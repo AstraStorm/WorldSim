@@ -4927,6 +4927,7 @@ function runTask(v, g, dt){
         if (WATER[world.biome[i]] || bridgeSet.has(i) || farmMap.has(i) || plazaSet.has(i)) continue;
         if (pathMap.has(i)) { gateSet.add(i); continue; }
         if (o && !['tree', 'berry'].includes(OBJ[o.key][1])) continue;
+        if (underBuilding(g, i % W, (i / W) | 0) || plotIn(i % W, (i / W) | 0, i % W, (i / W) | 0)) continue; // ni a través de un edificio ni de una parcela
         if (o) { if (OBJ[o.key][1] === 'tree') fallObj(i); world.objs[i] = null; composeRegion((i % W) - 7, ((i / W) | 0) - 11, (i % W) + 7, ((i / W) | 0) + 12); }
         if (villagers.some(u => !u.dead && Math.floor(u.x / T) === i % W && Math.floor(u.y / T) === ((i / W) | 0))) { k--; break; } // alguien encima: luego
         wallSet.add(i); g.wood -= 1; built++;
@@ -5179,7 +5180,8 @@ function buildingClash(x, y, kind, skip){
     if (b === skip) continue; const o = world.objs[b]; if (!o) continue;
     const d = BUILD_DIMS[o.key.split(':')[0]]; if (d && hit(b % W, (b / W) | 0, d)) return true;
   }
-  if (penOverlap(null, x - hw, y - hh, x + hw, y + 1) || plotIn(x - hw, y - hh, x + hw, y + 1)) return true; // ni encima de un cercado ni de una arboleda o bayal
+  if (penOverlap(null, x - hw, y - hh, x + hw, y + 1) || plotIn(x - hw, y - hh, x + hw, y + 1)) return true;
+  if (wallSet.size) for (let yy = y - 1; yy <= y + 1; yy++) for (let xx = x - hw; xx <= x + hw; xx++) if (wallSet.has(yy * W + xx)) return true; // ni encima de la muralla // ni encima de un cercado ni de una arboleda o bayal
   for (const v of villagers) {
     const t = v.task; if (!t || t.i == null || t.i === skip) continue;
     const k = TASK_KIND[t.k] || (t.k === 'trabajando' ? TASK_KIND[t.job] : null);
@@ -5738,6 +5740,16 @@ function drawWalls(){
   for (const i of wallSet) {
     const px = (i % W) * T, py = ((i / W) | 0) * T;
     if (px + T < x0 || px > x1 || py + T < y0 - 8 || py > y1) continue;
+    const vert = (wallSet.has(i - W) || wallSet.has(i + W) || gateSet.has(i - W) || gateSet.has(i + W)) && !wallSet.has(i - 1) && !wallSet.has(i + 1);
+    if (vert) { // tramo que va de arriba abajo: se ve de lado, más ancho (dos filas de estacas y el adarve)
+      vctx.fillStyle = 'rgba(0,0,0,.25)'; vctx.fillRect(px - 1, py + T - 1, T + 3, 2);
+      for (let k = -1; k <= T; k++) {
+        const back = k < 2; vctx.fillStyle = back ? (k % 2 ? '#6a4428' : '#84583a') : (k % 2 ? '#7a5030' : '#9a6a3e');
+        vctx.fillRect(px + k, py - (back ? 4 : 3), 1, T + (back ? 3 : 3)); vctx.fillStyle = '#4a3018'; vctx.fillRect(px + k, py - (back ? 5 : 4) + ((k + 2) % 2), 1, 1);
+      }
+      vctx.fillStyle = '#5a3a20'; vctx.fillRect(px - 1, py + 1, T + 2, 1); vctx.fillStyle = '#3a2614'; vctx.fillRect(px + T, py - 3, 1, T + 3);
+      continue;
+    }
     vctx.fillStyle = 'rgba(0,0,0,.25)'; vctx.fillRect(px, py + T - 1, T, 2);
     for (let k = 0; k < T; k++) { // estacas puntiagudas
       vctx.fillStyle = k % 2 ? '#7a5030' : '#9a6a3e'; vctx.fillRect(px + k, py - 3, 1, T + 3);
@@ -6419,7 +6431,7 @@ function diploTick(){
       const att = villageById(r.war.att), def = villageById(r.war.def);
       if (!att || !def || !popOf(att) || !popOf(def)) { r.war = null; continue; }
       if (r.war.dead >= 8 || (yearT - r.war.start > DAY_LEN * 3 && Math.random() < .05)) makePeace(a, b, r, r.war.dead >= 8 ? 'agotados por tantas muertes' : 'cansados de luchar');
-      else if (yearT - r.war.raidT > 120) { const back = Math.random() < .25, A = back ? def : att; if (!(knowsT(A, 'noche') && !isNight() && yearT - r.war.raidT < 170)) { r.war.raidT = yearT; launchRaid(A, back ? att : def, r); } } // a veces contraataca el atacado
+      else if (yearT - r.war.raidT > 120) { const back = Math.random() < .25, A = back ? def : att; if (!(knowsT(A, 'noche') && !isNight() && yearT - r.war.raidT < 170)) { r.war.raidT = yearT; const D = back ? att : def, far = Math.hypot(A.fx - D.fx, A.fy - D.fy); if (!(A.port && (far > 60 || Math.random() < .45) && launchNavalRaid(A, D, r))) launchRaid(A, D, r); } } // a veces contraataca el atacado
       continue;
     }
     // Caravanas de comercio y diplomáticos
@@ -6455,6 +6467,72 @@ function doTrade(g, o){
 }
 // Viajeros: un aldeano sale de su pueblo (con su carro, o en barca si los dos tienen muelle) y vuelve luego
 function lineWater(ax, ay, bx, by){ let w = 0, n = 0; for (let k = 0; k <= 30; k++) { const x = ax + (bx - ax) * k / 30, y = ay + (by - ay) * k / 30; n++; if (WATER[world.biome[Math.floor(y / T) * W + Math.floor(x / T)]]) w++; } return w / n; }
+// Dónde desembarcar: una orilla libre cerca del pueblo enemigo, con agua al lado (y el punto de agua desde el que se baja)
+function landingOf(def){
+  let best = null, bd = Infinity;
+  for (let dy = -14; dy <= 14; dy++) for (let dx = -14; dx <= 14; dx++) {
+    const x = def.fx + dx, y = def.fy + dy; if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1 || !tileFree(x, y)) continue;
+    const i = y * W + x, wn = nb4i(i).find(n => openWater(n)); if (wn == null) continue;
+    const d = Math.hypot(dx, dy); if (d < bd) { bd = d; best = { land:[x * T + 2, y * T + 3], water:[(wn % W) * T + 2, ((wn / W) | 0) * T + 3] }; }
+  }
+  return best;
+}
+// Ruta por el agua de una casilla a otra (búsqueda en anchura), en puntos cada pocas casillas; null si no hay paso
+function waterRoute(a, b){
+  if (a === b) return [];
+  const prev = new Int32Array(N).fill(-1), q = [a]; prev[a] = a;
+  for (let h = 0; h < q.length && q.length < 90000; h++) {
+    const i = q[h]; if (i === b) break;
+    const x = i % W, y = (i / W) | 0;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      if (!dx && !dy) continue; const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+      const n = ny * W + nx; if (prev[n] !== -1 || !(openWater(n) || n === b)) continue;
+      prev[n] = i; q.push(n);
+    }
+  }
+  if (prev[b] === -1) return null;
+  const path = []; for (let i = b; i !== a; i = prev[i]) path.push(i); path.reverse();
+  return path.filter((_, k) => k % 4 === 3 || k === path.length - 1).map(i => [(i % W) * T + 2, ((i / W) | 0) * T + 3]);
+}
+const pxTile = p => Math.floor(p[1] / T) * W + Math.floor(p[0] / T);
+// Un ataque por mar: la flota sale del muelle; al llegar, o saquea la costa o desembarca a los soldados
+function launchNavalRaid(att, def, r){
+  if (!att.port || !openWater(att.port.launch)) return false;
+  const L = landingOf(def); if (!L) return false;
+  const home = [(att.port.launch % W) * T + 2, ((att.port.launch / W) | 0) * T + 3];
+  const route = waterRoute(att.port.launch, pxTile(L.water)); if (!route || !route.length || route.length > 120) return false; // sin paso por agua (o demasiado lejos)
+  const ps = villagers.filter(v => !v.dead && !v.away && v.vid === att.id && (yearT - v.born) / YEAR >= ADULT_H && v !== att.leader && (v.hp ?? 1) > .5 && !v.boat).sort((a, b) => (b.weapon ? 1 : 0) - (a.weapon ? 1 : 0)).slice(0, Math.min(6, Math.max(2, Math.floor(popOf(att) / 3))));
+  if (ps.length < 2) return false;
+  const mode = Math.random() < .5 ? 'saqueo' : 'desembarco';
+  for (const v of ps) { v.sleep = false; releaseTask(v); if (v.actT > 0) { v.actT = 0; v.onDone = null; } dismount(v); v.task = { k:'viaje' }; v.away = true; }
+  const path = route.slice(); const first = path.shift();
+  travelers.push({ kind:'flota', mode, v:ps[0], crew:ps, from:att.id, to:def.id, x:home[0], y:home[1], tx:first[0], ty:first[1], path, back:[...route].reverse().slice(1).concat([home]), hx:home[0], hy:home[1], land:L.land, sea:true, phase:'ida', dir:1 });
+  notify(`¡Los barcos de ${att.name} zarpan contra ${def.name}${mode === 'saqueo' ? ' para saquear su costa' : ' con soldados para desembarcar'}!`, { x:home[0], y:home[1] });
+  return true;
+}
+function arriveFleet(t, from, to){
+  const r = rels.get(relKey(from, to)), crew = t.crew.filter(u => !u.dead);
+  if (!r || !r.war || !crew.length) return;
+  if (t.mode === 'desembarco') { // bajan a tierra y asaltan; luego vuelven en barca
+    const grp = { ps:crew, go:true, until:yearT, loot:false, repelled:false };
+    crew.forEach((u, k) => { u.away = false; u.x = t.land[0] + (k % 3 - 1) * 3; u.y = t.land[1] + Math.floor(k / 3) * 3; u.task = { k:'asalto', enemy:to.id, x:to.fx * T + 2, y:to.fy * T + 10, grp }; u.lastD = Infinity; u.navalHome = from.id; u.landing = t.land; });
+    if (to) to.alarm = { until:yearT + 70, posts:defensePosts(to, from) };
+    notify(`¡${crew.length} soldados de ${from.name} desembarcan en la costa de ${to.name}!`, { x:t.land[0], y:t.land[1] });
+    t.crewOff = true; return;
+  }
+  // Saqueo costero: si la orilla está defendida por arqueros, les cuesta caro
+  const archers = villagers.filter(u => !u.dead && u.vid === to.id && isRanged(u.weapon) && Math.hypot(u.x - t.x, u.y - t.y) < 120).length;
+  if (archers >= crew.length) {
+    const lost = crew.slice(0, Math.max(1, Math.floor(crew.length / 3))); for (const u of lost) { u.away = false; killVillager(u, 'guerra'); }
+    r.war.dead += lost.length; notify(`Los arqueros de ${to.name} rechazan desde la orilla a los barcos de ${from.name}: ${lost.length} muertos`, { x:t.x, y:t.y });
+    milOf(to).won++; milOf(to).xp += 2; milLearn(to); return;
+  }
+  const take = Math.min(to.food, 4 + crew.length * 2); to.food -= take; from.food += take;
+  const wood = buildingsOf(to).filter(b => world.objs[b] && wooden(world.objs[b]) && !world.objs[b].burnt && Math.hypot((b % W) * T - t.land[0], ((b / W) | 0) * T - t.land[1]) < 90);
+  if (wood.length && Math.random() < .6) { const b = wood[Math.floor(Math.random() * wood.length)]; fires.set(b, { t:0, life:10, tree:true, bld:true }); }
+  r.war.loots = (r.war.loots || 0) + 1; milOf(from).xp += 1; milLearn(from); misfortune(to, 'guerra');
+  notify(`Los barcos de ${from.name} saquean la costa de ${to.name}: se llevan ${Math.round(take)} de comida${wood.length ? ' y prenden fuego a lo que pillan' : ''}`, { x:t.land[0], y:t.land[1] });
+}
 function sendTraveler(kind, from, to){
   const v = villagers.filter(u => !u.dead && !u.away && u.vid === from.id && (yearT - u.born) / YEAR >= ADULT_H && u !== from.leader && !u.sleep && !u.boat && !u.mount && !(u.actT > 0))[0];
   if (!v) return;
@@ -6466,10 +6544,15 @@ function sendTraveler(kind, from, to){
 }
 function updateTravelers(dt){
   for (const t of travelers) {
-    const from = villageById(t.from), to = villageById(t.to), v = t.v;
-    if (v.dead || !from) { t.done = true; if (!v.dead) { v.away = false; v.task = null; } continue; }
-    const d = Math.hypot(t.tx - t.x, t.ty - t.y), sp = (t.sea ? 14 : 10) * dt;
-    if (d > 2) { t.x += (t.tx - t.x) / d * Math.min(d, sp); t.y += (t.ty - t.y) / d * Math.min(d, sp); if (Math.abs(t.tx - t.x) > .3) t.dir = t.tx < t.x ? -1 : 1; t.walk = (t.walk || 0) + dt; v.x = t.x; v.y = t.y; continue; }
+    const from = villageById(t.from), to = villageById(t.to); let v = t.v;
+    if (t.crew) { t.v = t.crew.find(u => !u.dead) || t.v; if (!t.crew.some(u => !u.dead)) { t.done = true; continue; } } // la flota sigue mientras quede alguien
+    if (t.v.dead || !from) { t.done = true; if (!t.v.dead) { t.v.away = false; t.v.task = null; } continue; }
+    v = t.v; let d = Math.hypot(t.tx - t.x, t.ty - t.y); const sp = (t.sea ? 14 : 10) * dt;
+    if (d <= 2 && t.path && t.path.length) { const nx = t.path.shift(); t.tx = nx[0]; t.ty = nx[1]; d = Math.hypot(t.tx - t.x, t.ty - t.y); } // siguiente punto de la ruta
+    if (d > 2) { t.x += (t.tx - t.x) / d * Math.min(d, sp); t.y += (t.ty - t.y) / d * Math.min(d, sp); if (Math.abs(t.tx - t.x) > .3) t.dir = t.tx < t.x ? -1 : 1; t.walk = (t.walk || 0) + dt; v.x = t.x; v.y = t.y; if (t.crew) for (const u of t.crew) if (!u.dead) { u.x = t.x; u.y = t.y; } continue; }
+    if (t.kind === 'regreso') { t.done = true; v.away = false; v.task = null; v.x = t.x; v.y = t.y; continue; } // de vuelta al muelle, a pie hasta casa
+    if (t.kind === 'flota' && t.phase === 'ida') { if (to) arriveFleet(t, from, to); if (t.crewOff) { t.done = true; continue; } t.phase = 'vuelta'; t.path = t.back.slice(); const nx = t.path.shift(); t.tx = nx[0]; t.ty = nx[1]; continue; }
+    if (t.kind === 'flota') { t.done = true; for (const u of t.crew) if (!u.dead) { u.away = false; u.task = null; u.x = t.x; u.y = t.y; } continue; }
     if (t.phase === 'ida') {
       const r = to && relOf(from, to);
       if (to && r) {
@@ -6493,6 +6576,7 @@ function drawTravelers(now){
     if (t.x < x0 - 20 || t.x > x1 + 20 || t.y < y0 - 20 || t.y > y1 + 20) continue;
     const g = villageById(t.from), s = personSprite(t.v, Math.floor((t.walk || 0) * 8) % 2, t.dir < 0), x = Math.round(t.x), y = Math.round(t.y);
     const wet = WATER[world.biome[Math.floor(t.y / T) * W + Math.floor(t.x / T)]];
+    if (t.crew) { const crew = t.crew.filter(u => !u.dead); crew.forEach((u, k) => { if (k % 2) return; const ox = -t.dir * Math.floor(k / 2) * 14, oy = (Math.floor(k / 2) % 2 ? 6 : -4); drawBoat(x + ox, y + oy, t.dir, now, true, personSprite(u, 0, t.dir < 0)); }); if (crew.length) { vctx.fillStyle = '#c8302a'; vctx.fillRect(x + t.dir * 2, y - 22, 3, 2); vctx.fillStyle = '#5a3a20'; vctx.fillRect(x + t.dir, y - 22, 1, 8); } continue; }
     if (t.sea || wet) { drawBoat(x, y, t.dir, now, true, s); continue; }
     if (t.kind === 'caravana') drawCart(x - t.dir * 8, y, t.dir, now, '#c8a050');
     vctx.drawImage(s, x - (s.width >> 1), y - s.height + 1);
@@ -7325,6 +7409,13 @@ function updateVillagers(dt){
     if (g.alarm && yearT < g.alarm.until && v.weapon && !child && !v.enemy && !v.boat && (!v.task || !['asalto', 'volver', 'beber', 'comer', 'guardia'].includes(v.task.k))) {
       const ps = g.alarm.posts, k = villagers.filter(u => u.vid === g.id && u.weapon).indexOf(v), p = ps[(k < 0 ? 0 : k) % ps.length];
       if (p && (!p[3] || isRanged(v.weapon) || ps.every(q => q[3]))) { if (v.actT > 0) { v.actT = 0; v.onDone = null; } releaseTask(v); v.sleep = false; v.task = { k:'guardia', x:p[0] + (k % 3 - 1) * 3, y:p[1], hide:p[2], until:g.alarm.until }; v.lastD = Infinity; }
+    }
+    if (v.navalHome && (!v.task || v.task.k === 'volver')) { // soldado desembarcado: a la orilla y de vuelta en barca
+      const hg = villageById(v.navalHome), L = v.landing;
+      if (!hg || !hg.port || !L) v.navalHome = null;
+      else if (vGo(v, L[0], L[1], dt, true)) { const h = [(hg.port.launch % W) * T + 2, ((hg.port.launch / W) | 0) * T + 3], wn = nb4i(pxTile(L)).find(n => openWater(n)), route = wn != null && waterRoute(wn, hg.port.launch); v.navalHome = null;
+        if (route) { const path = route.slice(), f = path.shift() || h; v.away = true; v.task = { k:'viaje' }; travelers.push({ kind:'regreso', v, from:hg.id, to:hg.id, x:L[0], y:L[1], tx:f[0], ty:f[1], path, hx:h[0], hy:h[1], sea:true, phase:'ida', dir:1 }); } else v.task = { k:'volver' }; }
+      continue;
     }
     if (v.task && v.task.k === 'asalto' && (v.water < .3 || v.food < .22)) v.task = null; // la sed y el hambre pueden más que la guerra
     if (v.task && v.task.k === 'asalto') {
