@@ -3,6 +3,11 @@
 let olymp = { next:SEASON_LEN * 2, cur:null, past:[] }, ballGames = [];
 const hasTheater = g => g && g.theater != null && !!world.objs[g.theater];
 const hasTavern = g => g && g.tavern != null && !!world.objs[g.tavern];
+const hasCathedral = g => g && g.cathedral != null && !!world.objs[g.cathedral];
+// Qué gran templo levanta cada fe: un solo dios, catedral; dioses del cielo, el sol, las estrellas o el fuego, zigurat; si no, panteón
+const SKY_DOMS = ['el cielo', 'el sol', 'las estrellas', 'el fuego', 'el trueno', 'la luna'];
+const holyStyleOf = g => !g.faith ? 'catedral' : g.faith.mono ? 'catedral' : SKY_DOMS.includes(g.faith.dom) ? 'zigurat' : 'panteon';
+const HOLY_TXT = { catedral:'la catedral', panteon:'el gran panteón', zigurat:'el zigurat' };
 const DRINKS = ['sidra', 'cerveza', 'aguamiel', 'vino', 'agua fresca'];
 const hasColiseum = g => g && g.coliseum != null && !!world.objs[g.coliseum];
 // Partido de pelota en la plaza: los jugadores persiguen la pelota y la chutan
@@ -122,7 +127,7 @@ let pathMap = new Set(), bridgeSet = new Set(), bridges = [];
 // Desgaste de tanto pisar: hierba gastada y, si se sigue pasando, un camino; si se deja de usar, vuelve la hierba
 let wear = null, wornSet = new Set(), desireSet = new Set();
 const storesOf = g => (g.stores ||= []).filter(i => world.objs[i] && world.objs[i].key === 'store:almacen');
-const buildingsOf = g => [...g.houses, ...(g.wells || []).map(w => w.i), ...(g.mill != null ? [g.mill] : []), ...(g.quarry != null ? [g.quarry] : []), ...(g.hall != null ? [g.hall] : []), ...(g.stores || []), ...(g.towers || []), ...[g.altar, g.temple, g.monument, g.market, g.bank, g.wonder, g.forge, g.hospital, g.barracks, g.lonja, g.theater, g.coliseum, g.tavern].filter(b => b != null)];
+const buildingsOf = g => [...g.houses, ...(g.wells || []).map(w => w.i), ...(g.mill != null ? [g.mill] : []), ...(g.quarry != null ? [g.quarry] : []), ...(g.hall != null ? [g.hall] : []), ...(g.stores || []), ...(g.towers || []), ...[g.altar, g.temple, g.monument, g.market, g.bank, g.wonder, g.forge, g.hospital, g.barracks, g.lonja, g.theater, g.coliseum, g.tavern, g.cathedral].filter(b => b != null)];
 // Capacidad del almacén: lo que cabe junto a la hoguera, más lo de cada almacén
 const capOf = g => Math.max(20, 80 * storesOf(g).length); // sin almacén, solo lo poco que cabe junto a la hoguera
 let plazaSet = new Set(), holySet = new Map();
@@ -202,9 +207,9 @@ function bestSite(v, g, kind){
   return best || planSite(g, kind);
 }
 // Tamaño de cada edificio (medio ancho y alto en casillas, por encima de su base): para que no se monten
-const BUILD_DIMS = { altar:[1, 2], temple:[4, 7], obelisk:[1, 4], market:[4, 4], house:[4, 6], hall:[5, 7], mill:[3, 8], well:[2, 4], store:[4, 5], tower:[2, 7], quarry:[4, 4], fire:[1, 1], bank:[4, 5], wonder:[6, 10], forge:[3, 5], hospital:[4, 5], barracks:[5, 6], tradehall:[5, 6], theater:[6, 6], coliseum:[6, 6], tavern:[5, 5] };
-const KIND_DIMS = { altar:[1, 2], templo:[4, 7], mercado:[4, 4], casa:[4, 6], ayuntamiento:[5, 7], molino:[3, 8], pozo:[2, 4], almacen:[4, 5], torre:[2, 7], cantera:[4, 4], banco:[4, 5], maravilla:[6, 10], herreria:[3, 5], hospital:[4, 5], cuartel:[5, 6], lonja:[5, 6], teatro:[6, 6], coliseo:[6, 6], taberna:[5, 5] };
-const TASK_KIND = { templo:'templo', mercado:'mercado', construir:'casa', ayuntamiento:'ayuntamiento', molino:'molino', pozo:'pozo', almacen:'almacen', torre:'torre', cantera:'cantera', banco:'banco', maravilla:'maravilla', herreria:'herreria', hospital:'hospital', cuartel:'cuartel', lonja:'lonja', teatro:'teatro', coliseo:'coliseo', taberna:'taberna' };
+const BUILD_DIMS = { altar:[1, 2], temple:[4, 7], obelisk:[1, 4], market:[4, 4], house:[4, 6], hall:[5, 7], mill:[3, 8], well:[2, 4], store:[4, 5], tower:[2, 7], quarry:[4, 4], fire:[1, 1], bank:[4, 5], wonder:[6, 10], forge:[3, 5], hospital:[4, 5], barracks:[5, 6], tradehall:[5, 6], theater:[6, 6], coliseum:[6, 6], tavern:[5, 5], cathedral:[6, 13] };
+const KIND_DIMS = { altar:[1, 2], templo:[4, 7], mercado:[4, 4], casa:[4, 6], ayuntamiento:[5, 7], molino:[3, 8], pozo:[2, 4], almacen:[4, 5], torre:[2, 7], cantera:[4, 4], banco:[4, 5], maravilla:[6, 10], herreria:[3, 5], hospital:[4, 5], cuartel:[5, 6], lonja:[5, 6], teatro:[6, 6], coliseo:[6, 6], taberna:[5, 5], catedral:[6, 13] };
+const TASK_KIND = { templo:'templo', mercado:'mercado', construir:'casa', ayuntamiento:'ayuntamiento', molino:'molino', pozo:'pozo', almacen:'almacen', torre:'torre', cantera:'cantera', banco:'banco', maravilla:'maravilla', herreria:'herreria', hospital:'hospital', cuartel:'cuartel', lonja:'lonja', teatro:'teatro', coliseo:'coliseo', taberna:'taberna', catedral:'catedral' };
 // ¿Choca con un edificio ya hecho o con uno que alguien está a punto de levantar? (skip: el propio solar)
 function buildingClash(x, y, kind, skip){
   const [hw, hh] = KIND_DIMS[kind] || [4, 5];
@@ -784,14 +789,14 @@ function homeOf(v, g){
   return v.home;
 }
 // ---- Oficios: cada adulto tiene el suyo y lo prefiere (aunque si hace falta, hace de todo) ----
-const OFICIOS = { curandero:['curar'], soldado:['instruir', 'arma', 'equipar'], ingeniero:['asedio', 'muralla', 'cuartel', 'puente', 'herreria', 'lonja'], mercader:['vender', 'comerciar', 'mercado', 'lonja', 'banco', 'tazas', 'taberna'], 'leñador':['talar', 'plantar', 'arboleda'], 'cantero':['picar', 'cantear', 'cantera', 'minar'], 'agricultor':['campo', 'arar', 'sembrar', 'cosechar', 'molino', 'bayal'],
-  'pescador':['pescar', 'barca', 'muelle', 'caña'], 'cazador':['cazar', 'arma', 'equipar'], 'constructor':['construir', 'ampliar', 'pozo', 'almacen', 'ayuntamiento', 'puente', 'cercar', 'torre', 'muralla', 'carro', 'herreria', 'hospital'],
-  'recolector':['bayas'], 'bombero':['apagar', 'quema'], 'comerciante':['comerciar', 'mercado', 'banco'], 'pastor':['capturar', 'cercar'], 'sacerdote':['orar', 'altar', 'templo', 'monumento', 'ofrenda', 'sacrificio'] };
-const OFICIO_MIX = { curandero:.04, soldado:.08, ingeniero:.04, mercader:.05, agricultor:.22, 'leñador':.16, constructor:.16, recolector:.1, pescador:.1, cazador:.1, cantero:.08, pastor:.08, sacerdote:.04, comerciante:.05, bombero:.03 };
+const OFICIOS = { curandero:['curar'], soldado:['instruir', 'arma', 'equipar'], ingeniero:['asedio', 'muralla', 'cuartel', 'puente', 'herreria', 'lonja'], mercader:['vender', 'comerciar', 'mercado', 'lonja', 'banco', 'tazas', 'taberna'], 'cartógrafo':['explorar'], 'leñador':['talar', 'plantar', 'arboleda'], 'cantero':['picar', 'cantear', 'cantera', 'minar'], 'agricultor':['campo', 'arar', 'sembrar', 'cosechar', 'molino', 'bayal'],
+  'pescador':['pescar', 'barca', 'muelle', 'caña'], 'cazador':['cazar', 'arma', 'equipar'], 'constructor':['construir', 'ampliar', 'pozo', 'almacen', 'ayuntamiento', 'puente', 'cercar', 'torre', 'muralla', 'carro', 'herreria', 'hospital', 'catedral'],
+  'recolector':['bayas'], 'bombero':['apagar', 'quema'], 'comerciante':['comerciar', 'mercado', 'banco'], 'pastor':['capturar', 'cercar'], 'sacerdote':['orar', 'altar', 'templo', 'monumento', 'ofrenda', 'sacrificio', 'catedral'] };
+const OFICIO_MIX = { 'cartógrafo':.03, curandero:.04, soldado:.08, ingeniero:.04, mercader:.05, agricultor:.22, 'leñador':.16, constructor:.16, recolector:.1, pescador:.1, cazador:.1, cantero:.08, pastor:.08, sacerdote:.04, comerciante:.05, bombero:.03 };
 function pickOficio(g){
   const ps = villagers.filter(u => !u.dead && u.vid === g.id && u.oficio), n = ps.length + 1;
   let best = 'recolector', bd = -Infinity;
-  for (const [o, w] of Object.entries(OFICIO_MIX)) { if ((o === 'soldado' && !hasBarracks(g)) || (o === 'ingeniero' && !hasBarracks(g) && !hasForge(g)) || (o === 'mercader' && g.market == null)) continue; const d = w * n - ps.filter(u => u.oficio === o).length + Math.random() * .3; if (d > bd) { bd = d; best = o; } }
+  for (const [o, w] of Object.entries(OFICIO_MIX)) { if ((o === 'cartógrafo' && !hasPaper(g)) || (o === 'soldado' && !hasBarracks(g)) || (o === 'ingeniero' && !hasBarracks(g) && !hasForge(g)) || (o === 'mercader' && g.market == null)) continue; const d = w * n - ps.filter(u => u.oficio === o).length + Math.random() * .3; if (d > bd) { bd = d; best = o; } }
   return best;
 }
 // ---- Defensa: torres de vigía con arquero y murallas (empalizada) alrededor del pueblo ----
@@ -908,7 +913,7 @@ function misfortune(g, cause){
   for (const [o, w] of opts) if ((k -= w) < 0) { why = o; break; }
   let msg;
   if (why === 'dios') msg = `En ${g.name} creen que ${txt} es un castigo de ${godTxt(f)}: se ponen a rezar`;
-  else if (why === 'tala') { g.taboo.talar = yearT + 300; g.cut = (g.cut || 0) + 4; msg = `En ${g.name} creen que ${txt} es por haber talado el bosque sagrado: dejan de talar un tiempo y plantan árboles`; }
+  else if (why === 'tala') { g.taboo.talar = yearT + 150; g.cut = (g.cut || 0) + 4; msg = `En ${g.name} creen que ${txt} es por haber talado el bosque sagrado: dejan de talar un tiempo y plantan árboles`; }
   else if (why === 'caza') { const sp = HERBIVORES[Math.floor(Math.random() * HERBIVORES.length)]; g.taboo[sp] = yearT + 400; msg = `En ${g.name} creen que ${txt} es por cazar ${ANIMALS[sp].n.toLowerCase()}s, animal sagrado de ${f.god}: ya no los cazan`; }
   else if (why === 'vecinos') { const o = others[Math.floor(Math.random() * others.length)]; g.grudge[o.id] = (g.grudge[o.id] || 0) + 1; msg = `En ${g.name} culpan a los de ${o.name} de ${txt}`; }
   else msg = `En ${g.name} dicen que ${txt} ya lo anunciaba un mal presagio: rezan a ${f.god}`;
@@ -1098,7 +1103,7 @@ function techsOf(g){
   if (villagers.some(v => !v.dead && v.vid === g.id && v.weapon)) t.push('Lanzas y arcos');
   if (k.pozo) t.push('Pozos'); if (k.molino) t.push('Molinos'); if (k.cantera) t.push('Canteras'); if (k.puente) t.push('Puentes');
   if (k.barca) t.push('Barcas'); if (k.montar) t.push('Equitación y carros'); if (k.antorchas) t.push('Antorchas'); if (k.bomberos) t.push('Cubos contra el fuego'); if (g.ctrlBurns) t.push('Quemas controladas');
-  if (g.market != null) t.push('Comercio'); if (g.coin) t.push('Moneda'); if (hasBank(g)) t.push('Banca'); if (k.mineria) t.push('Minería'); if (hasForge(g)) t.push('Herrería'); if (hasHosp(g)) t.push('Hospital'); if (hasTavern(g)) t.push('Taberna'); if (hasTheater(g)) t.push('Teatro'); if (hasColiseum(g)) t.push('Coliseo'); if (g.track) t.push('Pista de atletismo'); if (hasBarracks(g)) t.push('Cuartel'); if (g.siegeMsg) t.push('Asedio'); if (hasLonja(g)) t.push('Lonja'); if (g.cemetery) t.push('Cementerio'); if (k.acequias) t.push('Acequias'); if (g.grove) t.push('Arboledas'); if (g.berryPlot) t.push('Bayales'); if (g.jarMsg) t.push('Cántaros');
+  if (g.market != null) t.push('Comercio'); if (g.coin) t.push('Moneda'); if (hasBank(g)) t.push('Banca'); if (k.mineria) t.push('Minería'); if (hasForge(g)) t.push('Herrería'); if (hasHosp(g)) t.push('Hospital'); if (hasCathedral(g)) t.push(OBJ[world.objs[g.cathedral].key][0]); if (hasPaper(g)) t.push('Papel y mapas'); if (hasTavern(g)) t.push('Taberna'); if (hasTheater(g)) t.push('Teatro'); if (hasColiseum(g)) t.push('Coliseo'); if (g.track) t.push('Pista de atletismo'); if (hasBarracks(g)) t.push('Cuartel'); if (g.siegeMsg) t.push('Asedio'); if (hasLonja(g)) t.push('Lonja'); if (g.cemetery) t.push('Cementerio'); if (k.acequias) t.push('Acequias'); if (g.grove) t.push('Arboledas'); if (g.berryPlot) t.push('Bayales'); if (g.jarMsg) t.push('Cántaros');
   for (const c of Object.keys(g.crops || {})) t.push(`Cultivo de ${CROPS[c].n}`); if (g.temple != null) t.push('Templos');
   if (g.wallPlan) t.push('Murallas'); if (towersOf(g).length) t.push('Torres de vigía'); if (g.flag) t.push('Bandera');
   return t;
@@ -1260,7 +1265,7 @@ function renderPersonCard(force){
 }
 // ---- Ficha del pueblo, por pestañas ----
 let cardTab = 'resumen';
-const CARD_TABS = [['resumen', 'Resumen'], ['gente', 'Gente'], ['economia', 'Economía'], ['politica', 'Política'], ['historia', 'Historia']];
+const CARD_TABS = [['resumen', 'Resumen'], ['gente', 'Gente'], ['economia', 'Economía'], ['politica', 'Política'], ['mapa', 'Mapa'], ['historia', 'Historia']];
 function logKind(t){ return /guerra|ataca|saque|conquist|muerto en|Emboscada|rechaz|asalto/.test(t) ? 'war' : /elecciones|golpe|Golpe|revoluc|Manifest|partido|corona|régimen|independiza|rey|reina/.test(t) ? 'pol' : /moneda|banco|precios|Bancarrota|inflación|Flujo|presta|mercado|caravana/.test(t) ? 'eco' : /dios|diosa|ritual|templo|venerar|sacrific|ofrenda|fe /.test(t) ? 'rel' : /Murió|muere|ahogado/.test(t) ? 'death' : 'misc'; }
 function tile(label, val, sub){ return `<div class="tile"><span>${label}</span><b>${val}</b>${sub ? `<em>${sub}</em>` : ''}</div>`; }
 function renderVillageCard(force){
@@ -1310,6 +1315,8 @@ function renderVillageCard(force){
       <h4>Nación</h4><div>${status}${provinces.length ? `: ${provinces.map(o => `<button class="lnk" data-vid="${o.id}">${esc(o.name)}</button>`).join(', ')}` : ''}${n !== g ? ` · descontento con la capital ${Math.round(g.unrest || 0)} %` : ''}</div>
       ${allyCard(g)}${warCard(g)}
       <h4>Relaciones</h4><div class="chips rel">${villages.filter(o => o !== g && popOf(o) && rels.get(relKey(g, o)) && rels.get(relKey(g, o)).known).map(o => { const r = rels.get(relKey(g, o)), w = relWord(r), c = r.war ? '#d8483a' : r.v > 40 ? '#7ab04a' : r.v > 0 ? '#a8c060' : r.v > -30 ? '#d8b848' : '#e08a3a'; return `<button class="relb" data-vid="${o.id}" style="border-color:${c}" title="Ver la ficha de ${esc(o.name)}">${o.flagUrl ? `<img src="${o.flagUrl}" alt="">` : ''}${esc(o.name)} · <b style="color:${c}">${r.war ? 'en guerra' : w}</b></button>`; }).join('') || 'Aún no conocen a nadie'}</div>`;
+  } else if (cardTab === 'mapa') {
+    body = chartCard(g);
   } else {
     body = `<ul class="log">${(g.log || []).slice(-30).reverse().map(e => `<li class="${logKind(e.txt)}"><span class="d">día ${e.d}</span>${esc(e.txt.startsWith(`En ${g.name} `) ? capFirst(e.txt.slice(g.name.length + 4)) : e.txt)}</li>`).join('') || '<li>Nada destacable aún</li>'}</ul>`;
   }
@@ -1320,7 +1327,7 @@ function renderVillageCard(force){
     <div class="cbody">${body}</div>`, force);
 }
 // ---- Daños en los edificios: tormentas, terremotos, tsunamis y fuego ----
-const BLD = new Set(['house', 'hall', 'store', 'market', 'mill', 'tower', 'well', 'temple', 'obelisk', 'altar', 'bank', 'wonder', 'forge', 'hospital', 'barracks', 'tradehall', 'theater', 'coliseum', 'tavern']);
+const BLD = new Set(['house', 'hall', 'store', 'market', 'mill', 'tower', 'well', 'temple', 'obelisk', 'altar', 'bank', 'wonder', 'forge', 'hospital', 'barracks', 'tradehall', 'theater', 'coliseum', 'tavern', 'cathedral']);
 const isBuilding = o => !!o && BLD.has(o.key.split(':')[0]);
 const wooden = o => /^(house:hut|store|market|mill|tower)/.test(o.key); // de madera: arden; los de piedra, apenas
 const bldName = o => OBJ[o.key][0].toLowerCase();
@@ -1645,6 +1652,8 @@ function updateTravelers(dt){
     v = t.v; let d = Math.hypot(t.tx - t.x, t.ty - t.y); const sp = (t.sea ? 14 : 10) * dt;
     if (d <= 2 && t.path && t.path.length) { const nx = t.path.shift(); t.tx = nx[0]; t.ty = nx[1]; d = Math.hypot(t.tx - t.x, t.ty - t.y); } // siguiente punto de la ruta
     if (d > 2) { t.x += (t.tx - t.x) / d * Math.min(d, sp); t.y += (t.ty - t.y) / d * Math.min(d, sp); if (Math.abs(t.tx - t.x) > .3) t.dir = t.tx < t.x ? -1 : 1; t.walk = (t.walk || 0) + dt; v.x = t.x; v.y = t.y; if (t.crew) for (const u of t.crew) if (!u.dead) { u.x = t.x; u.y = t.y; } continue; }
+    if (t.kind === 'expedicion' && t.phase === 'ida') { t.phase = 'vuelta'; t.path = t.back.slice(); const nx = t.path.shift(); t.tx = nx[0]; t.ty = nx[1]; continue; }
+    if (t.kind === 'expedicion') { t.done = true; v.away = false; v.task = null; v.x = t.x; v.y = t.y; endExpedition(t, from); continue; }
     if (t.kind === 'regreso') { t.done = true; v.away = false; v.task = null; v.x = t.x; v.y = t.y; continue; }
     if (t.kind === 'emigrante') { t.done = true; v.away = false; v.task = null; v.home = null; if (to && popOf(to) !== undefined) { v.vid = to.id; v.x = t.x; v.y = t.y; floats.push({ x:v.x, y:v.y - 12, txt:'¡nuevo hogar!', col:'#c8e0a0', life:0 }); } continue; } // de vuelta al muelle, a pie hasta casa
     if (t.kind === 'flota' && t.phase === 'ida') { if (to) arriveFleet(t, from, to); if (t.crewOff) { t.done = true; continue; } t.phase = 'vuelta'; t.path = t.back.slice(); const nx = t.path.shift(); t.tx = nx[0]; t.ty = nx[1]; continue; }
@@ -1653,13 +1662,13 @@ function updateTravelers(dt){
       const r = to && relOf(from, to);
       if (to && r) {
         if (t.kind === 'caravana') {
-          const got = doTrade(from, to); r.v = clamp(r.v + 4, -100, 100);
+          const got = doTrade(from, to); r.v = clamp(r.v + 4, -100, 100); shareCharts(from, to);
           const sickHome = villagers.find(u => !u.dead && u.vid === from.id && u.sick); if (sickHome && !hasLaw(to, 'cuarentena') && Math.random() < .3) { const tgt = villagers.find(u => !u.dead && u.vid === to.id && !u.sick); if (tgt) infect(tgt, sickHome.sick, to); } // la caravana trae la enfermedad
           notify(`Una caravana de ${from.name} llega a ${to.name} ${t.sea ? 'por mar' : 'por tierra'}${got.length ? `: ${got.join(', ')}` : ''}`, { x:t.x, y:t.y });
         } else if (r.war) {
           if (Math.random() < .3 + Math.min(.4, (yearT - r.war.start) / (DAY_LEN * 6))) makePeace(from, to, r, `gracias a un diplomático de ${from.name}`);
           else notify(`${to.name} rechaza al diplomático de ${from.name}: sigue la guerra`, { x:t.x, y:t.y });
-        } else { r.v = clamp(r.v + 7, -100, 100); notify(`Un diplomático de ${from.name} visita ${to.name}: mejoran sus relaciones`, { x:t.x, y:t.y }); }
+        } else { r.v = clamp(r.v + 7, -100, 100); if (r.v > 20) shareCharts(from, to); notify(`Un diplomático de ${from.name} visita ${to.name}: mejoran sus relaciones`, { x:t.x, y:t.y }); }
       }
       t.phase = 'vuelta'; t.tx = t.hx; t.ty = t.hy; continue;
     }
@@ -2705,6 +2714,7 @@ function updateVillages(dt){
     if (!know.montar && penAnimals(g).some(a => a.sp === 'caballo' && (yearT - a.born) / YEAR >= ADULT)) {
       know.montar = true; notify(`En ${g.name} aprenden a montar a caballo (y a hacer carros)`, { x:g.fx * T, y:g.fy * T });
     }
+    chartTick(g, dt, people);
     for (const w of wellsOf(g)) w.q = Math.min(1, w.q + (raining(w.i) ? .04 : .006) * dt); // con la lluvia se llena; sin ella, poco a poco, del agua de debajo
     for (const ti of towersOf(g)) {
       const o = world.objs[ti], tx = (ti % W) * T + 2, ty = ((ti / W) | 0) * T - 28;
@@ -3042,7 +3052,7 @@ function updateVillagePanel(){
 }
 function villagerInfo(v){
   const age = (yearT - v.born) / YEAR, g = villageById(v.vid);
-  const job = { talar:'talando', picar:'picando piedra', bayas:'recogiendo bayas', pescar:'pescando', cazar:'cazando', sembrar:'sembrando', caña:'fabricando una caña', arma:'fabricando un arma', pozo:'construyendo un pozo', cantera:'abriendo una cantera', cantear:'sacando piedra de la cantera', molino:'construyendo un molino', plantar:'plantando un árbol', votar:'votando en la plaza', taberna:'construyendo la taberna', tazas:'tallando tazas de madera', ir_taberna:'tomando algo en la taberna', teatro:'construyendo el teatro', coliseo:'construyendo el coliseo', ver_teatro:'viendo una obra en el teatro', ver_coliseo:'viendo los juegos del coliseo', curar:'atendiendo a un enfermo', jugar:'jugando a la pelota', atleta:'compitiendo en los Juegos', espectador:'viendo los Juegos', emigrante:'emigrando', cuartel:'construyendo el cuartel', instruir:'instruyéndose en el cuartel', asedio:'construyendo una catapulta', lonja:'construyendo la lonja', vender:'vendiendo en el mercado', ampliar:'ampliando una casa', cementerio:'preparando el cementerio', hospital:'construyendo el hospital', curarse:'curándose en el hospital', ocio:'charlando en su tiempo libre', equipar:'forjando equipo para los soldados', minar:'sacando mineral de una veta', herreria:'construyendo la herrería', arboleda:'preparando una arboleda', bayal:'preparando un bayal', protesta:'manifestándose', golpe:'dando un golpe de estado', reprimir:'reprimiendo una protesta', detenido:'detenido', banco:'construyendo el banco', maravilla:'levantando una maravilla', asalto:'yendo a la guerra', guardia:'defendiendo su puesto', viaje:'de viaje', ritual:'yendo al ritual', ofrenda:'llevando una ofrenda', sacrificio:'llevando un animal al altar', quema:'haciendo una quema controlada', reparar:'reparando un edificio', derribar:'tirando abajo un edificio quemado', apagar:'apagando el fuego', antorcha:'poniendo una antorcha', alumbrar:'encendiendo las antorchas', comerciar:'comerciando en el mercado', encender:'encendiendo la hoguera', orar:'rezando', altar:'levantando un altar', templo:'construyendo el templo', monumento:'tallando una estatua', mercado:'montando el mercado', dormir:'yendo a dormir', torre:'construyendo una torre', muralla:'levantando la muralla', ayuntamiento:'construyendo el ayuntamiento', almacen:'construyendo un almacén', puente:'construyendo un puente', muelle:'construyendo un muelle', barca:'pescando en barca', carro:'construyendo un carro', montar:'yendo a por un caballo', campo:'marcando un campo', arar:'arando', cosechar:'cosechando', construir:'construyendo una casa', cercar:'haciendo un cercado', capturar:'trayendo un animal', pasear:'paseando', beber:'yendo a beber', comer:'comiendo', volver:'volviendo a la aldea', trabajando:'trabajando' };
+  const job = { talar:'talando', picar:'picando piedra', bayas:'recogiendo bayas', pescar:'pescando', cazar:'cazando', sembrar:'sembrando', caña:'fabricando una caña', arma:'fabricando un arma', pozo:'construyendo un pozo', cantera:'abriendo una cantera', cantear:'sacando piedra de la cantera', molino:'construyendo un molino', plantar:'plantando un árbol', votar:'votando en la plaza', taberna:'construyendo la taberna', tazas:'tallando tazas de madera', ir_taberna:'tomando algo en la taberna', explorar:'preparando una expedición', catedral:'levantando el gran templo', teatro:'construyendo el teatro', coliseo:'construyendo el coliseo', ver_teatro:'viendo una obra en el teatro', ver_coliseo:'viendo los juegos del coliseo', curar:'atendiendo a un enfermo', jugar:'jugando a la pelota', atleta:'compitiendo en los Juegos', espectador:'viendo los Juegos', emigrante:'emigrando', cuartel:'construyendo el cuartel', instruir:'instruyéndose en el cuartel', asedio:'construyendo una catapulta', lonja:'construyendo la lonja', vender:'vendiendo en el mercado', ampliar:'ampliando una casa', cementerio:'preparando el cementerio', hospital:'construyendo el hospital', curarse:'curándose en el hospital', ocio:'charlando en su tiempo libre', equipar:'forjando equipo para los soldados', minar:'sacando mineral de una veta', herreria:'construyendo la herrería', arboleda:'preparando una arboleda', bayal:'preparando un bayal', protesta:'manifestándose', golpe:'dando un golpe de estado', reprimir:'reprimiendo una protesta', detenido:'detenido', banco:'construyendo el banco', maravilla:'levantando una maravilla', asalto:'yendo a la guerra', guardia:'defendiendo su puesto', viaje:'de viaje', ritual:'yendo al ritual', ofrenda:'llevando una ofrenda', sacrificio:'llevando un animal al altar', quema:'haciendo una quema controlada', reparar:'reparando un edificio', derribar:'tirando abajo un edificio quemado', apagar:'apagando el fuego', antorcha:'poniendo una antorcha', alumbrar:'encendiendo las antorchas', comerciar:'comerciando en el mercado', encender:'encendiendo la hoguera', orar:'rezando', altar:'levantando un altar', templo:'construyendo el templo', monumento:'tallando una estatua', mercado:'montando el mercado', dormir:'yendo a dormir', torre:'construyendo una torre', muralla:'levantando la muralla', ayuntamiento:'construyendo el ayuntamiento', almacen:'construyendo un almacén', puente:'construyendo un puente', muelle:'construyendo un muelle', barca:'pescando en barca', carro:'construyendo un carro', montar:'yendo a por un caballo', campo:'marcando un campo', arar:'arando', cosechar:'cosechando', construir:'construyendo una casa', cercar:'haciendo un cercado', capturar:'trayendo un animal', pasear:'paseando', beber:'yendo a beber', comer:'comiendo', volver:'volviendo a la aldea', trabajando:'trabajando' };
   const beast = v.foe && !v.foe.dead ? (v.foe.sp === 'oso' ? 'un oso' : 'un lobo') : null;
   const doing = v.sleep ? 'durmiendo' : beast ? (v.weapon && age >= ADULT_H ? `luchando contra ${beast}` : `huyendo de ${beast}`) : v.task ? (v.task.k === 'trabajando' ? job[v.task.job] || 'trabajando' : job[v.task.k] || v.task.k) : 'descansando';
   return `<b>${v.name}</b> · ${v.sex === 'h' ? 'hombre' : 'mujer'}${age < ADULT_H ? ' (niño)' : v.oficio ? `, ${v.oficio}${v.sex === 'm' && /or$/.test(v.oficio) ? 'a' : ''}` : ''} · ${age.toFixed(1).replace('.', ',')} años · ${doing}${g ? ` · de ${g.name}` : ''} · ${dietName(v)}${v.mal ? ' (mal alimentado)' : ''}${v.rod ? ' · con caña' : ''}${v.weapon ? ` · con ${v.weapon}${v.shield ? ' y escudo' : ''}${v.armor ? `, ${GEAR_TXT[v.armor]}` : ''}` : ''}${v.swims === false ? ' · no sabe nadar' : ''}${v.mount ? ` · a caballo${v.cart ? ' con carro' : ''}` : ''}${v.boat ? ' · en barca' : ''}${g && g.coin && v.money ? ` · ${v.money} ${coinPl(g)}` : ''}${v.hp < .95 ? ` · herido (${Math.round(v.hp * 100)} %)` : ''} · comida ${Math.round(v.food * 100)} % · agua ${Math.round(v.water * 100)} %`;

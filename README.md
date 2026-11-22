@@ -10,7 +10,8 @@ También se puede abrir `index.html` directamente en el navegador (con la carpet
 
 - Terreno, ríos, estaciones, clima y catástrofes (tornados, terremotos, volcanes, meteoritos…).
 - Aldeanos con oficios, dieta, día y noche; construyen casas, caminos, puentes, puertos, molinos, pozos, almacenes y murallas.
-- Religiones que nacen de las desgracias, rituales, ofrendas y sacrificios.
+- Religiones que nacen de las desgracias, rituales, ofrendas y sacrificios; grandes templos según la fe: catedral (un solo dios), gran panteón (muchos dioses) o zigurat (dioses del cielo, el sol o el fuego).
+- Papel y mapas: cada aldea descubre el papel y sus cartógrafos exploran a pie y en barca. En la ficha de la aldea, pestaña Mapa, se ve el mundo tal como lo conocen: nítido lo cercano, torcido o inventado lo lejano. Al comerciar se copian los mapas.
 - Banderas propias, territorio, diplomacia, comercio por tierra y mar, guerras, conquistas e independencias.
 - Partidos, elecciones, monarquías, dictaduras, comunismo y fascismo; manifestaciones y golpes de estado.
 - Monedas, bancos, inflación, bancarrotas y alianzas con moneda común.
@@ -40,6 +41,7 @@ Sin dependencias ni compilación: cada archivo es un script normal y se cargan e
 | `js/partidas.js` | Guardar y cargar: ranuras y archivos `.forja` |
 | `js/vida.js` | Enfermedades, migraciones, historia y sonido |
 | `js/sociedad.js` | Ocio, Juegos, mar, fichas de pueblo y persona, crónica, leyes y diplomacia |
+| `js/cartografia.js` | Papel, expediciones de los cartógrafos y el mapa (impreciso) de cada aldea |
 | `js/vegetacion.js` | Crecimiento y muerte de la vegetación |
 | `js/aldeanos.js` | Movimiento y dibujo de los aldeanos |
 | `js/interfaz.js` | Herramientas del jugador, entrada, panel, pantalla de carga y oleaje |

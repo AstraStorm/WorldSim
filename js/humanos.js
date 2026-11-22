@@ -282,6 +282,9 @@ function chooseJob(v, g){
   add('lonja', g.port && g.market != null && !hasLonja(g) && g.wood >= 12 && g.stone >= 6 && !busyWith(g, 'lonja') ? 4 : 0);
   add('vender', g.market != null && world.objs[g.market] && busyWith(g, 'vender') < 3 ? (v.oficio === 'mercader' ? 3 : .3) : 0);
   add('taberna', !hasTavern(g) && houses >= 3 && pop >= 10 && g.wood >= 12 && g.stone >= 4 && !busyWith(g, 'taberna') ? 3.5 : 0);
+  // El gran templo: con templo ya hecho, mucha fe y mucha piedra (más si es teocracia)
+  add('catedral', g.faith && g.temple != null && world.objs[g.temple] && !hasCathedral(g) && pop >= 20 && g.stone >= 30 && g.wood >= 15 && (g.devotion || 0) >= 3 && !busyWith(g, 'catedral') ? (2 + Math.min(4, (g.devotion || 0) * .2)) * (regimeOf(g) === 'teocracia' ? 2 : 1) : 0);
+  add('explorar', hasPaper(g) && pop >= 8 && !(g.noExplore > yearT) && !travelers.some(t => t.kind === 'expedicion' && t.from === g.id) && !busyWith(g, 'explorar') ? (v.oficio === 'cartógrafo' ? 4 : 1) * ((g.expeditions || 0) < 3 ? 2 : 1) : 0);
   add('tazas', g.market != null && world.objs[g.market] && (g.cups || 0) < 6 + pop && g.wood >= 4 && !busyWith(g, 'tazas') ? ((g.cups || 0) < 3 ? 3 : 1.2) : 0);
   add('teatro', !hasTheater(g) && g.hall != null && pop >= 16 && g.stone >= 8 && g.wood >= 15 && !busyWith(g, 'teatro') ? 3 : 0);
   add('coliseo', !hasColiseum(g) && g.hall != null && pop >= 24 && g.stone >= 18 && g.wood >= 10 && !busyWith(g, 'coliseo') ? (['monarquia', 'dictadura', 'fascismo'].includes(regimeOf(g)) ? 3 : 1.5) : 0);
@@ -290,7 +293,7 @@ function chooseJob(v, g){
   add('herreria', !hasForge(g) && (g.iron || 0) >= 5 && g.wood >= 10 && g.stone >= 10 && g.hall != null && !busyWith(g, 'herreria') ? 5 : 0);
   const noTala = ((g.taboo || {}).talar || 0) > yearT;
   const wantHall = g.hall == null && pop >= 8 && houses >= 2;
-  add('talar', noTala ? .2 : g.wood < 6 ? 7 : wantHall && g.wood < 10 ? 5 : needHouse && g.wood < 4 + busyWith(g, 'construir') * 4 + 4 ? 6 : g.wood < 12 + Math.max(0, pop / 4 + 1 - houses) * 6 ? 3 : .4);
+  add('talar', noTala ? (g.wood < 8 ? 2.5 : .2) : g.wood < 6 ? 7 : wantHall && g.wood < 10 ? 5 : needHouse && g.wood < 4 + busyWith(g, 'construir') * 4 + 4 ? 6 : g.wood < 12 + Math.max(0, pop / 4 + 1 - houses) * 6 ? 3 : .4);
   const hungry = g.food < pop * 4, share = g.food > 0 ? (g.meat || 0) / g.food : 0, want = g.diet ?? .5;
   const needMeat = share < want - .1, needVeg = share > want + .1;
   add('bayas', (hungry ? 3 : .5) * (needVeg ? 2 : needMeat ? .5 : 1));
@@ -445,6 +448,8 @@ function setupTask(v, g, job){
     }
     case 'vender': { const r = g.marketRect; if (!r) return null; return { k:job, x:(r.x0 + 1 + Math.random() * (r.x1 - r.x0 - 2)) * T + 2, y:(r.y0 + 2) * T + 3 }; }
     case 'taberna': { const p = bestSite(v, g, job); return p ? { k:job, i:p[1] * W + p[0], x:p[0] * T + 2, y:(p[1] + 1) * T + 3 } : null; }
+    case 'catedral': { const p = bestSite(v, g, job); return p ? { k:job, i:p[1] * W + p[0], x:p[0] * T + 2, y:(p[1] + 1) * T + 3 } : null; }
+    case 'explorar': { const [fx, fy] = fireSpot(v, g); return { k:job, x:fx, y:fy }; }
     case 'tazas': { const sb = standBy(g.market); return sb ? { k:job, x:sb[0], y:sb[1] } : null; }
     case 'ir_taberna': { const sb = hasTavern(g) && standBy(g.tavern); return sb ? { k:job, x:sb[0] + (Math.random() - .5) * 14, y:sb[1] + 2 + Math.random() * 5 } : null; }
     case 'teatro': case 'coliseo': { const p = bestSite(v, g, job); return p ? { k:job, i:p[1] * W + p[0], x:p[0] * T + 2, y:(p[1] + 1) * T + 3 } : null; }
@@ -898,6 +903,17 @@ function runTask(v, g, dt){
       composeRegion(x - 10, y - 14, x + 10, y + 12); addEffect(x * T + 2, y * T + 3, 'poof'); connect(g, x, y); snd('build', x * T, y * T);
       notify(`En ${g.name} abren una taberna: al acabar la jornada van a beber y charlar`, { x:x * T, y:y * T });
     }; break;
+    case 'catedral': v.actT = 28; v.onDone = () => {
+      const x = t.i % W, y = (t.i / W) | 0, st = holyStyleOf(g);
+      if (hasCathedral(g) || !g.faith || g.stone < 30 || g.wood < 15) return;
+      if (clearable(x - 6, y - 13, x + 6, y + 1)) clearSite(g, x - 6, y - 13, x + 6, y + 1);
+      if (!tileFree(x, y) || buildingClash(x, y, 'catedral', t.i)) return;
+      world.objs[t.i] = { key:'cathedral:' + st, v:0, ox:0, oy:0, vid:g.id }; g.cathedral = t.i; g.stone -= 30; g.wood -= 15;
+      g.devotion = (g.devotion || 0) + 5; g.wrath = 0; g.anger = Math.max(0, (g.anger || 0) - 15);
+      composeRegion(x - 10, y - 20, x + 10, y + 12); addEffect(x * T + 2, y * T + 3, 'poof'); connect(g, x, y); snd('bell', x * T, y * T);
+      notify(`En ${g.name} terminan ${HOLY_TXT[st]} de ${g.faith.mono ? godTxt(g.faith) : allGods(g.faith).length > 1 ? 'sus dioses' : godTxt(g.faith)}`, { x:x * T, y:y * T });
+    }; break;
+    case 'explorar': v.actT = 3; v.onDone = () => { launchExpedition(v, g); }; break; // prepara la mochila (o la barca) y sale
     case 'tazas': v.actT = 6; v.onDone = () => { if (g.wood < 1) return; g.wood -= 1; g.cups = (g.cups || 0) + 4; floats.push({ x:v.x, y:v.y - 12, txt:'+4 tazas', col:'#d8b888', life:0 });
       if (!g.cupMsg) { g.cupMsg = true; notify(`En el mercado de ${g.name} empiezan a vender tazas de madera con agua`, { x:v.x, y:v.y }); } }; break;
     case 'ir_taberna': v.actT = 8 + Math.random() * 6; v.dir = Math.random() < .5 ? -1 : 1; v.onDone = () => {
