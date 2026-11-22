@@ -228,7 +228,14 @@ function buildingClash(x, y, kind, skip){
   return false;
 }
 function planSite(g, kind){
-  const [hw, hh] = kind === 'molino' ? [4, 8] : kind === 'pozo' ? [2, 4] : kind === 'ayuntamiento' ? [5, 7] : kind === 'templo' ? [4, 7] : kind === 'mercado' ? [4, 4] : [4, 6];
+  const [hw, hh] = kind === 'molino' ? [4, 8] : kind === 'pozo' ? [2, 4] : kind === 'ayuntamiento' ? [5, 7] : kind === 'templo' ? [4, 7] : kind === 'mercado' ? [4, 4] : kind === 'catedral' ? [6, 13] : [4, 6];
+  // El gran templo, junto a la plaza sagrada: al norte, mirando a ella, y si no cabe, a un lado o detrás.
+  // Se aparta más cuanto más grande es (su huella sube 13 casillas desde la puerta)
+  if (kind === 'catedral' && g.holy) {
+    const h = g.holy, fits = (x, y) => x > hw && y > hh + 1 && x < W - hw - 1 && y < H - 3 && !buildingClash(x, y, kind) && !penOverlap(g, x - hw, y - hh, x + hw, y + 1)
+      && !farmIn(x - hw, y - hh, x + hw, y + 1) && !plazaIn(x - hw, y - hh, x + hw, y) && !hallIn(g, x - hw, y - hh, x + hw, y + 1) && !pathIn(x - hw, y - hh, x + hw, y) && clearable(x - hw, y - hh, x + hw, y + 1);
+    for (let gap = 1; gap <= 8; gap++) for (const [x, y] of [[h.cx, h.y0 - gap - 1], [h.x0 - hw - gap, h.cy + 2], [h.x1 + hw + gap, h.cy + 2], [h.cx, h.y1 + hh + gap]]) if (fits(x, y)) return [x, y];
+  }
   // El ayuntamiento, presidiendo la plaza por el norte (con la puerta a ella)
   if (kind === 'ayuntamiento') { const x = g.fx, y = g.fy - 3; if (!buildingClash(x, y, kind) && !penOverlap(g, x - hw, y - hh, x + hw, y) && !farmIn(x - hw, y - hh, x + hw, y) && clearable(x - hw, y - hh, x + hw, y)) return [x, y]; }
   const ok = (x, y) => { const i = y * W + x; return x > hw && y > hh + 1 && x < W - hw - 1 && y < H - 3 && !farmMap.has(i) && !pathMap.has(i)
@@ -2715,6 +2722,8 @@ function updateVillages(dt){
       know.montar = true; notify(`En ${g.name} aprenden a montar a caballo (y a hacer carros)`, { x:g.fx * T, y:g.fy * T });
     }
     chartTick(g, dt, people);
+    // Un cementerio encima de una plaza sagrada (partidas de antes): se traslada (se vuelve a hacer en otro sitio)
+    const cm = g.cemetery; if (cm && villages.some(o => o.holy && !(cm.x0 + cm.w - 1 < o.holy.x0 || cm.x0 > o.holy.x1 || cm.y0 + cm.h - 1 < o.holy.y0 || cm.y0 > o.holy.y1))) { g.cemetery = null; notify(`En ${g.name} trasladan el cementerio fuera de la plaza sagrada`, { x:(cm.x0 + cm.w / 2) * T, y:(cm.y0 + cm.h / 2) * T }); }
     for (const w of wellsOf(g)) w.q = Math.min(1, w.q + (raining(w.i) ? .04 : .006) * dt); // con la lluvia se llena; sin ella, poco a poco, del agua de debajo
     for (const ti of towersOf(g)) {
       const o = world.objs[ti], tx = (ti % W) * T + 2, ty = ((ti / W) | 0) * T - 28;

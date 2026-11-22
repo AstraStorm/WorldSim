@@ -309,8 +309,9 @@ function chooseJob(v, g){
   add('pozo', know.pozo && houses >= 1 && (g.stone >= 5 || g.wood >= 8) && wellsOf(g).length < 1 + Math.floor(pop / 10) + (g.thirsty ? 1 : 0) && !busyWith(g, 'pozo') ? (g.thirsty ? 14 : 4) : 0);
   add('molino', know.molino && houses >= 3 && (g.mill == null || !world.objs[g.mill]) && spare >= 10 && g.stone >= 3 && farms.length >= 8 && !busyWith(g, 'molino') ? 4 : 0);
   const quarry = g.quarry != null && world.objs[g.quarry] && world.objs[g.quarry].key === 'quarry:cantera';
+  const wantStone = g.stone < (g.temple != null && world.objs[g.temple] && !hasCathedral(g) ? 40 : 20); // con templo, ahorran para el grande
   add('cantera', know.cantera && houses >= 2 && !quarry && spare >= 6 && !busyWith(g, 'cantera') ? 4 : 0);
-  add('cantear', quarry && busyWith(g, 'cantear') < 3 ? (g.stone < 30 ? 2.5 : .4) : 0);
+  add('cantear', quarry && busyWith(g, 'cantear') < 4 ? (wantStone || g.stone < 30 ? 3.5 : .5) : 0);
   add('puente', know.puente && houses >= 2 && spare >= 8 && bridges.filter(b => b.vid === g.id && !b.pier).length < 1 + Math.floor(pop / 6) && !busyWith(g, 'puente') ? (g.crossings && [...g.crossings.values()].some(n => n >= 4) ? 7 : 3.5) : 0);
   add('muelle', know.barca && houses >= 3 && !g.port && spare >= 8 && !busyWith(g, 'muelle') ? 3.5 : 0);
   add('carro', know.montar && houses >= 3 && (g.carts || 0) < 1 + Math.floor(pop / 10) && spare >= 10 && !busyWith(g, 'carro') ? 2.5 : 0);
@@ -345,7 +346,7 @@ function chooseJob(v, g){
   add('ofrenda', sacred && (g.wrath || 0) > 2 && g.food >= 4 && busyWith(g, 'ofrenda') < 2 ? 4 + g.wrath : 0);
   add('sacrificio', sacred && (g.wrath || 0) > 5 && penAnimals(g).length >= 2 && !busyWith(g, 'sacrificio') ? 7 : 0);
   add('plantar', (plotSlot(g, 'berryPlot') || plotSlot(g, 'grove') || (g.cut || 0) > (g.planted || 0) + 1 || (g.treesNear ?? 99) < 14) && busyWith(g, 'plantar') < 2 ? (plotSlot(g, 'berryPlot') || plotSlot(g, 'grove') ? 4 : (g.treesNear ?? 99) < 14 ? 5 : 2) : 0);
-  add('picar', (wantHall && g.stone < 6 ? 4 : g.stone < 12 + (know.pozo ? 5 : 0) ? 1.2 : .2) + ((g.rocksNear || 0) > 0 ? 2.5 : 0)); // y despejan las piedras del pueblo
+  add('picar', (wantHall && g.stone < 6 ? 4 : wantStone ? 2 : .3) + ((g.rocksNear || 0) > 0 ? 2.5 : 0)); // y despejan las piedras del pueblo
   add('pasear', .3);
   if (L.includes('obras')) for (const j of J) if (['construir', 'pozo', 'almacen', 'puente', 'molino', 'mercado', 'templo', 'reparar'].includes(j[0])) j[1] *= 1.5;
   if (L.includes('bosques')) for (const j of J) { if (j[0] === 'talar') j[1] *= .5; if (j[0] === 'plantar' || j[0] === 'arboleda') j[1] *= 1.8; }
@@ -370,7 +371,7 @@ function setupTask(v, g, job){
       return p ? { k:job, i, x:p[0], y:p[1] } : null;
     }
     case 'picar': {
-      const i = objNear(g, 30, o => OBJ[o.key][1] === 'stone' || OBJ[o.key][1] === 'mineral', v); const p = i != null && standBy(i);
+      const i = objNear(g, 42, o => OBJ[o.key][1] === 'stone' || OBJ[o.key][1] === 'mineral', v); const p = i != null && standBy(i);
       return p ? { k:job, i, x:p[0], y:p[1] } : null;
     }
     case 'bayas': {
@@ -426,9 +427,12 @@ function setupTask(v, g, job){
     }
     case 'arboleda': case 'bayal': case 'cementerio': {
       // Una parcela para plantar en filas (o, el cementerio, para enterrar a los suyos): árboles para madera (arboleda, 11×7) o arbustos de bayas (bayal, 9×5), lejos de las casas
-      const big = job === 'arboleda', cem = job === 'cementerio', w = big ? 11 : 9, h = big ? 7 : cem ? 7 : 5;
-      for (let k = 0; k < 60; k++) {
-        const a = Math.random() * Math.PI * 2, d = (big ? 24 : cem ? 22 : 18) + Math.random() * 10, x0 = Math.round(g.fx + Math.cos(a) * d - w / 2), y0 = Math.round(g.fy + Math.sin(a) * d * .8 - h / 2);
+      const big = job === 'arboleda', cem = job === 'cementerio', w = big ? 11 : 9, h = big ? 7 : cem ? 7 : 5, hl = cem && g.holy;
+      for (let k = 0; k < (hl ? 90 : 60); k++) {
+        // El cementerio, primero junto a la plaza sagrada (alrededor, nunca dentro); luego donde haya sitio
+        const a = Math.random() * Math.PI * 2, d = (big ? 24 : cem ? 22 : 18) + Math.random() * 10, near = hl && k < 30, side = k % 4;
+        const x0 = near ? (side === 0 ? hl.x0 - w - 2 : side === 1 ? hl.x1 + 3 : hl.cx - (w >> 1) + Math.round((Math.random() - .5) * 6)) : Math.round(g.fx + Math.cos(a) * d - w / 2);
+        const y0 = near ? (side === 2 ? hl.y1 + 3 : side === 3 ? hl.y0 - h - 3 : hl.cy - (h >> 1) + Math.round((Math.random() - .5) * 4)) : Math.round(g.fy + Math.sin(a) * d * .8 - h / 2);
         if (x0 < 2 || y0 < 2 || x0 + w >= W - 2 || y0 + h >= H - 2) continue;
         let ok = true;
         for (let y = y0; ok && y < y0 + h; y++) for (let x = x0; ok && x < x0 + w; x++) { const i = y * W + x, o = world.objs[i]; if (WATER[world.biome[i]] || (!cem && (FERTILE[world.biome[i]] || 0) < .15) || world.biome[i] === B.LAVA || pathMap.has(i) || plazaSet.has(i) || farmMap.has(i) || wallSet.has(i) || underBuilding(g, x, y) || (o && !['tree', 'berry'].includes(OBJ[o.key][1])) || villages.some(o2 => penOverlap(o2, x, y, x, y))) ok = false; }
@@ -491,9 +495,10 @@ function setupTask(v, g, job){
     case 'cantera': {
       // En terreno rocoso (colinas, roca, basalto) a no más de 30 casillas
       const ROCKY = [B.ROCK, B.HILLS, B.BASALT];
-      const p = ringFind(g.fx, g.fy, 30, (x, y) => ROCKY.includes(world.biome[y * W + x]) && Math.hypot(x - g.fx, y - g.fy) > 5 && tileFree(x, y) && tileFree(x, y + 1)
+      const site = (R, test) => ringFind(g.fx, g.fy, R, (x, y) => test(world.biome[y * W + x]) && Math.hypot(x - g.fx, y - g.fy) > 8 && tileFree(x, y) && tileFree(x, y + 1)
         && areaClear(x - 4, y - 4, x + 4, y + 1) && !underBuilding(g, x, y) && !farmMap.has(y * W + x) && !buildingClash(x, y, 'cantera'));
-      return p ? { k:job, i:p[1] * W + p[0], x:p[0] * T + 2, y:(p[1] + 1) * T + 3 } : null;
+      const p = site(45, b => ROCKY.includes(b)), q = p || site(28, b => !WATER[b] && b !== B.LAVA && b !== B.SNOW); // sin roca cerca, una cantera en el llano
+      return q ? { k:job, i:q[1] * W + q[0], x:q[0] * T + 2, y:(q[1] + 1) * T + 3, flat:!p } : null;
     }
     case 'cantear': { const sb = standBy(g.quarry); return sb ? { k:job, i:g.quarry, x:sb[0], y:sb[1] } : null; }
     case 'puente': { const b = bridgeSite(g); return b ? { k:job, br:b, x:b.sx * T + 2, y:b.sy * T + 3 } : null; }
@@ -689,9 +694,9 @@ function runTask(v, g, dt){
         const tx = t.i % W, ty = (t.i / W) | 0;
         if (t.k === 'bayas') { o2.harvT = yearT; v.carry = { k:'comida', t:'veg', n:3 }; }
         else if (t.k === 'talar') { const regrowKey = o2.key, regrow = Math.random() < (hasLaw(g, 'bosques') ? .6 : .3); if (regrow) setTimeout(() => { if (!world.objs[t.i] && placeObject(t.i, regrowKey, Math.random, yearT, .5)) composeRegion(tx - 7, ty - 11, tx + 7, ty + 12); }, 0); g.cut = (g.cut || 0) + 1; g.lastTree = o2.key; fallObj(t.i); world.objs[t.i] = null; composeRegion(tx - 7, ty - 11, tx + 7, ty + 12); rareDirty = true; v.carry = { k:'madera', n:o2.key.startsWith('ancient') ? 12 : 6 }; }
-        else { world.objs[t.i] = null; addEffect(tx * T + 2, ty * T + 3, 'poof'); composeRegion(tx - 7, ty - 11, tx + 7, ty + 12); rareDirty = true; v.carry = { k:'piedra', n:o2.key.startsWith('big') || OBJ[o2.key][1] === 'mineral' ? 5 : 2 };
+        else { world.objs[t.i] = null; addEffect(tx * T + 2, ty * T + 3, 'poof'); composeRegion(tx - 7, ty - 11, tx + 7, ty + 12); rareDirty = true; v.carry = { k:'piedra', n:o2.key.startsWith('big') || OBJ[o2.key][1] === 'mineral' ? 7 : 4 };
           g.mined = (g.mined || 0) + 1; const kn = g.know ||= {};
-          if (!kn.cantera && g.mined >= 5 && ringFind(g.fx, g.fy, 30, (x, y) => [B.ROCK, B.HILLS, B.BASALT].includes(world.biome[y * W + x]))) {
+          if (!kn.cantera && g.mined >= 3) { // (si no hay roca cerca, la cantera se abre en el llano: da algo menos)
             kn.cantera = true; notify(`En ${g.name} han aprendido a abrir canteras en la roca para sacar más piedra`, { x:g.fx * T, y:g.fy * T });
           } }
         statsSoon();
@@ -843,7 +848,7 @@ function runTask(v, g, dt){
       v.onDone = () => { g.wrath = Math.max(0, (g.wrath || 0) - .35); g.devotion = (g.devotion || 0) + .06; }; break;
     case 'santuario': v.actT = 7; v.onDone = () => {
       if (g.holy) return;
-      const x = t.hx, y = t.hy; if (villages.some(o => penOverlap(o, x - 6, y - 4, x + 6, y + 4))) return; // se ha hecho un cercado ahí entretanto
+      const x = t.hx, y = t.hy; if (villages.some(o => penOverlap(o, x - 6, y - 4, x + 6, y + 4)) || plotIn(x - 7, y - 5, x + 7, y + 5)) return; // se ha hecho un cercado o un cementerio ahí entretanto
       clearSite(g, x - 6, y - 4, x + 6, y + 4);
       for (let yy = y - 4; yy <= y + 4; yy++) for (let xx = x - 6; xx <= x + 6; xx++) { const i = yy * W + xx; if (!WATER[world.biome[i]]) { plazaSet.add(i); holySet.set(i, g.id); pathMap.add(i); farmMap.delete(i); } }
       g.holy = { x0:x - 6, y0:y - 4, x1:x + 6, y1:y + 4, cx:x, cy:y, style:holyStyle(g) };
@@ -861,10 +866,10 @@ function runTask(v, g, dt){
     case 'cantera': v.actT = 8; v.onDone = () => {
       const x = t.i % W, y = (t.i / W) | 0;
       if (!tileFree(x, y) || g.wood < 6) return;
-      world.objs[t.i] = { key:'quarry:cantera', v:0, ox:0, oy:0, vid:g.id }; g.quarry = t.i; g.wood -= 6;
+      world.objs[t.i] = { key:'quarry:cantera', v:0, ox:0, oy:0, vid:g.id, flat:!!t.flat }; g.quarry = t.i; g.wood -= 6;
       composeRegion(x - 7, y - 11, x + 7, y + 12); addEffect(x * T + 2, y * T + 3, 'poof'); connect(g, x, y);
     }; break;
-    case 'cantear': v.actT = 4; v.onDone = () => { const o = world.objs[t.i]; if (o && o.key === 'quarry:cantera') { v.carry = { k:'piedra', n:4 }; g.mined = (g.mined || 0) + 1; } }; break;
+    case 'cantear': v.actT = 4; v.onDone = () => { const o = world.objs[t.i]; if (o && o.key === 'quarry:cantera') { v.carry = { k:'piedra', n:o.flat ? 4 : 6 }; g.mined = (g.mined || 0) + 1; } }; break;
     case 'pozo': case 'molino': v.actT = t.k === 'pozo' ? 8 : 10; v.onDone = () => {
       const x = t.i % W, y = (t.i / W) | 0, well = t.k === 'pozo';
       if (well ? clearable(x - 2, y - 4, x + 2, y + 1) : clearable(x - 4, y - 8, x + 4, y + 1)) well ? clearSite(g, x - 2, y - 4, x + 2, y + 1) : clearSite(g, x - 4, y - 8, x + 4, y + 1);
@@ -874,7 +879,7 @@ function runTask(v, g, dt){
       composeRegion(x - 7, y - 11, x + 7, y + 12); addEffect(x * T + 2, y * T + 3, 'poof'); connect(g, x, y);
     }; break;
     case 'cementerio': v.actT = 6; v.onDone = () => {
-      const r = t.rect; if (g.cemetery) return; const slots = [];
+      const r = t.rect; if (g.cemetery || holyNear(r.x0 - 1, r.y0 - 1, r.x0 + r.w, r.y0 + r.h)) return; const slots = []; // nunca dentro de la plaza sagrada
       for (let y = r.y0 + 1; y < r.y0 + r.h - 1; y += 2) for (let x = r.x0 + 1; x < r.x0 + r.w - 1; x += 2) slots.push(y * W + x);
       clearSite(g, r.x0, r.y0, r.x0 + r.w - 1, r.y0 + r.h - 1);
       g.cemetery = { ...r, slots, graves:new Map() }; connect(g, r.x0 + (r.w >> 1), r.y0 + r.h - 1);

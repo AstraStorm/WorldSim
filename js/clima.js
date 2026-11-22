@@ -721,6 +721,7 @@ function makeTsunami(x, y, M){
   return { x, y, M, t:0, delay:2.5 + Math.random() * 2, wdist, land, li:0, E, maxD:10 };
 }
 function updateTsunamis(dt){
+  if (!floodA || floodA.length !== N) floodA = new Float32Array(N); // (sin el tiempo activado aún no existía)
   const { objs } = world;
   for (const s of tsunamis) {
     s.t += dt;
