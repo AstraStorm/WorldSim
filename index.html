@@ -87,6 +87,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .log li.war::before{background:#d8483a}.log li.pol::before{background:#5a8ad8}.log li.eco::before{background:#e8c050}.log li.rel::before{background:#b07ad8}.log li.death::before{background:#e8e0d0}
 .log .d{color:var(--muted);font-variant-numeric:tabular-nums;margin-right:6px;font-size:11.5px}
 .muted{color:var(--muted)}.gold{color:#f0c840}
+.gods{display:flex;flex-direction:column;gap:3px;margin-top:5px}.god{padding:3px 8px;border-left:3px solid #b07ad8;background:rgba(176,122,216,.08);border-radius:0 4px 4px 0;font-size:13px}.god.main{border-left-color:#f0c840;background:rgba(240,200,64,.08)}.god em{font-style:normal;font-size:11px;color:var(--accent);margin-left:4px}
 .parties{display:flex;flex-direction:column;gap:5px}.party{display:flex;gap:9px;align-items:center;padding:6px 8px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:7px}.party.on{border-color:var(--accent);background:rgba(233,185,73,.07)}
 .party .pi{display:flex;flex-direction:column;min-width:0;font-size:12px}.party .pi b{font-size:13px}.party .pv{display:flex;align-items:center;gap:6px;color:var(--muted);font-variant-numeric:tabular-nums}.party .plogo{margin:0}
 .plogo{image-rendering:pixelated;vertical-align:-4px;margin-right:3px;flex:none}.pname{display:inline-flex;align-items:center;gap:2px;min-width:0}
@@ -5675,7 +5676,7 @@ function makeFaith(dom){
   let god = ''; for (let k = 0, n = Math.random() < .4 ? 3 : 2; k < n; k++) god += SYL[Math.floor(Math.random() * SYL.length)];
   god = god[0].toUpperCase() + god.slice(1);
   const kind = ['Culto de', 'Hijos de', 'Fieles de', 'Orden de', 'Senda de'][Math.floor(Math.random() * 5)];
-  return { god, fem:Math.random() < .5, dom:dom || DOMAINS[Math.floor(Math.random() * DOMAINS.length)], name:`${kind} ${god}` };
+  return { god, fem:Math.random() < .5, dom:dom || DOMAINS[Math.floor(Math.random() * DOMAINS.length)], name:`${kind} ${god}`, mono:Math.random() < .45 };
 }
 const godTxt = f => `${f.god}, ${f.fem ? 'diosa' : 'dios'} ${f.dom.startsWith('el ') ? 'del ' + f.dom.slice(3) : 'de ' + f.dom}`;
 const CAUSE_TXT = { seca:'la sequía que secó los cultivos', helada:'la helada que mató la cosecha', inundada:'la riada que ahogó los campos', quemada:'el fuego en los campos',
@@ -5696,6 +5697,10 @@ const allGods = f => [{ god:f.god, fem:f.fem, dom:f.dom }, ...(f.pantheon || [])
 function newGods(g, cause){
   const f = g.faith, opts = CAUSE_DOM[cause]; if (!opts || allGods(f).some(d => opts.includes(d.dom))) return false;
   const r = Math.random(), nf = makeFaith(opts[Math.floor(Math.random() * opts.length)]), txt = CAUSE_TXT[cause];
+  if (f.mono) { // un solo dios: la desgracia es cosa suya; solo si su ira no cesa pueden acabar cambiando de fe
+    if (r < .12 && (g.wrath || 0) > 6) { const old = f.god; g.faith = { ...nf, mono:true }; g.wrath = 1; g.devotion = 0; g.lastBlame = `abandonan a ${old} y se convierten a ${godTxt(nf)}, su nuevo y único dios`; notify(`En ${g.name} ${g.lastBlame}`, { x:g.fx * T, y:g.fy * T }); return true; }
+    return false;
+  }
   if (r < .3 && (f.pantheon || []).length < 5) {
     (f.pantheon ||= []).push({ god:nf.god, fem:nf.fem, dom:nf.dom });
     g.lastBlame = `tras ${txt}, veneran también a ${godTxt(nf)}`; notify(`En ${g.name}, tras ${txt}, empiezan a venerar también a ${godTxt(nf)}`, { x:g.fx * T, y:g.fy * T });
@@ -5749,20 +5754,23 @@ const DOMAIN_FLAG = { 'las tormentas':{ col:'#1f3f78', charge:'rayo' }, 'el true
 const LAYOUTS = ['h2', 'h3', 'v2', 'v3', 'nordica', 'cruz', 'aspa', 'canton', 'triangulo', 'banda', 'cuartel', 'borde', 'franja', 'palo', 'rayas', 'chevron', 'dentado', 'liso', 'tajado'];
 let usedFlags = new Set();
 const rndOf = a => a[Math.floor(Math.random() * a.length)];
-function makeFlag(g){
-  const dom = g.faith && DOMAIN_FLAG[g.faith.dom];
+const FLAG_STYLE = { comunismo:{ c:['#c8302c'], m:'#e8c040', charge:'estrella' }, socialismo:{ c:['#c8302c', '#8a2a3a'], charge:'sol' }, fascismo:{ c:['#1e1e22'], charge:'rombo' },
+  dictadura:{ c:['#2e7a3a', '#1e1e22', '#1f3f78'], charge:'estrella' }, monarquia:{ c:['#1f3f78', '#7a3a9a', '#8a2a3a'], m:'#e8c040', charge:'anillo' }, teocracia:{ m:'#e8c040', charge:'dios' }, republica:{} };
+function makeFlag(g, reg){
+  const dom = g.faith && DOMAIN_FLAG[g.faith.dom], st = reg && FLAG_STYLE[reg];
   for (let tries = 0; tries < 60; tries++) {
     // Tinturas: un color principal (el de su dios o el de la aldea), un metal y un segundo color distinto
     const [r, g2, b] = villageColor(g), own = '#' + [r, g2, b].map(c => c.toString(16).padStart(2, '0')).join('');
-    const c1 = dom && Math.random() < .6 ? dom.col : Math.random() < .5 ? own : rndOf(COLOURS);
+    const c1 = st && st.c ? rndOf(st.c) : st && st.charge === 'dios' && dom ? dom.col : dom && Math.random() < .6 ? dom.col : Math.random() < .5 ? own : rndOf(COLOURS);
     let c2; do c2 = rndOf(COLOURS); while (c2 === c1);
-    const m1 = rndOf(METALS), m2 = METALS.find(m => m !== m1);
+    const m1 = st && st.m ? st.m : rndOf(METALS), m2 = METALS.find(m => m !== m1);
     const layout = rndOf(LAYOUTS);
     const metalFirst = Math.random() < .35;
     const f = { layout, a:metalFirst ? m1 : c1, b:metalFirst ? c1 : m1, c:metalFirst ? c2 : c2, m2, n:5 + 2 * Math.floor(Math.random() * 4), fimb:Math.random() < .4 };
     // Emblema: el de su dios (a menudo), otro al azar o ninguno; dónde va y de qué tintura (contrasta con lo que tiene debajo)
     const charges = ['', 'estrella', 'estrellas', 'disco', 'luna', 'sol', 'rombo', 'anillo', 'arbol', 'llama'];
     f.charge = dom && Math.random() < .55 ? dom.charge : Math.random() < .25 ? '' : rndOf(charges);
+    if (st && st.charge) f.charge = st.charge === 'dios' ? (dom ? dom.charge : 'sol') : st.charge;
     if (f.charge === 'olas' && !['liso', 'h2', 'borde'].includes(layout)) f.charge = 'estrella';
     f.pos = ['canton', 'nordica'].includes(layout) ? 'canton' : ['triangulo', 'chevron', 'dentado'].includes(layout) ? 'asta' : 'centro';
     // Lo que cuenta es cómo se ve: si el dibujo ya lo tiene otra aldea, a diseñar otra
@@ -6042,7 +6050,8 @@ function renderPersonCard(force){
   el.hidden = false;
   const g = villageById(v.vid), n = g && nationOf(g), a = ageOf(v), mood = moodOf(v), p = partyOf(v), reg = g ? regimeOf(g) : null;
   const life = clamp(a / v.life, 0, 1), money = g && g.coin ? `${v.money || 0} ${coinPl(g)}` : '—';
-  const belief = !g || !g.faith ? 'En su pueblo aún no hay religión' : pietyOf(v) > .75 ? `Muy devot${sexW(v, 'o', 'a')} de ${esc(g.faith.name)}: venera a ${esc(godTxt(g.faith))}` : pietyOf(v) > .3 ? `Creyente de ${esc(g.faith.name)} (${esc(godTxt(g.faith))})` : `No es creyente, aunque en su pueblo veneran a ${esc(g.faith.god)}`;
+  const gods = g && g.faith ? allGods(g.faith) : [], godList = gods.map(d => esc(godTxt(d))).join('; '), godNames = gods.map(d => esc(d.god)).join(', ').replace(/, ([^,]*)$/, ' y $1');
+  const belief = !g || !g.faith ? 'En su pueblo aún no hay religión' : pietyOf(v) > .75 ? `Muy devot${sexW(v, 'o', 'a')} de ${esc(g.faith.name)}: venera a ${godList}` : pietyOf(v) > .3 ? `Creyente de ${esc(g.faith.name)}: ${godList}` : `No es creyente, aunque en su pueblo veneran a ${godNames}`;
   const vote = a < ADULT_H ? 'Aún no vota' : !p ? 'En su pueblo no hay partidos' : votes(g) ? `${logoImg(p, 30)} Vota a ${artP(p)} <b style="color:${p.col}">${esc(p.name)}</b>` : `${logoImg(p, 30)} Simpatiza con ${artP(p)} <b style="color:${p.col}">${esc(p.name)}</b> (no hay elecciones: ${regimeName(g).toLowerCase()})`;
   const ideoPos = ((v.ideo || 0) + 1) / 2 * 100;
   setCardHTML(el, `<div class="ph"><img class="pp" src="${portraitUrl(v, 4)}" alt=""><div><h3>${esc(v.name)}</h3>
@@ -6093,7 +6102,7 @@ function renderVillageCard(force){
         ${g.iron || g.gold || g.gems || g.hides ? `<span>Materiales</span><span class="muted">hierro ${g.iron || 0} · oro ${g.gold || 0} · gemas ${g.gems || 0} · pieles ${g.hides || 0}</span><span></span>` : ''}</div>
       <h4>Estado</h4><div class="needs"><span>Descontento</span>${bar(anger / 100, anger > 60 ? '#d8483a' : anger > 35 ? '#e8a838' : '#7ab04a', 150)}<span>${anger} %</span></div>
       ${g.protest ? '<div class="alert">Manifestación en curso</div>' : ''}${g.coup ? '<div class="alert">Golpe de estado en curso</div>' : ''}${wars.length ? `<div class="alert">En guerra con ${wars.map(o => `<button class="lnk" data-vid="${o.id}">${esc(o.name)}</button> (${REASON_TXT[rels.get(relKey(g, o)).war.reason] || 'el territorio'})`).join(', ')}</div>` : ''}
-      ${g.faith ? `<h4>Religión</h4><div>${esc(g.faith.name)}: veneran a ${esc(godTxt(g.faith))}${(g.faith.pantheon || []).length ? ` y ${g.faith.pantheon.length} dios${g.faith.pantheon.length > 1 ? 'es' : ''} más` : ''}</div>` : ''}
+      ${g.faith ? `<h4>Religión</h4><div>${esc(g.faith.name)} · ${g.faith.mono ? 'monoteístas: un solo dios' : (g.faith.pantheon || []).length ? `politeístas: ${allGods(g.faith).length} dioses` : 'politeístas (de momento, un dios)'}</div><div class="gods">${allGods(g.faith).map((d, k) => `<span class="god${k === 0 ? ' main' : ''}"><b>${esc(d.god)}</b>${esc(godTxt(d).slice(d.god.length + 1))}${k === 0 ? ' <em>principal</em>' : ''}</span>`).join('')}</div>` : ''}
       <h4>Tecnologías</h4><div class="chips">${techsOf(g).map(t => `<span>${t}</span>`).join('')}</div>`;
   } else if (cardTab === 'gente') {
     const adults = ps.filter(v => ageOf(v) >= ADULT_H), of = new Map(); for (const v of adults) { const k = v.oficio || 'sin oficio'; of.set(k, (of.get(k) || 0) + 1); }
@@ -6658,7 +6667,8 @@ const govIdeo = g => { const n = nationOf(g), r = n.ruling != null && n.parties 
 const ONE_PARTY = { comunismo:['Partido de los Trabajadores', 'Partido de la Estrella Roja', 'Partido del Pueblo Unido', 'Partido Comunal'], fascismo:['Movimiento del Orden Nuevo', 'Frente de la Espada de Hierro', 'Guardia de la Antorcha', 'Movimiento de la Sangre y el Suelo'] };
 const capFirst = s => s[0].toUpperCase() + s.slice(1);
 function setRegime(g, reg, chief){
-  g.regime = reg; g.regimeT = yearT; g.voteRes = null; g.empire = false; if (chief) g.leader = chief;
+  const prevReg = g.regime; g.regime = reg; g.regimeT = yearT; g.voteRes = null; g.empire = false; if (chief) g.leader = chief;
+  if (g.flag && prevReg && prevReg !== reg) { g.flag = makeFlag(g, reg); g.flagUrl = flagDataUrl(g.flag); setTimeout(() => notify(`${g.name} cambia de bandera: la del nuevo régimen (${REGIMES[reg].toLowerCase()})`, { x:g.fx * T, y:g.fy * T }), 400); }
   if (reg === 'republica' || reg === 'socialismo') { g.voteT = yearT; if (!g.parties || g.parties.length < 2) { g.parties = null; makeParties(g); } if (reg === 'republica') { g.ruling = null; g.voteT = -1e9; } }
   if (reg === 'teocracia') g.ruling = null;
   if (ONE_PARTY[reg]) { const L = ONE_PARTY[reg]; g.parties = [{ name:L[Math.floor(Math.random() * L.length)], ideo:REGIME_IDEO[reg], laws:REGIME_LAWS[reg], col:reg === 'comunismo' ? '#d8483a' : '#3a3a3a' }]; g.ruling = 0; }
@@ -6679,7 +6689,8 @@ function succession(g, people){
     const nu = heir || people.filter(adult).sort((a, b) => a.born - b.born)[0]; if (!nu) return;
     g.leader = nu;
     notify(heir ? `Muere ${old.sex === 'm' ? 'la reina' : 'el rey'} ${old.name} de ${g.name}; ${heir.sex === 'm' ? 'su hija' : 'su hijo'} ${heir.name} hereda la corona`
-      : `${old.sex === 'm' ? 'La reina' : 'El rey'} ${old.name} muere sin herederos: ${nu.name} funda una nueva dinastía en ${g.name}`, { x:nu.x, y:nu.y });
+      : `${old.sex === 'm' ? 'La reina' : 'El rey'} ${old.name} muere sin herederos: ${nu.name} funda una nueva dinastía en ${g.name} y estrena bandera`, { x:nu.x, y:nu.y });
+    if (!heir && g.flag) { g.flag = makeFlag(g, 'monarquia'); g.flagUrl = flagDataUrl(g.flag); }
   } else if (reg === 'teocracia') {
     const nu = people.filter(adult).sort((a, b) => (b.oficio === 'sacerdote') - (a.oficio === 'sacerdote') || pietyOf(b) - pietyOf(a))[0]; if (!nu) return;
     g.leader = nu; notify(`Muere ${old.name}; los sacerdotes de ${g.name} eligen a ${nu.name} como ${leaderTitle(g)}`, { x:nu.x, y:nu.y });
@@ -6717,7 +6728,7 @@ function politicsTick(g, dt, people){
     if (priest) { const old = g.leader; setRegime(g, 'teocracia', priest); notify(`Los sacerdotes de ${g.name} toman el poder en nombre de ${g.faith.god}${old && old !== priest && !old.dead ? ` y apartan a ${old.name}` : ''}: ${priest.name} es ${leaderTitle(g)} de una teocracia`, { x:g.fx * T, y:g.fy * T }); return; }
   }
   if (cap === g && regimeOf(g) === 'monarquia' && !g.empire && villages.filter(o => o !== g && popOf(o) && o.nation === g.id).length >= 3) {
-    g.empire = true; notify(`¡${g.name} se proclama imperio! ${g.leader && !g.leader.dead ? `${g.leader.name} es ahora ${leaderTitle(g)}` : ''}`, { x:g.fx * T, y:g.fy * T });
+    g.empire = true; if (g.flag) { g.flag = makeFlag(g, 'monarquia'); g.flagUrl = flagDataUrl(g.flag); } notify(`¡${g.name} se proclama imperio (con bandera nueva)! ${g.leader && !g.leader.dead ? `${g.leader.name} es ahora ${leaderTitle(g)}` : ''}`, { x:g.fx * T, y:g.fy * T });
   }
   // Golpe de estado: en la capital, con mucho descontento, con mucha represión acumulada o con militares hartos de un gobierno pacifista
   if (cap === g && regimeOf(g) !== 'tribu' && !isNight()) {
