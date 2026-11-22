@@ -83,6 +83,9 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .log li.war::before{background:#d8483a}.log li.pol::before{background:#5a8ad8}.log li.eco::before{background:#e8c050}.log li.rel::before{background:#b07ad8}.log li.death::before{background:#e8e0d0}
 .log .d{color:var(--muted);font-variant-numeric:tabular-nums;margin-right:6px;font-size:11.5px}
 .muted{color:var(--muted)}.gold{color:#f0c840}
+.parties{display:flex;flex-direction:column;gap:5px}.party{display:flex;gap:9px;align-items:center;padding:6px 8px;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:7px}.party.on{border-color:var(--accent);background:rgba(233,185,73,.07)}
+.party .pi{display:flex;flex-direction:column;min-width:0;font-size:12px}.party .pi b{font-size:13px}.party .pv{display:flex;align-items:center;gap:6px;color:var(--muted);font-variant-numeric:tabular-nums}.party .plogo{margin:0}
+.plogo{image-rendering:pixelated;vertical-align:-4px;margin-right:3px;flex:none}.pname{display:inline-flex;align-items:center;gap:2px;min-width:0}
 .spark{width:100%;height:64px;display:block;background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:6px}
 .ph{display:flex;gap:10px;align-items:center}.ph .pp{width:auto;height:66px;image-rendering:pixelated;background:radial-gradient(circle at 50% 60%,rgba(255,255,255,.1),transparent 70%);border-radius:6px;padding:2px 6px}
 .ph .fl{width:18px;height:12px;image-rendering:pixelated;vertical-align:-1px;margin-right:4px}
@@ -364,6 +367,7 @@ const ROOFS = [null, ['#b8483a', '#8a3028'], ['#5a7a9a', '#3a5a7a'], ['#8a6a4a',
 const ALTAR_ROWS = ['......O......','.....OfO.....','....OfFfO....','.....OFO.....','..OOOOOOOOO..','.OsSsSsSsSsO.','.OSOOOOOOOSO.','..OsSsSsSsO..','..OSsSsSsSO..','.OOOOOOOOOOO.','OpppppppppppO','OOOOOOOOOOOOO'];
 // Banco (al doble) y las maravillas de cada régimen (a 1:1, con más detalle)
 const WONDER_ROWS = {"republica": [".............OOOO..........", "............OkrrrO.........", "............OkrrrO.........", "............OkOOO..........", "...........OOkOO...........", "........OOOsssssOOO........", "......OOsssssssssssOO......", "...OOOssssssyyyssssssOOO...", ".OOsssssssssyyysssssssssOO.", "OsssssssssssssssssssssssssO", "OsssssssssssssssssssssssssO", "OSSSSSSSSSSSSSSSSSSSSSSSSSO", "OsssssssssssssssssssssssssO", ".OssSwwssSwwssSwwssSwwssSO.", ".OssSwwssSwwssSwwssSwwssSO.", ".OssSwwssSwwssSwwssSwwssSO.", ".OssSwwssSwwdddwwssSwwssSO.", ".OssSwwssSwwdddwwssSwwssSO.", ".OssSwwssSwwdddwwssSwwssSO.", ".OssSwwssSwwdddwwssSwwssSO.", ".OssSwwssSwwdddwwssSwwssSO.", "OsssssssssssssssssssssssssO", "OSSSSSSSSSSSSSSSSSSSSSSSSSO", "OSSSSSSSSSSSSSSSSSSSSSSSSSO", "OSSSSSSSSSSSSSSSSSSSSSSSSSO", ".OOOOOOOOOOOOOOOOOOOOOOOOO."], "monarquia": ["....OOO...................OOO..", "...OkyyO.................OkyyO.", "...OkyyO.......O.........OkyyO.", "...OkOO......OOyOO.......OkOO..", "...OrO......OyOOOyO......OrO...", "..OrrrO.....OyyyyyO.....OrrrO..", "..OrrrO.....OyryryO.....OrrrO..", ".OrrrrrO....OyyyyyO....OrrrrrO.", ".OrrrrrO....OOOrOOO....OrrrrrO.", "OrrrrrrrO..OrrrrRRRO..OrrrrrrrO", ".OssssSO..OrrrrrRRRrO..OssssSO.", ".OssssSO.OrrrrrrRRRrrO.OssssSO.", ".OssssSOOrrrrrrrRRRrrrOOssssSO.", ".OssssSOsrrrrrrrrrrrrrsOssssSO.", ".OswwsSssssssssssssssssSswwsSO.", ".OswwsSssssssssssssssssSswwsSO.", ".OswwsSssssssssssssssssSswwsSO.", ".OssssSsswwssbbbbbsswwsSssssSO.", ".OssssSsswwssbbbbbsswwsSssssSO.", ".OssssSsswwssssssssswwsSssssSO.", ".OswwsSssssssssdsssssssSswwsSO.", ".OswwsSsssssssdddssssssSswwsSO.", ".OswwsSsswwsssdddssswwsSswwsSO.", ".OssssSsswwsssdddssswwsSssssSO.", ".OssssSsswwsssdddssswwsSssssSO.", ".OssssSsssssssdddssssssSssssSO.", ".OssssSsssssssdddssssssSssssSO.", ".OssssSsssssssdddssssssSssssSO.", "OSSSSSSSSSSSSSSSSSSSSSSSSSSSSSO", "OSSSSSSSSSSSSSSSSSSSSSSSSSSSSSO", ".OOOOOOOOOOOOOOOOOOOOOOOOOOOOO."], "dictadura": ["...............OO..", "..............ObbO.", "........OOO...ObbO.", ".......OBBBO..ObbO.", "......OBBBBBOObbO..", ".......ObbbO.ObbO..", ".......ObbBOObbO...", ".......ObbbOObbO...", "......OObbbObbO....", ".....ObbbbBBbbO....", "....OBbbybBBBO.....", "....OBbbybBBBO.....", "....OBbbybBBBO.....", "....OBbbybBBBO.....", "....OBbbybBBBO.....", "....OBbbybBBBO.....", "....OBbbbbbBBO.....", "....ObbbbbbBBO.....", ".....ObbbbbBBO.....", "......ObbOBBO......", "......ObbOBBO......", "......ObbOBBO......", "......ObbOBBO......", "....OOObbOBBOOO....", "...OsrsssssssrSO...", "...OsrsssssssrSO...", "...OsrsyyyyysrSO...", "...OsrsyyyyysrSO...", "...OsrsssssssrSO...", "..OOsssssssssSSOO..", ".OSSSSSSSSSSSSSSSO.", ".OSSSSSSSSSSSSSSSO.", "..OOOOOOOOOOOOOOO.."], "comunismo": ["..........O..........", ".........OyO.........", "........OyyyO........", ".......OyyyyyO.......", "........OyyyO........", "........OyOyO........", ".........OOO.........", "........OrrRO........", "........OrrRO........", "........OrrRO........", "........OyyyO........", "........OrrRO........", "........OrrRO........", "........OrrRO........", ".......OrrrRRO.......", ".......OyyyyyO.......", ".......OrrrRRO.......", ".......OrryRRO.......", ".....O.OryyyRO.O.....", "...OOBOOrrrRROOBOO...", "..ObOBOOrrrRROOBObO..", "..ObBOOrrrrRRROOBbO..", ".ObbBOOrrrrRRROOBbbO.", ".ObbbOOrrrrRRROObbbO.", ".ObbbOOrrrrRRROObbbO.", ".ObbbOOrrrrRRROObbbO.", ".OBOBOOrrrrRRROOBOBO.", ".OBOBOrrrrrRRRROBOBO.", ".OsssssssssssssssSSO.", ".OsssssssssssssssSSO.", ".OrrrrrrrrrrrrrrrrrO.", ".OsssssssssssssssSSO.", ".OsssssssssssssssSSO.", "OSSSSSSSSSSSSSSSSSSSO", "OSSSSSSSSSSSSSSSSSSSO", ".OOOOOOOOOOOOOOOOOOO."], "fascismo": ["..............O..............", ".............OyO.............", "........OOOOOOyyOOOOO........", ".......OyyyyyyyyyyyyyO.......", "........OOyyyyyyyyyOO........", ".OOOOOOOOOOOyyyyyOOOOOOOOOOO.", "OgggggggggggggggggggggggggggO", "OgggkgkgkgkgkgkgkgkgkgkgkgggO", "OgggggggggggggggggggggggggggO", "OGGGGGGGGGGGGGGGGGGGGGGGGGGGO", ".OgggggggggggggggggggggggggO.", ".OggGrrgGgggggggggggGgrrGggO.", ".OggGrrgGgggggOgggggGgrrGggO.", ".OggGrrgGggOOO.OOOggGgrrGggO.", ".OggGyrgGggO.....OggGgryGggO.", ".OggGrrgGgO.......OgGgrrGggO.", ".OggGrrgGgO.......OgGgrrGggO.", ".OggGrrgGgO.......OgGgrrGggO.", ".OggGrrgGgO.......OgGgrrGggO.", ".OggGrggGgO.......OgGggrGggO.", ".OggGgggGgO.......OgGgggGggO.", ".OggGgggGgO.......OgGgggGggO.", ".OggGgggGgO.......OgGgggGggO.", ".OggGgggGgO.......OgGgggGggO.", ".OggGgggGgO.......OgGgggGggO.", ".OggGgggGgO.......OgGgggGggO.", ".OggGgggGgO.......OgGgggGggO.", ".OggGgggGgO.......OgGgggGggO.", ".OggGgggGgOOOOOOOOOgGgggGggO.", "OGGGGGGGGGGGGGGGGGGGGGGGGGGGO", "OGGGGGGGGGGGGGGGGGGGGGGGGGGGO", ".OOOOOOOOOOOOOOOOOOOOOOOOOOO."]};
+Object.assign(WONDER_ROWS, {"socialismo": ["..............OOOOO..............", ".............OrrkrrO.............", "............OrrrrrrrO............", "...........OrrrrrrrrrO...........", "............OsssssSSO............", "............OsssssSSO............", "............OsyyyyySO............", "............OsysksySO............", "............OsysksySO............", "............OsysssySO............", "............OsyyyyySO............", "............OsssssSSO............", ".OOOOOOOOOOOOsssssSSOOOOOOOOOOOO.", "OsssssssssssssssssSSssssssssssssO", "OSSSSSSSSSSSSsssssSSSSSSSSSSSSSSO", ".OssssrrrsssssssssssssssrrrssSSO.", ".OssssrrrsssssssssssssssrrrssSSO.", ".OsswwryrwwwsssssssswwwsryrwsSSO.", ".OsswwryrwwwsssssssswwwsryrwsSSO.", ".OsswwrrrwwwsssssssswwwsrrrwsSSO.", ".OsswwrrrwwwsssdddsswwwsrrrwsSSO.", ".OssssrrrsssssdddddsssssrrrssSSO.", ".OssssrrrsssssdddddsssssrrrssSSO.", ".OsswwwrswwwssdddddswwwssrwwsSSO.", ".OsswwwsswwwssdddddswwwsswwwsSSO.", ".OsswwwsswwwssdddddswwwsswwwsSSO.", ".OsswwwsswwwssdddddswwwsswwwsSSO.", ".OssssssssssssdddddssssssssssSSO.", ".OssssssssssssdddddssssssssssSSO.", "OSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSO", "OSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSO", ".OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO."], "teocracia": [".............O.O.O.............", "............OyOyOyO............", ".............OOyOO.............", "............OyyyyyO............", ".............OOyOO.............", "............OyOyOyO............", "............OOOyOOO............", "...........OyyyyYYYO...........", "..........OyyyyyYYYyO..........", ".........OyyyyyyYYYyyO.........", "........OyyyyyyyYYYyyyO........", ".......OyyyyyyyyYYYyyyyO.......", ".......OyyyyyyyyYYYyyyyO.......", ".......OyyyyyyyyyyyyyyyO.......", "......OsssssssssssssssssO......", "......OsswwsrrrrrrrswwssO......", "......OsswwsrryyyrrswwssO......", "......OsswwsrryyyrrswwssO......", "......OsswwsrrrrrrrswwssO......", "....OOOSSSSSSSSSSSSSSSSSOOO....", "...OssssssssssdddssssssssssO...", "...OssSsssSssdddddsSsssSsssO...", "...OssSsssSssdddddsSsssSsssO...", "...OssSsssSssdddddsSsssSsssO...", "...OssSsssSssdddddsSsssSsssO...", ".OOOSSSSSSSSSdddddSSSSSSSSSOOO.", "OsssssssssssssssssssssssssssssO", "OsssssssssssssssssssssssssssssO", "OsssssssssssssssssssssssssssssO", "OSSSSSSSSSSSSSSSSSSSSSSSSSSSSSO", "OSSSSSSSSSSSSSSSSSSSSSSSSSSSSSO", "OSSSSSSSSSSSSSSSSSSSSSSSSSSSSSO", ".OOOOOOOOOOOOOOOOOOOOOOOOOOOOO."]});
 const BANK_ROWS = [".......OOOO.......", ".....OOyyyyOO.....", "...OOsssssssSOO...", ".OOssssssssssssSOO", "OOOOOOOOOOOOOOOOOO", ".OsSOsSOsSOsSOsSO.", ".OsSOsSOsSOsSOsSO.", ".OsSOsSOddOsSOsSO.", ".OsSOsSOddOsSOsSO.", ".OsSOsSOddOsSOsSO.", "OOOOOOOOOOOOOOOOOO", "OSSSSSSSSSSSSSSSSO"];
 const TEMPLE_ROWS = ['.........OO.........','........OyyO........','.........OO.........','......OOOOOOOO......','....OOrrrrrrrrOO....','..OOrrRrrrrrrRrrOO..','OOrrrrrrrrrrrrrrrrOO','OOOOOOOOOOOOOOOOOOOO','.OOOOOOOOOOOOOOOOOO.','.OcOwwOcOddOcOwwOcO.','.OcOwwOcOddOcOwwOcO.','.OcOwwOcOddOcOwwOcO.','.OcOwwOcOddOcOwwOcO.','OOOOOOOOOOOOOOOOOOOO','ssssssssssssssssssss','SSSSSSSSSSSSSSSSSSSS'];
 // La estatua de su dios sobre un pedestal
@@ -390,6 +394,8 @@ const PALS = {
   monarquia: { O:'#22201e', s:'#e4d8c0', S:'#b4a68c', w:'#3a4a6a', d:'#5a3a20', k:'#3a3028', r:'#3a5ab0', R:'#2a3e80', y:'#f0c840', b:'#c83a3a' },
   dictadura: { O:'#1e1c1a', b:'#9a7a48', B:'#6a5232', s:'#b8b2a6', S:'#88827a', y:'#e8c050', r:'#b8302a' },
   comunismo: { O:'#221a18', r:'#c8302a', R:'#8a1e1a', y:'#f0c838', b:'#8a7a5a', B:'#5e5240', s:'#c8c0b0', S:'#989080' },
+  socialismo: { O:'#22201e', s:'#e8dcc8', S:'#b8a88c', w:'#4a4a5a', d:'#5a3a20', k:'#2a2420', r:'#d0383a', y:'#f0c840' },
+  teocracia: { O:'#2a2018', s:'#e8e0cc', S:'#b8ac90', w:'#3a3028', d:'#4a2a18', r:'#8a2a5a', y:'#f0c840', Y:'#c8982a' },
   fascismo: { O:'#1a1a1c', g:'#8a8a86', G:'#5e5e5a', k:'#2a2a2a', r:'#a82a24', y:'#d8b040' },
   pozo:   { O:'#22201e', r:'#8a5a30', R:'#6a4426', W:'#c8b890', k:'#7a5230', s:'#a8a49c', S:'#7a766e', b:'#1a1612' },
   molino: { O:'#2a1a10', r:'#b8483a', R:'#8a3028', w:'#e0d4b8', W:'#b8a888', d:'#4a3020', b:'#3a2a1a' },
@@ -434,7 +440,7 @@ const OBJ = {
   'ancient:baobab':['Baobab milenario','tree',3], 'ancient:mangrove':['Mangle anciano','tree',3],
   'ancient:life':['Árbol de la vida','tree',4],
   'bush:red':['Bayas rojas','berry',0], 'bush:blueb':['Arándanos','berry',1], 'bush:goldb':['Bayas doradas','berry',2], 'bush:moon':['Bayas lunares','berry',3],
-  'house:hut':['Cabaña','house',0], 'house:piedra':['Casa de piedra','house',0], 'fire:camp':['Hoguera','fire',0], 'well:pozo':['Pozo','house',0], 'hall:ayuntamiento':['Ayuntamiento','house',0], 'tower:torre':['Torre de vigía','house',0], 'altar:altar':['Altar','house',0], 'temple:templo':['Templo','house',0], 'obelisk:monumento':['Estatua','house',0], 'market:mercado':['Mercado','house',0], 'store:almacen':['Almacén','house',0], 'quarry:cantera':['Cantera','house',0], 'mill:molino':['Molino','house',0], 'bank:banco':['Banco','house',0], 'wonder:republica':['Foro de la República','house',0], 'wonder:monarquia':['Palacio Real','house',0], 'wonder:dictadura':['Estatua del Líder','house',0], 'wonder:comunismo':['Monumento al Trabajo','house',0], 'wonder:fascismo':['Arco del Triunfo','house',0],
+  'house:hut':['Cabaña','house',0], 'house:piedra':['Casa de piedra','house',0], 'fire:camp':['Hoguera','fire',0], 'well:pozo':['Pozo','house',0], 'hall:ayuntamiento':['Ayuntamiento','house',0], 'tower:torre':['Torre de vigía','house',0], 'altar:altar':['Altar','house',0], 'temple:templo':['Templo','house',0], 'obelisk:monumento':['Estatua','house',0], 'market:mercado':['Mercado','house',0], 'store:almacen':['Almacén','house',0], 'quarry:cantera':['Cantera','house',0], 'mill:molino':['Molino','house',0], 'bank:banco':['Banco','house',0], 'wonder:republica':['Foro de la República','house',0], 'wonder:monarquia':['Palacio Real','house',0], 'wonder:dictadura':['Estatua del Líder','house',0], 'wonder:comunismo':['Monumento al Trabajo','house',0], 'wonder:fascismo':['Arco del Triunfo','house',0], 'wonder:socialismo':['Casa del Pueblo','house',0], 'wonder:teocracia':['Gran Templo','house',0],
   'rock:stone':['Piedra','stone',0], 'big:stone':['Roca','stone',0],
   'ore:iron':['Veta de hierro','mineral',1], 'ore:gold':['Veta de oro','mineral',2],
   'gem:amethyst':['Geoda de amatista','mineral',3], 'gem:mana':['Cristal de maná','mineral',4],
@@ -5730,6 +5736,42 @@ function villageAt(sx, sy){
   let best = null, bd = 14; for (const g of villages) { const d = Math.hypot(g.fx - tx, g.fy - ty); if (d < bd && popOf(g)) { bd = d; best = g; } }
   return best;
 }
+// ---- Logos de los partidos: un emblema de pixel según su nombre, con su color y su forma ----
+const LOGO_SYM = {
+  puno:['.#.#.#.', '.#####.', '######.', '#######', '.######', '..####.', '..###..'],
+  espiga:['...#...', '..#.#..', '..###..', '.#.#.#.', '..###..', '...#...', '...#...'],
+  rueda:['.#.#.#.', '#######', '.##.##.', '###.###', '.##.##.', '#######', '.#.#.#.'],
+  espada:['...#...', '...#...', '...#...', '...#...', '.#####.', '...#...', '..###..'],
+  corona:['.......', '#..#..#', '#.###.#', '#######', '#######', '.#####.', '.......'],
+  moneda:['..###..', '.#...#.', '#..#..#', '#.###.#', '#..#..#', '.#...#.', '..###..'],
+  hoja:['....##.', '..####.', '.#####.', '.####..', '.###...', '#.#....', '#......'],
+  ola:['.......', '.##..##', '#..##..', '.......', '.##..##', '#..##..', '.......'],
+  llama:['...#...', '..##...', '..###..', '.####..', '.#####.', '.##.##.', '..###..'],
+  estrella:['...#...', '...#...', '#######', '.#####.', '..###..', '.##.##.', '.#...#.'],
+  rosa:['..###..', '.##.##.', '.#.#.#.', '.##.##.', '..###..', '...#.#.', '..##...'],
+  sol:['#..#..#', '.#####.', '.#####.', '#######', '.#####.', '.#####.', '#..#..#'],
+  oveja:['.......', '.####..', '######.', '######.', '.####.#', '.#..#..', '.#..#..'],
+  manos:['.......', '##...##', '###.###', '.#####.', '..###..', '...#...', '.......'],
+  ojo:['.......', '..###..', '.#...#.', '#..#..#', '.#...#.', '..###..', '.......']
+};
+const LOGO_KEYS = [[/Pueblo|Popular|Unido/, 'puno'], [/Pan|Cosechas|Arado/, 'espiga'], [/Jornaleros|Trabajadores|Comunal/, 'rueda'], [/Espada|Orden|Hierro|Sangre/, 'espada'],
+  [/Corona|Linajes/, 'corona'], [/Comercio|Mercaderes|Libre/, 'moneda'], [/Verde/, 'hoja'], [/Río/, 'ola'], [/Hoguera|Antorcha/, 'llama'], [/Estrella/, 'estrella'],
+  [/Socialista|Reparto/, 'rosa'], [/Fe|Templo|Sagrad/, 'sol'], [/Pastores/, 'oveja'], [/Concordia|Camino/, 'manos'], [/Guardia/, 'ojo']];
+function partyLogo(p){
+  if (p.logoUrl) return p.logoUrl;
+  const h = hashStr(p.name), sym = (LOGO_KEYS.find(([re]) => re.test(p.name)) || [0, p.ideo < -.3 ? 'puno' : p.ideo > .3 ? 'espada' : 'estrella'])[1];
+  const shape = ['circulo', 'escudo', 'cuadrado', 'rombo'][h % 4], S = 15, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d');
+  const inside = (i, j) => { const u = i - 7, v = j - 7; return shape === 'circulo' ? u * u + v * v <= 50 : shape === 'rombo' ? Math.abs(u) + Math.abs(v) <= 8 : shape === 'escudo' ? (j < 9 ? Math.abs(u) <= 6 && j >= 1 : Math.abs(u) <= 6 - (j - 9)) : Math.abs(u) <= 6 && Math.abs(v) <= 6; };
+  const dark = shade(p.col, .55), fg = p.ideo > .3 ? '#f0d060' : '#f6ead2';
+  for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) {
+    if (!inside(i, j)) continue;
+    const edge = !inside(i - 1, j) || !inside(i + 1, j) || !inside(i, j - 1) || !inside(i, j + 1);
+    x.fillStyle = edge ? dark : p.col; x.fillRect(i, j, 1, 1);
+  }
+  LOGO_SYM[sym].forEach((row, j) => [...row].forEach((ch, i) => { if (ch === '#') { x.fillStyle = fg; x.fillRect(4 + i, 4 + j, 1, 1); } }));
+  return p.logoUrl = c.toDataURL();
+}
+const logoImg = (p, sz = 18) => `<img class="plogo" src="${partyLogo(p)}" width="${sz}" height="${sz}" alt="" title="${esc(p.name)}">`;
 // ---- Retratos, ánimo y familia de cada persona ----
 const portraitCache = new WeakMap();
 function portraitUrl(v, px = 3){
@@ -5802,7 +5844,7 @@ function renderPersonCard(){
   const g = villageById(v.vid), n = g && nationOf(g), a = ageOf(v), mood = moodOf(v), p = partyOf(v), reg = g ? regimeOf(g) : null;
   const life = clamp(a / v.life, 0, 1), money = g && g.coin ? `${v.money || 0} ${coinPl(g)}` : '—';
   const belief = !g || !g.faith ? 'En su pueblo aún no hay religión' : pietyOf(v) > .75 ? `Muy devot${sexW(v, 'o', 'a')} de ${esc(g.faith.name)}: venera a ${esc(godTxt(g.faith))}` : pietyOf(v) > .3 ? `Creyente de ${esc(g.faith.name)} (${esc(godTxt(g.faith))})` : `No es creyente, aunque en su pueblo veneran a ${esc(g.faith.god)}`;
-  const vote = a < ADULT_H ? 'Aún no vota' : !p ? 'En su pueblo no hay partidos' : reg === 'republica' ? `Vota a ${artP(p)} <b style="color:${p.col}">${esc(p.name)}</b>` : `Simpatiza con ${artP(p)} <b style="color:${p.col}">${esc(p.name)}</b> (no hay elecciones: ${REGIMES[reg].toLowerCase()})`;
+  const vote = a < ADULT_H ? 'Aún no vota' : !p ? 'En su pueblo no hay partidos' : votes(g) ? `${logoImg(p, 30)} Vota a ${artP(p)} <b style="color:${p.col}">${esc(p.name)}</b>` : `${logoImg(p, 30)} Simpatiza con ${artP(p)} <b style="color:${p.col}">${esc(p.name)}</b> (no hay elecciones: ${regimeName(g).toLowerCase()})`;
   const ideoPos = ((v.ideo || 0) + 1) / 2 * 100;
   el.innerHTML = `<div class="ph"><img class="pp" src="${portraitUrl(v, 4)}" alt=""><div><h3>${esc(v.name)}</h3>
       <div class="muted">${v.sex === 'h' ? 'Hombre' : 'Mujer'} · ${Math.floor(a)} año${Math.floor(a) === 1 ? '' : 's'} (${stageOf(v)})</div>
@@ -5868,7 +5910,7 @@ function renderVillageCard(){
   } else if (cardTab === 'politica') {
     const vr = n.voteRes;
     body = `<div>${govCard(g)}</div>
-      ${n.parties ? `<h4>Partidos</h4><div class="hbars">${n.parties.map((q, k) => { const pct = vr && vr[k] ? vr[k] : 0; return `<span style="color:${q.col}">${esc(q.name)}${n.ruling === k ? ' ★' : ''}</span>${bar(pct / 100, q.col, 90)}<span>${vr ? pct + ' %' : sideTxt(q)}</span>`; }).join('')}</div>` : '<h4>Partidos</h4><div>Aún no tienen partidos</div>'}
+      ${n.parties ? `<h4>Partidos</h4><div class="parties">${n.parties.map((q, k) => { const pct = vr && vr[k] != null ? vr[k] : null; return `<div class="party${n.ruling === k ? ' on' : ''}">${logoImg(q, 30)}<div class="pi"><b style="color:${q.col}">${esc(q.name)}${n.ruling === k ? ' <span class="gold">★ gobierna</span>' : ''}</b><span class="muted">${sideTxt(q)} · ${q.laws.map(l => LAW_TXT[l]).join(', ')}</span>${pct != null ? `<span class="pv">${bar(pct / 100, q.col, 150)} ${pct} %</span>` : ''}</div></div>`; }).join('')}</div>` : '<h4>Partidos</h4><div>Aún no tienen partidos</div>'}
       ${lawsOf(g).length ? `<h4>Leyes</h4><div class="chips">${lawsOf(g).map(l => `<span>${LAW_TXT[l]}</span>`).join('')}</div>` : ''}
       <h4>Nación</h4><div>${status}${provinces.length ? `: ${provinces.map(o => esc(o.name)).join(', ')}` : ''}${n !== g ? ` · descontento con la capital ${Math.round(g.unrest || 0)} %` : ''}</div>
       ${allyCard(g)}${warCard(g)}
@@ -5878,7 +5920,7 @@ function renderVillageCard(){
   }
   const sc = el.querySelector('.cbody'), top = sc ? sc.scrollTop : 0;
   el.innerHTML = `<div class="vh">${n.flagUrl ? `<img class="flag" src="${n.flagUrl}" alt="">` : '<span class="flag none"></span>'}<div><h3>${esc(g.name)}</h3>
-      <div class="pills"><span>${REGIMES[reg]}</span><span>${status}</span>${al ? `<span class="ally">${esc(al.abbr)}</span>` : ''}${g.coin ? `<span class="coin">${esc(g.coin)}</span>` : ''}</div></div>
+      <div class="pills"><span>${regimeName(g)}</span><span>${status}</span>${al ? `<span class="ally">${esc(al.abbr)}</span>` : ''}${g.coin ? `<span class="coin">${esc(g.coin)}</span>` : ''}</div></div>
       <button class="x" aria-label="Cerrar">×</button></div>
     <div class="tabs">${CARD_TABS.map(([k, t]) => `<button data-tab="${k}"${cardTab === k ? ' class="on"' : ''}>${t}</button>`).join('')}</div>
     <div class="cbody">${body}</div>`;
@@ -6296,7 +6338,7 @@ function warCard(g){
 // reúnen en la plaza y votan; el partido que gana pone al líder y sus leyes cambian cómo vive el pueblo y cómo trata
 // a los demás ----
 const PARTY_A = ['Partido', 'Unión', 'Frente', 'Movimiento', 'Liga', 'Alianza', 'Consejo', 'Hermandad', 'Asamblea'];
-const PARTY_B = { izq:['del Pueblo', 'de la Hoguera Común', 'de los Pastores', 'del Pan para Todos', 'Popular', 'de los Jornaleros', 'del Reparto'],
+const PARTY_B = { izq:['Socialista', 'Socialista del Trabajo', 'del Pueblo', 'de la Hoguera Común', 'de los Pastores', 'del Pan para Todos', 'Popular', 'de los Jornaleros', 'del Reparto'],
   centro:['del Arado', 'del Río', 'de la Concordia', 'de las Cosechas', 'del Camino', 'Verde', 'de la Fe'],
   der:['del Comercio', 'de la Espada', 'Libre', 'de los Linajes', 'del Orden', 'de la Corona de Piedra', 'de los Mercaderes'] };
 const LAW_TXT = { reparto:'reparto de comida', obras:'obras públicas', paz:'paz con los vecinos', comercio:'comercio libre', ejercito:'ejército', expansion:'expansión', fe:'fe oficial', estatal:'economía estatal', censura:'censura' };
@@ -6317,7 +6359,8 @@ function makeParties(g){
   notify(`En ${g.name} nacen los partidos: ${parties.map(p => p.name).join(', ')}`, { x:g.fx * T, y:g.fy * T });
 }
 const artP = p => /^(Unión|Liga|Alianza|Asamblea|Hermandad)/.test(p.name) ? 'la' : 'el'; // «gana la Liga…», «gana el Frente…»
-const lawsOf = g => { const n = nationOf(g); if (REGIME_LAWS[n.regime]) return REGIME_LAWS[n.regime]; return n.ruling != null && n.parties ? n.parties[n.ruling].laws : []; };
+const lawsOf = g => { const n = nationOf(g); if (REGIME_LAWS[n.regime]) return REGIME_LAWS[n.regime]; const L = n.ruling != null && n.parties ? n.parties[n.ruling].laws : [];
+  return n.regime === 'socialismo' ? [...new Set(['reparto', 'estatal', ...L])] : L; };
 const hasLaw = (g, l) => lawsOf(g).includes(l);
 const sideTxt = p => p.ideo < -.3 ? 'izquierda' : p.ideo > .3 ? 'derecha' : 'centro';
 // Elecciones: los de toda la nación van a la plaza de su pueblo a votar; luego se cuenta
@@ -6351,6 +6394,9 @@ function countVotes(cap){
   // Polarización: si un pueblo muy grande queda partido casi por la mitad, los perdedores pueden irse y fundar el suyo
   const second = [...votes].sort((a, b) => b - a)[1] || 0;
   if (popOf(cap) > 36 && second / tot > .38 && Math.random() < .35) secede(cap, ps[votes.indexOf(second)]);
+  const share = votes[win] / tot;
+  if (regimeOf(cap) === 'republica' && p.ideo < -.4 && share >= .6 && Math.random() < .35) { setRegime(cap, 'socialismo', null); cap.ruling = win; cap.voteRes = votes.map(x => Math.round(x / tot * 100)); notify(`Con ${Math.round(share * 100)} % de los votos, ${artP(p)} ${p.name} proclama la República Socialista de ${cap.name}`, { x:cap.fx * T, y:cap.fy * T }); }
+  else if (regimeOf(cap) === 'socialismo' && p.ideo > .3 && share >= .5) { setRegime(cap, 'republica', null); cap.ruling = win; cap.voteRes = votes.map(x => Math.round(x / tot * 100)); notify(`${cap.name} deja el socialismo: gana ${artP(p)} ${p.name} y vuelve la república de siempre`, { x:cap.fx * T, y:cap.fy * T }); }
 }
 // Escisión: los partidarios del partido perdedor se marchan a fundar su propio pueblo
 function secede(g, party){
@@ -6369,28 +6415,32 @@ function secede(g, party){
   }
 }
 // ---- Regímenes: tribu, república, monarquía, dictadura, comunismo o fascismo; cada uno manda a su manera ----
-const REGIMES = { tribu:'Consejo tribal', republica:'República', monarquia:'Monarquía', dictadura:'Dictadura militar', comunismo:'Estado comunista', fascismo:'Régimen fascista' };
-const REGIME_A = { tribu:'un consejo tribal', republica:'una república', monarquia:'una monarquía', dictadura:'una dictadura militar', comunismo:'un estado comunista', fascismo:'un régimen fascista' };
-const REGIME_IDEO = { comunismo:-.85, fascismo:.85, dictadura:.35, monarquia:.5 };
-const REGIME_LAWS = { comunismo:['reparto', 'obras', 'ejercito', 'estatal'], fascismo:['ejercito', 'expansion', 'fe', 'censura'], dictadura:['ejercito', 'obras', 'censura'], monarquia:['fe', 'comercio'] };
+const REGIMES = { socialismo:'República socialista', teocracia:'Teocracia', tribu:'Consejo tribal', republica:'República', monarquia:'Monarquía', dictadura:'Dictadura militar', comunismo:'Estado comunista', fascismo:'Régimen fascista' };
+const REGIME_A = { socialismo:'una república socialista', teocracia:'una teocracia', tribu:'un consejo tribal', republica:'una república', monarquia:'una monarquía', dictadura:'una dictadura militar', comunismo:'un estado comunista', fascismo:'un régimen fascista' };
+const REGIME_IDEO = { teocracia:.45, comunismo:-.85, fascismo:.85, dictadura:.35, monarquia:.5 };
+const REGIME_LAWS = { teocracia:['fe', 'censura', 'reparto'], comunismo:['reparto', 'obras', 'ejercito', 'estatal'], fascismo:['ejercito', 'expansion', 'fe', 'censura'], dictadura:['ejercito', 'obras', 'censura'], monarquia:['fe', 'comercio'] };
 const regimeOf = g => { const n = nationOf(g); return n.regime || (n.parties ? 'republica' : 'tribu'); };
-const tyranny = g => ['dictadura', 'comunismo', 'fascismo'].includes(regimeOf(g));
+const tyranny = g => ['dictadura', 'comunismo', 'fascismo', 'teocracia'].includes(regimeOf(g));
+const votes = g => ['republica', 'socialismo'].includes(regimeOf(g)); // donde se vota
+const regimeName = g => { const n = nationOf(g), r = regimeOf(g); return r === 'monarquia' && n.empire ? 'Imperio' : REGIMES[r]; };
 function leaderTitle(g){
   const f = g.leader && g.leader.sex === 'm';
   if (nationOf(g) !== g) return f ? 'gobernadora' : 'gobernador';
-  return { tribu:f ? 'jefa' : 'jefe', republica:f ? 'presidenta' : 'presidente', monarquia:f ? 'reina' : 'rey', dictadura:f ? 'dictadora' : 'dictador', comunismo:f ? 'secretaria general' : 'secretario general', fascismo:f ? 'caudilla' : 'caudillo' }[regimeOf(g)];
+  if (regimeOf(g) === 'monarquia' && g.empire) return f ? 'emperatriz' : 'emperador';
+  return { socialismo:f ? 'presidenta' : 'presidente', teocracia:f ? 'suma sacerdotisa' : 'sumo sacerdote', tribu:f ? 'jefa' : 'jefe', republica:f ? 'presidenta' : 'presidente', monarquia:f ? 'reina' : 'rey', dictadura:f ? 'dictadora' : 'dictador', comunismo:f ? 'secretaria general' : 'secretario general', fascismo:f ? 'caudilla' : 'caudillo' }[regimeOf(g)];
 }
 const leaderRef = g => g.leader && !g.leader.dead ? `${g.leader.sex === 'm' ? 'la' : 'el'} ${leaderTitle(g)} ${g.leader.name}` : 'el gobierno';
-const govIdeo = g => { const n = nationOf(g); return REGIME_IDEO[regimeOf(g)] ?? (n.ruling != null && n.parties ? n.parties[n.ruling].ideo : 0); };
+const govIdeo = g => { const n = nationOf(g), r = n.ruling != null && n.parties ? n.parties[n.ruling].ideo : 0; return regimeOf(g) === 'socialismo' ? Math.min(r, -.3) : REGIME_IDEO[regimeOf(g)] ?? r; };
 const ONE_PARTY = { comunismo:['Partido de los Trabajadores', 'Partido de la Estrella Roja', 'Partido del Pueblo Unido', 'Partido Comunal'], fascismo:['Movimiento del Orden Nuevo', 'Frente de la Espada de Hierro', 'Guardia de la Antorcha', 'Movimiento de la Sangre y el Suelo'] };
 const capFirst = s => s[0].toUpperCase() + s.slice(1);
 function setRegime(g, reg, chief){
-  g.regime = reg; g.regimeT = yearT; g.voteRes = null; if (chief) g.leader = chief;
-  if (reg === 'republica') { g.ruling = null; g.voteT = -1e9; if (!g.parties || g.parties.length < 2) { g.parties = null; makeParties(g); } }
+  g.regime = reg; g.regimeT = yearT; g.voteRes = null; g.empire = false; if (chief) g.leader = chief;
+  if (reg === 'republica' || reg === 'socialismo') { g.voteT = yearT; if (!g.parties || g.parties.length < 2) { g.parties = null; makeParties(g); } if (reg === 'republica') { g.ruling = null; g.voteT = -1e9; } }
+  if (reg === 'teocracia') g.ruling = null;
   if (ONE_PARTY[reg]) { const L = ONE_PARTY[reg]; g.parties = [{ name:L[Math.floor(Math.random() * L.length)], ideo:REGIME_IDEO[reg], laws:REGIME_LAWS[reg], col:reg === 'comunismo' ? '#d8483a' : '#3a3a3a' }]; g.ruling = 0; }
   // La maravilla del régimen anterior: si era culto al líder o a la corona, la derriban
   const o = g.wonder != null && world.objs[g.wonder];
-  if (o && o.key !== 'wonder:' + reg && /monarquia|dictadura|comunismo|fascismo/.test(o.key)) {
+  if (o && o.key !== 'wonder:' + reg && /monarquia|dictadura|comunismo|fascismo|teocracia/.test(o.key)) {
     const i = g.wonder, nm = OBJ[o.key][0]; world.objs[i] = null; g.wonder = null; addEffect((i % W) * T + 2, ((i / W) | 0) * T + 3, 'poof');
     composeRegion((i % W) - 10, ((i / W) | 0) - 16, (i % W) + 10, ((i / W) | 0) + 12);
     notify(`En ${g.name} derriban ${/^(Palacio|Arco|Monumento)/.test(nm) ? 'el' : 'la'} ${nm} del antiguo régimen`, { x:(i % W) * T, y:((i / W) | 0) * T });
@@ -6406,6 +6456,9 @@ function succession(g, people){
     g.leader = nu;
     notify(heir ? `Muere ${old.sex === 'm' ? 'la reina' : 'el rey'} ${old.name} de ${g.name}; ${heir.sex === 'm' ? 'su hija' : 'su hijo'} ${heir.name} hereda la corona`
       : `${old.sex === 'm' ? 'La reina' : 'El rey'} ${old.name} muere sin herederos: ${nu.name} funda una nueva dinastía en ${g.name}`, { x:nu.x, y:nu.y });
+  } else if (reg === 'teocracia') {
+    const nu = people.filter(adult).sort((a, b) => (b.oficio === 'sacerdote') - (a.oficio === 'sacerdote') || pietyOf(b) - pietyOf(a))[0]; if (!nu) return;
+    g.leader = nu; notify(`Muere ${old.name}; los sacerdotes de ${g.name} eligen a ${nu.name} como ${leaderTitle(g)}`, { x:nu.x, y:nu.y });
   } else if (Math.random() < .4) {
     g.leader = null; setRegime(g, 'republica', null);
     notify(`Tras la muerte de ${old.name}, ${g.name} vuelve a ser una república y convoca elecciones`, { x:g.fx * T, y:g.fy * T });
@@ -6435,6 +6488,13 @@ function politicsTick(g, dt, people){
   if (g.protest) { runProtest(g); return; }
   if (g.coup) { if (yearT > g.coup.until) resolveCoup(g); return; }
   if (g.anger > 35 && g.grief && !isNight() && g.plaza && !cap.election && yearT - (g.protestT ?? -1e9) > DAY_LEN * .5) { startProtest(g, adults); return; }
+  if (cap === g && g.faith && ['republica', 'monarquia', 'tribu'].includes(regimeOf(g)) && (g.devotion || 0) > 8 && (g.wrath || 0) > 3 && !isNight() && Math.random() < .0004 * dt) {
+    const priest = adults.filter(u => u.oficio === 'sacerdote').sort((a, b) => pietyOf(b) - pietyOf(a))[0] || adults.slice().sort((a, b) => pietyOf(b) - pietyOf(a))[0];
+    if (priest) { const old = g.leader; setRegime(g, 'teocracia', priest); notify(`Los sacerdotes de ${g.name} toman el poder en nombre de ${g.faith.god}${old && old !== priest && !old.dead ? ` y apartan a ${old.name}` : ''}: ${priest.name} es ${leaderTitle(g)} de una teocracia`, { x:g.fx * T, y:g.fy * T }); return; }
+  }
+  if (cap === g && regimeOf(g) === 'monarquia' && !g.empire && villages.filter(o => o !== g && popOf(o) && o.nation === g.id).length >= 3) {
+    g.empire = true; notify(`¡${g.name} se proclama imperio! ${g.leader && !g.leader.dead ? `${g.leader.name} es ahora ${leaderTitle(g)}` : ''}`, { x:g.fx * T, y:g.fy * T });
+  }
   // Golpe de estado: en la capital, con mucho descontento, con mucha represión acumulada o con militares hartos de un gobierno pacifista
   if (cap === g && regimeOf(g) !== 'tribu' && !isNight()) {
     const armed = adults.filter(u => u.weapon).length, mil = regimeOf(g) === 'republica' && hasLaw(g, 'paz') && armed >= 4 ? .0006 : 0;
@@ -6473,7 +6533,7 @@ function respondProtest(g, who){
     if (g.grief === 'hambre' || g.grief === 'bancarrota') { what = 'reparten comida de los almacenes'; for (const u of who) u.food = Math.min(1, u.food + .4); g.food = Math.max(0, g.food - who.length * .5); }
     else if (g.grief === 'guerra') { what = 'prometen buscar la paz'; for (const r of rels.values()) if (r.war && (r.war.def === g.id || r.war.att === g.id) && Math.random() < .5) { const a = villageById(r.war.att), b = villageById(r.war.def); if (a && b) makePeace(a, b, r, 'tras las protestas'); } }
     else if (g.grief === 'inflación' && g.coin) { what = 'congelan los precios'; ecOf(g).infl *= .3; }
-    else if (reg === 'republica' && cap.parties && !cap.election) { what = 'convocan elecciones anticipadas'; cap.voteT = -1e9; }
+    else if (votes(g) && cap.parties && !cap.election) { what = 'convocan elecciones anticipadas'; cap.voteT = -1e9; }
     else if (reg === 'monarquia') { what = `${leaderRef(cap)} reparte grano y promete reformas`; g.food = Math.max(0, g.food - who.length * .3); }
     else what = 'escuchan sus quejas y prometen cambios';
     notify(`En ${g.name} el gobierno cede ante los manifestantes: ${what}`, at);
@@ -6533,10 +6593,10 @@ function resolveCoup(g){
     if (dest.length && Math.random() < .45) { const d = dest[Math.floor(Math.random() * dest.length)]; releaseTask(L); L.task = null; L.vid = d.id; L.home = null; fate = `${capFirst(title)} huye al exilio en ${d.name}`; }
     else { killVillager(L, c.military ? 'golpe de estado' : 'revolución'); fate = `${capFirst(title)} muere en el asalto`; }
   }
-  const reg = c.pIdeo < -.35 ? 'comunismo' : c.pIdeo > .35 ? (c.military ? 'fascismo' : 'monarquia') : wasTyr && !c.military ? 'republica' : c.military ? 'dictadura' : 'republica';
+  const reg = c.pIdeo < -.35 ? (!c.military && c.pIdeo > -.65 ? 'socialismo' : 'comunismo') : c.pIdeo > .35 ? (c.military ? 'fascismo' : 'monarquia') : wasTyr && !c.military ? 'republica' : c.military ? 'dictadura' : 'republica';
   const chief = plot.slice().sort((a, b) => (b.weapon ? 1 : 0) - (a.weapon ? 1 : 0) || Math.abs(b.ideo || 0) - Math.abs(a.ideo || 0))[0];
-  g.leader = null; setRegime(g, reg, reg === 'republica' ? null : chief); g.anger = 15; g.repressed = 0;
-  notify(`¡${c.military ? 'Triunfa el golpe de estado' : 'Triunfa la revolución'} en ${g.name}! ${fate ? fate + '; ' : ''}${reg === 'republica' ? (wasRep ? 'habrá elecciones nuevas' : 'se proclama una república y habrá elecciones') : reg === 'monarquia' ? `${chief.name} se corona ${chief.sex === 'm' ? 'reina' : 'rey'}` : `${chief.name} instaura ${REGIME_A[reg]}`}`, at);
+  g.leader = null; setRegime(g, reg, reg === 'republica' || reg === 'socialismo' ? null : chief); g.anger = 15; g.repressed = 0;
+  notify(`¡${c.military ? 'Triunfa el golpe de estado' : 'Triunfa la revolución'} en ${g.name}! ${fate ? fate + '; ' : ''}${reg === 'socialismo' ? 'se proclama una república socialista y habrá elecciones' : reg === 'republica' ? (wasRep ? 'habrá elecciones nuevas' : 'se proclama una república y habrá elecciones') : reg === 'monarquia' ? `${chief.name} se corona ${chief.sex === 'm' ? 'reina' : 'rey'}` : `${chief.name} instaura ${REGIME_A[reg]}`}`, at);
 }
 // ---- Dinero: cada pueblo su moneda; impuestos, gasto, banco, deuda, inflación y bancarrota ----
 const ecOf = g => g.coin ? (g.ec ||= { P:1, infl:0, treas:10, debt:0, dep:0, hist:[1] }) : null;
@@ -6544,11 +6604,11 @@ const priceOf = g => g.coin ? Math.max(1, Math.round(ecOf(g).P)) : 1;
 const hasBank = g => g.bank != null && !!world.objs[g.bank];
 function econTick(g, people){
   const ec = ecOf(g), pop = Math.max(1, people.length), reg = regimeOf(g), bank = hasBank(g);
-  const taxR = (hasLaw(g, 'ejercito') || hasLaw(g, 'expansion') ? .12 : .07) + (reg === 'comunismo' ? .25 : 0) + (reg === 'monarquia' ? .04 : 0);
+  const taxR = (hasLaw(g, 'ejercito') || hasLaw(g, 'expansion') ? .12 : .07) + (reg === 'comunismo' ? .25 : reg === 'socialismo' ? .12 : 0) + (reg === 'monarquia' ? .04 : 0);
   let tax = 0; for (const v of people) { const t0 = Math.floor((v.money || 0) * taxR); v.money = (v.money || 0) - t0; tax += t0; }
   if (bank) for (const v of people) if ((v.money || 0) > 10 * ec.P) { const d = Math.floor(v.money * .3); v.money -= d; ec.dep += d; }
   const atWar = [...rels.values()].some(r => r.war && (r.war.att === g.id || r.war.def === g.id));
-  const extra = (hasLaw(g, 'obras') ? .25 : 0) + (hasLaw(g, 'ejercito') ? .3 : 0) + (hasLaw(g, 'reparto') ? .15 : 0) + (atWar ? .6 : 0) + (reg === 'monarquia' ? .15 : 0) + (reg === 'fascismo' ? .2 : 0);
+  const extra = (reg === 'teocracia' ? .15 : 0) + (hasLaw(g, 'obras') ? .25 : 0) + (hasLaw(g, 'ejercito') ? .3 : 0) + (hasLaw(g, 'reparto') ? .15 : 0) + (atWar ? .6 : 0) + (reg === 'monarquia' ? .15 : 0) + (reg === 'fascismo' ? .2 : 0);
   const spend = tax * (.9 + extra) + pop * ec.P * .05 * extra;
   ec.treas += tax - spend;
   let printed = 0;
@@ -6593,7 +6653,7 @@ const ALLY_A = ['Pacto', 'Liga', 'Alianza', 'Tratado', 'Unión', 'Coalición', '
 const ALLY_B = ['del Norte', 'del Sur', 'de los Ríos', 'de las Hogueras', 'del Mar Interior', 'de las Colinas', 'de los Tres Soles', 'de la Llanura', 'del Alba', 'de las Islas', 'de Hierro', 'de los Puertos', 'del Gran Lago'];
 const artA = al => /^(Pacto|Tratado)/.test(al.name) ? 'el' : 'la';
 const allianceOf = g => g ? alliances.find(a => !a.dead && a.members.includes(nationOf(g).id)) : null;
-const regimeClash = (x, y) => { const p = [regimeOf(x), regimeOf(y)]; return p.includes('comunismo') && (p.includes('fascismo') || p.includes('monarquia')); };
+const regimeClash = (x, y) => { const p = [regimeOf(x), regimeOf(y)]; return (p.includes('comunismo') && (p.includes('fascismo') || p.includes('monarquia') || p.includes('teocracia'))) || (p.includes('socialismo') && p.includes('fascismo')); };
 function leaveAlliance(al, g, why){
   al.members = al.members.filter(id => id !== nationOf(g).id);
   notify(`${g.name} abandona ${artA(al)} ${al.name} (${why})`, { x:g.fx * T, y:g.fy * T });
@@ -6685,12 +6745,12 @@ function drawMoneyFlows(now){
   moneyFlows = moneyFlows.filter(f => now - f.t0 < 6000);
 }
 // ---- Maravillas: cada régimen levanta la suya ----
-const WONDER_TXT = { republica:'el Foro de la República, donde el pueblo debate sus leyes', monarquia:'el Palacio Real, para mayor gloria de la corona', dictadura:'una estatua gigante del líder, para que nadie olvide quién manda',
+const WONDER_TXT = { socialismo:'la Casa del Pueblo, donde se reparten el trabajo y el pan', teocracia:'el Gran Templo, morada de su dios en la tierra', republica:'el Foro de la República, donde el pueblo debate sus leyes', monarquia:'el Palacio Real, para mayor gloria de la corona', dictadura:'una estatua gigante del líder, para que nadie olvide quién manda',
   comunismo:'el Monumento al Trabajo, en honor a los trabajadores', fascismo:'el Arco del Triunfo, para celebrar la grandeza de la nación' };
 // ---- En la ficha del pueblo ----
 function govCard(g){
   const n = nationOf(g), reg = regimeOf(g), a = Math.round(g.anger || 0);
-  return `${REGIMES[reg]}${n !== g ? ` (de ${n.name})` : ''} · ${leaderTitle(n)}: <b>${n.leader && !n.leader.dead ? n.leader.name : 'nadie'}</b>
+  return `${regimeName(g)}${n !== g ? ` (de ${n.name})` : ''} · ${leaderTitle(n)}: <b>${n.leader && !n.leader.dead ? n.leader.name : 'nadie'}</b>
     <br>Descontento: <span style="display:inline-block;width:60px;height:6px;background:#3a3028;vertical-align:1px"><span style="display:block;height:6px;width:${a * .6}px;background:${a > 60 ? '#d8483a' : a > 35 ? '#e8a838' : '#7ab04a'}"></span></span> ${a} %${g.grief && a > 10 ? ` (por ${GRIEF_TXT[g.grief]})` : ''}
     ${g.protest ? '<br><b>¡Manifestación en curso!</b>' : ''}${g.coup ? '<br><b>¡Golpe de estado en curso!</b>' : ''}${g.repressed ? `<br>${g.repressed} protesta${g.repressed > 1 ? 's' : ''} reprimida${g.repressed > 1 ? 's' : ''}` : ''}
     ${n.wonder != null && world.objs[n.wonder] ? `<br>Maravilla: ${OBJ[world.objs[n.wonder].key][0]}` : ''}`;
@@ -7102,7 +7162,7 @@ function updateVillages(dt){
     }
     if (nationOf(g) === g) {
       if (!g.parties && popOf(g) >= 8 && yearT > DAY_LEN * .8) makeParties(g);
-      if (g.parties && regimeOf(g) === 'republica' && !g.election && !isNight() && yearT - (g.voteT ?? -1e9) > DAY_LEN * 2) { g.voteT = yearT; startElection(g); }
+      if (g.parties && votes(g) && !g.election && !isNight() && yearT - (g.voteT ?? -1e9) > DAY_LEN * 2) { g.voteT = yearT; startElection(g); }
       if (g.election && yearT > g.election.until) { g.election = null; countVotes(g); }
     }
     politicsTick(g, dt, people);
@@ -7829,7 +7889,7 @@ function drawVillagers(){
         const sx = x - v.dir * 2, sy = y - s.height - 6 - lift - drop; vctx.fillStyle = '#5a4030'; vctx.fillRect(sx, sy, 1, 8); vctx.fillStyle = '#c8302a'; vctx.fillRect(sx + 1, sy, 3, 2); vctx.fillStyle = '#1a1a1a'; vctx.fillRect(sx + 1, sy + 2, 3, 1);
       }
       if (v.task && v.task.k === 'trabajando' && v.task.job === 'detenido') { vctx.fillStyle = '#6a6a70'; vctx.fillRect(x - 2, y - 7, 5, 1); } // con grilletes
-      if (v.task && v.task.k === 'trabajando' && v.task.job === 'votar') { vctx.fillStyle = '#f2efe6'; vctx.fillRect(x + v.dir * 2, y - 8 - ((Math.floor(now / 500) + v.x) % 2), 2, 3); }
+      if (v.task && v.task.k === 'trabajando' && v.task.job === 'votar') { const vp = partyOf(v); vctx.fillStyle = vp ? vp.col : '#f2efe6'; vctx.fillRect(x + v.dir * 2, y - 8 - ((Math.floor(now / 500) + v.x) % 2), 2, 3); }
       if (v.task && v.task.k === 'trabajando' && (v.task.job === 'orar' || v.task.job === 'ritual')) { const g0 = villageById(v.vid); if (g0) { const [r, gg, b] = villageColor(g0); vctx.fillStyle = `rgba(${Math.min(255, r + 90)},${Math.min(255, gg + 90)},${Math.min(255, b + 90)},.9)`; for (let k = 0; k < 2; k++) vctx.fillRect(x - 2 + k * 4, y - s.height - 2 - Math.floor((now / 160 + k * 3) % 6), 1, 1); } }
       if (v.task && v.task.k === 'trabajando' && (v.born === undefined || (yearT - v.born) / YEAR >= ADULT_H)) drawTool(v, x, y, now);
       // Arma en la mano: la lanza en vertical (adelantada al clavarla) o el arco
