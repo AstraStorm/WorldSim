@@ -3588,7 +3588,7 @@ function fireRisk(i){
 function ignite(i, chance, lightning){
   // Un rayo puede prender aunque llueva (la lluvia lo apagará enseguida); el resto de fuegos, no
   const risk = lightning && raining(i) ? (wetT[i] = -1e9, fireRisk(i)) : fireRisk(i);
-  if (fires.has(i) || fires.size > 600 || Math.random() > chance * risk) return false;
+  if (fires.has(i) || fires.size > 260 || Math.random() > chance * risk) return false;
   const bo = world.objs[i], bld = isBuilding(bo) && !bo.burnt, tree = (bo && OBJ[bo.key][1] === 'tree') || bld;
   if (bld && !wooden(bo) && Math.random() > .15) return false; // la piedra casi no prende
   fires.set(i, { t:0, life:(bld ? 10 : tree ? 7 : 3.5) + Math.random() * 3, tree, bld });
@@ -3596,9 +3596,20 @@ function ignite(i, chance, lightning){
   if (t - lastFireNotice > 20000) { lastFireNotice = t; notify('Se ha declarado un incendio', { x:(i % W) * T + 2, y:((i / W) | 0) * T + 3 }); }
   return true;
 }
+// Tras la ceniza, la tierra rebrota: la hierba vuelve y a veces sale un arbusto o un árbol joven de los que había alrededor
+function regrow(i){
+  if (world.graze) world.graze[i] = Math.min(world.graze[i], .3);
+  if (world.objs[i] || WATER[world.biome[i]] || farmMap.has(i) || pathMap.has(i) || plazaSet.has(i)) return;
+  const r0 = Math.random(), x = i % W, y = (i / W) | 0;
+  if (r0 < .22) { const table = treeTable(i), key = table && table.length ? fromTable(table, rollTier(Math.random, false)) : null; if (key && placeObject(i, key, Math.random, yearT, .5)) composeRegion(x - 7, y - 11, x + 7, y + 12); }
+  else if (r0 < .3 && (FERTILE[world.biome[i]] || 0) > .3) { if (placeObjectRaw(i, 'bush:red', Math.random)) composeRegion(x - 7, y - 11, x + 7, y + 12); }
+}
 function updateFires(dt){
   simT += dt;
-  for (const [i, b] of burnt) { const age = b + dt; if (age > YEAR * 1.5) burnt.delete(i); else burnt.set(i, age); }
+  for (const [i, b] of burnt) {
+    const age = b + dt;
+    if (age > YEAR * .7) { burnt.delete(i); burntDirty = true; regrow(i); } else burnt.set(i, age);
+  }
   for (const p of smoke) { p.life += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.r += dt * 1.6; }
   if (smoke.length) smoke = smoke.filter(p => p.life < p.max);
   if (!fires.size) return;
@@ -3613,9 +3624,9 @@ function updateFires(dt){
       if (!dx && !dy) continue;
       const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
       const down = 1 + Math.max(0, (dx * wx + dy * wy) / ws) * 1.4;
-      if (!f.wet && !f.ctrl) ignite(ny * W + nx, dt * .055 * down * (f.tree ? 1.5 : 1));
+      if (!f.wet && !f.ctrl) ignite(ny * W + nx, dt * .032 * down * (f.tree ? 1.4 : 1) * (dx && dy ? .7 : 1));
     }
-    if (Math.random() < dt * (f.tree ? 5 : 2.5)) smoke.push({ x:x * T + Math.random() * T, y:y * T - (f.tree ? 22 : 1), vx:wx * .8, vy:-6 - Math.random() * 6, r:1, life:0, max:2 + Math.random() * 2.5 });
+    if (smoke.length < 450 && Math.random() < dt * (f.tree ? 5 : 2.5) * Math.min(1, 120 / fires.size)) smoke.push({ x:x * T + Math.random() * T, y:y * T - (f.tree ? 22 : 1), vx:wx * .8, vy:-6 - Math.random() * 6, r:1, life:0, max:2 + Math.random() * 2.5 });
     // Los animales que están en la casilla huyen o se queman
     for (const a of animals) if (!a.dead && Math.floor(a.x / T) === x && Math.floor(a.y / T) === y && Math.random() < dt * .8) killAnimal(a, 'fuego');
     if (f.t >= f.life) {
@@ -3624,26 +3635,37 @@ function updateFires(dt){
         const o = world.objs[i], g = villageById(o.vid);
         if (wooden(o)) { o.burnt = true; if (g) { notify(`En ${g.name} se ha quemado ${o.key.startsWith('house') ? 'una casa' : 'el ' + bldName(o)}: habrá que tirarla abajo`, { x:x * T, y:y * T }); misfortune(g, 'incendio'); } }
         else o.dmg = (o.dmg || 0) + .4;
-        composeRegion(x - 8, y - 12, x + 8, y + 12); burnt.set(i, 0); continue;
+        composeRegion(x - 8, y - 12, x + 8, y + 12); burnt.set(i, 0); burntDirty = true; continue;
       }
       if (world.objs[i] && OBJ[world.objs[i].key][1] !== 'tree') continue;
       if (world.objs[i]) uproot(i, x, y, true);
-      burnt.set(i, 0);
+      burnt.set(i, 0); burntDirty = true;
       if (world.graze) world.graze[i] = 1; // la hierba tardará en volver
     }
   }
 }
 // Tierra calcinada: manchas negras y ceniza gris que se van aclarando hasta desaparecer
+let burntCv = null, burntDirty = true, burntT = 0;
 function drawBurnt(){
+  if (!burnt.size) return;
+  const now = performance.now();
+  if (!burntCv || burntCv.width !== PW || burntCv.height !== PH) { burntCv = document.createElement('canvas'); burntCv.width = PW; burntCv.height = PH; burntDirty = true; }
+  if (burntDirty || now - burntT > 4000) {
+    burntDirty = false; burntT = now; const bc = burntCv.getContext('2d'); bc.clearRect(0, 0, PW, PH); paintBurnt(bc);
+  }
+  const [x0, y0, x1, y1] = visibleRect();
+  vctx.drawImage(burntCv, x0, y0, x1 - x0 + 1, y1 - y0 + 1, x0, y0, x1 - x0 + 1, y1 - y0 + 1);
+}
+function paintBurnt(ctx){
   for (const [i, age] of burnt) {
-    const x = (i % W) * T, y = ((i / W) | 0) * T, k = 1 - age / (YEAR * 1.5);
+    const x = (i % W) * T, y = ((i / W) | 0) * T, k = 1 - age / (YEAR * .7);
     for (let py = 0; py < T; py++) for (let px = 0; px < T; px++) {
       const hv = h2(x + px, y + py, 91); if (hv > .3 + k * .7) continue;
-      vctx.fillStyle = hv < .1 ? `rgba(130,126,118,${.7 * k})` : `rgba(26,20,16,${.8 * k})`;
-      vctx.fillRect(x + px, y + py, 1, 1);
+      ctx.fillStyle = hv < .1 ? `rgba(130,126,118,${.7 * k})` : `rgba(26,20,16,${.8 * k})`;
+      ctx.fillRect(x + px, y + py, 1, 1);
     }
     // Bordes irregulares: algún píxel chamuscado fuera de la casilla
-    if (k > .3) { vctx.fillStyle = `rgba(40,30,20,${.45 * k})`; vctx.fillRect(x - 1 + Math.floor(h2(i, 1, 3) * (T + 2)), y - 1, 1, 1); vctx.fillRect(x + T, y + Math.floor(h2(i, 2, 3) * T), 1, 1); }
+    if (k > .3) { ctx.fillStyle = `rgba(40,30,20,${.45 * k})`; ctx.fillRect(x - 1 + Math.floor(h2(i, 1, 3) * (T + 2)), y - 1, 1, 1); ctx.fillRect(x + T, y + Math.floor(h2(i, 2, 3) * T), 1, 1); }
   }
 }
 // Silueta negra de un sprite (el árbol carbonizado)
@@ -3656,7 +3678,9 @@ function charred(os){
 }
 // Llamas de píxeles que parpadean (en los árboles, por toda la copa) y humo que se lleva el viento
 function drawSmoke(){
+  const [x0, y0, x1, y1] = visibleRect();
   for (const p of smoke) {
+    if (p.x < x0 - 10 || p.x > x1 + 10 || p.y < y0 - 10 || p.y > y1 + 10) continue;
     const a = (1 - p.life / p.max) * .45, s = Math.max(1, Math.round(p.r)), g = 70 + p.life * 25 | 0;
     vctx.fillStyle = `rgba(${g},${g},${g},${a})`;
     vctx.fillRect(Math.round(p.x - s / 2), Math.round(p.y - s / 2), s, s);
@@ -3678,9 +3702,12 @@ function redrawFront(l, r, top, baseY){
 }
 // trees = false: fuego en la hierba (se pinta bajo los árboles) · true: árboles en llamas (tapados por lo de delante)
 function drawFires(t, trees){
+  const [vx0, vy0, vx1, vy1] = visibleRect();
   for (const [i, f] of fires) {
     if (!!f.tree !== trees) continue;
-    const x = (i % W) * T, y = ((i / W) | 0) * T, p = Math.min(1, f.t * 2) * Math.min(1, (f.life - f.t) * .8);
+    const x = (i % W) * T, y = ((i / W) | 0) * T;
+    if (x < vx0 - 30 || x > vx1 + 30 || y < vy0 - 10 || y > vy1 + 60) continue;
+    const p = Math.min(1, f.t * 2) * Math.min(1, (f.life - f.t) * .8);
     // Zona que arde: la casilla, o toda la copa si es un árbol (que además se va ennegreciendo)
     let bx = x, by = y + T - 1, bw = T, bh = 1, tall = 5, n = 4;
     const o = world.objs[i];
@@ -3914,7 +3941,7 @@ function impact(m){
     const d = Math.hypot(dx, dy); if (d > blastR || d < R) continue;
     const i = y * W + x, f = 1 - (d - R) / (blastR - R);
     if (objs[i] && OBJ[objs[i].key][1] === 'tree' && Math.random() < f * .9) { fallObj(i, f > .7); objs[i] = null; }
-    if (!WATER[world.biome[i]] && world.biome[i] !== B.LAVA && Math.random() < f * f) burnt.set(i, 0); // solo se calcina la tierra
+    if (!WATER[world.biome[i]] && world.biome[i] !== B.LAVA && Math.random() < f * f) { burnt.set(i, 0); burntDirty = true; } // solo se calcina la tierra
     ignite(i, f * 1.6); // el agua no arde: ahí no prende
   }
   composeRegion(cx - B2 - 7, cy - B2 - 11, cx + B2 + 7, cy + B2 + 12);
@@ -4441,7 +4468,7 @@ function chooseJob(v, g){
   const needMeat = share < want - .1, needVeg = share > want + .1;
   add('bayas', (hungry ? 3 : .5) * (needVeg ? 2 : needMeat ? .5 : 1));
   add('pescar', (hungry ? 2.5 : .3) * (needMeat ? 2 : needVeg ? .5 : 1)); add('cazar', (hungry ? 2 : .2) * (needMeat ? 2 : needVeg ? .5 : 1));
-  if (g.port) add('barca', g.boatOut || busyWith(g, 'barca') ? 0 : (hungry || needMeat ? 3.5 : 1));
+  if (g.port && openWater(g.port.launch)) add('barca', g.boatOut || busyWith(g, 'barca') ? 0 : (hungry || needMeat ? 3.5 : 1));
   add('cercar', pop >= 4 && !g.pen && spare >= 8 && !busyWith(g, 'cercar') && houses >= 1 ? 4 : 0);
   add('capturar', g.pen && penAnimals(g).length + busyWith(g, 'capturar') < 14 && busyWith(g, 'capturar') < 3 ? (penAnimals(g).length < 4 ? 5 : 3) : 0);
   // Armas: solo saben hacer lanzas y arcos, y se ponen a ello cuando ven fieras cerca
@@ -4743,6 +4770,7 @@ function runTask(v, g, dt){
       else { v.boat = false; g.boatOut = false; v.x = t.x; v.y = t.y; v.task = { k:'volver' }; }
       return;
     }
+    if (!openWater(Math.floor(v.y / T) * W + Math.floor(v.x / T)) && !bridgeSet.has(Math.floor(v.y / T) * W + Math.floor(v.x / T))) { v.boat = false; g.boatOut = false; v.x = t.x; v.y = t.y; v.task = { k:'volver' }; return; } // el agua se ha secado o helado: la barca se queda varada
     const sp = Math.min(d, 6 * dt); v.x += (tx - v.x) / d * sp; v.y += (ty - v.y) / d * sp;
     if (Math.abs(tx - v.x) > .5) v.dir = tx < v.x ? -1 : 1; v.moving = true; v.walk += dt; return;
   }
@@ -5049,10 +5077,12 @@ function dropSpot(v, g){
 function clampStore(g){
   const cap = capOf(g); g.food = Math.min(g.food, cap); g.wood = Math.min(g.wood, cap); g.stone = Math.min(g.stone, cap); g.meat = Math.min(g.meat || 0, g.food);
 }
-const penOverlap = (g, x0, y0, x1, y1) => g.pen && !(x1 < g.pen.x0 - 1 || x0 > g.pen.x1 + 1 || y1 < g.pen.y0 - 1 || y0 > g.pen.y1 + 1);
+const penOverlap = (g, x0, y0, x1, y1) => villages.some(o => o.pen && !(x1 < o.pen.x0 - 1 || x0 > o.pen.x1 + 1 || y1 < o.pen.y0 - 1 || y0 > o.pen.y1 + 1));
 // ¿Esta casilla queda bajo el dibujo de una casa, pozo o molino de la aldea?
+let ubCache = null, ubT = -1;
 function underBuilding(g, x, y){
-  for (const h of buildingsOf(g)) {
+  if (ubT !== yearT || !ubCache) { ubT = yearT; ubCache = villages.flatMap(buildingsOf); } // los de todos los pueblos (una vez por paso)
+  for (const h of ubCache) {
     const hx = h % W, hy = (h / W) | 0; if (Math.abs(x - hx) <= 5 && y - hy >= -7 && y - hy <= 1) return true;
   }
   return false;
@@ -5088,8 +5118,8 @@ function bestSite(v, g, kind){
   return best || planSite(g, kind);
 }
 // Tamaño de cada edificio (medio ancho y alto en casillas, por encima de su base): para que no se monten
-const BUILD_DIMS = { quarry:[4, 4], altar:[1, 2], temple:[4, 7], obelisk:[1, 4], market:[4, 4], house:[4, 6], hall:[5, 7], mill:[3, 8], well:[2, 4], store:[4, 5], tower:[2, 7], quarry:[3, 3], fire:[1, 1], bank:[4, 5], wonder:[6, 10], forge:[3, 5] };
-const KIND_DIMS = { cantera:[4, 4], altar:[1, 2], templo:[4, 7], mercado:[4, 4], casa:[4, 6], ayuntamiento:[5, 7], molino:[3, 8], pozo:[2, 4], almacen:[4, 5], torre:[2, 7], cantera:[3, 3], banco:[4, 5], maravilla:[6, 10], herreria:[3, 5] };
+const BUILD_DIMS = { altar:[1, 2], temple:[4, 7], obelisk:[1, 4], market:[4, 4], house:[4, 6], hall:[5, 7], mill:[3, 8], well:[2, 4], store:[4, 5], tower:[2, 7], quarry:[4, 4], fire:[1, 1], bank:[4, 5], wonder:[6, 10], forge:[3, 5] };
+const KIND_DIMS = { altar:[1, 2], templo:[4, 7], mercado:[4, 4], casa:[4, 6], ayuntamiento:[5, 7], molino:[3, 8], pozo:[2, 4], almacen:[4, 5], torre:[2, 7], cantera:[4, 4], banco:[4, 5], maravilla:[6, 10], herreria:[3, 5] };
 const TASK_KIND = { templo:'templo', mercado:'mercado', construir:'casa', ayuntamiento:'ayuntamiento', molino:'molino', pozo:'pozo', almacen:'almacen', torre:'torre', cantera:'cantera', banco:'banco', maravilla:'maravilla', herreria:'herreria' };
 // ¿Choca con un edificio ya hecho o con uno que alguien está a punto de levantar? (skip: el propio solar)
 function buildingClash(x, y, kind, skip){
@@ -5099,6 +5129,7 @@ function buildingClash(x, y, kind, skip){
     if (b === skip) continue; const o = world.objs[b]; if (!o) continue;
     const d = BUILD_DIMS[o.key.split(':')[0]]; if (d && hit(b % W, (b / W) | 0, d)) return true;
   }
+  if (penOverlap(null, x - hw, y - hh, x + hw, y + 1)) return true; // ni encima de un cercado
   for (const v of villagers) {
     const t = v.task; if (!t || t.i == null || t.i === skip) continue;
     const k = TASK_KIND[t.k] || (t.k === 'trabajando' ? TASK_KIND[t.job] : null);
@@ -5231,7 +5262,7 @@ function drawPaths(){
   }
 }
 // ---- Puentes sobre los ríos (para no tener que nadar ni dar rodeos) y muelles para las barcas ----
-const openWater = i => WATER[world.biome[i]] && !bridgeSet.has(i);
+const openWater = i => WATER[world.biome[i]] && !bridgeSet.has(i) && !dried(i) && !frozen(i);
 // Agua que se puede cruzar con un puente: río o lago (no el mar)
 const bridgeable = i => openWater(i) && (world.biome[i] === B.RIVER || world.biome[i] === B.LAKE);
 function bridgeSite(g){
@@ -6584,11 +6615,18 @@ function makeParties(g){
     parties.push({ name, ideo, laws, col:side === 'izq' ? '#d8483a' : side === 'der' ? '#3a6ab8' : '#e8b848' });
   }
   g.parties = parties;
-  if (!g.flag) { g.flag = makeFlag(g); g.flagUrl = flagDataUrl(g.flag); notify(`${g.name} se da a sí misma una bandera`, { x:g.fx * T, y:g.fy * T }); }
-  if (!g.regime) { // la primera forma de gobierno: casi siempre una república; a veces quien manda se corona
-    g.regime = Math.random() < .25 && g.leader && !g.leader.dead ? 'monarquia' : 'republica'; g.regimeT = yearT;
-    if (g.regime === 'monarquia') notify(`${g.leader.name} se corona ${g.leader.sex === 'm' ? 'reina' : 'rey'} de ${g.name}: nace una monarquía`, { x:g.fx * T, y:g.fy * T });
+  if (!g.regime) { // la primera forma de gobierno depende de cómo les va: quien manda, cuánto temen a sus dioses, si hay peligro...
+    const L = g.leader && !g.leader.dead ? g.leader : null, devout = g.faith && ((g.devotion || 0) > 1 || (g.wrath || 0) > 2), danger = (g.danger || 0) > 0;
+    const w = { republica:3, monarquia:L ? 2.5 : 0, teocracia:devout ? 2 : .3, dictadura:L ? (danger ? 2 : .8) : 0, socialismo:1, tribu:1.2 };
+    let k = Math.random() * Object.values(w).reduce((a2, b2) => a2 + b2, 0); for (const [reg, x] of Object.entries(w)) if ((k -= x) < 0) { g.regime = reg; break; }
+    g.regime ||= 'republica'; g.regimeT = yearT;
+    if (g.regime === 'teocracia' && g.faith) { const pr = villagers.filter(u => !u.dead && u.vid === g.id && (yearT - u.born) / YEAR >= ADULT_H).sort((x, y) => pietyOf(y) - pietyOf(x))[0]; if (pr) g.leader = pr; }
+    const at = { x:g.fx * T, y:g.fy * T }, Ln = g.leader && !g.leader.dead ? g.leader.name : 'quien manda';
+    notify({ republica:`En ${g.name} deciden gobernarse votando: nace una república`, monarquia:`${Ln} se corona ${g.leader && g.leader.sex === 'm' ? 'reina' : 'rey'} de ${g.name}: nace una monarquía`,
+      teocracia:`En ${g.name} mandan los sacerdotes en nombre de ${g.faith ? g.faith.god : 'sus dioses'}: nace una teocracia`, dictadura:`${Ln} se hace con todo el poder en ${g.name}${danger ? ' ante el peligro' : ''}: nace una dictadura`,
+      socialismo:`En ${g.name} deciden repartirlo todo y votar: nace una república socialista`, tribu:`${g.name} sigue gobernándose como siempre, con un consejo de ancianos` }[g.regime], at);
   }
+  if (!g.flag) { g.flag = makeFlag(g, g.regime); g.flagUrl = flagDataUrl(g.flag); notify(`${g.name} se da a sí misma una bandera`, { x:g.fx * T, y:g.fy * T }); }
   notify(`En ${g.name} nacen los partidos: ${parties.map(p => p.name).join(', ')}`, { x:g.fx * T, y:g.fy * T });
 }
 const artP = p => /^(Unión|Liga|Alianza|Asamblea|Hermandad)/.test(p.name) ? 'la' : 'el'; // «gana la Liga…», «gana el Frente…»
