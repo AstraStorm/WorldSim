@@ -135,12 +135,12 @@ function updateClimate(dt){
     const cx = (c % SW) * SOIL_C + 4, cy = Math.floor(c / SW) * SOIL_C + 4, ti = Math.min(H - 1, cy) * W + Math.min(W - 1, cx);
     // Sin lluvia, el suelo tiende a su humedad normal, menos cuanto más calor haga por encima de lo habitual
     // en esa zona (verano, olas de calor). Un verano normal no basta: hace falta calor de más o falta de lluvia
-    const t = world.baseT[ti] + seasonVal('temp') + anomaly(cx, cy), stress = clamp((t - world.baseT[ti]) / 12, 0, 1);
-    const target = soilNorm[c] * (1 - stress * .6) * (si === 3 ? 1.05 : 1);
+    const t = world.baseT[ti] + seasonVal('temp') + anomaly(cx, cy), stress = clamp((t - world.baseT[ti] - Math.max(0, seasonVal('temp')) - 1.5) / 4.5, 0, 1); // solo el calor por encima de lo normal en la estación
+    const target = soilNorm[c] * (1 - stress * .55) * (si === 3 ? 1.05 : 1);
     soil[c] = clamp(soil[c] + soilRain[c] + (target - soil[c]) * .04 * step, 0, 1);
     soilRain[c] = 0;
     const d = clamp((soilNorm[c] * .8 - soil[c]) / (soilNorm[c] * .6), 0, 1);
-    if (d > .35 && drought[c] <= .35 && t > 15) maybeDroughtNotice(cx, cy);
+    if (d > .45 && drought[c] <= .45 && t > 15) maybeDroughtNotice(cx, cy);
     drought[c] = d;
   }
   // Capa de sequía: 1 píxel por casilla (se pinta ampliada y suavizada sobre el terreno)
@@ -152,7 +152,7 @@ function updateClimate(dt){
   droughtCv.getContext('2d').putImageData(img, 0, 0);
 }
 function maybeDroughtNotice(x, y){
-  const t = performance.now(); if (t - lastDroughtNotice < 60000) return;
+  const t = performance.now(); if (t - lastDroughtNotice < 180000) return; // un aviso cada pocos minutos como mucho
   lastDroughtNotice = t; notify('Hay sequía en una región', { x:x * T, y:y * T });
 }
 function drawDrought(){

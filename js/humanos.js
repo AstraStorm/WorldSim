@@ -831,7 +831,7 @@ function runTask(v, g, dt){
       g.trades = (g.trades || 0) + 1;
       if (g.coin) { const n = (1 + Math.floor(Math.random() * 3)) * priceOf(g); v.money = (v.money || 0) + n; floats.push({ x:v.x, y:v.y - 12, txt:`+${n} ${coinPl(g)}`, col:'#f0d060', life:0 }); }
       else { const a = BARTER[Math.floor(Math.random() * BARTER.length)], b = BARTER.filter(o => o !== a)[Math.floor(Math.random() * (BARTER.length - 1))]; floats.push({ x:v.x, y:v.y - 12, txt:`${a} ⇄ ${b}`, col:'#e8dcc0', life:0 }); }
-      if (!g.coin && g.trades >= 15) { g.coin = coinName(); notify(`En ${g.name} dejan el trueque e inventan su propia moneda: el ${g.coin}`, { x:g.fx * T, y:g.fy * T }); }
+      if (!g.coin && g.trades >= 8) { g.coin = coinName(); notify(`En ${g.name} dejan el trueque e inventan su propia moneda: el ${g.coin}`, { x:g.fx * T, y:g.fy * T }); }
     }; break;
     case 'antorcha': v.actT = 3; v.onDone = () => { if (g.wood >= 1 && tileFree(t.ti % W, (t.ti / W) | 0) && !torchesOf(g).some(tc => tc.i === t.ti)) { g.wood -= 1; torchesOf(g).push({ i:t.ti, lit:isNight() || dayT() > .42 }); } }; break;
     case 'alumbrar': v.actT = 1; v.onDone = () => {

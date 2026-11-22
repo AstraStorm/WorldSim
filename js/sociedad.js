@@ -1197,6 +1197,7 @@ function moodOf(v){
     if (ageOf(v) >= ADULT_H && (nationOf(g).parties)) { const gap = Math.abs((v.ideo || 0) - govIdeo(g)); add(gap < .3 ? 8 : -(gap - .3) * 25, gap < .3 ? 'le gusta el gobierno' : 'no le gusta el gobierno'); }
     if (g.faith && pietyOf(v) > .6) add((g.wrath || 0) > 3 ? -10 : 8, (g.wrath || 0) > 3 ? `teme la ira de ${g.faith.god}` : 'su fe le da paz');
     if (g.coin && ageOf(v) >= ADULT_H) add((v.money || 0) >= priceOf(g) * 5 ? 6 : -8, (v.money || 0) >= priceOf(g) * 5 ? 'tiene ahorros' : 'anda sin dinero');
+    if (g.coin && v.wage != null) { const c = costOfLiving(g), w = wageDay(v); add(w >= c * 1.4 ? 7 : w >= c ? 2 : -12, w >= c * 1.4 ? 'gana un buen sueldo' : w >= c ? 'el sueldo le da para vivir' : 'su sueldo no le llega'); }
     if ([...rels.values()].some(r => r.war && (r.war.att === nationOf(g).id || r.war.def === nationOf(g).id))) add(-8, 'su pueblo está en guerra');
   }
   if (v.home == null || !world.objs[v.home]) { if (ageOf(v) >= ADULT_H) add(-6, 'no tiene casa'); } else add(5, 'tiene casa');
@@ -1255,7 +1256,7 @@ function renderPersonCard(force){
     <div class="sec"><div class="kv"><span>Oficio</span><b>${a < ADULT_H ? 'Ninguno (es pequeñ' + sexW(v, 'o', 'a') + ')' : oficioTxt(v) || 'Sin oficio'}</b></div>
       <div class="kv"><span>Ahora</span><b>${esc(doingOf(v))}</b></div>
       <div class="kv"><span>Dieta</span><b>${dietName(v)}</b></div>
-      ${g && g.coin && ageOf(v) >= ADULT_H ? `<div class="kv"><span>Dinero</span><b>${v.money || 0} ${coinPl(g)} · ha ganado ${v.earned || 0} · impuestos ${Math.round(taxRateOf(g) * 100)} %</b></div>` : ''}
+      ${g && ageOf(v) >= ADULT_H ? (g.coin ? `<div class="kv"><span>Sueldo</span><b>${v.wage != null || v.dayPay ? `${wageDay(v)} ${coinPl(g)} al día <span class="muted">(vivir cuesta ${costOfLiving(g)})</span>${wageDay(v) < costOfLiving(g) ? ' · <span style="color:#f08a7a">no le llega</span>' : ''}` : '<span class="muted">aún no ha cobrado</span>'}</b></div><div class="kv"><span>Dinero</span><b>${v.money || 0} ${coinPl(g)} · ha ganado ${v.earned || 0} · impuestos ${Math.round(taxRateOf(g) * 100)} %</b></div>` : `<div class="kv"><span>Sueldo</span><b class="muted">en especie: su pueblo aún no tiene moneda</b></div>`) : ''}
       <div class="kv"><span>Equipo</span><b>${[v.weapon && (v.weapon === 'lanza' && v.ironW ? 'lanza de hierro' : v.weapon), v.shield && 'escudo', v.armor && GEAR_TXT[v.armor], v.rod && 'caña', v.mount && 'caballo', v.cart && 'carro', v.swims === false && 'no sabe nadar'].filter(Boolean).join(', ') || 'nada'}</b></div></div>
     <h4>Ánimo</h4><div class="mood"><span class="mw" style="color:${moodCol(mood.score)}">${mood.word}</span>${bar(mood.score / 100, moodCol(mood.score), 120)} <span class="muted">${mood.score}/100</span></div>
     ${mood.good.length ? `<div class="why good">+ ${mood.good.join(' · ')}</div>` : ''}${mood.bad.length ? `<div class="why bad">− ${mood.bad.join(' · ')}</div>` : ''}
@@ -2055,8 +2056,8 @@ function succession(g, people){
 }
 // ---- Descontento, manifestaciones y golpes de estado ----
 const SLOGANS = { jornada:['¡Queremos descansar!', '¡Menos horas!'], impuestos:['¡Menos impuestos!', '¡No más tributos!'], hambre:['¡Pan!', '¡Tenemos hambre!', '¡Comida para todos!'], 'inflación':['¡Precios justos!', '¡Nuestro dinero no vale nada!', '¡Salarios dignos!'],
-  'tiranía':['¡Libertad!', '¡Abajo el tirano!', '¡Fuera!'], ideas:['¡Fuera el gobierno!', '¡Otro gobierno!', '¡No nos representan!'], guerra:['¡Paz!', '¡No a la guerra!'], bancarrota:['¡Devolved nuestros ahorros!', '¡Ladrones!'] };
-const GRIEF_TXT = { jornada:'las jornadas interminables', impuestos:'los impuestos', hambre:'el hambre', 'inflación':'la subida de precios', 'tiranía':'la tiranía', ideas:'el gobierno', guerra:'la guerra', bancarrota:'la bancarrota' };
+  'tiranía':['¡Libertad!', '¡Abajo el tirano!', '¡Fuera!'], ideas:['¡Fuera el gobierno!', '¡Otro gobierno!', '¡No nos representan!'], guerra:['¡Paz!', '¡No a la guerra!'], bancarrota:['¡Devolved nuestros ahorros!', '¡Ladrones!'], salarios:['¡Sueldos dignos!', '¡No llegamos a fin de mes!', '¡Más salario!'] };
+const GRIEF_TXT = { jornada:'las jornadas interminables', impuestos:'los impuestos', hambre:'el hambre', 'inflación':'la subida de precios', 'tiranía':'la tiranía', ideas:'el gobierno', guerra:'la guerra', bancarrota:'la bancarrota', salarios:'los sueldos bajos' };
 const BUSY_POL = ['asalto', 'apagar', 'viaje', 'votar', 'golpe', 'protesta', 'reprimir', 'detenido', 'ritual'];
 function politicsTick(g, dt, people){
   if (g.coin && (g.econT = (g.econT ?? 20) - dt) <= 0) { g.econT = 20; econTick(g, people); }
@@ -2067,7 +2068,8 @@ function politicsTick(g, dt, people){
     'tiranía':tyranny(g) ? .22 + (g.repressed || 0) * .02 : regimeOf(g) === 'monarquia' ? .06 : 0,
     ideas:cap.parties ? Math.max(0, Math.abs(avg - govIdeo(g)) - .5) * 1.1 : 0,
     guerra:[...rels.values()].some(r => r.war && r.war.def === g.id && r.war.dead > 2) ? .5 : 0,
-    bancarrota:ec && yearT - (ec.bankruptT ?? -1e9) < DAY_LEN * 2 ? 1 : 0, jornada:hasLaw(g, 'jornada_larga') ? .25 : 0, impuestos:hasLaw(g, 'impuestos_altos') ? .12 : 0 };
+    bancarrota:ec && yearT - (ec.bankruptT ?? -1e9) < DAY_LEN * 2 ? 1 : 0, jornada:hasLaw(g, 'jornada_larga') ? .25 : 0, impuestos:hasLaw(g, 'impuestos_altos') ? .12 : 0, salarios:0 };
+  if (g.coin) { const ws = wageStats(g); if (ws.n >= 3 && (ws.avg < ws.cost || ws.low / ws.n > .4)) f.salarios = Math.min(.8, Math.max((1 - ws.avg / ws.cost) * 1.3, (ws.low / ws.n - .3) * 1.2)); } // no les llega el sueldo
   let up = -(.32 + (hasLaw(g, 'reparto') ? .12 : 0) + (cap.wonder != null && world.objs[cap.wonder] ? .1 : 0) + (hasLaw(g, 'censura') ? .1 : 0)), worst = null;
   for (const [k, d] of Object.entries(f)) { up += d; if (d > 0 && (!worst || d > f[worst])) worst = k; }
   g.anger = clamp((g.anger || 0) + up * dt, 0, 100); if (worst) g.grief = worst;
@@ -2135,6 +2137,7 @@ function respondProtest(g, who){
     if (g.grief === 'hambre' || g.grief === 'bancarrota') { what = 'reparten comida de los almacenes'; for (const u of who) u.food = Math.min(1, u.food + .4); g.food = Math.max(0, g.food - who.length * .5); }
     else if (g.grief === 'guerra') { what = 'prometen buscar la paz'; for (const r of rels.values()) if (r.war && (r.war.def === g.id || r.war.att === g.id) && Math.random() < .5) { const a = villageById(r.war.att), b = villageById(r.war.def); if (a && b) makePeace(a, b, r, 'tras las protestas'); } }
     else if (g.grief === 'inflación' && g.coin) { what = 'congelan los precios'; ecOf(g).infl *= .3; }
+    else if (g.grief === 'salarios' && g.coin) { g.wageUp = Math.min(2.5, (g.wageUp || 1) * 1.3); what = 'suben los sueldos un 30 %'; }
     else if (votes(g) && cap.parties && !cap.election) { what = 'convocan elecciones anticipadas'; cap.voteT = -1e9; }
     else if (reg === 'monarquia') { what = `${leaderRef(cap)} reparte grano y promete reformas`; g.food = Math.max(0, g.food - who.length * .3); }
     else what = 'escuchan sus quejas y prometen cambios';
@@ -2202,7 +2205,22 @@ function resolveCoup(g){
 }
 // ---- Dinero: cada pueblo su moneda; impuestos, gasto, banco, deuda, inflación y bancarrota ----
 // Salario por un viaje de trabajo (según lo que trae, los precios y el salario mínimo) e impuesto que se lleva el gobierno
-const wageOf = (g, n) => Math.max(1, Math.round(n / 3 * priceOf(g) * (hasLaw(g, 'salario_minimo') ? 1.5 : 1) * (regimeOf(g) === 'comunismo' ? .7 : 1)));
+const wageOf = (g, n) => Math.max(1, Math.round(n / 3 * priceOf(g) * (hasLaw(g, 'salario_minimo') ? 1.5 : 1) * (regimeOf(g) === 'comunismo' ? .7 : 1) * (g.wageUp || 1)));
+// Lo que cuesta vivir un día (comer lo de cada día y algo más) y lo que gana cada uno al día
+const costOfLiving = g => Math.max(2, Math.round(priceOf(g) * 4.5)); // comida, casa, ropa y lo demás de un día
+const UNPAID = new Set(['ocio', 'pasear', 'comer', 'beber', 'dormir', 'ver_teatro', 'ver_coliseo', 'ir_taberna', 'jugar', 'volver', 'espectador', 'votar', 'protesta', 'golpe', 'detenido', 'ritual']);
+function payWage(v, g, n){
+  if (!g || !g.coin || ageOf(v) < ADULT_H) return;
+  const pay = wageOf(g, n), d = Math.floor(yearT / DAY_LEN);
+  if (v.payDay !== d) { if (v.payDay != null) v.wage = v.wage == null ? v.dayPay || 0 : Math.round(v.wage * .5 + (v.dayPay || 0) * .5); v.payDay = d; v.dayPay = 0; }
+  v.dayPay += pay; v.money = (v.money || 0) + pay; v.earned = (v.earned || 0) + pay; v.lastPay = pay;
+}
+const wageDay = v => { const g = villageById(v.vid), w = v.wage ?? v.dayPay ?? 0; return Math.round(w * (1 - (g && g.coin ? taxRateOf(g) : 0))); }; // sueldo neto de un día (tras impuestos; el de ayer, suavizado)
+function wageStats(g){
+  const ws = villagers.filter(v => !v.dead && v.vid === g.id && ageOf(v) >= ADULT_H && v.wage != null).map(wageDay);
+  const avg = ws.length ? ws.reduce((a, b) => a + b, 0) / ws.length : 0, cost = costOfLiving(g);
+  return { avg:Math.round(avg), cost, n:ws.length, low:ws.filter(w => w < cost).length };
+}
 const taxRateOf = g => { const reg = regimeOf(g); return clamp((hasLaw(g, 'ejercito') || hasLaw(g, 'expansion') ? .12 : .07) + (reg === 'comunismo' ? .25 : reg === 'socialismo' ? .12 : 0) + (reg === 'monarquia' ? .04 : 0) + (hasLaw(g, 'impuestos_altos') ? .08 : 0) - (hasLaw(g, 'impuestos_bajos') ? .04 : 0), .02, .5); };
 const ecOf = g => g.coin ? (g.ec ||= { P:1, infl:0, treas:10, debt:0, dep:0, hist:[1] }) : null;
 const priceOf = g => g.coin ? Math.max(1, Math.round(ecOf(g).P)) : 1;
@@ -2371,7 +2389,7 @@ function econCard(g){
       ${tile('Tesoro', Math.round(ec.treas), `deuda: ${Math.round(ec.debt)}`)}${tile('Banco', hasBank(g) ? Math.round(ec.dep) : '—', hasBank(g) ? 'en ahorros de la gente' : 'aún no tienen')}</div>
     <h4>Valor del ${esc(g.coin)}</h4><svg class="spark" viewBox="0 0 160 30" preserveAspectRatio="none"><polygon points="${area}" fill="rgba(240,200,64,.15)"/><polyline fill="none" stroke="#f0c840" stroke-width="1.2" vector-effect="non-scaling-stroke" points="${line}"/></svg>
     ${ec.bankruptT != null ? `<div class="alert">Bancarrota el día ${Math.floor(ec.bankruptT / DAY_LEN) + 1}</div>` : ''}
-    <h4>Salarios e impuestos</h4><div class="sec"><div class="kv"><span>Salario por un viaje de trabajo</span><b>${wageOf(g, 6)} ${coinPl(g)}${hasLaw(g, 'salario_minimo') ? ' <span class="muted">(salario mínimo)</span>' : ''}</b></div>
+    <h4>Salarios e impuestos</h4><div class="sec">${(ws => `<div class="kv"><span>Sueldo medio al día</span><b>${ws.n ? `${ws.avg} ${coinPl(g)}` : '—'}${ws.n && ws.avg < ws.cost ? ' <span style="color:#f08a7a">(no llega para vivir)</span>' : ''}</b></div><div class="kv"><span>Coste de la vida al día</span><b>${ws.cost} ${coinPl(g)}${ws.low ? ` · <span style="color:#f08a7a">${ws.low} de ${ws.n} no llegan</span>` : ''}</b></div>${(g.wageUp || 1) > 1 ? `<div class="kv"><span>Subidas de sueldo</span><b>+${Math.round(((g.wageUp || 1) - 1) * 100)} % por las protestas</b></div>` : ''}`)(wageStats(g))}<div class="kv"><span>Salario por un viaje de trabajo</span><b>${wageOf(g, 6)} ${coinPl(g)}${hasLaw(g, 'salario_minimo') ? ' <span class="muted">(salario mínimo)</span>' : ''}</b></div>
       <div class="kv"><span>Impuestos</span><b>${Math.round(taxRateOf(g) * 100)} % de lo que tiene cada uno</b></div>
       <div class="kv"><span>Recaudado / gastado (último cobro)</span><b>${Math.round(ec.lastTax || 0)} / ${Math.round(ec.lastSpend || 0)}</b></div></div>
     <div class="sec"><div class="kv"><span>Una comida cuesta</span><b>${priceOf(g)} ${priceOf(g) > 1 ? coinPl(g) : g.coin}</b></div>
@@ -2477,7 +2495,7 @@ function deposit(v, g){
   else if (v.carry.k === 'oro') { g.gold = (g.gold || 0) + v.carry.n; if (g.coin) { const ec = ecOf(g); ec.treas += v.carry.n * 6 * ec.P; ec.infl -= .01 * v.carry.n; } } // el oro respalda la moneda
   else if (v.carry.k === 'gemas') g.gems = (g.gems || 0) + v.carry.n;
   else g.stone += v.carry.n;
-  if (g.coin) { const pay = wageOf(g, v.carry.n); v.money = (v.money || 0) + pay; v.earned = (v.earned || 0) + pay; v.lastPay = pay; } // el trabajo se paga (más cuanto más suben los precios)
+  payWage(v, g, v.carry.n); // el trabajo se paga (más cuanto más suben los precios)
   v.carry = null; clampStore(g);
 }
 // ---- Necesidades y muerte ----
@@ -2658,7 +2676,7 @@ function updateVillagers(dt){
         else { const h = homeOf(v, g), [sx, sy] = h != null ? [(h % W) * T + 2, ((h / W) | 0) * T + 3 + T] : fireSpot(v, g); v.task = { k:'dormir', x:sx, y:sy, h }; v.lastD = Infinity; }
       }
     }
-    if (v.actT > 0) { v.actT -= dt; v.walk = 0; if (v.actT <= 0) { const had = v.carry, tk0 = v.task; if (v.onDone) v.onDone(); v.onDone = null; if (v.carry && v.carry !== had) { if (v.cart) v.carry.n = Math.round(v.carry.n * 2.5); gainText(v); } if (v.task === tk0) v.task = v.carry ? { k:'volver' } : null; } continue; } // (si al acabar se ha puesto otra tarea, se respeta)
+    if (v.actT > 0) { v.actT -= dt; v.walk = 0; if (v.actT <= 0) { const had = v.carry, tk0 = v.task; if (v.onDone) v.onDone(); v.onDone = null; if (tk0 && !v.carry && !UNPAID.has(tk0.k)) payWage(v, g, 3); /* obras, oficios y servicios también se pagan */ if (v.carry && v.carry !== had) { if (v.cart) v.carry.n = Math.round(v.carry.n * 2.5); gainText(v); } if (v.task === tk0) v.task = v.carry ? { k:'volver' } : null; } continue; } // (si al acabar se ha puesto otra tarea, se respeta)
     if (v.wait > 0) { v.wait -= dt; continue; }
     if (!v.task && v.carry) v.task = { k:'volver' }; // lo que lleva encima, primero a casa
     if (!v.task) {
@@ -2767,6 +2785,8 @@ function updateVillages(dt){
       know.montar = true; notify(`En ${g.name} aprenden a montar a caballo (y a hacer carros)`, { x:g.fx * T, y:g.fy * T });
     }
     chartTick(g, dt, people);
+    // Un pueblo grande con gobierno acuña su moneda aunque apenas comercie (y desde entonces se pagan sueldos)
+    if (!g.coin && g.hall != null && people.length >= 25 && Math.random() < dt * .004) { g.coin = coinName(); notify(`En ${g.name} el gobierno acuña su propia moneda, el ${g.coin}: desde ahora el trabajo se paga con sueldo`, { x:g.fx * T, y:g.fy * T }); }
     // Un cementerio encima de una plaza sagrada (partidas de antes): se traslada (se vuelve a hacer en otro sitio)
     const cm = g.cemetery; if (cm && villages.some(o => o.holy && !(cm.x0 + cm.w - 1 < o.holy.x0 || cm.x0 > o.holy.x1 || cm.y0 + cm.h - 1 < o.holy.y0 || cm.y0 > o.holy.y1))) { g.cemetery = null; notify(`En ${g.name} trasladan el cementerio fuera de la plaza sagrada`, { x:(cm.x0 + cm.w / 2) * T, y:(cm.y0 + cm.h / 2) * T }); }
     for (const w of wellsOf(g)) w.q = Math.min(1, w.q + (raining(w.i) ? .04 : .006) * dt); // con la lluvia se llena; sin ella, poco a poco, del agua de debajo
