@@ -52,13 +52,49 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .season .sbar{width:60px;height:4px;background:var(--line);border-radius:2px;overflow:hidden}
 .season .sbar span{display:block;height:100%;width:0;background:var(--accent)}
 .follow{top:46px !important}
-.vcard{position:absolute;top:52px;right:10px;z-index:5;width:min(320px,calc(100% - 20px));max-height:calc(100% - 70px);overflow:auto;background:rgba(17,21,26,.95);border:1px solid var(--line);border-radius:6px;padding:12px 14px;font-size:13px;line-height:1.45;color:var(--fg);box-sizing:border-box}
-.vcard h3{margin:0 0 6px;font-family:var(--f-display);font-size:17px;display:flex;align-items:center;gap:8px}
-.vcard h3 img{image-rendering:pixelated;border:1px solid rgba(0,0,0,.5)}
-.vcard .x{margin-left:auto;background:none;border:0;color:var(--muted);font-size:18px;cursor:pointer;line-height:1}
-.vcard h4{margin:10px 0 3px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-.vcard .chips{display:flex;flex-wrap:wrap;gap:4px}.vcard .chips span{background:rgba(255,255,255,.07);border:1px solid var(--line);border-radius:3px;padding:1px 6px;font-size:12px}
-.vcard ul{margin:0;padding-left:16px}.vcard li{margin:1px 0}.vcard .d{color:var(--muted);font-variant-numeric:tabular-nums}
+.vcard,.pcard{position:absolute;z-index:5;max-height:calc(100% - 70px);overflow:hidden;display:flex;flex-direction:column;background:linear-gradient(180deg,rgba(26,32,39,.97),rgba(15,19,24,.97));border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,.45);font-size:13px;line-height:1.45;color:var(--fg);box-sizing:border-box}
+.vcard{top:52px;right:10px;width:min(370px,calc(100% - 20px))}
+.pcard{top:84px;left:10px;width:min(310px,calc(100% - 20px));padding:12px 14px;overflow:auto}
+.vcard h3,.pcard h3{margin:0;font-family:var(--f-display);font-size:19px;line-height:1.15}
+.vcard .x,.pcard .x{margin-left:auto;align-self:flex-start;background:none;border:0;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;padding:0 2px}
+.vcard .x:hover,.pcard .x:hover{color:var(--fg)}
+.vcard h4,.pcard h4{margin:12px 0 5px;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:6px}
+.vcard h4::after,.pcard h4::after{content:"";flex:1;height:1px;background:var(--line)}
+.vh{display:flex;gap:10px;align-items:center;padding:12px 14px 8px}
+.vh .flag{width:45px;height:30px;image-rendering:pixelated;border:1px solid rgba(0,0,0,.6);box-shadow:0 1px 3px rgba(0,0,0,.4);flex:none}
+.vh .flag.none{display:inline-block;background:repeating-linear-gradient(45deg,#2c3640 0 4px,#232b33 4px 8px)}
+.pills{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}.pills span{font-size:11px;padding:1px 7px;border-radius:10px;background:rgba(255,255,255,.07);border:1px solid var(--line);color:var(--muted)}
+.pills .ally{color:#8ac0f0;border-color:#3a6ab8}.pills .coin{color:#f0d060;border-color:#8a6a18}
+.tabs{display:flex;gap:2px;padding:0 10px;border-bottom:1px solid var(--line)}
+.tabs button{font:inherit;font-size:12px;color:var(--muted);background:none;border:0;border-bottom:2px solid transparent;padding:6px 8px 5px;cursor:pointer}
+.tabs button:hover{color:var(--fg)}.tabs button.on{color:var(--fg);border-bottom-color:var(--accent)}
+.cbody{padding:4px 14px 14px;overflow:auto;min-height:0}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.tile{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:6px;padding:6px 8px;display:flex;flex-direction:column}
+.tile span{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}.tile b{font-family:var(--f-display);font-size:20px;font-weight:600;line-height:1.2}.tile em{font-style:normal;font-size:11.5px;color:var(--muted)}
+.bar{display:inline-block;height:7px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;vertical-align:middle}.bar i{display:block;height:100%;border-radius:4px}
+.needs,.hbars{display:grid;grid-template-columns:auto 1fr auto;gap:4px 8px;align-items:center}.needs>span:nth-child(3n),.hbars>span:nth-child(3n){color:var(--muted);font-variant-numeric:tabular-nums;font-size:12px;text-align:right}
+.needs .bar,.hbars .bar{width:100% !important}
+.chips{display:flex;flex-wrap:wrap;gap:4px}.chips span{background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:4px;padding:1px 7px;font-size:12px}
+.chips.rel span{display:inline-flex;align-items:center;gap:4px;border-width:1px 1px 1px 3px}.chips.rel img{width:15px;height:10px;image-rendering:pixelated}
+.alert{margin-top:6px;padding:4px 8px;border-radius:4px;background:rgba(216,72,58,.15);border:1px solid rgba(216,72,58,.5);color:#f0a090;font-size:12px}
+.hist{display:flex;align-items:flex-end;gap:4px;height:40px}.hist i{flex:1;border-radius:3px 3px 0 0}.ideo-l{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+.log{list-style:none;margin:6px 0 0;padding:0}.log li{position:relative;padding:3px 0 3px 14px;border-bottom:1px solid rgba(255,255,255,.04)}.log li::before{content:"";position:absolute;left:2px;top:9px;width:6px;height:6px;border-radius:50%;background:#7a868e}
+.log li.war::before{background:#d8483a}.log li.pol::before{background:#5a8ad8}.log li.eco::before{background:#e8c050}.log li.rel::before{background:#b07ad8}.log li.death::before{background:#e8e0d0}
+.log .d{color:var(--muted);font-variant-numeric:tabular-nums;margin-right:6px;font-size:11.5px}
+.muted{color:var(--muted)}.gold{color:#f0c840}
+.spark{width:100%;height:64px;display:block;background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:6px}
+.ph{display:flex;gap:10px;align-items:center}.ph .pp{width:auto;height:66px;image-rendering:pixelated;background:radial-gradient(circle at 50% 60%,rgba(255,255,255,.1),transparent 70%);border-radius:6px;padding:2px 6px}
+.ph .fl{width:18px;height:12px;image-rendering:pixelated;vertical-align:-1px;margin-right:4px}
+.lifebar{margin:6px 0 2px}.lifebar .bar{width:100% !important;height:4px}
+.sec{display:grid;gap:2px;margin-top:6px}.kv{display:flex;justify-content:space-between;gap:10px}.kv span{color:var(--muted)}.kv b{font-weight:600;text-align:right}
+.mood{display:flex;align-items:center;gap:8px}.mood .mw{font-family:var(--f-display);font-size:17px;min-width:84px}
+.why{font-size:12px;margin-top:3px}.why.good{color:#a8d088}.why.bad{color:#f0a090}
+.ideo{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-top:4px}.ideo .track{flex:1;height:6px;border-radius:3px;background:linear-gradient(90deg,#d8483a,#c8b890,#3a6ab8);position:relative}.ideo .track i{position:absolute;top:-3px;width:4px;height:12px;margin-left:-2px;background:#fff;border-radius:2px;box-shadow:0 0 0 1px #000}
+.tree{display:flex;flex-direction:column;gap:4px}.famrow{display:flex;flex-wrap:wrap;gap:4px;justify-content:center}.famlbl{font-size:11px;color:var(--muted);text-align:center;margin-top:2px}
+.fam{font:inherit;display:flex;flex-direction:column;align-items:center;min-width:62px;max-width:72px;padding:3px 4px;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:6px;color:var(--fg);cursor:pointer}
+.fam:hover:not([disabled]){border-color:var(--accent)}.fam.me{border-color:var(--accent);background:rgba(233,185,73,.12)}.fam.dead{opacity:.5;cursor:default}.fam.none{color:var(--muted);justify-content:center;min-height:52px}
+.fam img{height:28px;image-rendering:pixelated}.fam .fn{font-size:11.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.fam .fr{font-size:10.5px;color:var(--muted)}
 .notice{position:absolute;top:52px;left:50%;transform:translateX(-50%);max-width:calc(100% - 20px);z-index:4;display:flex;align-items:center;gap:10px;background:rgba(17,21,26,.92);border:1px solid #e8743a;border-radius:6px;padding:5px 6px 5px 12px;font-size:13px;color:#ffb07a;font-weight:700}
 .notice button{font-size:12px;padding:3px 10px}
 .loading{position:absolute;inset:0;z-index:5;display:grid;place-items:center;background:rgba(10,14,20,.82);transition:opacity .3s}
@@ -154,6 +190,7 @@ canvas.ic{width:28px;height:28px;flex:none;image-rendering:pixelated;background:
     <button class="season" id="season" title="Pasar a la siguiente estación"><span class="sdot" id="seasonDot"></span><span id="seasonTxt"></span><span class="sbar"><span id="seasonBar"></span></span><span class="snext">»</span></button>
     <div class="speed" id="speed" role="group" aria-label="Velocidad del juego"><button data-s="0" title="Pausa">❚❚</button><button data-s="1" class="on" title="Velocidad normal">1×</button><button data-s="2">2×</button><button data-s="3">3×</button><button data-s="4">4×</button><button data-s="5">5×</button></div>
     <div class="vcard" id="vcard" hidden></div>
+    <div class="pcard" id="pcard" hidden></div>
     <div class="notice" id="notice" role="status" hidden><span id="noticeTxt"></span><button id="noticeGo">Ver</button></div>
     <div class="spawn" id="spawnMenu" role="toolbar" aria-label="Crear vida">
       <span class="ttl">Crear vida</span>
@@ -4521,6 +4558,7 @@ function runTask(v, g, dt){
   if ((t.k === 'ritual' || t.k === 'votar' || t.k === 'golpe' || t.k === 'detenido') && yearT > t.until) { v.task = null; return; }
   if (t.k === 'protesta') { if (yearT > t.until) { v.task = null; return; } const q = t.pts[t.idx % t.pts.length]; if (vGo(v, q[0], q[1], dt)) t.idx++; return; } // dando vueltas a la plaza con el cartel
   if (t.k === 'reprimir') { runRepress(v, g, t, dt); return; }
+  if (t.k === 'guardia') { if (yearT > t.until) { v.task = null; v.ambush = false; return; } if (vGo(v, t.x, t.y, dt, true)) v.ambush = !!t.hide; return; } // en su puesto, esperando
   if (t.k === 'sacrificio' && t.phase !== 'altar') {
     const a = t.a; if (!a || a.dead || a.dom !== g.id) { v.task = null; return; }
     if (t.phase === 'ir') {
@@ -5692,26 +5730,159 @@ function villageAt(sx, sy){
   let best = null, bd = 14; for (const g of villages) { const d = Math.hypot(g.fx - tx, g.fy - ty); if (d < bd && popOf(g)) { bd = d; best = g; } }
   return best;
 }
+// ---- Retratos, ánimo y familia de cada persona ----
+const portraitCache = new WeakMap();
+function portraitUrl(v, px = 3){
+  const s = personSprite(v, 0, false); let m = portraitCache.get(s); if (!m) portraitCache.set(s, m = {});
+  if (m[px]) return m[px];
+  const c = document.createElement('canvas'); c.width = s.width * px; c.height = s.height * px; const x = c.getContext('2d'); x.imageSmoothingEnabled = false; x.drawImage(s, 0, 0, c.width, c.height);
+  return m[px] = c.toDataURL();
+}
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const ageOf = v => (yearT - v.born) / YEAR;
+const stageOf = v => { const a = ageOf(v); return a < ADULT_H ? (v.sex === 'm' ? 'niña' : 'niño') : a > v.life * .8 ? (v.sex === 'm' ? 'anciana' : 'anciano') : (v.sex === 'm' ? 'adulta' : 'adulto'); };
+const pietyOf = v => v.piety ??= clamp((v.parents ? ((v.parents[0].piety ?? .5) + (v.parents[1].piety ?? .5)) / 2 : .5) + (Math.random() - .5), 0, 1);
+const oficioTxt = v => !v.oficio ? '' : v.oficio + (v.sex === 'm' && /or$/.test(v.oficio) ? 'a' : '');
+function doingOf(v){ const s0 = villagerInfo(v), m = s0.match(/años · ([^·]+) ·/); return m ? m[1].trim() : ''; }
+function partyOf(v){ const n = nationOf(villageById(v.vid) || {}); if (!n || !n.parties) return null; let best = null, bd = Infinity; for (const p of n.parties) { const d = Math.abs((v.ideo || 0) - p.ideo); if (d < bd) { bd = d; best = p; } } return best; }
+// Ánimo: lo que le pasa a esa persona (hambre, sed, salud, luto, dinero, hogar) y a su pueblo (descontento, fe, gobierno)
+function moodOf(v){
+  const g = villageById(v.vid), f = [];
+  const add = (d, why) => { if (Math.abs(d) >= 3) f.push([d, why]); };
+  add((Math.min(v.food, .7) - .45) * 60, v.food < .3 ? 'tiene hambre' : v.food < .45 ? 'tiene algo de hambre' : 'come bien');
+  add((Math.min(v.water, .7) - .45) * 60, v.water < .3 ? 'tiene sed' : v.water < .45 ? 'tiene algo de sed' : 'bebe bien');
+  if ((v.hp ?? 1) < .9) add(((v.hp ?? 1) - 1) * 50, 'está herido');
+  if (v.mourn && yearT - v.mourn.t < DAY_LEN * 2) add(-25, `está de luto por ${v.mourn.who}`);
+  if (g) {
+    if ((g.anger || 0) > 20) add(-(g.anger || 0) * .3, `le preocupa ${GRIEF_TXT[g.grief] || 'cómo van las cosas'}`);
+    if (ageOf(v) >= ADULT_H && (nationOf(g).parties)) { const gap = Math.abs((v.ideo || 0) - govIdeo(g)); add(gap < .3 ? 8 : -(gap - .3) * 25, gap < .3 ? 'le gusta el gobierno' : 'no le gusta el gobierno'); }
+    if (g.faith && pietyOf(v) > .6) add((g.wrath || 0) > 3 ? -10 : 8, (g.wrath || 0) > 3 ? `teme la ira de ${g.faith.god}` : 'su fe le da paz');
+    if (g.coin && ageOf(v) >= ADULT_H) add((v.money || 0) >= priceOf(g) * 5 ? 6 : -8, (v.money || 0) >= priceOf(g) * 5 ? 'tiene ahorros' : 'anda sin dinero');
+    if ([...rels.values()].some(r => r.war && (r.war.att === nationOf(g).id || r.war.def === nationOf(g).id))) add(-8, 'su pueblo está en guerra');
+  }
+  if (v.home == null || !world.objs[v.home]) { if (ageOf(v) >= ADULT_H) add(-6, 'no tiene casa'); } else add(5, 'tiene casa');
+  if (v.task && v.task.k === 'detenido') add(-30, 'está detenido');
+  if (v.task && v.task.k === 'protesta') add(-8, 'está protestando');
+  const kids = (v.kids || []).filter(k => !k.dead).length; if (kids) add(6, `tiene ${kids} hij${kids > 1 ? 'os' : 'o'}`);
+  const score = clamp(Math.round(55 + f.reduce((a, [d]) => a + d, 0)), 0, 100);
+  const word = score > 78 ? 'Feliz' : score > 60 ? 'Contento' : score > 45 ? 'Tranquilo' : score > 30 ? 'Preocupado' : score > 15 ? 'Triste' : 'Desesperado';
+  f.sort((a, b) => Math.abs(b[0]) - Math.abs(a[0]));
+  return { score, word, good:f.filter(x => x[0] > 0).slice(0, 3).map(x => x[1]), bad:f.filter(x => x[0] < 0).slice(0, 3).map(x => x[1]) };
+}
+const moodCol = s => s > 60 ? '#7ab04a' : s > 40 ? '#d8b848' : s > 25 ? '#e08a3a' : '#d8483a';
+const bar = (k, col, w = 100) => `<span class="bar" style="width:${w}px"><i style="width:${Math.round(clamp(k, 0, 1) * 100)}%;background:${col}"></i></span>`;
+// Referencias para poder pinchar en un pariente y seguirle
+let uidSeq = 0;
+const refOf = v => v.uid ??= ++uidSeq;
+function famNode(v, rel, me){
+  if (!v) return `<div class="fam none"><span class="fr">${rel}</span>—</div>`;
+  const a = Math.floor(ageOf(v));
+  return `<button class="fam${v.dead ? ' dead' : ''}${me ? ' me' : ''}" ${v.dead ? 'disabled' : `data-pid="${refOf(v)}"`} title="${esc(v.name)}${v.dead ? ` (murió: ${esc(v.dead)})` : ''}">
+    <img src="${portraitUrl(v, 2)}" alt=""><span class="fn">${esc(v.name)}${v.dead ? ' †' : ''}</span><span class="fr">${rel}${v.dead ? '' : ` · ${a}`}</span></button>`;
+}
+const sexW = (v, m, f) => v.sex === 'm' ? f : m;
+function familyTree(v){
+  const par = v.parents || [], gp = k => (par[k] && par[k].parents) || [];
+  const kids = (v.kids || []), partner = (v.partners || []).slice(-1)[0];
+  const sibs = par.length ? villagers.filter(u => u !== v && !u.dead && u.parents && u.parents[0] === par[0] && u.parents[1] === par[1]) : [];
+  const row = (arr) => `<div class="famrow">${arr.join('')}</div>`;
+  let h = '';
+  if (gp(0).length || gp(1).length) h += row([famNode(gp(0)[1], 'abuelo'), famNode(gp(0)[0], 'abuela'), famNode(gp(1)[1], 'abuelo'), famNode(gp(1)[0], 'abuela')]);
+  if (par.length) h += row([famNode(par[1], 'padre'), famNode(par[0], 'madre')]);
+  h += row([famNode(v, sexW(v, 'él', 'ella'), true), ...(partner ? [famNode(partner, 'pareja')] : [])]);
+  if (sibs.length) h += `<div class="famlbl">Hermanos</div>` + row(sibs.slice(0, 6).map(u => famNode(u, sexW(u, 'hermano', 'hermana'))));
+  if (kids.length) h += `<div class="famlbl">Hijos</div>` + row(kids.slice(0, 8).map(u => famNode(u, sexW(u, 'hijo', 'hija'))));
+  if (!par.length && !kids.length && !partner) h += `<div class="muted">De los primeros pobladores: no se sabe de dónde viene${ageOf(v) >= ADULT_H ? ' y aún no tiene hijos' : ''}.</div>`;
+  return h;
+}
+function renderPersonCard(){
+  const el = $('pcard'), v = follow;
+  if (!v || v.born === undefined) { el.hidden = true; return; }
+  el.hidden = false;
+  const g = villageById(v.vid), n = g && nationOf(g), a = ageOf(v), mood = moodOf(v), p = partyOf(v), reg = g ? regimeOf(g) : null;
+  const life = clamp(a / v.life, 0, 1), money = g && g.coin ? `${v.money || 0} ${coinPl(g)}` : '—';
+  const belief = !g || !g.faith ? 'En su pueblo aún no hay religión' : pietyOf(v) > .75 ? `Muy devot${sexW(v, 'o', 'a')} de ${esc(g.faith.name)}: venera a ${esc(godTxt(g.faith))}` : pietyOf(v) > .3 ? `Creyente de ${esc(g.faith.name)} (${esc(godTxt(g.faith))})` : `No es creyente, aunque en su pueblo veneran a ${esc(g.faith.god)}`;
+  const vote = a < ADULT_H ? 'Aún no vota' : !p ? 'En su pueblo no hay partidos' : reg === 'republica' ? `Vota a ${artP(p)} <b style="color:${p.col}">${esc(p.name)}</b>` : `Simpatiza con ${artP(p)} <b style="color:${p.col}">${esc(p.name)}</b> (no hay elecciones: ${REGIMES[reg].toLowerCase()})`;
+  const ideoPos = ((v.ideo || 0) + 1) / 2 * 100;
+  el.innerHTML = `<div class="ph"><img class="pp" src="${portraitUrl(v, 4)}" alt=""><div><h3>${esc(v.name)}</h3>
+      <div class="muted">${v.sex === 'h' ? 'Hombre' : 'Mujer'} · ${Math.floor(a)} año${Math.floor(a) === 1 ? '' : 's'} (${stageOf(v)})</div>
+      <div>${g && n.flagUrl ? `<img class="fl" src="${n.flagUrl}" alt="">` : ''}${g ? esc(g.name) : 'Sin pueblo'}${g && g.leader === v ? ` · <b class="gold">${leaderTitle(g)}</b>` : ''}</div></div>
+      <button class="x" aria-label="Soltar">×</button></div>
+    <div class="lifebar" title="Vida: ${Math.round(life * 100)} %">${bar(life, life > .8 ? '#b89a6a' : '#6a9ac8', 270)}</div>
+    <div class="sec"><div class="kv"><span>Oficio</span><b>${a < ADULT_H ? 'Ninguno (es pequeñ' + sexW(v, 'o', 'a') + ')' : oficioTxt(v) || 'Sin oficio'}</b></div>
+      <div class="kv"><span>Ahora</span><b>${esc(doingOf(v))}</b></div>
+      <div class="kv"><span>Dieta</span><b>${dietName(v)}</b></div>
+      <div class="kv"><span>Equipo</span><b>${[v.weapon && (v.weapon === 'lanza' ? 'lanza' : 'arco'), v.rod && 'caña', v.mount && 'caballo', v.cart && 'carro', v.swims === false && 'no sabe nadar'].filter(Boolean).join(', ') || 'nada'}</b></div></div>
+    <h4>Ánimo</h4><div class="mood"><span class="mw" style="color:${moodCol(mood.score)}">${mood.word}</span>${bar(mood.score / 100, moodCol(mood.score), 120)} <span class="muted">${mood.score}/100</span></div>
+    ${mood.good.length ? `<div class="why good">+ ${mood.good.join(' · ')}</div>` : ''}${mood.bad.length ? `<div class="why bad">− ${mood.bad.join(' · ')}</div>` : ''}
+    <h4>Necesidades</h4><div class="needs">
+      <span>Comida</span>${bar(v.food, v.food < .3 ? '#d8483a' : '#7ab04a')}<span>${Math.round(v.food * 100)} %</span>
+      <span>Agua</span>${bar(v.water, v.water < .3 ? '#d8483a' : '#5a9ad8')}<span>${Math.round(v.water * 100)} %</span>
+      <span>Salud</span>${bar(v.hp ?? 1, (v.hp ?? 1) < .5 ? '#d8483a' : '#d86a8a')}<span>${Math.round((v.hp ?? 1) * 100)} %</span>
+      <span>Dinero</span>${bar(g && g.coin ? (v.money || 0) / (priceOf(g) * 15) : 0, '#e8c050')}<span>${money}</span>
+      <span>Hogar</span>${bar(v.home != null && world.objs[v.home] ? 1 : 0, '#b88a5a')}<span>${v.home != null && world.objs[v.home] ? 'tiene casa' : 'sin casa'}</span></div>
+    <h4>Política</h4><div>${vote}</div>
+    <div class="ideo"><span>izquierda</span><span class="track"><i style="left:${ideoPos}%"></i></span><span>derecha</span></div>
+    <h4>Creencias</h4><div>${belief}</div>
+    <h4>Familia</h4><div class="tree">${familyTree(v)}</div>`;
+}
+// ---- Ficha del pueblo, por pestañas ----
+let cardTab = 'resumen';
+const CARD_TABS = [['resumen', 'Resumen'], ['gente', 'Gente'], ['economia', 'Economía'], ['politica', 'Política'], ['historia', 'Historia']];
+function logKind(t){ return /guerra|ataca|saque|conquist|muerto en|Emboscada|rechaz|asalto/.test(t) ? 'war' : /elecciones|golpe|Golpe|revoluc|Manifest|partido|corona|régimen|independiza|rey|reina/.test(t) ? 'pol' : /moneda|banco|precios|Bancarrota|inflación|Flujo|presta|mercado|caravana/.test(t) ? 'eco' : /dios|diosa|ritual|templo|venerar|sacrific|ofrenda|fe /.test(t) ? 'rel' : /Murió|muere|ahogado/.test(t) ? 'death' : 'misc'; }
+function tile(label, val, sub){ return `<div class="tile"><span>${label}</span><b>${val}</b>${sub ? `<em>${sub}</em>` : ''}</div>`; }
 function renderVillageCard(){
   const el = $('vcard'), g = villageById(cardVid);
   if (!g || !popOf(g)) { el.hidden = true; cardVid = 0; return; }
-  const ps = villagers.filter(v => !v.dead && v.vid === g.id), kids = ps.filter(v => (yearT - v.born) / YEAR < ADULT_H).length;
-  const deaths = Object.entries(g.deaths || {}).sort((a, b) => b[1] - a[1]).map(([c, n]) => `${n} por ${c}`);
-  const log = (g.log || []).slice(-14).reverse().map(e => `<li><span class="d">día ${e.d}</span> · ${e.txt.replace(`En ${g.name} `, '').replace(`${g.name} `, '')}</li>`).join('');
-  el.innerHTML = `<h3>${nationOf(g).flagUrl ? `<img src="${nationOf(g).flagUrl}" width="30" height="20" alt="">` : ''}${g.name}<button class="x" aria-label="Cerrar">×</button></h3>
-    <div>Fundada el día ${Math.floor((g.born || 0) / DAY_LEN) + 1} · ${ps.length} habitantes (${kids} niños) · ${housesOf(g).length} casas</div>
-    <div>Al mando: <b>${g.leader && !g.leader.dead ? g.leader.name : 'nadie'}</b>${g.leader && !g.leader.dead ? ` (${leaderTitle(g)})` : ''}${g.leader && !g.leader.dead && g.leader.oficio ? ` (${g.leader.oficio})` : ''}</div>
-    ${g.faith ? `<h4>Religión</h4><div>${g.faith.name}: veneran a ${godTxt(g.faith)}${g.faith.shape ? `; rezan juntos formando ${shapeTxt(g.faith.shape)}${g.faith.rite ? `; sus ofrendas y sacrificios, ${RITE_TXT[g.faith.rite]}` : ''}` : ''}${(g.faith.pantheon || []).length ? `; también a ${g.faith.pantheon.map(godTxt).join('; ')} (politeístas)` : ''}${(g.wrath || 0) > .5 ? `. Temen su ira` : ''}${g.devotion > 3 ? '. Muy devotos' : ''}</div>` : ''}
-    <h4>Economía</h4><div>${econCard(g)}</div>
-    <h4>Nación y política</h4><div>${nationOf(g) !== g ? `Forma parte de la nación de <b>${nationOf(g).name}</b> · descontento ${Math.round(g.unrest || 0)} %` : villages.some(o => o !== g && popOf(o) && o.nation === g.id) ? `Capital de: ${villages.filter(o => o !== g && popOf(o) && o.nation === g.id).map(o => o.name).join(', ')}` : 'Nación independiente'}
-      ${nationOf(g).parties ? `<br>${regimeOf(g) === 'republica' ? 'Gobierna' : 'Partido en el poder'}: <b>${nationOf(g).ruling != null ? `${nationOf(g).parties[nationOf(g).ruling].name} (${sideTxt(nationOf(g).parties[nationOf(g).ruling])})` : 'nadie aún'}</b>${lawsOf(g).length ? ` · leyes: ${lawsOf(g).map(l => LAW_TXT[l]).join(', ')}` : ''}<br>Partidos: ${nationOf(g).parties.map(q => `${q.name} (${sideTxt(q)})`).join(' · ')}${nationOf(g).lastVote ? `<br>Últimas elecciones: ${nationOf(g).lastVote}` : ''}` : '<br>Aún no tienen partidos'}</div>
-    <h4>Gobierno</h4><div>${govCard(g)}</div>${allyCard(g)}
-    <h4>Relaciones</h4><div>${villages.filter(o => o !== g && popOf(o) && rels.get(relKey(g, o)) && rels.get(relKey(g, o)).known).map(o => { const r = rels.get(relKey(g, o)); return `${o.flagUrl ? `<img src="${o.flagUrl}" width="15" height="10" alt="" style="image-rendering:pixelated;vertical-align:-1px"> ` : ''}${o.name}: <b>${relWord(r)}</b>${(r.war || r.v <= -15) && r.reason ? ` (${REASON_TXT[r.reason]})` : ''}`; }).join('<br>') || 'Aún no conocen a nadie'}</div>
-    <h4>Tecnologías</h4><div class="chips">${techsOf(g).map(t => `<span>${t}</span>`).join('')}</div>
-    <h4>Muertes</h4><div>${deaths.length ? deaths.join(' · ') : 'Ninguna todavía'}</div>
-    <h4>Acontecimientos</h4><ul>${log || '<li>Nada destacable aún</li>'}</ul>`;
-  el.querySelector('.x').onclick = () => { cardVid = 0; el.hidden = true; };
   el.hidden = false;
+  const n = nationOf(g), ps = villagers.filter(v => !v.dead && v.vid === g.id), kids = ps.filter(v => ageOf(v) < ADULT_H).length, old = ps.filter(v => ageOf(v) > v.life * .8).length;
+  const moods = ps.map(v => moodOf(v).score), avgMood = moods.length ? Math.round(moods.reduce((a, b) => a + b, 0) / moods.length) : 50;
+  const reg = regimeOf(g), al = allianceOf(g), cap = capOf(g), anger = Math.round(g.anger || 0);
+  const provinces = villages.filter(o => o !== g && popOf(o) && o.nation === g.id);
+  const status = n !== g ? `Provincia de ${esc(n.name)}` : provinces.length ? `Capital de ${provinces.length} pueblo${provinces.length > 1 ? 's' : ''}` : 'Nación independiente';
+  const wars = villages.filter(o => o !== g && popOf(o) && rels.get(relKey(g, o)) && rels.get(relKey(g, o)).war);
+  let body = '';
+  if (cardTab === 'resumen') {
+    body = `<div class="tiles">${tile('Habitantes', ps.length, `${kids} niños · ${old} ancianos`)}${tile('Casas', housesOf(g).length, `${buildingsOf(g).filter(b => world.objs[b]).length} edificios`)}${tile('Ánimo', `<span style="color:${moodCol(avgMood)}">${avgMood}</span>`, avgMood > 60 ? 'contentos' : avgMood > 40 ? 'tranquilos' : 'descontentos')}${tile('Fundada', `día ${Math.floor((g.born || 0) / DAY_LEN) + 1}`, g.leader && !g.leader.dead ? `${leaderTitle(g)}: ${esc(g.leader.name)}` : 'sin líder')}</div>
+      <h4>Almacén</h4><div class="needs">
+        <span>Comida</span>${bar(g.food / cap, '#7ab04a', 150)}<span>${Math.floor(g.food)}</span>
+        <span>Madera</span>${bar(g.wood / cap, '#b8864e', 150)}<span>${g.wood}</span>
+        <span>Piedra</span>${bar(g.stone / cap, '#a8a49c', 150)}<span>${g.stone}</span></div>
+      <h4>Estado</h4><div class="needs"><span>Descontento</span>${bar(anger / 100, anger > 60 ? '#d8483a' : anger > 35 ? '#e8a838' : '#7ab04a', 150)}<span>${anger} %</span></div>
+      ${g.protest ? '<div class="alert">Manifestación en curso</div>' : ''}${g.coup ? '<div class="alert">Golpe de estado en curso</div>' : ''}${wars.length ? `<div class="alert">En guerra con ${wars.map(o => esc(o.name)).join(', ')}</div>` : ''}
+      ${g.faith ? `<h4>Religión</h4><div>${esc(g.faith.name)}: veneran a ${esc(godTxt(g.faith))}${(g.faith.pantheon || []).length ? ` y ${g.faith.pantheon.length} dios${g.faith.pantheon.length > 1 ? 'es' : ''} más` : ''}</div>` : ''}
+      <h4>Tecnologías</h4><div class="chips">${techsOf(g).map(t => `<span>${t}</span>`).join('')}</div>`;
+  } else if (cardTab === 'gente') {
+    const adults = ps.filter(v => ageOf(v) >= ADULT_H), of = new Map(); for (const v of adults) { const k = v.oficio || 'sin oficio'; of.set(k, (of.get(k) || 0) + 1); }
+    const ofs = [...of].sort((a, b) => b[1] - a[1]), mx = Math.max(1, ...ofs.map(x => x[1]));
+    const bins = [0, 0, 0, 0, 0]; for (const v of adults) bins[clamp(Math.floor(((v.ideo || 0) + 1) / 2 * 5), 0, 4)]++; const bm = Math.max(1, ...bins);
+    const believers = g.faith ? ps.filter(v => pietyOf(v) > .3).length : 0;
+    const notable = [...ps].sort((a, b) => (b === g.leader) - (a === g.leader) || a.born - b.born).slice(0, 6);
+    body = `<h4>Oficios</h4><div class="hbars">${ofs.map(([k, c]) => `<span>${k}</span>${bar(c / mx, '#6a9ac8', 140)}<span>${c}</span>`).join('')}</div>
+      <h4>Ideas políticas</h4><div class="hist">${bins.map((c, k) => `<i style="height:${Math.round(c / bm * 36) + 2}px;background:${['#d8483a', '#e08a6a', '#c8b890', '#7a9ad8', '#3a6ab8'][k]}" title="${c}"></i>`).join('')}</div><div class="ideo-l"><span>izquierda</span><span>centro</span><span>derecha</span></div>
+      <h4>Creencias</h4><div>${g.faith ? `${believers} de ${ps.length} son creyentes (${Math.round(believers / Math.max(1, ps.length) * 100)} %)` : 'Aún no tienen religión'}</div>
+      <h4>Muertes</h4><div>${Object.entries(g.deaths || {}).sort((a, b) => b[1] - a[1]).map(([c, k]) => `${k} por ${c}`).join(' · ') || 'Ninguna todavía'}</div>
+      <h4>Gente destacada</h4><div class="famrow">${notable.map(v => famNode(v, v === g.leader ? leaderTitle(g) : oficioTxt(v) || stageOf(v))).join('')}</div>`;
+  } else if (cardTab === 'economia') {
+    body = `<div>${econCard(g)}</div>`;
+  } else if (cardTab === 'politica') {
+    const vr = n.voteRes;
+    body = `<div>${govCard(g)}</div>
+      ${n.parties ? `<h4>Partidos</h4><div class="hbars">${n.parties.map((q, k) => { const pct = vr && vr[k] ? vr[k] : 0; return `<span style="color:${q.col}">${esc(q.name)}${n.ruling === k ? ' ★' : ''}</span>${bar(pct / 100, q.col, 90)}<span>${vr ? pct + ' %' : sideTxt(q)}</span>`; }).join('')}</div>` : '<h4>Partidos</h4><div>Aún no tienen partidos</div>'}
+      ${lawsOf(g).length ? `<h4>Leyes</h4><div class="chips">${lawsOf(g).map(l => `<span>${LAW_TXT[l]}</span>`).join('')}</div>` : ''}
+      <h4>Nación</h4><div>${status}${provinces.length ? `: ${provinces.map(o => esc(o.name)).join(', ')}` : ''}${n !== g ? ` · descontento con la capital ${Math.round(g.unrest || 0)} %` : ''}</div>
+      ${allyCard(g)}${warCard(g)}
+      <h4>Relaciones</h4><div class="chips rel">${villages.filter(o => o !== g && popOf(o) && rels.get(relKey(g, o)) && rels.get(relKey(g, o)).known).map(o => { const r = rels.get(relKey(g, o)), w = relWord(r), c = r.war ? '#d8483a' : r.v > 40 ? '#7ab04a' : r.v > 0 ? '#a8c060' : r.v > -30 ? '#d8b848' : '#e08a3a'; return `<span style="border-color:${c}">${o.flagUrl ? `<img src="${o.flagUrl}" alt="">` : ''}${esc(o.name)} · <b style="color:${c}">${r.war ? 'en guerra' : w}</b></span>`; }).join('') || 'Aún no conocen a nadie'}</div>`;
+  } else {
+    body = `<ul class="log">${(g.log || []).slice(-30).reverse().map(e => `<li class="${logKind(e.txt)}"><span class="d">día ${e.d}</span>${esc(e.txt.startsWith(`En ${g.name} `) ? capFirst(e.txt.slice(g.name.length + 4)) : e.txt)}</li>`).join('') || '<li>Nada destacable aún</li>'}</ul>`;
+  }
+  const sc = el.querySelector('.cbody'), top = sc ? sc.scrollTop : 0;
+  el.innerHTML = `<div class="vh">${n.flagUrl ? `<img class="flag" src="${n.flagUrl}" alt="">` : '<span class="flag none"></span>'}<div><h3>${esc(g.name)}</h3>
+      <div class="pills"><span>${REGIMES[reg]}</span><span>${status}</span>${al ? `<span class="ally">${esc(al.abbr)}</span>` : ''}${g.coin ? `<span class="coin">${esc(g.coin)}</span>` : ''}</div></div>
+      <button class="x" aria-label="Cerrar">×</button></div>
+    <div class="tabs">${CARD_TABS.map(([k, t]) => `<button data-tab="${k}"${cardTab === k ? ' class="on"' : ''}>${t}</button>`).join('')}</div>
+    <div class="cbody">${body}</div>`;
+  const nb = el.querySelector('.cbody'); if (nb) nb.scrollTop = top;
 }
 // ---- Daños en los edificios: tormentas, terremotos, tsunamis y fuego ----
 const BLD = new Set(['house', 'hall', 'store', 'market', 'mill', 'tower', 'well', 'temple', 'obelisk', 'altar', 'bank', 'wonder']);
@@ -5912,7 +6083,7 @@ function diploTick(){
       const att = villageById(r.war.att), def = villageById(r.war.def);
       if (!att || !def || !popOf(att) || !popOf(def)) { r.war = null; continue; }
       if (r.war.dead >= 8 || (yearT - r.war.start > DAY_LEN * 3 && Math.random() < .05)) makePeace(a, b, r, r.war.dead >= 8 ? 'agotados por tantas muertes' : 'cansados de luchar');
-      else if (yearT - r.war.raidT > 75) { r.war.raidT = yearT; const back = Math.random() < .25; launchRaid(back ? def : att, back ? att : def, r); } // a veces contraataca el atacado
+      else if (yearT - r.war.raidT > 75) { const back = Math.random() < .25, A = back ? def : att; if (!(knowsT(A, 'noche') && !isNight() && yearT - r.war.raidT < 170)) { r.war.raidT = yearT; launchRaid(A, back ? att : def, r); } } // a veces contraataca el atacado
       continue;
     }
     // Caravanas de comercio y diplomáticos
@@ -6001,28 +6172,125 @@ function launchRaid(att, def, r){
   if (!att || !def || att === def) return;
   const ps = villagers.filter(v => !v.dead && !v.away && v.vid === att.id && (yearT - v.born) / YEAR >= ADULT_H && v !== att.leader && (v.hp ?? 1) > .5).sort((a, b) => (b.weapon ? 1 : 0) - (a.weapon ? 1 : 0)).slice(0, Math.min(6, Math.max(2, Math.floor(popOf(att) / 3))));
   if (ps.length < 2) return;
-  for (const v of ps) { v.sleep = false; releaseTask(v); if (v.actT > 0) { v.actT = 0; v.onDone = null; } dismount(v); v.task = { k:'asalto', enemy:def.id, x:def.fx * T + 2, y:def.fy * T + 10 }; v.lastD = Infinity; v.route = null; v.routeKey = null; }
-  notify(`Los de ${att.name} marchan a atacar ${def.name}`, { x:att.fx * T, y:att.fy * T });
+  // Con experiencia, se reúnen antes en un punto a cierta distancia del pueblo enemigo y atacan todos a la vez
+  const grp = { ps, go:!knowsT(att, 'grupo'), until:yearT + 35, loot:false, repelled:false };
+  if (!grp.go) {
+    const dd = Math.hypot(att.fx - def.fx, att.fy - def.fy) || 1, k = Math.min(14, dd * .6);
+    const rp = ringFind(Math.round(def.fx + (att.fx - def.fx) / dd * k), Math.round(def.fy + (att.fy - def.fy) / dd * k), 5, (x, y) => tileFree(x, y) && !WATER[world.biome[y * W + x]]);
+    if (rp) { grp.rx = rp[0] * T + 2; grp.ry = rp[1] * T + 3; } else grp.go = true;
+  }
+  for (const v of ps) {
+    v.sleep = false; releaseTask(v); if (v.actT > 0) { v.actT = 0; v.onDone = null; }
+    if (!(v.mount && knowsT(att, 'caballeria'))) dismount(v);
+    v.task = { k:'asalto', enemy:def.id, x:def.fx * T + 2, y:def.fy * T + 10, grp }; v.lastD = Infinity; v.route = null; v.routeKey = null;
+  }
+  // Los vigías avisan: si saben, los defensores toman posiciones
+  const posts = defensePosts(def, att); if (posts.length) def.alarm = { until:yearT + 70, posts };
+  const cav = ps.filter(v => v.mount).length;
+  notify(`Los de ${att.name} marchan a atacar ${def.name}${grp.go ? '' : ' (se reunirán antes de atacar)'}${cav ? ` con ${cav} jinete${cav > 1 ? 's' : ''}` : ''}${isNight() ? ' en plena noche' : ''}`, { x:att.fx * T, y:att.fy * T });
 }
 const enemyOf = (v, u) => { const a = villageById(v.vid), b = villageById(u.vid); if (!a || !b || a === b) return false; const r = rels.get(relKey(a, b)); return !!(r && r.war); };
 // Pelea entre personas (cuerpo a cuerpo con lanza o puños; con arco, de lejos). Devuelve true si este turno lo ha pasado luchando
 function fightPerson(v, e, dt){
-  const d = Math.hypot(e.x - v.x, e.y - v.y), reach = v.weapon === 'arco' ? 30 : 5;
+  const gv = villageById(v.vid), ge = villageById(e.vid), d = Math.hypot(e.x - v.x, e.y - v.y), hv = elevAt(v), he = elevAt(e);
+  const tv = Math.floor(v.x / T), ty = Math.floor(v.y / T);
+  const onTower = knowsT(gv, 'torres') && towersOf(gv || {}).some(i => Math.hypot((i % W) - tv, ((i / W) | 0) - ty) < 3);
+  const cav = v.mount && knowsT(gv, 'caballeria');
+  const reach = v.weapon === 'arco' ? 30 + (onTower ? 14 : 0) + (hv - he > .02 ? 8 : 0) : cav ? 7 : 5;
   v.dir = e.x < v.x ? -1 : 1; v.dirT = .4; v.atkT = (v.atkT || 0) - dt;
+  if (v.weapon === 'arco' && !onTower) {
+    // Arqueros que saben: si se les echan encima, retroceden; si hay una loma cerca desde la que llegan, suben a ella
+    if (knowsT(gv, 'distancia') && d < 14) { const k = 20 / Math.max(1, d); vGo(v, v.x + (v.x - e.x) * k, v.y + (v.y - e.y) * k, dt, true); return true; }
+    if (knowsT(gv, 'altura')) {
+      if (!(v.hillT > 0)) {
+        v.hillT = 3; v.hill = null; let best = hv + .015;
+        for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) {
+          const x = tv + dx, y = ty + dy; if (x < 0 || y < 0 || x >= W || y >= H) continue; const i = y * W + x;
+          if (world.e[i] > best && !WATER[world.biome[i]] && tileCost(x, y) < Infinity && Math.hypot(x * T + 2 - e.x, y * T + 3 - e.y) < 34) { best = world.e[i]; v.hill = [x * T + 2, y * T + 3]; }
+        }
+      } else v.hillT -= dt;
+      if (v.hill && Math.hypot(v.hill[0] - v.x, v.hill[1] - v.y) > 3) { vGo(v, v.hill[0], v.hill[1], dt, true); return true; }
+    }
+  }
   if (d > reach) { vGo(v, e.x, e.y, dt, true); return true; }
   if (v.atkT <= 0) {
-    v.atkT = v.weapon === 'arco' ? 1.5 : 1; v.stab = .25;
-    const dmg = v.weapon === 'lanza' ? .34 : v.weapon === 'arco' ? .28 : .14;
-    if (Math.random() < (v.weapon === 'arco' ? .7 : .85)) {
+    v.atkT = (v.weapon === 'arco' ? 1.5 : 1) * (cav ? .8 : 1); v.stab = .25;
+    let dmg = v.weapon === 'lanza' ? .34 : v.weapon === 'arco' ? .28 : .14, hit = v.weapon === 'arco' ? .7 : .85;
+    if (v.weapon && knowsT(gv, 'puntas')) dmg *= 1.25;          // punta de piedra
+    if (hv - he > .02) dmg *= 1.25;                              // desde arriba se golpea mejor
+    if (cav) dmg += .12;                                         // la carga a caballo
+    if (knowsT(ge, 'escudos')) dmg *= .8;                        // el enemigo se cubre
+    if (e.sleep) dmg *= 1.5;                                     // pillado durmiendo
+    if (inForest(e) && knowsT(ge, 'bosque')) hit *= .7;          // entre los árboles cuesta acertar
+    if (onTower) hit = Math.min(.95, hit + .15);
+    if (v.ambush) { dmg *= 1.6; hit = 1; v.ambush = false; if (gv && yearT - (gv.ambushMsgT ?? -1e9) > 40) { gv.ambushMsgT = yearT; notify(`¡Emboscada! Los de ${gv.name} salen del bosque y caen sobre los de ${ge ? ge.name : '?'}`, { x:v.x, y:v.y }); } }
+    if (Math.random() < hit) {
       e.hp = (e.hp ?? 1) - dmg; hurtFx(e, v.x, v.y, walkable);
+      if (gv) milOf(gv).xp += .2;
       if (e.hp <= 0) {
-        const ge = villageById(e.vid), gv = villageById(v.vid), r = ge && gv && rels.get(relKey(ge, gv)); if (r && r.war) r.war.dead++;
+        const r = ge && gv && rels.get(relKey(ge, gv)); if (r && r.war) r.war.dead++;
         notify(`${e.name} de ${ge ? ge.name : '?'} ha muerto en la guerra contra ${gv ? gv.name : '?'}`, { x:e.x, y:e.y });
+        if (gv) { const m = milOf(gv); m.kills++; m.xp += 1; }
+        if (ge) { const m = milOf(ge); m.deaths++; m.xp += .6; }
+        // Un ataque rechazado: si caen la mitad de los que vinieron sin haber saqueado
+        const raid = e.task && e.task.k === 'asalto' && e.task.grp;
         releaseTask(e); killVillager(e, 'guerra');
+        if (raid && !raid.loot && !raid.repelled && raid.ps.filter(u => u.dead).length >= Math.ceil(raid.ps.length / 2)) {
+          raid.repelled = true; if (ge) milOf(ge).repelled++; if (gv) { milOf(gv).won++; milOf(gv).xp += 2; }
+          for (const u of raid.ps) if (!u.dead && u.task && u.task.k === 'asalto') u.task = { k:'volver' };
+          if (gv && ge) notify(`Los de ${gv.name} rechazan el ataque de ${ge.name}: los que quedan huyen`, { x:v.x, y:v.y });
+        }
+        milLearn(gv); milLearn(ge);
       }
     }
   }
   return true;
+}
+// ---- Arte de la guerra: cada nación aprende de lo que vive en combate (y de sus avances) a luchar mejor ----
+const TACTICS = { grupo:'reunirse antes de atacar y caer todos a la vez', distancia:'que los arqueros guarden la distancia', altura:'buscar las alturas para disparar desde arriba',
+  bosque:'esconderse en el bosque y tender emboscadas', foco:'rematar primero al enemigo más herido', retirada:'retirar a los heridos antes de que mueran', noche:'atacar de noche, mientras el enemigo duerme',
+  caballeria:'cargar a caballo', escudos:'llevar escudos de madera', torres:'defenderse desde las torres de vigía', puntas:'hacer lanzas y flechas con punta de piedra' };
+const TACTIC_SHORT = { grupo:'Ataque en grupo', distancia:'Arqueros a distancia', altura:'Terreno elevado', bosque:'Emboscadas', foco:'Rematar heridos', retirada:'Retirada de heridos', noche:'Ataques nocturnos',
+  caballeria:'Caballería', escudos:'Escudos', torres:'Defensa en torres', puntas:'Puntas de piedra' };
+const milOf = g => { const n = nationOf(g); return n.mil ||= { xp:0, t:{}, kills:0, deaths:0, repelled:0, won:0 }; };
+const knowsT = (g, k) => !!(g && milOf(g).t[k]);
+function learnT(g, k){ const m = milOf(g); if (m.t[k]) return; m.t[k] = true; notify(`Los de ${nationOf(g).name} aprenden a ${TACTICS[k]}`, { x:g.fx * T, y:g.fy * T }); }
+// Lo vivido se convierte en táctica: las derrotas enseñan tanto como las victorias
+function milLearn(g){
+  if (!g) return; const m = milOf(g), n = nationOf(g);
+  if (n.quarry != null && m.xp >= 2) learnT(g, 'puntas');
+  if (towersOf(n).length && m.xp >= 3) learnT(g, 'torres');
+  if (m.xp >= 4 || m.deaths >= 2) learnT(g, 'grupo');
+  if ((n.know || {}).montar && m.xp >= 5) learnT(g, 'caballeria');
+  if (m.xp >= 6 && villagers.some(u => !u.dead && u.vid === n.id && u.weapon === 'arco')) learnT(g, 'distancia');
+  if (m.xp >= 7 && (n.treesNear ?? 0) >= 12) learnT(g, 'bosque');
+  if (m.xp >= 8 && m.deaths >= 2) learnT(g, 'escudos');
+  if (m.xp >= 9) learnT(g, 'altura');
+  if (m.deaths >= 4) learnT(g, 'retirada');
+  if (m.repelled >= 1) learnT(g, 'noche');
+  if (m.xp >= 12) learnT(g, 'foco');
+}
+const inForest = u => { const x = Math.floor(u.x / T), y = Math.floor(u.y / T); for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const o = world.objs[(y + dy) * W + x + dx]; if (o && OBJ[o.key] && OBJ[o.key][1] === 'tree') return true; } return false; };
+const elevAt = u => world.e[clamp(Math.floor(u.y / T), 0, H - 1) * W + clamp(Math.floor(u.x / T), 0, W - 1)];
+// Puestos de defensa cuando se acerca un ataque: los arqueros a las torres, el resto escondido en el bosque del lado por donde vienen
+function defensePosts(def, att){
+  const posts = [];
+  if (knowsT(def, 'torres')) for (const i of towersOf(def)) { const sb = standBy(i); if (sb) posts.push([sb[0], sb[1], false, true]); }
+  if (knowsT(def, 'bosque')) {
+    const ang = Math.atan2(att.fy - def.fy, att.fx - def.fx), c = [];
+    for (let d = 6; d <= 14; d++) for (let a = -.9; a <= .9; a += .15) {
+      const x = Math.round(def.fx + Math.cos(ang + a) * d), y = Math.round(def.fy + Math.sin(ang + a) * d);
+      if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1 || WATER[world.biome[y * W + x]] || tileCost(x, y) === Infinity || world.objs[y * W + x]) continue;
+      if (inForest({ x:x * T + 2, y:y * T + 3 })) c.push([x * T + 2, y * T + 3, true, false, Math.abs(a)]);
+    }
+    c.sort((p, q) => p[4] - q[4]); for (const p of c.slice(0, 8)) posts.push(p);
+  }
+  return posts;
+}
+function warCard(g){
+  const m = nationOf(g).mil; if (!m) return '';
+  const ts = Object.keys(m.t);
+  return `<h4>Arte de la guerra</h4><div>Experiencia ${Math.round(m.xp)} · ${m.kills} enemigo${m.kills === 1 ? '' : 's'} abatido${m.kills === 1 ? '' : 's'} · ${m.deaths} caído${m.deaths === 1 ? '' : 's'}${m.won ? ` · ${m.won} ataques rechazados` : ''}${ts.length ? `<div class="chips">${ts.map(k => `<span title="${TACTICS[k]}">${TACTIC_SHORT[k]}</span>`).join('')}</div>` : '<br>Aún no saben luchar más que a lo bruto'}</div>`;
 }
 // ---- Política: partidos inventados en cada sitio, de izquierdas a derechas, con sus leyes; cada cierto tiempo se
 // reúnen en la plaza y votan; el partido que gana pone al líder y sus leyes cambian cómo vive el pueblo y cómo trata
@@ -6078,7 +6346,7 @@ function countVotes(cap){
   // El líder: alguien de la capital con ideas parecidas a las del partido
   const cands = villagers.filter(u => !u.dead && u.vid === cap.id && (yearT - u.born) / YEAR >= ADULT_H && (yearT - u.born) / YEAR < u.life * .85).sort((a, b) => Math.abs((a.ideo || 0) - p.ideo) - Math.abs((b.ideo || 0) - p.ideo));
   if (cands.length) cap.leader = cands[0];
-  cap.lastVote = ps.map((q, k) => `${q.name} ${Math.round(votes[k] / tot * 100)} %`).join(' · ');
+  cap.lastVote = ps.map((q, k) => `${q.name} ${Math.round(votes[k] / tot * 100)} %`).join(' · '); cap.voteRes = votes.map(x => Math.round(x / tot * 100));
   notify(`Elecciones en ${cap.name}: gana ${artP(p)} ${p.name} (${sideTxt(p)}, ${Math.round(votes[win] / tot * 100)} %)${cap.leader ? `; ${cap.leader.name} pasa a mandar` : ''}${changed ? `. Nuevas leyes: ${p.laws.map(l => LAW_TXT[l]).join(', ')}` : ''}`, { x:cap.fx * T, y:cap.fy * T });
   // Polarización: si un pueblo muy grande queda partido casi por la mitad, los perdedores pueden irse y fundar el suyo
   const second = [...votes].sort((a, b) => b - a)[1] || 0;
@@ -6117,7 +6385,7 @@ const govIdeo = g => { const n = nationOf(g); return REGIME_IDEO[regimeOf(g)] ??
 const ONE_PARTY = { comunismo:['Partido de los Trabajadores', 'Partido de la Estrella Roja', 'Partido del Pueblo Unido', 'Partido Comunal'], fascismo:['Movimiento del Orden Nuevo', 'Frente de la Espada de Hierro', 'Guardia de la Antorcha', 'Movimiento de la Sangre y el Suelo'] };
 const capFirst = s => s[0].toUpperCase() + s.slice(1);
 function setRegime(g, reg, chief){
-  g.regime = reg; g.regimeT = yearT; if (chief) g.leader = chief;
+  g.regime = reg; g.regimeT = yearT; g.voteRes = null; if (chief) g.leader = chief;
   if (reg === 'republica') { g.ruling = null; g.voteT = -1e9; if (!g.parties || g.parties.length < 2) { g.parties = null; makeParties(g); } }
   if (ONE_PARTY[reg]) { const L = ONE_PARTY[reg]; g.parties = [{ name:L[Math.floor(Math.random() * L.length)], ideo:REGIME_IDEO[reg], laws:REGIME_LAWS[reg], col:reg === 'comunismo' ? '#d8483a' : '#3a3a3a' }]; g.ruling = 0; }
   // La maravilla del régimen anterior: si era culto al líder o a la corona, la derriban
@@ -6411,7 +6679,7 @@ function drawMoneyFlows(now){
     const k = (now - f.t0) / 6000; if (k > 1) continue;
     for (let j = 0; j < 6; j++) {
       const q = (k * 3 + j / 6) % 1, x = Math.round(f.x0 + (f.x1 - f.x0) * q), y = Math.round(f.y0 + (f.y1 - f.y0) * q - Math.sin(q * Math.PI) * 30);
-      vctx.fillStyle = '#8a6a18'; vctx.fillRect(x - 1, y - 1, 3, 3); vctx.fillStyle = '#f0c840'; vctx.fillRect(x - 1, y - 1, 2, 2);
+      const r = Math.max(1, Math.round(2.5 / zoom)); vctx.fillStyle = '#8a6a18'; vctx.fillRect(x - r, y - r, r * 2 + 1, r * 2 + 1); vctx.fillStyle = '#f0c840'; vctx.fillRect(x - r, y - r, r * 2, r * 2);
     }
   }
   moneyFlows = moneyFlows.filter(f => now - f.t0 < 6000);
@@ -6428,13 +6696,20 @@ function govCard(g){
     ${n.wonder != null && world.objs[n.wonder] ? `<br>Maravilla: ${OBJ[world.objs[n.wonder].key][0]}` : ''}`;
 }
 function econCard(g){
-  if (!g.coin) return `${g.market != null ? `Trueque en el mercado · ${g.trades || 0} intercambios` : 'Sin mercado todavía'} · almacén ${Math.floor(g.food)} comida, ${g.wood} madera, ${g.stone} piedra`;
-  const ec = ecOf(g), al = allianceOf(g), h = ec.hist, mx = Math.max(...h), mn = Math.min(...h), pts = h.map((v, k) => `${(k / Math.max(1, h.length - 1) * 158 + 1).toFixed(1)},${(26 - (v - mn) / Math.max(1e-6, mx - mn) * 24).toFixed(1)}`).join(' ');
-  const fx = villages.filter(o => o !== g && o.coin && o.coin !== g.coin && popOf(o) && rels.get(relKey(g, o)) && rels.get(relKey(g, o)).known).slice(0, 3).map(o => `1 ${g.coin} = ${(ecOf(o).P / ec.P).toFixed(2)} ${coinPl(o)}`);
-  return `Moneda: el <b>${g.coin}</b>${al && al.coin === g.coin ? ` (común de ${al.abbr})` : ''} · precios ${ec.infl >= 0 ? '+' : ''}${Math.round(ec.infl * 100)} % · una comida cuesta ${priceOf(g)} ${priceOf(g) > 1 ? coinPl(g) : g.coin}
-    <br><svg width="160" height="28" viewBox="0 0 160 28" style="background:#1e1a16;border-radius:3px;vertical-align:middle"><polyline fill="none" stroke="#f0c840" stroke-width="1.5" points="${pts}"/></svg> valor del ${g.coin}
-    <br>Tesoro ${Math.round(ec.treas)} · deuda ${Math.round(ec.debt)} · ${hasBank(g) ? `banco con ${Math.round(ec.dep)} en ahorros` : 'sin banco'}${ec.bankruptT != null ? ` · bancarrota el día ${Math.floor(ec.bankruptT / DAY_LEN) + 1}` : ''}
-    ${fx.length ? `<br>Cambio: ${fx.join(' · ')}` : ''}<br>${g.trades || 0} tratos · almacén ${Math.floor(g.food)} comida, ${g.wood} madera, ${g.stone} piedra`;
+  if (!g.coin) return `<div class="tiles">${tile('Economía', g.market != null ? 'Trueque' : 'Sin mercado', `${g.trades || 0} intercambios`)}${tile('Almacén', Math.floor(g.food), `comida · ${g.wood} madera · ${g.stone} piedra`)}</div><div class="muted" style="margin-top:8px">Cuando comercien lo bastante en el mercado inventarán su propia moneda.</div>`;
+  const ec = ecOf(g), al = allianceOf(g), h = ec.hist, mx = Math.max(...h), mn = Math.min(...h), up = ec.infl > .08, down = ec.infl < -.05;
+  const pts = h.map((v, k) => [(k / Math.max(1, h.length - 1) * 160).toFixed(1), (28 - (v - mn) / Math.max(1e-6, mx - mn) * 25).toFixed(1)]);
+  const line = pts.map(q => q.join(',')).join(' '), area = `0,30 ${line} 160,30`;
+  const fx = villages.filter(o => o !== g && o.coin && o.coin !== g.coin && popOf(o) && rels.get(relKey(g, o)) && rels.get(relKey(g, o)).known).slice(0, 4);
+  return `<div class="tiles">${tile('Moneda', esc(g.coin), al && al.coin === g.coin ? `común de ${esc(al.abbr)}` : 'propia')}
+      ${tile('Precios', `<span style="color:${up ? '#f08a7a' : down ? '#a8d088' : 'inherit'}">${ec.infl >= 0 ? '+' : ''}${Math.round(ec.infl * 100)} %</span>`, up ? 'suben: inflación' : down ? 'bajan' : 'estables')}
+      ${tile('Tesoro', Math.round(ec.treas), `deuda: ${Math.round(ec.debt)}`)}${tile('Banco', hasBank(g) ? Math.round(ec.dep) : '—', hasBank(g) ? 'en ahorros de la gente' : 'aún no tienen')}</div>
+    <h4>Valor del ${esc(g.coin)}</h4><svg class="spark" viewBox="0 0 160 30" preserveAspectRatio="none"><polygon points="${area}" fill="rgba(240,200,64,.15)"/><polyline fill="none" stroke="#f0c840" stroke-width="1.2" vector-effect="non-scaling-stroke" points="${line}"/></svg>
+    ${ec.bankruptT != null ? `<div class="alert">Bancarrota el día ${Math.floor(ec.bankruptT / DAY_LEN) + 1}</div>` : ''}
+    <div class="sec"><div class="kv"><span>Una comida cuesta</span><b>${priceOf(g)} ${priceOf(g) > 1 ? coinPl(g) : g.coin}</b></div>
+      <div class="kv"><span>Tratos en el mercado</span><b>${g.trades || 0}</b></div>
+      <div class="kv"><span>Dinero en manos de la gente</span><b>${villagers.filter(v => !v.dead && v.vid === g.id).reduce((a, v) => a + (v.money || 0), 0)}</b></div></div>
+    ${fx.length ? `<h4>Cambio de moneda</h4><div class="sec">${fx.map(o => `<div class="kv"><span>1 ${esc(g.coin)} =</span><b>${(ecOf(o).P / ec.P).toFixed(2)} ${coinPl(o)} <span class="muted">(${esc(o.name)})</span></b></div>`).join('')}</div>` : ''}`;
 }
 function allyCard(g){
   const al = allianceOf(g); if (!al) return '';
@@ -6543,6 +6818,7 @@ function warmthAt(v, g){
 function killVillager(v, cause){
   if (v.dead) return;
   v.dead = cause; dismount(v);
+  for (const u of [...(v.parents || []), ...(v.kids || []), ...(v.partners || [])]) if (u && !u.dead) u.mourn = { t:yearT, who:v.name };
   { const g = villageById(v.vid); if (g) { (g.deaths ||= {})[cause] = (g.deaths[cause] || 0) + 1; if (cause !== 'vejez') (g.log ||= []).push({ d:Math.floor(yearT / DAY_LEN) + 1, txt:`Murió ${v.name} (${cause})` }); } }
   misfortune(villageById(v.vid), cause);
   if (v.boat) { const g = villageById(v.vid); if (g) g.boatOut = false; }
@@ -6608,23 +6884,36 @@ function updateVillagers(dt){
     if (rels.size && !(v.scanW > 0)) {
       v.scanW = .4; v.enemy = null;
       let bd = v.task && v.task.k === 'asalto' ? 45 : 35;
-      for (const u of villagers) { if (u.dead || u.away || u === v || !enemyOf(v, u)) continue; if (!(u.task && u.task.k === 'asalto') && !(v.task && v.task.k === 'asalto')) continue; const d = Math.hypot(u.x - v.x, u.y - v.y); if (d < bd) { bd = d; v.enemy = u; } }
+      const focus = knowsT(g, 'foco'); let bs = Infinity;
+      for (const u of villagers) { if (u.dead || u.away || u === v || !enemyOf(v, u)) continue; if (!(u.task && u.task.k === 'asalto') && !(v.task && v.task.k === 'asalto')) continue; const d = Math.hypot(u.x - v.x, u.y - v.y); if (d >= bd) continue; const sc = focus ? d - (1 - (u.hp ?? 1)) * 40 : d; if (sc < bs) { bs = sc; v.enemy = u; } }
     } else v.scanW -= dt;
+    if (v.task && v.task.k === 'asalto' && (v.hp ?? 1) < .35 && knowsT(g, 'retirada')) { v.task = { k:'volver' }; v.enemy = null; v.retreatT = 10; floats.push({ x:v.x, y:v.y - 14, txt:'¡retirada!', col:'#f0c8a0', life:0 }); }
+    if (v.retreatT > 0) { v.retreatT -= dt; v.enemy = null; }
     if (v.enemy && !v.enemy.dead) {
       if (v.sleep) v.sleep = false;
       const armed = v.weapon && !child;
       if (armed || (v.task && v.task.k === 'asalto')) { if (fightPerson(v, v.enemy, dt)) continue; }
       else { if (v.actT > 0) { v.actT = 0; v.onDone = null; } releaseTask(v); v.task = null; vGo(v, ...fireSpot(v, g), dt, true); continue; }
     }
+    if (g.alarm && yearT < g.alarm.until && v.weapon && !child && !v.enemy && !v.boat && (!v.task || !['asalto', 'volver', 'beber', 'comer', 'guardia'].includes(v.task.k))) {
+      const ps = g.alarm.posts, k = villagers.filter(u => u.vid === g.id && u.weapon).indexOf(v), p = ps[(k < 0 ? 0 : k) % ps.length];
+      if (p && (!p[3] || v.weapon === 'arco' || ps.every(q => q[3]))) { if (v.actT > 0) { v.actT = 0; v.onDone = null; } releaseTask(v); v.sleep = false; v.task = { k:'guardia', x:p[0] + (k % 3 - 1) * 3, y:p[1], hide:p[2], until:g.alarm.until }; v.lastD = Infinity; }
+    }
     if (v.task && v.task.k === 'asalto' && (v.water < .3 || v.food < .22)) v.task = null; // la sed y el hambre pueden más que la guerra
     if (v.task && v.task.k === 'asalto') {
       const eg = villageById(v.task.enemy), r = eg && rels.get(relKey(eg, g));
+      const G = v.task.grp;
+      if (eg && r && r.war && G && !G.go) {
+        const alive = G.ps.filter(u => !u.dead && u.task && u.task.k === 'asalto');
+        if (yearT > G.until || alive.every(u => Math.hypot(u.x - G.rx, u.y - G.ry) < 20)) { G.go = true; if (alive.length > 1) notify(`Las tropas de ${g.name} se han reunido: atacan ${eg.name} todas a la vez`, { x:G.rx, y:G.ry }); }
+        else { vGo(v, G.rx + (G.ps.indexOf(v) % 3 - 1) * 5, G.ry + Math.floor(G.ps.indexOf(v) / 3) * 4, dt); continue; }
+      }
       if (!eg || !r || !r.war) { v.task = { k:'volver' }; }
       else if (Math.hypot(v.x / T - eg.fx, v.y / T - eg.fy) < 6) { // en el corazón del pueblo enemigo y nadie lo defiende: saqueo
         const take = Math.min(eg.food, 6); eg.food -= take; v.carry = { k:'comida', t:'veg', n:Math.floor(take) };
         const wood = buildingsOf(eg).filter(b => world.objs[b] && wooden(world.objs[b]) && !world.objs[b].burnt);
         if (wood.length && Math.random() < .5) { const b = wood[Math.floor(Math.random() * wood.length)]; fires.set(b, { t:0, life:10, tree:true, bld:true }); }
-        r.war.loots = (r.war.loots || 0) + 1;
+        r.war.loots = (r.war.loots || 0) + 1; if (v.task.grp) v.task.grp.loot = true; milOf(g).xp += 1; milLearn(g);
         // Conquista: sin nadie armado que les defienda, o muy pocos, o tras varios saqueos, el pueblo pasa a ser suyo
         const defArmed = villagers.filter(u => !u.dead && u.vid === eg.id && u.weapon).length;
         if (popOf(eg) > 0 && (defArmed === 0 || popOf(eg) <= 4 || r.war.loots >= 3) && (hasLaw(g, 'expansion') || Math.random() < .5)) { conquer(nationOf(g), eg, r); v.task = { k:'volver' }; continue; }
@@ -6650,7 +6939,7 @@ function updateVillagers(dt){
     // Durmiendo: hasta que se hace de día (o les despierta el hambre o la sed)
     if (v.sleep) { if (!isNight() || v.food < .1 || v.water < .12) { v.sleep = false; v.task = null; v.wait = Math.random() * .8; } else { v.moving = false; continue; } }
     // Al caer la noche dejan lo que no sea urgente (lo que llevan encima, lo dejan antes) y se van a dormir
-    if (isNight() && !v.boat && !(v.actT > 0) && (!v.task || !['dormir', 'volver', 'beber', 'comer', 'trabajando', 'alumbrar', 'encender', 'ritual', 'asalto', 'viaje', 'votar', 'protesta', 'golpe', 'reprimir', 'detenido'].includes(v.task.k)) && v.food > .2 && v.water > .25) {
+    if (isNight() && !v.boat && !(v.actT > 0) && (!v.task || !['dormir', 'volver', 'beber', 'comer', 'trabajando', 'alumbrar', 'encender', 'ritual', 'asalto', 'viaje', 'votar', 'protesta', 'golpe', 'reprimir', 'detenido', 'guardia'].includes(v.task.k)) && v.food > .2 && v.water > .25) {
       releaseTask(v); if (v.carry) v.task = { k:'volver' };
       else {
         // Antes de acostarse, si quedan antorchas apagadas, uno las va encendiendo
@@ -6864,6 +7153,7 @@ function updateVillages(dt){
       kid.skin = SKIN[si2]; kid.ad = clamp((mom.ad + dad.ad) / 2 + (Math.random() - .5) * 3, -20, 20); kid.vid = g.id;
       kid.swims = (mom.swims || dad.swims) ? Math.random() < .6 : Math.random() < .1; // se aprende de los padres
       kid.parents = [mom, dad]; kid.name = nameFor(kid.sex);
+      (mom.kids ||= []).push(kid); (dad.kids ||= []).push(kid); if (!(mom.partners ||= []).includes(dad)) mom.partners.push(dad); if (!(dad.partners ||= []).includes(mom)) dad.partners.push(mom);
       kid.ideo = clamp(((mom.ideo || 0) + (dad.ideo || 0)) / 2 + (Math.random() - .5) * .4, -1, 1);
       kid.diet = clamp(((mom.diet ?? .5) + (dad.diet ?? .5)) / 2 + (Math.random() - .5) * .1, 0, 1); kid.ate = kid.diet;
       villagers.push(kid); g.food -= 3;
@@ -7068,7 +7358,7 @@ function updateVillagePanel(){
 }
 function villagerInfo(v){
   const age = (yearT - v.born) / YEAR, g = villageById(v.vid);
-  const job = { talar:'talando', picar:'picando piedra', bayas:'recogiendo bayas', pescar:'pescando', cazar:'cazando', sembrar:'sembrando', caña:'fabricando una caña', arma:'fabricando un arma', pozo:'construyendo un pozo', cantera:'abriendo una cantera', cantear:'sacando piedra de la cantera', molino:'construyendo un molino', plantar:'plantando un árbol', votar:'votando en la plaza', protesta:'manifestándose', golpe:'dando un golpe de estado', reprimir:'reprimiendo una protesta', detenido:'detenido', banco:'construyendo el banco', maravilla:'levantando una maravilla', asalto:'yendo a la guerra', viaje:'de viaje', ritual:'yendo al ritual', ofrenda:'llevando una ofrenda', sacrificio:'llevando un animal al altar', quema:'haciendo una quema controlada', reparar:'reparando un edificio', derribar:'tirando abajo un edificio quemado', apagar:'apagando el fuego', antorcha:'poniendo una antorcha', alumbrar:'encendiendo las antorchas', comerciar:'comerciando en el mercado', encender:'encendiendo la hoguera', orar:'rezando', altar:'levantando un altar', templo:'construyendo el templo', monumento:'tallando una estatua', mercado:'montando el mercado', dormir:'yendo a dormir', torre:'construyendo una torre', muralla:'levantando la muralla', ayuntamiento:'construyendo el ayuntamiento', almacen:'construyendo un almacén', puente:'construyendo un puente', muelle:'construyendo un muelle', barca:'pescando en barca', carro:'construyendo un carro', montar:'yendo a por un caballo', campo:'marcando un campo', arar:'arando', cosechar:'cosechando', construir:'construyendo una casa', cercar:'haciendo un cercado', capturar:'trayendo un animal', pasear:'paseando', beber:'yendo a beber', comer:'comiendo', volver:'volviendo a la aldea', trabajando:'trabajando' };
+  const job = { talar:'talando', picar:'picando piedra', bayas:'recogiendo bayas', pescar:'pescando', cazar:'cazando', sembrar:'sembrando', caña:'fabricando una caña', arma:'fabricando un arma', pozo:'construyendo un pozo', cantera:'abriendo una cantera', cantear:'sacando piedra de la cantera', molino:'construyendo un molino', plantar:'plantando un árbol', votar:'votando en la plaza', protesta:'manifestándose', golpe:'dando un golpe de estado', reprimir:'reprimiendo una protesta', detenido:'detenido', banco:'construyendo el banco', maravilla:'levantando una maravilla', asalto:'yendo a la guerra', guardia:'defendiendo su puesto', viaje:'de viaje', ritual:'yendo al ritual', ofrenda:'llevando una ofrenda', sacrificio:'llevando un animal al altar', quema:'haciendo una quema controlada', reparar:'reparando un edificio', derribar:'tirando abajo un edificio quemado', apagar:'apagando el fuego', antorcha:'poniendo una antorcha', alumbrar:'encendiendo las antorchas', comerciar:'comerciando en el mercado', encender:'encendiendo la hoguera', orar:'rezando', altar:'levantando un altar', templo:'construyendo el templo', monumento:'tallando una estatua', mercado:'montando el mercado', dormir:'yendo a dormir', torre:'construyendo una torre', muralla:'levantando la muralla', ayuntamiento:'construyendo el ayuntamiento', almacen:'construyendo un almacén', puente:'construyendo un puente', muelle:'construyendo un muelle', barca:'pescando en barca', carro:'construyendo un carro', montar:'yendo a por un caballo', campo:'marcando un campo', arar:'arando', cosechar:'cosechando', construir:'construyendo una casa', cercar:'haciendo un cercado', capturar:'trayendo un animal', pasear:'paseando', beber:'yendo a beber', comer:'comiendo', volver:'volviendo a la aldea', trabajando:'trabajando' };
   const beast = v.foe && !v.foe.dead ? (v.foe.sp === 'oso' ? 'un oso' : 'un lobo') : null;
   const doing = v.sleep ? 'durmiendo' : beast ? (v.weapon && age >= ADULT_H ? `luchando contra ${beast}` : `huyendo de ${beast}`) : v.task ? (v.task.k === 'trabajando' ? job[v.task.job] || 'trabajando' : job[v.task.k] || v.task.k) : 'descansando';
   return `<b>${v.name}</b> · ${v.sex === 'h' ? 'hombre' : 'mujer'}${age < ADULT_H ? ' (niño)' : v.oficio ? `, ${v.oficio}${v.sex === 'm' && /or$/.test(v.oficio) ? 'a' : ''}` : ''} · ${age.toFixed(1).replace('.', ',')} años · ${doing}${g ? ` · de ${g.name}` : ''} · ${dietName(v)}${v.mal ? ' (mal alimentado)' : ''}${v.rod ? ' · con caña' : ''}${v.weapon ? ` · con ${v.weapon === 'lanza' ? 'lanza' : 'arco'}` : ''}${v.swims === false ? ' · no sabe nadar' : ''}${v.mount ? ` · a caballo${v.cart ? ' con carro' : ''}` : ''}${v.boat ? ' · en barca' : ''}${g && g.coin && v.money ? ` · ${v.money} ${coinPl(g)}` : ''}${v.hp < .95 ? ` · herido (${Math.round(v.hp * 100)} %)` : ''} · comida ${Math.round(v.food * 100)} % · agua ${Math.round(v.water * 100)} %`;
@@ -7267,7 +7557,7 @@ const nameFor = sex => { const L = sex === 'm' ? NAMES_F : NAMES_M; return L[Mat
 let villagers = [], follow = null;
 function setFollow(v){
   follow = v;
-  $('followTag').hidden = !v;
+  $('followTag').hidden = !v; pcardT = 0; renderPersonCard();
   // Encuadre inmediato: sin viaje de cámara por medio mundo
   if (v) { centerOn(v.x, v.y - 5, Math.max(zoom, 6)); updateFollowTag(); }
 }
@@ -7276,8 +7566,10 @@ function followNext(){
   const k = follow ? (villagers.indexOf(follow) + 1) % villagers.length : 0;
   setFollow(villagers[k]);
 }
+let pcardT = 0;
 function updateFollowTag(){
   if (!follow) return;
+  if (performance.now() - pcardT > 500) { pcardT = performance.now(); renderPersonCard(); }
   const state = follow.moving ? 'paseando' : 'descansando';
   const txt = `Siguiendo a ${follow.name} · ${state}`;
   if ($('followTxt').textContent !== txt) $('followTxt').textContent = txt;
@@ -8099,6 +8391,15 @@ new ResizeObserver(() => { $('speed').style.left = ($('season').offsetLeft + $('
 $('season').onclick = () => { yearT = (Math.floor(yearT / SEASON_LEN) + 1) * SEASON_LEN + .01; };
 $('noticeGo').onclick = () => { if (noticeTarget) { setFollow(null); centerOn(noticeTarget.x, noticeTarget.y - 10, Math.max(zoom, 5)); } $('notice').hidden = true; };
 $('followStop').onclick = () => setFollow(null);
+$('vcard').addEventListener('click', e => {
+  const tb = e.target.closest('[data-tab]'); if (tb) { cardTab = tb.dataset.tab; renderVillageCard(); return; }
+  if (e.target.closest('.x')) { cardVid = 0; $('vcard').hidden = true; return; }
+  const pb = e.target.closest('[data-pid]'); if (pb) { const v = villagers.find(u => u.uid === +pb.dataset.pid && !u.dead); if (v) setFollow(v); }
+});
+$('pcard').addEventListener('click', e => {
+  if (e.target.closest('.x')) { setFollow(null); return; }
+  const pb = e.target.closest('[data-pid]'); if (pb) { const v = villagers.find(u => u.uid === +pb.dataset.pid && !u.dead); if (v) setFollow(v); }
+});
 $('newWorld').onclick = () => { params.seed = randomSeed(); $('seed').value = params.seed; regenerate(true); };
 $('useSeed').onclick = () => { params.seed = $('seed').value.trim() || randomSeed(); $('seed').value = params.seed; regenerate(true); };
 $('seed').addEventListener('keydown', e => { if (e.key === 'Enter') $('useSeed').click(); });
