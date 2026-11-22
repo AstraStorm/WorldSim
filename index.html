@@ -52,12 +52,16 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .season .sbar{width:60px;height:4px;background:var(--line);border-radius:2px;overflow:hidden}
 .season .sbar span{display:block;height:100%;width:0;background:var(--accent)}
 .follow{top:46px !important}
+.vcard[hidden],.pcard[hidden],.chron[hidden],.toasts[hidden]{display:none !important}
 .vcard,.pcard{position:absolute;z-index:5;max-height:calc(100% - 70px);overflow:hidden;display:flex;flex-direction:column;background:linear-gradient(180deg,rgba(26,32,39,.97),rgba(15,19,24,.97));border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,.45);font-size:13px;line-height:1.45;color:var(--fg);box-sizing:border-box}
-.vcard{top:52px;right:10px;width:min(370px,calc(100% - 20px))}
-.pcard{top:84px;left:10px;width:min(310px,calc(100% - 20px));padding:12px 14px;overflow:auto}
-.vcard h3,.pcard h3{margin:0;font-family:var(--f-display);font-size:19px;line-height:1.15}
-.vcard .x,.pcard .x{margin-left:auto;align-self:flex-start;background:none;border:0;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;padding:0 2px}
-.vcard .x:hover,.pcard .x:hover{color:var(--fg)}
+.vcard{top:52px;right:10px;width:min(430px,calc(100% - 20px));font-size:14px}
+.pcard{top:84px;left:10px;width:min(350px,calc(100% - 20px));padding:14px 16px;overflow:auto;font-size:14px}
+.vcard h3,.pcard h3{margin:0;font-family:var(--f-display);font-size:22px;line-height:1.15}
+.vcard .x,.pcard .x,.chron .x{margin-left:auto;align-self:flex-start;width:30px;height:30px;flex:none;background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:6px;color:var(--fg);font-size:20px;cursor:pointer;line-height:1;padding:0}
+.vbtns{margin-left:auto;align-self:flex-start;display:flex;gap:6px}.vbtns .x{margin:0}.vbtns .go{font:inherit;font-size:13px;height:30px;padding:0 12px;background:var(--accent);color:#11151a;border:0;border-radius:6px;cursor:pointer;font-weight:600}
+.lnk{font:inherit;color:#9ec8f0;background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-decoration-color:rgba(158,200,240,.4);text-underline-offset:2px}.lnk:hover{color:#cfe4f8}
+.relb{font:inherit;font-size:12.5px;color:var(--fg);display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.05);border:1px solid var(--line);border-left-width:3px;border-radius:5px;padding:3px 8px;cursor:pointer}.relb:hover{background:rgba(255,255,255,.1)}.relb img{width:18px;height:12px;image-rendering:pixelated}
+.vcard .x:hover,.pcard .x:hover,.chron .x:hover{background:rgba(216,72,58,.35);border-color:#d8483a}
 .vcard h4,.pcard h4{margin:12px 0 5px;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:6px}
 .vcard h4::after,.pcard h4::after{content:"";flex:1;height:1px;background:var(--line)}
 .vh{display:flex;gap:10px;align-items:center;padding:12px 14px 8px}
@@ -66,12 +70,12 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .pills{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}.pills span{font-size:11px;padding:1px 7px;border-radius:10px;background:rgba(255,255,255,.07);border:1px solid var(--line);color:var(--muted)}
 .pills .ally{color:#8ac0f0;border-color:#3a6ab8}.pills .coin{color:#f0d060;border-color:#8a6a18}
 .tabs{display:flex;gap:2px;padding:0 10px;border-bottom:1px solid var(--line)}
-.tabs button{font:inherit;font-size:12px;color:var(--muted);background:none;border:0;border-bottom:2px solid transparent;padding:6px 8px 5px;cursor:pointer}
+.tabs button{font:inherit;font-size:13.5px;color:var(--muted);background:none;border:0;border-bottom:3px solid transparent;padding:8px 10px 7px;cursor:pointer;flex:1}
 .tabs button:hover{color:var(--fg)}.tabs button.on{color:var(--fg);border-bottom-color:var(--accent)}
 .cbody{padding:4px 14px 14px;overflow:auto;min-height:0}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
 .tile{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:6px;padding:6px 8px;display:flex;flex-direction:column}
-.tile span{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}.tile b{font-family:var(--f-display);font-size:20px;font-weight:600;line-height:1.2}.tile em{font-style:normal;font-size:11.5px;color:var(--muted)}
+.tile{padding:8px 10px !important}.tile span{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}.tile b{font-family:var(--f-display);font-size:24px;font-weight:600;line-height:1.2}.tile em{font-style:normal;font-size:11.5px;color:var(--muted)}
 .bar{display:inline-block;height:7px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;vertical-align:middle}.bar i{display:block;height:100%;border-radius:4px}
 .needs,.hbars{display:grid;grid-template-columns:auto 1fr auto;gap:4px 8px;align-items:center}.needs>span:nth-child(3n),.hbars>span:nth-child(3n){color:var(--muted);font-variant-numeric:tabular-nums;font-size:12px;text-align:right}
 .needs .bar,.hbars .bar{width:100% !important}
@@ -95,9 +99,26 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .why{font-size:12px;margin-top:3px}.why.good{color:#a8d088}.why.bad{color:#f0a090}
 .ideo{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-top:4px}.ideo .track{flex:1;height:6px;border-radius:3px;background:linear-gradient(90deg,#d8483a,#c8b890,#3a6ab8);position:relative}.ideo .track i{position:absolute;top:-3px;width:4px;height:12px;margin-left:-2px;background:#fff;border-radius:2px;box-shadow:0 0 0 1px #000}
 .tree{display:flex;flex-direction:column;gap:4px}.famrow{display:flex;flex-wrap:wrap;gap:4px;justify-content:center}.famlbl{font-size:11px;color:var(--muted);text-align:center;margin-top:2px}
-.fam{font:inherit;display:flex;flex-direction:column;align-items:center;min-width:62px;max-width:72px;padding:3px 4px;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:6px;color:var(--fg);cursor:pointer}
+.fam{font:inherit;display:flex;flex-direction:column;align-items:center;min-width:70px;max-width:80px;padding:3px 4px;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:6px;color:var(--fg);cursor:pointer}
 .fam:hover:not([disabled]){border-color:var(--accent)}.fam.me{border-color:var(--accent);background:rgba(233,185,73,.12)}.fam.dead{opacity:.5;cursor:default}.fam.none{color:var(--muted);justify-content:center;min-height:52px}
-.fam img{height:28px;image-rendering:pixelated}.fam .fn{font-size:11.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.fam .fr{font-size:10.5px;color:var(--muted)}
+.fam img{height:34px;image-rendering:pixelated}.fam .fn{font-size:11.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.fam .fr{font-size:10.5px;color:var(--muted)}
+.toasts{position:absolute;top:46px;left:50%;transform:translateX(-50%);z-index:6;width:min(460px,calc(100% - 460px));min-width:min(300px,calc(100% - 20px));display:flex;flex-direction:column;gap:4px;pointer-events:none}
+.toast{pointer-events:auto;display:flex;align-items:center;gap:8px;background:linear-gradient(180deg,rgba(28,34,42,.97),rgba(17,21,26,.97));border:1px solid var(--line);border-left:4px solid #7a868e;border-radius:6px;padding:4px 5px 4px 9px;box-shadow:0 4px 14px rgba(0,0,0,.4);animation:tin .25s ease-out;transition:opacity .3s,transform .3s}
+.toast.out{opacity:0;transform:translateY(-6px)}@keyframes tin{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+.toast .tk{flex:none;display:flex}.toast .td{display:none}.toast .tt{font-family:var(--f-display);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase}.toast .td{font-size:11.5px;color:var(--muted)}
+.toast .tx{flex:1;min-width:0;font-size:13px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.toast.big .tx{font-weight:600}.toast.big{box-shadow:0 0 0 1px rgba(255,255,255,.08),0 8px 26px rgba(0,0,0,.55)}
+.toast .tb{flex:none;display:flex;gap:3px;align-items:center}.toast .tb button{font:inherit;font-size:12px;padding:2px 8px;border-radius:5px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:var(--fg);cursor:pointer}
+.toast .tb .go{background:var(--accent);color:#11151a;border-color:var(--accent);font-weight:600}.toast .tb .cl{font-size:16px;line-height:1}.toast .tb .cl:hover{background:rgba(216,72,58,.35)}
+.toast.war{border-left-color:#d8483a}.toast.war .tt{color:#f08070}.toast.pol{border-left-color:#5a8ad8}.toast.pol .tt{color:#8ab4f0}.toast.eco{border-left-color:#e8c050}.toast.eco .tt{color:#f0d070}
+.toast.dip{border-left-color:#5ac0a0}.toast.dip .tt{color:#80e0c0}.toast.rel{border-left-color:#b07ad8}.toast.rel .tt{color:#d0a0f0}.toast.dis{border-left-color:#e8843a}.toast.dis .tt{color:#f0a870}.toast.death{border-left-color:#c8c0b0}.toast.death .tt{color:#e0d8c8}.toast.misc .tt{color:var(--muted)}
+.chron{position:absolute;top:46px;left:50%;transform:translateX(-50%);z-index:7;width:min(440px,calc(100% - 20px));max-height:min(60%,calc(100% - 120px));display:flex;flex-direction:column;background:linear-gradient(180deg,rgba(26,32,39,.98),rgba(15,19,24,.98));border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 28px rgba(0,0,0,.5);font-size:13.5px}
+.chron .ch-h{display:flex;align-items:center;padding:12px 14px 6px;font-family:var(--f-display);font-size:18px}.cl-f{display:flex;flex-wrap:wrap;gap:4px;padding:4px 14px 8px;border-bottom:1px solid var(--line)}
+.cl-f button{font:inherit;font-size:12px;padding:3px 9px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--muted);cursor:pointer}.cl-f button.on{background:var(--accent);color:#11151a;border-color:var(--accent)}
+.cl-list{list-style:none;margin:0;padding:6px 14px 12px;overflow:auto;min-height:0}.cl-list li{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:start;padding:6px 0 6px 12px;border-bottom:1px solid rgba(255,255,255,.05);position:relative}
+.cl-list li::before{content:"";position:absolute;left:0;top:12px;width:6px;height:6px;border-radius:50%;background:#7a868e}.cl-list li.war::before{background:#d8483a}.cl-list li.pol::before{background:#5a8ad8}.cl-list li.eco::before{background:#e8c050}.cl-list li.dip::before{background:#5ac0a0}.cl-list li.rel::before{background:#b07ad8}.cl-list li.dis::before{background:#e8843a}.cl-list li.death::before{background:#e8e0d0}
+.cl-list .d{color:var(--muted);font-size:11.5px;white-space:nowrap;padding-top:1px}.cl-list button{font:inherit;font-size:11.5px;padding:2px 8px;border-radius:4px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:var(--fg);cursor:pointer}.cl-list .empty{color:var(--muted);display:block}
+.app.wide{grid-template-columns:minmax(0,1fr) 0;column-gap:0}.app.wide .panel{display:none}
+#chronBtn{position:relative}#chronBtn[data-n]::after{content:attr(data-n);position:absolute;top:-6px;right:-6px;min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:8px;background:#d8483a;color:#fff;font-size:10px;line-height:16px;text-align:center}
 .notice{position:absolute;top:52px;left:50%;transform:translateX(-50%);max-width:calc(100% - 20px);z-index:4;display:flex;align-items:center;gap:10px;background:rgba(17,21,26,.92);border:1px solid #e8743a;border-radius:6px;padding:5px 6px 5px 12px;font-size:13px;color:#ffb07a;font-weight:700}
 .notice button{font-size:12px;padding:3px 10px}
 .loading{position:absolute;inset:0;z-index:5;display:grid;place-items:center;background:rgba(10,14,20,.82);transition:opacity .3s}
@@ -177,6 +198,8 @@ canvas.ic{width:28px;height:28px;flex:none;image-rendering:pixelated;background:
       <button id="zin" aria-label="Acercar">+</button>
       <button id="zout" aria-label="Alejar">−</button>
       <button id="zfit">Encuadrar</button>
+      <button id="chronBtn" title="Todo lo que ha pasado">Crónica</button>
+      <button id="panelTog" title="Ocultar el panel de la derecha" aria-pressed="false">Panel ⇥</button>
     </div>
     <div class="thermo" id="heightLegend" hidden><b>Altura</b><div class="bar" style="background:linear-gradient(90deg,#0c1e4a 0%,#2a5aa0 27.2%,#7ab0d8 42.9%,#3c8a3a 43.5%,#9cbc4a 50%,#d8c060 57.6%,#a0703a 68.5%,#8a8580 82.6%,#ffffff 100%)"></div><div class="ticks"><span style="left:0">−4000</span><span style="left:43.5%">0</span><span style="left:100%">5200 m</span></div></div>
     <div class="thermo" id="windLegend" hidden><b>Viento</b><div class="bar" style="background:linear-gradient(90deg,#78b4e8 0%,#5ac87a 30%,#f0d43a 55%,#f08a2a 75%,#d0281e 100%)"></div><div class="ticks"><span style="left:0">0</span><span style="left:33%">40</span><span style="left:66%">80</span><span style="left:100%">120 km/h</span></div></div>
@@ -195,6 +218,10 @@ canvas.ic{width:28px;height:28px;flex:none;image-rendering:pixelated;background:
     <div class="vcard" id="vcard" hidden></div>
     <div class="pcard" id="pcard" hidden></div>
     <div class="notice" id="notice" role="status" hidden><span id="noticeTxt"></span><button id="noticeGo">Ver</button></div>
+    <div class="toasts" id="toasts" aria-live="polite"></div>
+    <div class="chron" id="chron" hidden><div class="ch-h"><b>Crónica del mundo</b><button class="x" aria-label="Cerrar crónica">×</button></div>
+      <div class="cl-f"><button data-f="all">Todo</button><button data-f="war">Guerra</button><button data-f="pol">Política</button><button data-f="dip">Diplomacia</button><button data-f="eco">Economía</button><button data-f="rel">Religión</button><button data-f="dis">Catástrofes</button><button data-f="death">Muertes</button></div>
+      <ul class="cl-list"></ul></div>
     <div class="spawn" id="spawnMenu" role="toolbar" aria-label="Crear vida">
       <span class="ttl">Crear vida</span>
       <button data-k="person"><canvas class="pi" data-n="1" width="9" height="10"></canvas>Aldeano</button>
@@ -462,6 +489,40 @@ const ROCKS = ['big:stone','ore:iron','ore:gold','gem:amethyst','gem:mana'];
 // ---- Generador de sprites ----
 // Letras: O contorno · d sombra · g medio · l luz · h brillo · t/T tronco · s piedra · x mineral · r baya · w/k corteza de abedul · c coco
 function grid(w, h){ return { w, h, a:new Array(w * h).fill('.') }; }
+// Edificios al doble de resolución pero a píxel fino: Scale2x suaviza las diagonales (tejados, cúpulas), el contorno se queda
+// en un píxel y las superficies ganan textura: tejas en los tejados, tablones en la madera y sillares en la piedra
+const WOODEN_PAL = new Set(['hut', 'almacen', 'torre', 'mercado']);
+function fineBuilding(g0, pal, P){
+  const w0 = g0.w, h0 = g0.h, at0 = (x, y) => x < 0 || y < 0 || x >= w0 || y >= h0 ? '.' : g0.a[y * w0 + x];
+  const n = grid(w0 * 2, h0 * 2), W2 = n.w, H2 = n.h;
+  for (let y = 0; y < h0; y++) for (let x = 0; x < w0; x++) {
+    const P0 = at0(x, y), A = at0(x, y - 1), Bc = at0(x + 1, y), C = at0(x - 1, y), D = at0(x, y + 1);
+    let e0 = P0, e1 = P0, e2 = P0, e3 = P0;
+    if (C === A && C !== D && A !== Bc) e0 = A; if (A === Bc && A !== C && Bc !== D) e1 = Bc;
+    if (D === C && D !== Bc && C !== A) e2 = C; if (Bc === D && Bc !== A && D !== C) e3 = D;
+    const i = y * 2 * W2 + x * 2; n.a[i] = e0; n.a[i + 1] = e1; n.a[i + W2] = e2; n.a[i + W2 + 1] = e3;
+  }
+  const at = (x, y) => x < 0 || y < 0 || x >= W2 || y >= H2 ? '.' : n.a[y * W2 + x], out = n.a.slice();
+  for (let y = 0; y < H2; y++) for (let x = 0; x < W2; x++) {
+    if (at(x, y) !== 'O') continue;
+    const nb = [at(x - 1, y), at(x + 1, y), at(x, y - 1), at(x, y + 1)];
+    if (nb.includes('.')) continue;                                  // borde exterior: se queda
+    const fill = nb.find(c => c !== 'O' && c !== '.'); if (!fill) continue;
+    const cx = x >> 1, cy = y >> 1;
+    if (at0(cx, cy) === 'O' && [at0(cx - 1, cy), at0(cx + 1, cy), at0(cx, cy - 1), at0(cx, cy + 1)].includes('.')) { out[y * W2 + x] = fill; continue; } // mitad interior del contorno exterior
+    const vert = at0(cx - 1, cy) !== 'O' && at0(cx + 1, cy) !== 'O', hor = at0(cx, cy - 1) !== 'O' && at0(cx, cy + 1) !== 'O';
+    if ((vert && x % 2) || (hor && y % 2) || (!vert && !hor && x % 2 && y % 2)) out[y * W2 + x] = fill; // líneas interiores de un píxel
+  }
+  const wood = WOODEN_PAL.has(pal), dark = { r:'R', w:'W', s:'S', g:'G', p:'P' };
+  for (let y = 0; y < H2; y++) for (let x = 0; x < W2; x++) {
+    const c = out[y * W2 + x], dk = dark[c]; if (!dk || !P[dk]) continue;
+    const up = out[(y - 1) * W2 + x], row = y % 3, band = (y / 3) | 0;
+    if (c === 'r') { if (row === 2 && (x + band * 2) % 4 !== 0 && up === 'r') out[y * W2 + x] = dk; }          // hileras de tejas
+    else if (wood && c === 'w') { if (row === 2 && (x + band * 5) % 9 !== 0) out[y * W2 + x] = dk; }         // tablones
+    else if (row === 2 || (row !== 2 && (x + (band % 2) * 3) % 6 === 0)) { if (up && up !== 'O' && up !== '.') out[y * W2 + x] = dk; } // sillares
+  }
+  n.a = out; return n;
+}
 const gset = (g, x, y, ch) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && y >= 0 && x < g.w && y < g.h) g.a[y * g.w + x] = ch; };
 const gget = (g, x, y) => (x < 0 || y < 0 || x >= g.w || y >= g.h) ? '.' : g.a[y * g.w + x];
 const toneOf = lit => lit > .5 ? 'h' : lit > .12 ? 'l' : lit > -.38 ? 'g' : 'd';
@@ -758,9 +819,7 @@ function sprite(key, variant = 0, season = spriteSeason, form = 'a', sz = 1, rac
     default:        res = fromRows(GEM);
   }
   if (shape === 'house' || shape === 'mill' || shape === 'well' || shape === 'hall' || shape === 'store' || shape === 'tower' || shape === 'temple' || shape === 'bank' || shape === 'wonder') { // cada píxel, un bloque de 2×2: el dibujo queda igual pero al doble
-    const g0 = res.g, n = grid(g0.w * 2, g0.h * 2);
-    for (let y = 0; y < n.h; y++) for (let x = 0; x < n.w; x++) n.a[y * n.w + x] = g0.a[(y >> 1) * g0.w + (x >> 1)];
-    res = { g:n, ax:res.ax * 2 + 1 };
+    res = { g:fineBuilding(res.g, pal, P), ax:res.ax * 2 + 1 };
   }
   if (form === 'b') res = sapling(shape);
   else {
@@ -1634,9 +1693,53 @@ function nearDisaster(cause, px, py, R){
 function notify(text, target){
   if (typeof villages !== 'undefined') for (const g of villages) if (text.includes(g.name)) { (g.log ||= []).push({ d:Math.floor(yearT / DAY_LEN) + 1, txt:text }); if (g.log.length > 60) g.log.shift(); }
   if (!inDisaster) for (const [re, cause, R] of DISASTER_NOTICES) if (re.test(text)) { setTimeout(() => nearDisaster(cause, target && target.x, target && target.y, R), 1200); break; }
-  $('noticeTxt').textContent = text; noticeTarget = target; $('notice').hidden = false;
-  clearTimeout(noticeTimer); noticeTimer = setTimeout(() => { $('notice').hidden = true; }, 7000);
+  pushToast(text, target);
 }
+// ---- Avisos: tarjetas apiladas por tipo, que duran más si son importantes; y la crónica con todo lo que ha pasado ----
+const TOAST_KIND = [
+  ['war', /guerra|ataca|saque|conquist|Emboscada|rechaz|asalto|marchan a atacar|arrasada/],
+  ['pol', /lecciones|golpe|Golpe|evoluci|Manifest|se corona|régimen|teocracia|Socialista|socialismo|imperio|independiza|partidos|se une por las buenas|escinden|dinastía|hereda la corona|soldados? carga|detiene|cede ante/],
+  ['eco', /moneda|banco|precios|Bancarrota|nflación|Flujo|presta|mercado|caravana|trueque/],
+  ['dip', /firman|alianza|Alianza|Pacto|Liga|Tratado|Coalición|Concordia|abandona|diplomático|ahora son|se han encontrado|se disuelve/],
+  ['rel', /dios|diosa|ritual|templo|venerar|sacrific|ofrenda|plaza sagrada|sacerdotes/],
+  ['dis', /tormenta|tornado|huracán|terremoto|volcán|meteorito|incendio|fuego|inunda|tsunami|sequía|helada|tromba|erupción|derrumbado|derruid/],
+  ['death', /muere|Murió|ha muerto|extinguido|ejecutados/]
+];
+const TOAST_TITLE = { war:'Guerra', pol:'Política', eco:'Economía', dip:'Diplomacia', rel:'Religión', dis:'Catástrofe', death:'Muerte', misc:'Noticia' };
+const TOAST_BIG = /declara la guerra|conquista|Triunfa|Golpe de estado|Revolución|extinguido|arrasada|Bancarrota|firman|teocracia|República Socialista|imperio|independiza|entra en la guerra|rechazan el ataque|se corona/;
+let chronicle = [], toastSeq = 0, chronUnread = 0, lastToastT = -1e9;
+const kindOf = t => (TOAST_KIND.find(([, re]) => re.test(t)) || ['misc'])[0];
+function pushToast(text, target){
+  const kind = kindOf(text), big = TOAST_BIG.test(text), box = $('toasts');
+  chronicle.push({ d:Math.floor(yearT / DAY_LEN) + 1, text, kind, target }); if (chronicle.length > 150) chronicle.shift();
+  if ($('chron') && !$('chron').hidden) renderChronicle();
+  if (!box) return;
+  const btn = $('chronBtn'); if (btn && $('chron').hidden) { chronUnread++; btn.dataset.n = chronUnread > 99 ? '99+' : chronUnread; }
+  // Solo salen arriba los importantes y, de los demás, uno cada pocos segundos (todo queda en la crónica)
+  const now = performance.now();
+  if (!big && !['war', 'dis', 'pol', 'dip'].includes(kind)) return;
+  if (!big) { if (now - lastToastT < 6000) return; lastToastT = now; }
+  for (const el of box.children) if (el.dataset.txt === text) { el.remove(); break; } // el mismo aviso repetido: solo una vez
+  const el = document.createElement('div'); el.className = `toast ${kind}${big ? ' big' : ''}`; el.dataset.txt = text; el.dataset.id = ++toastSeq;
+  el.innerHTML = `<div class="tk"><span class="tt">${TOAST_TITLE[kind]}</span><span class="td">día ${Math.floor(yearT / DAY_LEN) + 1}</span></div><div class="tx"></div>
+    <div class="tb">${target ? '<button class="go">Ver</button>' : ''}<button class="cl" aria-label="Cerrar aviso">×</button></div>`;
+  el.querySelector('.tx').textContent = text;
+  if (target) el.querySelector('.go').onclick = () => { setFollow(null); centerOn(target.x, target.y - 10, Math.max(zoom, 5)); el.remove(); };
+  el.querySelector('.cl').onclick = () => el.remove();
+  let left = big ? 14000 : 8000, t0 = performance.now(), timer = 0;
+  const arm = () => { t0 = performance.now(); timer = setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 300); }, left); };
+  el.onmouseenter = () => { clearTimeout(timer); left -= performance.now() - t0; }; el.onmouseleave = () => { left = Math.max(left, 2500); arm(); };
+  box.prepend(el); arm();
+  // Como mucho 4 a la vez: se van primero los menos importantes y más viejos
+  while (box.children.length > 2) { const kids = [...box.children].reverse(), drop = kids.find(k => !k.classList.contains('big')) || kids[0]; drop.remove(); }
+}
+function renderChronicle(){
+  const el = $('chron'), f = el.dataset.f || 'all';
+  const list = chronicle.filter(c => f === 'all' || c.kind === f).slice(-80).reverse();
+  el.querySelector('.cl-list').innerHTML = list.map((c, k) => `<li class="${c.kind}"><span class="d">día ${c.d}</span><span class="txt">${esc(c.text)}</span>${c.target ? `<button data-ci="${chronicle.indexOf(c)}">Ver</button>` : ''}</li>`).join('') || '<li class="empty">Aún no ha pasado nada</li>';
+  for (const b of el.querySelectorAll('.cl-f button')) b.classList.toggle('on', b.dataset.f === f);
+}
+
 // ---- Coladas de lava vivas: avanzan casilla a casilla, se paran, se enfrían y quedan como roca volcánica ----
 let ash = [];
 function flowPath(v){
@@ -4323,7 +4426,8 @@ function chooseJob(v, g){
   add('arar', farms.some(f => (f.st === 'pradera' || f.st === 'muerta') && !f.claim) ? 4 : 0);
   add('campo', farms.length < Math.min(48, 8 + pop * 2) && !farms.some(f => f.st === 'pradera') && !busyWith(g, 'campo') ? 3 : 0);
   const noTala = ((g.taboo || {}).talar || 0) > yearT;
-  add('talar', noTala ? .2 : needHouse && g.wood < 4 + busyWith(g, 'construir') * 4 + 4 ? 6 : g.wood < 12 + Math.max(0, pop / 4 + 1 - houses) * 6 ? 3 : .4);
+  const wantHall = g.hall == null && pop >= 8 && houses >= 2;
+  add('talar', noTala ? .2 : wantHall && g.wood < 10 ? 5 : needHouse && g.wood < 4 + busyWith(g, 'construir') * 4 + 4 ? 6 : g.wood < 12 + Math.max(0, pop / 4 + 1 - houses) * 6 ? 3 : .4);
   const hungry = g.food < pop * 4, share = g.food > 0 ? (g.meat || 0) / g.food : 0, want = g.diet ?? .5;
   const needMeat = share < want - .1, needVeg = share > want + .1;
   add('bayas', (hungry ? 3 : .5) * (needVeg ? 2 : needMeat ? .5 : 1));
@@ -4342,7 +4446,7 @@ function chooseJob(v, g){
   add('puente', know.puente && houses >= 2 && spare >= 8 && bridges.filter(b => b.vid === g.id && !b.pier).length < 1 + Math.floor(pop / 6) && !busyWith(g, 'puente') ? (g.crossings && [...g.crossings.values()].some(n => n >= 4) ? 7 : 3.5) : 0);
   add('muelle', know.barca && houses >= 3 && !g.port && spare >= 8 && !busyWith(g, 'muelle') ? 3.5 : 0);
   add('carro', know.montar && houses >= 3 && (g.carts || 0) < 1 + Math.floor(pop / 10) && spare >= 10 && !busyWith(g, 'carro') ? 2.5 : 0);
-  add('ayuntamiento', g.hall == null && pop >= 12 && houses >= 3 && spare >= 16 && g.stone >= 10 && !busyWith(g, 'ayuntamiento') ? 5 : 0);
+  add('ayuntamiento', g.hall == null && pop >= 8 && houses >= 2 && g.wood >= 10 && g.stone >= 6 && !busyWith(g, 'ayuntamiento') ? 12 : 0);
   add('almacen', Math.max(g.food, g.wood, g.stone) > capOf(g) * .8 && g.wood >= 8 && !busyWith(g, 'almacen') ? 8 : 0);
   add('torre', g.hall != null && (g.sawBeast || pop >= 16) && towersOf(g).length < 1 + Math.floor(pop / 10) && spare >= 12 && g.stone >= 4 && !busyWith(g, 'torre') ? 3 : 0);
   add('muralla', g.hall != null && pop >= 18 && spare >= 6 && wallLeft(g) > 0 && !busyWith(g, 'muralla') ? 2.5 : 0);
@@ -4372,7 +4476,7 @@ function chooseJob(v, g){
   add('ofrenda', sacred && (g.wrath || 0) > 2 && g.food >= 4 && busyWith(g, 'ofrenda') < 2 ? 4 + g.wrath : 0);
   add('sacrificio', sacred && (g.wrath || 0) > 5 && penAnimals(g).length >= 2 && !busyWith(g, 'sacrificio') ? 7 : 0);
   add('plantar', ((g.cut || 0) > (g.planted || 0) + 1 || (g.treesNear ?? 99) < 14) && busyWith(g, 'plantar') < 2 ? ((g.treesNear ?? 99) < 14 ? 5 : 2) : 0);
-  add('picar', (g.stone < 12 + (know.pozo ? 5 : 0) ? 1.2 : .2) + ((g.rocksNear || 0) > 0 ? 2.5 : 0)); // y despejan las piedras del pueblo
+  add('picar', (wantHall && g.stone < 6 ? 4 : g.stone < 12 + (know.pozo ? 5 : 0) ? 1.2 : .2) + ((g.rocksNear || 0) > 0 ? 2.5 : 0)); // y despejan las piedras del pueblo
   add('pasear', .3);
   if (L.includes('obras')) for (const j of J) if (['construir', 'pozo', 'almacen', 'puente', 'molino', 'mercado', 'templo', 'reparar'].includes(j[0])) j[1] *= 1.5;
   let k = Math.random() * J.reduce((s, j) => s + j[1], 0);
@@ -4678,11 +4782,11 @@ function runTask(v, g, dt){
     }; break; }
     case 'ayuntamiento': case 'almacen': { const hall = t.k === 'ayuntamiento'; v.actT = hall ? 14 : 8; v.onDone = () => {
       const x = t.i % W, y = (t.i / W) | 0, [hw, hh] = hall ? [5, 7] : [4, 5];
-      if ((hall ? g.hall != null || g.wood < 16 || g.stone < 10 : g.wood < 8)) return;
+      if ((hall ? g.hall != null || g.wood < 10 || g.stone < 6 : g.wood < 8)) return;
       if (clearable(x - hw, y - hh, x + hw, y + (hall ? 0 : 1))) clearSite(g, x - hw, y - hh, x + hw, y + (hall ? 0 : 1));
       if ((!tileFree(x, y) && !(hall && !world.objs[t.i])) || buildingClash(x, y, t.k, t.i)) return;
       world.objs[t.i] = { key:hall ? 'hall:ayuntamiento' : 'store:almacen', v:0, ox:0, oy:0, vid:g.id };
-      if (hall) { g.hall = t.i; g.wood -= 16; g.stone -= 10; g.flag ||= makeFlag(g); g.flagUrl = flagDataUrl(g.flag); notify(`${g.name} ya tiene ayuntamiento y ha creado su bandera`, { x:x * T, y:y * T }); }
+      if (hall) { g.hall = t.i; g.wood -= 10; g.stone -= 6; const nf = !g.flag; g.flag ||= makeFlag(g); g.flagUrl = flagDataUrl(g.flag); notify(`${g.name} ya tiene ayuntamiento${nf ? ' y ha creado su bandera' : ''}`, { x:x * T, y:y * T }); }
       else { (g.stores ||= []).push(t.i); g.wood -= 8; if (g.stores.length === 1) notify(`En ${g.name} han construido un almacén`, { x:x * T, y:y * T }); connect(g, x, y); }
       composeRegion(x - 8, y - 12, x + 8, y + 12); addEffect(x * T + 2, y * T + 3, 'poof');
     }; break; }
@@ -5772,6 +5876,17 @@ function partyLogo(p){
   return p.logoUrl = c.toDataURL();
 }
 const logoImg = (p, sz = 18) => `<img class="plogo" src="${partyLogo(p)}" width="${sz}" height="${sz}" alt="" title="${esc(p.name)}">`;
+// Redibujar una ficha sin quitarle el clic al jugador: si está pulsando dentro, se espera; si solo tiene el ratón encima, se refresca más despacio
+let uiDown = false;
+addEventListener('pointerdown', e => { if (e.target.closest && e.target.closest('.vcard,.pcard,.chron,.toasts')) uiDown = true; }, true);
+addEventListener('pointerup', () => { setTimeout(() => { uiDown = false; }, 0); }, true);
+function setCardHTML(el, html, force){
+  if (el._html === html) return;
+  if (!force && el.matches(':hover') && (uiDown || performance.now() - (el._t || 0) < 1500)) return;
+  const sc = el.querySelector('.cbody') || el, top = sc.scrollTop;
+  el.innerHTML = html; el._html = html; el._t = performance.now();
+  (el.querySelector('.cbody') || el).scrollTop = top;
+}
 // ---- Retratos, ánimo y familia de cada persona ----
 const portraitCache = new WeakMap();
 function portraitUrl(v, px = 3){
@@ -5837,7 +5952,7 @@ function familyTree(v){
   if (!par.length && !kids.length && !partner) h += `<div class="muted">De los primeros pobladores: no se sabe de dónde viene${ageOf(v) >= ADULT_H ? ' y aún no tiene hijos' : ''}.</div>`;
   return h;
 }
-function renderPersonCard(){
+function renderPersonCard(force){
   const el = $('pcard'), v = follow;
   if (!v || v.born === undefined) { el.hidden = true; return; }
   el.hidden = false;
@@ -5846,9 +5961,9 @@ function renderPersonCard(){
   const belief = !g || !g.faith ? 'En su pueblo aún no hay religión' : pietyOf(v) > .75 ? `Muy devot${sexW(v, 'o', 'a')} de ${esc(g.faith.name)}: venera a ${esc(godTxt(g.faith))}` : pietyOf(v) > .3 ? `Creyente de ${esc(g.faith.name)} (${esc(godTxt(g.faith))})` : `No es creyente, aunque en su pueblo veneran a ${esc(g.faith.god)}`;
   const vote = a < ADULT_H ? 'Aún no vota' : !p ? 'En su pueblo no hay partidos' : votes(g) ? `${logoImg(p, 30)} Vota a ${artP(p)} <b style="color:${p.col}">${esc(p.name)}</b>` : `${logoImg(p, 30)} Simpatiza con ${artP(p)} <b style="color:${p.col}">${esc(p.name)}</b> (no hay elecciones: ${regimeName(g).toLowerCase()})`;
   const ideoPos = ((v.ideo || 0) + 1) / 2 * 100;
-  el.innerHTML = `<div class="ph"><img class="pp" src="${portraitUrl(v, 4)}" alt=""><div><h3>${esc(v.name)}</h3>
+  setCardHTML(el, `<div class="ph"><img class="pp" src="${portraitUrl(v, 4)}" alt=""><div><h3>${esc(v.name)}</h3>
       <div class="muted">${v.sex === 'h' ? 'Hombre' : 'Mujer'} · ${Math.floor(a)} año${Math.floor(a) === 1 ? '' : 's'} (${stageOf(v)})</div>
-      <div>${g && n.flagUrl ? `<img class="fl" src="${n.flagUrl}" alt="">` : ''}${g ? esc(g.name) : 'Sin pueblo'}${g && g.leader === v ? ` · <b class="gold">${leaderTitle(g)}</b>` : ''}</div></div>
+      <div>${g ? `<button class="lnk" data-vid="${g.id}" title="Ver la ficha del pueblo">${n.flagUrl ? `<img class="fl" src="${n.flagUrl}" alt="">` : ''}${esc(g.name)}</button>` : 'Sin pueblo'}${g && g.leader === v ? ` · <b class="gold">${leaderTitle(g)}</b>` : ''}</div></div>
       <button class="x" aria-label="Soltar">×</button></div>
     <div class="lifebar" title="Vida: ${Math.round(life * 100)} %">${bar(life, life > .8 ? '#b89a6a' : '#6a9ac8', 270)}</div>
     <div class="sec"><div class="kv"><span>Oficio</span><b>${a < ADULT_H ? 'Ninguno (es pequeñ' + sexW(v, 'o', 'a') + ')' : oficioTxt(v) || 'Sin oficio'}</b></div>
@@ -5866,14 +5981,14 @@ function renderPersonCard(){
     <h4>Política</h4><div>${vote}</div>
     <div class="ideo"><span>izquierda</span><span class="track"><i style="left:${ideoPos}%"></i></span><span>derecha</span></div>
     <h4>Creencias</h4><div>${belief}</div>
-    <h4>Familia</h4><div class="tree">${familyTree(v)}</div>`;
+    <h4>Familia</h4><div class="tree">${familyTree(v)}</div>`, force);
 }
 // ---- Ficha del pueblo, por pestañas ----
 let cardTab = 'resumen';
 const CARD_TABS = [['resumen', 'Resumen'], ['gente', 'Gente'], ['economia', 'Economía'], ['politica', 'Política'], ['historia', 'Historia']];
 function logKind(t){ return /guerra|ataca|saque|conquist|muerto en|Emboscada|rechaz|asalto/.test(t) ? 'war' : /elecciones|golpe|Golpe|revoluc|Manifest|partido|corona|régimen|independiza|rey|reina/.test(t) ? 'pol' : /moneda|banco|precios|Bancarrota|inflación|Flujo|presta|mercado|caravana/.test(t) ? 'eco' : /dios|diosa|ritual|templo|venerar|sacrific|ofrenda|fe /.test(t) ? 'rel' : /Murió|muere|ahogado/.test(t) ? 'death' : 'misc'; }
 function tile(label, val, sub){ return `<div class="tile"><span>${label}</span><b>${val}</b>${sub ? `<em>${sub}</em>` : ''}</div>`; }
-function renderVillageCard(){
+function renderVillageCard(force){
   const el = $('vcard'), g = villageById(cardVid);
   if (!g || !popOf(g)) { el.hidden = true; cardVid = 0; return; }
   el.hidden = false;
@@ -5885,13 +6000,13 @@ function renderVillageCard(){
   const wars = villages.filter(o => o !== g && popOf(o) && rels.get(relKey(g, o)) && rels.get(relKey(g, o)).war);
   let body = '';
   if (cardTab === 'resumen') {
-    body = `<div class="tiles">${tile('Habitantes', ps.length, `${kids} niños · ${old} ancianos`)}${tile('Casas', housesOf(g).length, `${buildingsOf(g).filter(b => world.objs[b]).length} edificios`)}${tile('Ánimo', `<span style="color:${moodCol(avgMood)}">${avgMood}</span>`, avgMood > 60 ? 'contentos' : avgMood > 40 ? 'tranquilos' : 'descontentos')}${tile('Fundada', `día ${Math.floor((g.born || 0) / DAY_LEN) + 1}`, g.leader && !g.leader.dead ? `${leaderTitle(g)}: ${esc(g.leader.name)}` : 'sin líder')}</div>
+    body = `<div class="tiles">${tile('Habitantes', ps.length, `${kids} niños · ${old} ancianos`)}${tile('Casas', housesOf(g).length, `${buildingsOf(g).filter(b => world.objs[b]).length} edificios`)}${tile('Ánimo', `<span style="color:${moodCol(avgMood)}">${avgMood}</span>`, avgMood > 60 ? 'contentos' : avgMood > 40 ? 'tranquilos' : 'descontentos')}${tile('Fundada', `día ${Math.floor((g.born || 0) / DAY_LEN) + 1}`, g.leader && !g.leader.dead ? `${leaderTitle(g)}: <button class="lnk" data-pid="${refOf(g.leader)}">${esc(g.leader.name)}</button>` : 'sin líder')}</div>
       <h4>Almacén</h4><div class="needs">
         <span>Comida</span>${bar(g.food / cap, '#7ab04a', 150)}<span>${Math.floor(g.food)}</span>
         <span>Madera</span>${bar(g.wood / cap, '#b8864e', 150)}<span>${g.wood}</span>
         <span>Piedra</span>${bar(g.stone / cap, '#a8a49c', 150)}<span>${g.stone}</span></div>
       <h4>Estado</h4><div class="needs"><span>Descontento</span>${bar(anger / 100, anger > 60 ? '#d8483a' : anger > 35 ? '#e8a838' : '#7ab04a', 150)}<span>${anger} %</span></div>
-      ${g.protest ? '<div class="alert">Manifestación en curso</div>' : ''}${g.coup ? '<div class="alert">Golpe de estado en curso</div>' : ''}${wars.length ? `<div class="alert">En guerra con ${wars.map(o => esc(o.name)).join(', ')}</div>` : ''}
+      ${g.protest ? '<div class="alert">Manifestación en curso</div>' : ''}${g.coup ? '<div class="alert">Golpe de estado en curso</div>' : ''}${wars.length ? `<div class="alert">En guerra con ${wars.map(o => `<button class="lnk" data-vid="${o.id}">${esc(o.name)}</button> (${REASON_TXT[rels.get(relKey(g, o)).war.reason] || 'el territorio'})`).join(', ')}</div>` : ''}
       ${g.faith ? `<h4>Religión</h4><div>${esc(g.faith.name)}: veneran a ${esc(godTxt(g.faith))}${(g.faith.pantheon || []).length ? ` y ${g.faith.pantheon.length} dios${g.faith.pantheon.length > 1 ? 'es' : ''} más` : ''}</div>` : ''}
       <h4>Tecnologías</h4><div class="chips">${techsOf(g).map(t => `<span>${t}</span>`).join('')}</div>`;
   } else if (cardTab === 'gente') {
@@ -5912,19 +6027,17 @@ function renderVillageCard(){
     body = `<div>${govCard(g)}</div>
       ${n.parties ? `<h4>Partidos</h4><div class="parties">${n.parties.map((q, k) => { const pct = vr && vr[k] != null ? vr[k] : null; return `<div class="party${n.ruling === k ? ' on' : ''}">${logoImg(q, 30)}<div class="pi"><b style="color:${q.col}">${esc(q.name)}${n.ruling === k ? ' <span class="gold">★ gobierna</span>' : ''}</b><span class="muted">${sideTxt(q)} · ${q.laws.map(l => LAW_TXT[l]).join(', ')}</span>${pct != null ? `<span class="pv">${bar(pct / 100, q.col, 150)} ${pct} %</span>` : ''}</div></div>`; }).join('')}</div>` : '<h4>Partidos</h4><div>Aún no tienen partidos</div>'}
       ${lawsOf(g).length ? `<h4>Leyes</h4><div class="chips">${lawsOf(g).map(l => `<span>${LAW_TXT[l]}</span>`).join('')}</div>` : ''}
-      <h4>Nación</h4><div>${status}${provinces.length ? `: ${provinces.map(o => esc(o.name)).join(', ')}` : ''}${n !== g ? ` · descontento con la capital ${Math.round(g.unrest || 0)} %` : ''}</div>
+      <h4>Nación</h4><div>${status}${provinces.length ? `: ${provinces.map(o => `<button class="lnk" data-vid="${o.id}">${esc(o.name)}</button>`).join(', ')}` : ''}${n !== g ? ` · descontento con la capital ${Math.round(g.unrest || 0)} %` : ''}</div>
       ${allyCard(g)}${warCard(g)}
-      <h4>Relaciones</h4><div class="chips rel">${villages.filter(o => o !== g && popOf(o) && rels.get(relKey(g, o)) && rels.get(relKey(g, o)).known).map(o => { const r = rels.get(relKey(g, o)), w = relWord(r), c = r.war ? '#d8483a' : r.v > 40 ? '#7ab04a' : r.v > 0 ? '#a8c060' : r.v > -30 ? '#d8b848' : '#e08a3a'; return `<span style="border-color:${c}">${o.flagUrl ? `<img src="${o.flagUrl}" alt="">` : ''}${esc(o.name)} · <b style="color:${c}">${r.war ? 'en guerra' : w}</b></span>`; }).join('') || 'Aún no conocen a nadie'}</div>`;
+      <h4>Relaciones</h4><div class="chips rel">${villages.filter(o => o !== g && popOf(o) && rels.get(relKey(g, o)) && rels.get(relKey(g, o)).known).map(o => { const r = rels.get(relKey(g, o)), w = relWord(r), c = r.war ? '#d8483a' : r.v > 40 ? '#7ab04a' : r.v > 0 ? '#a8c060' : r.v > -30 ? '#d8b848' : '#e08a3a'; return `<button class="relb" data-vid="${o.id}" style="border-color:${c}" title="Ver la ficha de ${esc(o.name)}">${o.flagUrl ? `<img src="${o.flagUrl}" alt="">` : ''}${esc(o.name)} · <b style="color:${c}">${r.war ? 'en guerra' : w}</b></button>`; }).join('') || 'Aún no conocen a nadie'}</div>`;
   } else {
     body = `<ul class="log">${(g.log || []).slice(-30).reverse().map(e => `<li class="${logKind(e.txt)}"><span class="d">día ${e.d}</span>${esc(e.txt.startsWith(`En ${g.name} `) ? capFirst(e.txt.slice(g.name.length + 4)) : e.txt)}</li>`).join('') || '<li>Nada destacable aún</li>'}</ul>`;
   }
-  const sc = el.querySelector('.cbody'), top = sc ? sc.scrollTop : 0;
-  el.innerHTML = `<div class="vh">${n.flagUrl ? `<img class="flag" src="${n.flagUrl}" alt="">` : '<span class="flag none"></span>'}<div><h3>${esc(g.name)}</h3>
+  setCardHTML(el, `<div class="vh">${n.flagUrl ? `<img class="flag" src="${n.flagUrl}" alt="">` : '<span class="flag none"></span>'}<div><h3>${esc(g.name)}</h3>
       <div class="pills"><span>${regimeName(g)}</span><span>${status}</span>${al ? `<span class="ally">${esc(al.abbr)}</span>` : ''}${g.coin ? `<span class="coin">${esc(g.coin)}</span>` : ''}</div></div>
-      <button class="x" aria-label="Cerrar">×</button></div>
+      <div class="vbtns"><button class="go" data-go="${g.id}" title="Llevar la cámara al pueblo">Ir</button><button class="x" aria-label="Cerrar">×</button></div></div>
     <div class="tabs">${CARD_TABS.map(([k, t]) => `<button data-tab="${k}"${cardTab === k ? ' class="on"' : ''}>${t}</button>`).join('')}</div>
-    <div class="cbody">${body}</div>`;
-  const nb = el.querySelector('.cbody'); if (nb) nb.scrollTop = top;
+    <div class="cbody">${body}</div>`, force);
 }
 // ---- Daños en los edificios: tormentas, terremotos, tsunamis y fuego ----
 const BLD = new Set(['house', 'hall', 'store', 'market', 'mill', 'tower', 'well', 'temple', 'obelisk', 'altar', 'bank', 'wonder']);
@@ -6117,7 +6230,8 @@ function diploTick(){
       const att = armed(a) + popOf(a) * .3 >= armed(b) + popOf(b) * .3 ? a : b, def = att === a ? b : a;
       r.war = { att:att.id, def:def.id, reason:r.reason || 'territorio', start:yearT, raidT:yearT - 40, dead:0 };
       att.danger = def.danger = 120;
-      notify(`¡${att.name} declara la guerra a ${def.name} por ${REASON_TXT[r.war.reason] || 'el territorio'}!`, { x:def.fx * T, y:def.fy * T });
+      const sol = g0 => villagers.filter(v => !v.dead && v.vid === g0.id && v.weapon).length;
+      notify(`¡${att.name} declara la guerra a ${def.name}! Motivo: ${REASON_TXT[r.war.reason] || 'el territorio'}. ${att.name} tiene ${sol(att)} soldados y ${popOf(att)} habitantes; ${def.name}, ${sol(def)} soldados y ${popOf(def)} habitantes`, { x:def.fx * T, y:def.fy * T });
       callAllies(nationOf(att), nationOf(def));
       misfortune(def, 'guerra');
     }
@@ -6352,6 +6466,7 @@ function makeParties(g){
     parties.push({ name, ideo, laws, col:side === 'izq' ? '#d8483a' : side === 'der' ? '#3a6ab8' : '#e8b848' });
   }
   g.parties = parties;
+  if (!g.flag) { g.flag = makeFlag(g); g.flagUrl = flagDataUrl(g.flag); notify(`${g.name} se da a sí misma una bandera`, { x:g.fx * T, y:g.fy * T }); }
   if (!g.regime) { // la primera forma de gobierno: casi siempre una república; a veces quien manda se corona
     g.regime = Math.random() < .25 && g.leader && !g.leader.dead ? 'monarquia' : 'republica'; g.regimeT = yearT;
     if (g.regime === 'monarquia') notify(`${g.leader.name} se corona ${g.leader.sex === 'm' ? 'reina' : 'rey'} de ${g.name}: nace una monarquía`, { x:g.fx * T, y:g.fy * T });
@@ -7617,7 +7732,7 @@ const nameFor = sex => { const L = sex === 'm' ? NAMES_F : NAMES_M; return L[Mat
 let villagers = [], follow = null;
 function setFollow(v){
   follow = v;
-  $('followTag').hidden = !v; pcardT = 0; renderPersonCard();
+  $('followTag').hidden = !v; pcardT = 0; renderPersonCard(true);
   // Encuadre inmediato: sin viaje de cámara por medio mundo
   if (v) { centerOn(v.x, v.y - 5, Math.max(zoom, 6)); updateFollowTag(); }
 }
@@ -8031,7 +8146,7 @@ view.addEventListener('pointermove', e => {
 const endPtr = e => {
   const p0 = pts.get(e.pointerId);
   if (e.type === 'pointerup' && p0 && p0.pan && p0.btn === 0 && pts.size === 1 && params.tool === 'move' && Math.hypot(e.offsetX - p0.sx, e.offsetY - p0.sy) < 5) {
-    const g = villageAt(e.offsetX, e.offsetY); if (g) { cardVid = g.id; renderVillageCard(); }
+    const g = villageAt(e.offsetX, e.offsetY); if (g) { cardVid = g.id; renderVillageCard(true); }
   }
   pts.delete(e.pointerId); if (pts.size < 2) pinch = null; if (!pts.size) { painting = false; lastTile = null; view.style.cursor = ''; } };
 view.addEventListener('pointerup', endPtr);
@@ -8451,8 +8566,27 @@ new ResizeObserver(() => { $('speed').style.left = ($('season').offsetLeft + $('
 $('season').onclick = () => { yearT = (Math.floor(yearT / SEASON_LEN) + 1) * SEASON_LEN + .01; };
 $('noticeGo').onclick = () => { if (noticeTarget) { setFollow(null); centerOn(noticeTarget.x, noticeTarget.y - 10, Math.max(zoom, 5)); } $('notice').hidden = true; };
 $('followStop').onclick = () => setFollow(null);
+$('chronBtn').onclick = () => { const c = $('chron'); c.hidden = !c.hidden; $('toasts').hidden = !c.hidden; if (!c.hidden) { renderChronicle(); chronUnread = 0; delete $('chronBtn').dataset.n; } };
+$('chron').addEventListener('click', e => {
+  if (e.target.closest('.x')) { $('chron').hidden = true; $('toasts').hidden = false; return; }
+  const fb = e.target.closest('[data-f]'); if (fb) { $('chron').dataset.f = fb.dataset.f; renderChronicle(); return; }
+  const cb = e.target.closest('[data-ci]'); if (cb) { const c = chronicle[+cb.dataset.ci]; if (c && c.target) { setFollow(null); centerOn(c.target.x, c.target.y - 10, Math.max(zoom, 5)); } }
+});
+const setPanel = wide => { document.querySelector('.app').classList.toggle('wide', wide); $('panelTog').textContent = wide ? 'Panel ⇤' : 'Panel ⇥'; $('panelTog').title = wide ? 'Mostrar el panel de la derecha' : 'Ocultar el panel de la derecha'; $('panelTog').setAttribute('aria-pressed', wide); try { localStorage.setItem('forja-panel', wide ? '1' : '0'); } catch (err) {} };
+$('panelTog').onclick = () => setPanel(!document.querySelector('.app').classList.contains('wide'));
+try { if (localStorage.getItem('forja-panel') === '1') setPanel(true); } catch (err) {}
+window.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (!$('chron').hidden) { $('chron').hidden = true; $('toasts').hidden = false; } else if (follow) setFollow(null); else if (!$('vcard').hidden) { cardVid = 0; $('vcard').hidden = true; }
+  else for (const t of [...$('toasts').children]) t.remove();
+});
+const openVillage = id => { cardVid = id; cardTab = 'resumen'; renderVillageCard(true); };
+for (const id of ['vcard', 'pcard']) $(id).addEventListener('click', e => {
+  const vb = e.target.closest('[data-vid]'); if (vb) { openVillage(+vb.dataset.vid); return; }
+  const gb = e.target.closest('[data-go]'); if (gb) { const g = villageById(+gb.dataset.go); if (g) { setFollow(null); centerOn(g.fx * T, g.fy * T, Math.max(zoom, 4)); } }
+});
 $('vcard').addEventListener('click', e => {
-  const tb = e.target.closest('[data-tab]'); if (tb) { cardTab = tb.dataset.tab; renderVillageCard(); return; }
+  const tb = e.target.closest('[data-tab]'); if (tb) { cardTab = tb.dataset.tab; renderVillageCard(true); return; }
   if (e.target.closest('.x')) { cardVid = 0; $('vcard').hidden = true; return; }
   const pb = e.target.closest('[data-pid]'); if (pb) { const v = villagers.find(u => u.uid === +pb.dataset.pid && !u.dead); if (v) setFollow(v); }
 });
