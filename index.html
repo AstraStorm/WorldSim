@@ -5556,13 +5556,18 @@ function clampStore(g){
 }
 const penOverlap = (g, x0, y0, x1, y1) => villages.some(o => o.pen && !(x1 < o.pen.x0 - 1 || x0 > o.pen.x1 + 1 || y1 < o.pen.y0 - 1 || y0 > o.pen.y1 + 1));
 // ¿Esta casilla queda bajo el dibujo de una casa, pozo o molino de la aldea?
-let ubCache = null, ubT = -1;
+// Rejilla de casillas ocupadas por la huella de los edificios de todos los pueblos: se rehace solo si cambian
+let ubCache = null, ubT = -1, ubGrid = null, ubSig = '';
 function underBuilding(g, x, y){
-  if (ubT !== yearT || !ubCache) { ubT = yearT; ubCache = villages.flatMap(buildingsOf); } // los de todos los pueblos (una vez por paso)
-  for (const h of ubCache) {
-    const hx = h % W, hy = (h / W) | 0; if (Math.abs(x - hx) <= 5 && y - hy >= -7 && y - hy <= 1) return true;
+  if (ubT !== yearT || !ubCache) {
+    ubT = yearT; ubCache = villages.flatMap(buildingsOf);
+    const sig = ubCache.length + ':' + ubCache.reduce((a, b) => (a + b * 31) % 1e9, 0);
+    if (sig !== ubSig || !ubGrid || ubGrid.length !== N) {
+      ubSig = sig; if (!ubGrid || ubGrid.length !== N) ubGrid = new Uint8Array(N); else ubGrid.fill(0);
+      for (const h of ubCache) { const hx = h % W, hy = (h / W) | 0; for (let yy = Math.max(0, hy - 7); yy <= Math.min(H - 1, hy + 1); yy++) for (let xx = Math.max(0, hx - 5); xx <= Math.min(W - 1, hx + 5); xx++) ubGrid[yy * W + xx] = 1; }
+    }
   }
-  return false;
+  return x >= 0 && y >= 0 && x < W && y < H && ubGrid[y * W + x] === 1;
 }
 const STREETS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 // Solar que se puede despejar: tierra firme sin agua, y sin más estorbo que árboles o arbustos (que se talan)
@@ -8028,7 +8033,7 @@ function updateVillages(dt){
     if (desireSet.has(i) && wear[i] < 12) { desireSet.delete(i); pathMap.delete(i); }
     if (wear[i] <= 0) { wear[i] = 0; wornSet.delete(i); }
   }
-  if ((zoneT -= dt) <= 0) { zoneT = 2; buildZones(); }
+  if ((zoneT -= dt) <= 0) { zoneT = 5; buildZones(); } // el territorio cambia despacio
   const si = seasonInfo().i, grow = [1, 1.2, .6, .2][si];
   for (const [i, f] of farmMap) {
     const g = villageById(f.vid); if (!g) { farmMap.delete(i); continue; }
@@ -9192,6 +9197,17 @@ function drawGlobe(t){
 const waveCv = document.createElement('canvas'), wvctx = waveCv.getContext('2d');
 let waveImg = null, coastK = null, coastD = null, coastPh = null, coastRow = null, glintK = null, glintPh = null, waveLast = 0, waveBand = 0;
 let riverK = null, riverF = null, riverS = null, riverRow = null, lavaK = null, lavaV = null, lavaD = null, lavaL = null;
+// El navegador puede vaciar los lienzos grandes cuando la pestaña pasa tiempo en segundo plano: se comprueba
+// un píxel de tierra del terreno y, si está vacío, se repintan las capas
+function layersAlive(){
+  if (!world || busy) return true;
+  for (let k = 0; k < 6; k++) { const i = Math.floor(Math.random() * N); if (tctx.getImageData((i % W) * T + 1, ((i / W) | 0) * T + 1, 1, 1).data[3] > 0) return true; }
+  return false;
+}
+function restoreLayers(){ if (layersAlive()) return; repaintAll(); buildWaves(); burntDirty = true; }
+document.addEventListener('visibilitychange', () => { if (!document.hidden) restoreLayers(); });
+for (const cv of [terrain, worldCv]) cv.addEventListener('contextrestored', () => { if (world) { repaintAll(); buildWaves(); burntDirty = true; } });
+setInterval(restoreLayers, 3000);
 function buildWaves(){
   const biome = world.biome, NP = PW * PH;
   // Solo se crea de nuevo si cambia el tamaño o es un mundo nuevo; si no, se borran las olas, corrientes y
