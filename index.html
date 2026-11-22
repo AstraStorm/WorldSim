@@ -1518,8 +1518,8 @@ function composeRegion(x0, y0, x1, y1){
   if (params.objects) {
     const objs = world.objs;
     // Los objetos se dibujan fila a fila: los de abajo tapan a los de arriba
-    for (let ty = Math.max(0, y0 - 1); ty <= Math.min(H - 1, y1 + 11); ty++)
-      for (let tx = Math.max(0, x0 - 7); tx <= Math.min(W - 1, x1 + 7); tx++) {
+    for (let ty = Math.max(0, y0 - 1); ty <= Math.min(H - 1, y1 + 16); ty++)
+      for (let tx = Math.max(0, x0 - 8); tx <= Math.min(W - 1, x1 + 8); tx++) {
         const o = objs[ty * W + tx]; if (!o) continue;
         const s = objSprite(o), cx = tx * T + 2 + o.ox, by = ty * T + 3 + o.oy;
         wctx.fillStyle = 'rgba(0,0,0,.24)';
@@ -3690,8 +3690,8 @@ function drawSmoke(){
 function redrawFront(l, r, top, baseY){
   if (!params.objects) return;
   const objs = world.objs;
-  for (let ty = Math.max(0, Math.floor(baseY / T)); ty <= Math.min(H - 1, Math.floor((baseY + 56) / T)); ty++)
-    for (let tx = Math.max(0, Math.floor((l - 28) / T)); tx <= Math.min(W - 1, Math.floor((r + 28) / T)); tx++) {
+  for (let ty = Math.max(0, Math.floor(baseY / T)); ty <= Math.min(H - 1, Math.floor((baseY + 80) / T)); ty++)
+    for (let tx = Math.max(0, Math.floor((l - 34) / T)); tx <= Math.min(W - 1, Math.floor((r + 34) / T)); tx++) {
       const o = objs[ty * W + tx]; if (!o) continue;
       const os = objSprite(o), by = ty * T + 3 + o.oy;
       if (by <= baseY || o.key === 'quarry:cantera') continue;
@@ -5785,23 +5785,20 @@ const DOMAIN_FLAG = { 'las tormentas':{ col:'#1f3f78', charge:'rayo' }, 'el true
 const LAYOUTS = ['h2', 'h3', 'v2', 'v3', 'nordica', 'cruz', 'aspa', 'canton', 'triangulo', 'banda', 'cuartel', 'borde', 'franja', 'palo', 'rayas', 'chevron', 'dentado', 'liso', 'tajado'];
 let usedFlags = new Set();
 const rndOf = a => a[Math.floor(Math.random() * a.length)];
-const FLAG_STYLE = { comunismo:{ c:['#c8302c'], m:'#e8c040', charge:'estrella' }, socialismo:{ c:['#c8302c', '#8a2a3a'], charge:'sol' }, fascismo:{ c:['#1e1e22'], charge:'rombo' },
-  dictadura:{ c:['#2e7a3a', '#1e1e22', '#1f3f78'], charge:'estrella' }, monarquia:{ c:['#1f3f78', '#7a3a9a', '#8a2a3a'], m:'#e8c040', charge:'anillo' }, teocracia:{ m:'#e8c040', charge:'dios' }, republica:{} };
-function makeFlag(g, reg){
-  const dom = g.faith && DOMAIN_FLAG[g.faith.dom], st = reg && FLAG_STYLE[reg];
+function makeFlag(g){
+  const dom = g.faith && DOMAIN_FLAG[g.faith.dom]; // diseño libre: cada régimen nuevo estrena una bandera distinta
   for (let tries = 0; tries < 60; tries++) {
     // Tinturas: un color principal (el de su dios o el de la aldea), un metal y un segundo color distinto
     const [r, g2, b] = villageColor(g), own = '#' + [r, g2, b].map(c => c.toString(16).padStart(2, '0')).join('');
-    const c1 = st && st.c ? rndOf(st.c) : st && st.charge === 'dios' && dom ? dom.col : dom && Math.random() < .6 ? dom.col : Math.random() < .5 ? own : rndOf(COLOURS);
+    const c1 = dom && Math.random() < .6 ? dom.col : Math.random() < .5 ? own : rndOf(COLOURS);
     let c2; do c2 = rndOf(COLOURS); while (c2 === c1);
-    const m1 = st && st.m ? st.m : rndOf(METALS), m2 = METALS.find(m => m !== m1);
+    const m1 = rndOf(METALS), m2 = METALS.find(m => m !== m1);
     const layout = rndOf(LAYOUTS);
     const metalFirst = Math.random() < .35;
     const f = { layout, a:metalFirst ? m1 : c1, b:metalFirst ? c1 : m1, c:metalFirst ? c2 : c2, m2, n:5 + 2 * Math.floor(Math.random() * 4), fimb:Math.random() < .4 };
     // Emblema: el de su dios (a menudo), otro al azar o ninguno; dónde va y de qué tintura (contrasta con lo que tiene debajo)
     const charges = ['', 'estrella', 'estrellas', 'disco', 'luna', 'sol', 'rombo', 'anillo', 'arbol', 'llama'];
     f.charge = dom && Math.random() < .55 ? dom.charge : Math.random() < .25 ? '' : rndOf(charges);
-    if (st && st.charge) f.charge = st.charge === 'dios' ? (dom ? dom.charge : 'sol') : st.charge;
     if (f.charge === 'olas' && !['liso', 'h2', 'borde'].includes(layout)) f.charge = 'estrella';
     f.pos = ['canton', 'nordica'].includes(layout) ? 'canton' : ['triangulo', 'chevron', 'dentado'].includes(layout) ? 'asta' : 'centro';
     // Lo que cuenta es cómo se ve: si el dibujo ya lo tiene otra aldea, a diseñar otra
@@ -6626,7 +6623,7 @@ function makeParties(g){
       teocracia:`En ${g.name} mandan los sacerdotes en nombre de ${g.faith ? g.faith.god : 'sus dioses'}: nace una teocracia`, dictadura:`${Ln} se hace con todo el poder en ${g.name}${danger ? ' ante el peligro' : ''}: nace una dictadura`,
       socialismo:`En ${g.name} deciden repartirlo todo y votar: nace una república socialista`, tribu:`${g.name} sigue gobernándose como siempre, con un consejo de ancianos` }[g.regime], at);
   }
-  if (!g.flag) { g.flag = makeFlag(g, g.regime); g.flagUrl = flagDataUrl(g.flag); notify(`${g.name} se da a sí misma una bandera`, { x:g.fx * T, y:g.fy * T }); }
+  if (!g.flag) { g.flag = makeFlag(g); g.flagUrl = flagDataUrl(g.flag); notify(`${g.name} se da a sí misma una bandera`, { x:g.fx * T, y:g.fy * T }); }
   notify(`En ${g.name} nacen los partidos: ${parties.map(p => p.name).join(', ')}`, { x:g.fx * T, y:g.fy * T });
 }
 const artP = p => /^(Unión|Liga|Alianza|Asamblea|Hermandad)/.test(p.name) ? 'la' : 'el'; // «gana la Liga…», «gana el Frente…»
@@ -6706,7 +6703,7 @@ const ONE_PARTY = { comunismo:['Partido de los Trabajadores', 'Partido de la Est
 const capFirst = s => s[0].toUpperCase() + s.slice(1);
 function setRegime(g, reg, chief){
   const prevReg = g.regime; g.regime = reg; g.regimeT = yearT; g.voteRes = null; g.empire = false; if (chief) g.leader = chief;
-  if (g.flag && prevReg && prevReg !== reg) { g.flag = makeFlag(g, reg); g.flagUrl = flagDataUrl(g.flag); setTimeout(() => notify(`${g.name} cambia de bandera: la del nuevo régimen (${REGIMES[reg].toLowerCase()})`, { x:g.fx * T, y:g.fy * T }), 400); }
+  if (g.flag && prevReg && prevReg !== reg) { g.flag = makeFlag(g); g.flagUrl = flagDataUrl(g.flag); setTimeout(() => notify(`${g.name} estrena bandera con su nuevo régimen (${REGIMES[reg].toLowerCase()})`, { x:g.fx * T, y:g.fy * T }), 400); }
   if (reg === 'republica' || reg === 'socialismo') { g.voteT = yearT; if (!g.parties || g.parties.length < 2) { g.parties = null; makeParties(g); } if (reg === 'republica') { g.ruling = null; g.voteT = -1e9; } }
   if (reg === 'teocracia') g.ruling = null;
   if (ONE_PARTY[reg]) { const L = ONE_PARTY[reg]; g.parties = [{ name:L[Math.floor(Math.random() * L.length)], ideo:REGIME_IDEO[reg], laws:REGIME_LAWS[reg], col:reg === 'comunismo' ? '#d8483a' : '#3a3a3a' }]; g.ruling = 0; }
@@ -6728,7 +6725,7 @@ function succession(g, people){
     g.leader = nu;
     notify(heir ? `Muere ${old.sex === 'm' ? 'la reina' : 'el rey'} ${old.name} de ${g.name}; ${heir.sex === 'm' ? 'su hija' : 'su hijo'} ${heir.name} hereda la corona`
       : `${old.sex === 'm' ? 'La reina' : 'El rey'} ${old.name} muere sin herederos: ${nu.name} funda una nueva dinastía en ${g.name} y estrena bandera`, { x:nu.x, y:nu.y });
-    if (!heir && g.flag) { g.flag = makeFlag(g, 'monarquia'); g.flagUrl = flagDataUrl(g.flag); }
+    if (!heir && g.flag) { g.flag = makeFlag(g); g.flagUrl = flagDataUrl(g.flag); }
   } else if (reg === 'teocracia') {
     const nu = people.filter(adult).sort((a, b) => (b.oficio === 'sacerdote') - (a.oficio === 'sacerdote') || pietyOf(b) - pietyOf(a))[0]; if (!nu) return;
     g.leader = nu; notify(`Muere ${old.name}; los sacerdotes de ${g.name} eligen a ${nu.name} como ${leaderTitle(g)}`, { x:nu.x, y:nu.y });
@@ -6766,7 +6763,7 @@ function politicsTick(g, dt, people){
     if (priest) { const old = g.leader; setRegime(g, 'teocracia', priest); notify(`Los sacerdotes de ${g.name} toman el poder en nombre de ${g.faith.god}${old && old !== priest && !old.dead ? ` y apartan a ${old.name}` : ''}: ${priest.name} es ${leaderTitle(g)} de una teocracia`, { x:g.fx * T, y:g.fy * T }); return; }
   }
   if (cap === g && regimeOf(g) === 'monarquia' && !g.empire && villages.filter(o => o !== g && popOf(o) && o.nation === g.id).length >= 3) {
-    g.empire = true; if (g.flag) { g.flag = makeFlag(g, 'monarquia'); g.flagUrl = flagDataUrl(g.flag); } notify(`¡${g.name} se proclama imperio (con bandera nueva)! ${g.leader && !g.leader.dead ? `${g.leader.name} es ahora ${leaderTitle(g)}` : ''}`, { x:g.fx * T, y:g.fy * T });
+    g.empire = true; if (g.flag) { g.flag = makeFlag(g); g.flagUrl = flagDataUrl(g.flag); } notify(`¡${g.name} se proclama imperio (con bandera nueva)! ${g.leader && !g.leader.dead ? `${g.leader.name} es ahora ${leaderTitle(g)}` : ''}`, { x:g.fx * T, y:g.fy * T });
   }
   // Golpe de estado: en la capital, con mucho descontento, con mucha represión acumulada o con militares hartos de un gobierno pacifista
   if (cap === g && regimeOf(g) !== 'tribu' && !isNight()) {
