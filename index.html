@@ -6371,6 +6371,7 @@ function renderVillageCard(force){
     body = `<div>${govCard(g)}</div>
       ${n.parties ? `<h4>Partidos</h4><div class="parties">${n.parties.map((q, k) => { const pct = vr && vr[k] != null ? vr[k] : null; return `<div class="party${n.ruling === k ? ' on' : ''}">${logoImg(q, 30)}<div class="pi"><b style="color:${q.col}">${esc(q.name)}${n.ruling === k ? ' <span class="gold">★ gobierna</span>' : ''}</b><span class="muted">${sideTxt(q)} · propone: ${q.laws.map(l => LAW_TXT[l]).join(', ')}</span>${pct != null ? `<span class="pv">${bar(pct / 100, q.col, 150)} ${pct} %</span>` : ''}</div></div>`; }).join('')}</div>` : '<h4>Partidos</h4><div>Aún no tienen partidos</div>'}
       <h4>Leyes</h4><div class="laws">${lawsOf(g).map(l => `<div><b>${LAW_TXT[l]}</b><span class="muted">${LAW_DESC[l] || ''}</span></div>`).join('') || '<div class="muted">Sin leyes propias todavía</div>'}</div>
+      ${(nationOf(g).lawHist || []).length ? `<h4>Historia de las leyes</h4><ul class="log">${nationOf(g).lawHist.slice().reverse().map(e => `<li class="pol"><span class="d">día ${e.d}</span>${esc(e.txt.replace(`En ${nationOf(g).name} `, ''))}</li>`).join('')}</ul>` : ''}
       <h4>Horario</h4><div>${shiftTxt(g)}${inShift(g) ? ' · <b>ahora trabajan</b>' : isNight() ? ' · ahora duermen' : ' · <b>ahora es su tiempo libre</b>'}</div>
       <h4>Nación</h4><div>${status}${provinces.length ? `: ${provinces.map(o => `<button class="lnk" data-vid="${o.id}">${esc(o.name)}</button>`).join(', ')}` : ''}${n !== g ? ` · descontento con la capital ${Math.round(g.unrest || 0)} %` : ''}</div>
       ${allyCard(g)}${warCard(g)}
@@ -6978,9 +6979,12 @@ function countVotes(cap){
   }
   const tot = Math.max(1, voters.length), win = votes.indexOf(Math.max(...votes)), p = ps[win];
   const changed = cap.ruling !== win; cap.ruling = win;
-  for (const [k, q] of ps.entries()) if (k !== win && Math.random() < .35 && q.laws.length) {
-    const out = q.laws[Math.floor(Math.random() * q.laws.length)], keep = q.laws.filter(l => l !== out), nl = partyProgram(q.ideo + (Math.random() - .5) * .3, q.laws.length, keep);
-    const added = nl.find(l => !q.laws.includes(l)); if (added) { q.laws = nl; setTimeout(() => notify(`Tras perder en ${cap.name}, ${artP(q)} ${q.name} renueva su programa: deja «${LAW_TXT[out]}» y propone «${LAW_TXT[added]}»`, { x:cap.fx * T, y:cap.fy * T }), 600); }
+  // Los que pierden se replantean el programa (a veces a fondo): miran qué piensa la gente y se acercan un poco
+  const avgIdeo = voters.reduce((a, u) => a + (u.ideo || 0), 0) / Math.max(1, voters.length);
+  for (const [k, q] of ps.entries()) if (k !== win && Math.random() < .6 && q.laws.length) {
+    const nOut = Math.random() < .35 ? 2 : 1, outs = [...q.laws].sort(() => Math.random() - .5).slice(0, nOut), keep = q.laws.filter(l => !outs.includes(l));
+    const nl = partyProgram(q.ideo + (avgIdeo - q.ideo) * .3 + (Math.random() - .5) * .2, q.laws.length, keep), added = nl.filter(l => !q.laws.includes(l));
+    if (added.length) { q.laws = nl; const txt = `Tras perder en ${cap.name}, ${artP(q)} ${q.name} renueva su programa: deja ${outs.map(l => `«${LAW_TXT[l]}»`).join(' y ')} y propone ${added.map(l => `«${LAW_TXT[l]}»`).join(' y ')}`; lawLog(cap, txt); setTimeout(() => notify(txt, { x:cap.fx * T, y:cap.fy * T }), 600); }
   }
   // El líder: alguien de la capital con ideas parecidas a las del partido
   const cands = villagers.filter(u => !u.dead && u.vid === cap.id && (yearT - u.born) / YEAR >= ADULT_H && (yearT - u.born) / YEAR < u.life * .85).sort((a, b) => Math.abs((a.ideo || 0) - p.ideo) - Math.abs((b.ideo || 0) - p.ideo));
@@ -7093,11 +7097,27 @@ function politicsTick(g, dt, people){
   if (cap === g && regimeOf(g) === 'monarquia' && !g.empire && villages.filter(o => o !== g && popOf(o) && o.nation === g.id).length >= 3) {
     g.empire = true; if (g.flag) { g.flag = makeFlag(g); g.flagUrl = flagDataUrl(g.flag); } notify(`¡${g.name} se proclama imperio (con bandera nueva)! ${g.leader && !g.leader.dead ? `${g.leader.name} es ahora ${leaderTitle(g)}` : ''}`, { x:g.fx * T, y:g.fy * T });
   }
+  // Vida parlamentaria: el partido en el gobierno propone de vez en cuando una ley nueva y la gente la vota en la plaza
+  if (cap === g && votes(g) && g.parties && g.ruling != null && !g.election && !isNight() && yearT - (g.lawT ?? yearT) > DAY_LEN * 1.5) { g.lawT = yearT; proposeLaw(g, adults); }
+  g.lawT ??= yearT;
   // Golpe de estado: en la capital, con mucho descontento, con mucha represión acumulada o con militares hartos de un gobierno pacifista
   if (cap === g && regimeOf(g) !== 'tribu' && !isNight()) {
     const armed = adults.filter(u => u.weapon).length, mil = regimeOf(g) === 'republica' && hasLaw(g, 'paz') && armed >= 4 ? .0006 : 0;
     if (Math.random() < (Math.max(0, (g.anger - 60) / 2500) + mil + ((g.repressed || 0) > 5 ? .0008 : 0)) * dt) startCoup(g, adults);
   }
+}
+function lawLog(g, txt){ (g.lawHist ||= []).push({ d:Math.floor(yearT / DAY_LEN) + 1, txt }); if (g.lawHist.length > 12) g.lawHist.shift(); }
+// Una ley nueva: la propone el gobierno (cercana a sus ideas) y la vota la gente (cada uno, según lo cerca que le quede)
+function proposeLaw(g, adults){
+  const p = g.parties[g.ruling], cand = Object.keys(LAW_LEAN).filter(l => !p.laws.includes(l) && !LAW_CLASH.some(([a, b]) => (l === a && p.laws.includes(b)) || (l === b && p.laws.includes(a))));
+  if (!cand.length || !adults.length) return;
+  const w = cand.map(l => Math.exp(-((LAW_LEAN[l] - p.ideo) ** 2) / .2) + .02); let k = Math.random() * w.reduce((a, b) => a + b, 0), law = cand[0];
+  for (let j = 0; j < cand.length; j++) if ((k -= w[j]) < 0) { law = cand[j]; break; }
+  const yes = adults.filter(u => Math.abs((u.ideo || 0) - LAW_LEAN[law]) < .65).length, pct = Math.round(yes / adults.length * 100), at = { x:g.fx * T, y:g.fy * T };
+  if (pct >= 50) {
+    const out = p.laws.length >= 4 ? p.laws[Math.floor(Math.random() * p.laws.length)] : null; if (out) p.laws = p.laws.filter(l => l !== out); p.laws.push(law);
+    const txt = `En ${g.name} se aprueba la ley de «${LAW_TXT[law]}» con el ${pct} % de los votos${out ? `; se deroga la de «${LAW_TXT[out]}»` : ''}`; lawLog(g, txt); notify(txt, at);
+  } else { const txt = `En ${g.name} el pueblo rechaza la ley de «${LAW_TXT[law]}» que proponía ${artP(p)} ${p.name} (solo un ${pct} % a favor)`; lawLog(g, txt); notify(txt, at); g.anger = Math.min(100, (g.anger || 0) + 3); }
 }
 function startProtest(g, adults){
   const gi = govIdeo(g), econ = ['hambre', 'inflación', 'bancarrota', 'guerra', 'jornada', 'impuestos'].includes(g.grief); g.protestT = yearT;
