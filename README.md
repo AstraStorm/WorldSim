@@ -14,4 +14,8 @@ También se puede abrir `index.html` directamente en el navegador; no necesita i
 - Banderas propias, territorio, diplomacia, comercio por tierra y mar, guerras, conquistas e independencias.
 - Partidos, elecciones, monarquías, dictaduras, comunismo y fascismo; manifestaciones y golpes de estado.
 - Monedas, bancos, inflación, bancarrotas y alianzas con moneda común.
-- Clic en una aldea para ver su ficha.
+- Enfermedades y epidemias, curanderos, hospitales y cuarentenas; migraciones y refugiados.
+- Teatro, coliseo, partidos de pelota y Juegos cada dos estaciones entre naciones en paz.
+- Guerra con formaciones, caballería, abanderados, catapultas, flotas y murallas dobles.
+- Botones arriba a la derecha: Crónica, Historia (gráficas, línea del tiempo y Juegos), Guardar, Cargar y Sonido.
+- Clic en una aldea para ver su ficha; clic en una persona para seguirla.
