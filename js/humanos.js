@@ -247,8 +247,11 @@ function builtNear(x, y){
   return false;
 }
 const streetZone = (g, x, y) => (Math.abs(y - (g.fy + 2)) <= 1 && Math.abs(x - g.fx) <= 50) || (Math.abs(x - g.fx) <= 1 && Math.abs(y - g.fy) <= 50) || plazaSet.has(y * W + x) || hallZone(g, x, y);
-const farmable = (g, x, y, i) => tileFree(x, y) && !farmMap.has(i) && !pathMap.has(i) && !plotIn(x, y, x, y) && !streetZone(g, x, y) && !underBuilding(g, x, y) && !inPen(g, x, y) && Math.hypot(x - g.fx, y - g.fy) > 2.5
-  && [B.GRASS, B.PLAINS, B.FOREST, B.DRY, B.DIRT, B.HILLS].includes(world.biome[i]) && freshNear(i, 5);
+// Se puede sembrar: tierra libre (o con árboles y matas, que se talan al marcar el campo), junto a agua dulce
+// o, en tierra húmeda (pradera, llanura, bosque), de secano con la lluvia
+const fieldObjOk = i => { const o = world.objs[i]; return !o || ['tree', 'berry'].includes(OBJ[o.key][1]); };
+const farmable = (g, x, y, i) => (tileFree(x, y) || (fieldObjOk(i) && !WATER[world.biome[i]] && !bridgeSet.has(i) && !wallSet.has(i))) && !farmMap.has(i) && !pathMap.has(i) && !plotIn(x, y, x, y) && !streetZone(g, x, y) && !underBuilding(g, x, y) && !inPen(g, x, y) && Math.hypot(x - g.fx, y - g.fy) > 2.5
+  && [B.GRASS, B.PLAINS, B.FOREST, B.DRY, B.DIRT, B.HILLS].includes(world.biome[i]) && (freshNear(i, (g.know || {}).acequias ? 12 : 8) || [B.GRASS, B.PLAINS, B.FOREST].includes(world.biome[i]));
 // Cuántos de la aldea están ya con ese trabajo (para no ir todos a lo mismo)
 const busyWith = (g, job) => villagers.filter(o => !o.dead && o.vid === g.id && o.task && (o.task.k === job || o.task.job === job)).length;
 function chooseJob(v, g){
@@ -266,10 +269,12 @@ function chooseJob(v, g){
   const canHouses = Math.floor(g.wood / 4) + (g.wood >= 1 ? Math.floor(g.stone / 10) : 0); // de madera, o de piedra con un poco de madera
   add('construir', needHouse && !(g.noSite > yearT) && canHouses > busyWith(g, 'construir') ? 9 + Math.min(12, (canHouses - busyWith(g, 'construir')) * 2) : 0); // con material de sobra, más gente a construir
   // El campo: se marca una parcela, se ara casilla a casilla, se siembra, crece y se cosecha
-  add('cosechar', farms.some(f => f.st === 'madura' && !f.claim) ? 7 : 0);
-  add('sembrar', farms.some(f => f.st === 'arada' && !f.claim) ? 5 : 0);
-  add('arar', farms.some(f => (f.st === 'pradera' || f.st === 'muerta') && !f.claim) ? 4 : 0);
-  add('campo', farms.length < Math.min(70, 10 + pop * 3) && !farms.some(f => f.st === 'pradera') && !busyWith(g, 'campo') ? 4.5 : 0);
+  // Cuanto más campo espera, más gente va a él
+  let nRipe = 0, nPlowed = 0, nRaw = 0; for (const f of farms) if (!f.claim) { if (f.st === 'madura') nRipe++; else if (f.st === 'arada') nPlowed++; else if (f.st === 'pradera' || f.st === 'muerta') nRaw++; }
+  add('cosechar', nRipe ? 9 + Math.min(12, nRipe) : 0); // la cosecha no espera
+  add('sembrar', nPlowed ? 5 + Math.min(7, nPlowed / 3) : 0);
+  add('arar', nRaw ? 4 + Math.min(6, nRaw / 4) : 0);
+  add('campo', farms.length < Math.min(110, 14 + pop * 4) && nRaw < 10 && busyWith(g, 'campo') < (pop >= 20 ? 2 : 1) ? (g.food < pop * 3 ? 7 : 4.5) : 0); // más campos cuanto más gente; no esperan a arar todo
   const berriesNear = g.berriesNear ?? 99;
   add('cementerio', !g.cemetery && houses >= 2 && (pop >= 10 || Object.values(g.deaths || {}).reduce((a, b) => a + b, 0) >= 2) && !busyWith(g, 'cementerio') ? 3 : 0);
   add('arboleda', !g.grove && houses >= 2 && pop >= 6 && !busyWith(g, 'arboleda') ? ((g.treesNear ?? 99) < 20 ? 4 : 1.5) : 0);
@@ -356,7 +361,7 @@ function chooseJob(v, g){
   if (famine) for (const j of J) j[1] *= FOOD_JOBS.includes(j[0]) ? 3 : ['apagar', 'encender', 'alumbrar', 'beber', 'comer', 'pozo', 'construir', 'ampliar', 'ayuntamiento'].includes(j[0]) || (atWarJ && ['arma', 'muralla'].includes(j[0])) ? 1 : ['talar', 'picar'].includes(j[0]) ? .7 : .35;
   // Fuera de su horario, los adultos descansan: solo atienden lo urgente (fuego, defensa, la hoguera, las antorchas)
   if (!inShift(g) && !isNight() && ageOf(v) >= ADULT_H && !(g.danger > 0) && !(famine && g.food < pop * 1.5)) {
-    for (let k2 = J.length - 1; k2 >= 0; k2--) if (!['apagar', 'encender', 'alumbrar', 'arma', 'equipar', 'beber', 'comer'].includes(J[k2][0])) J.splice(k2, 1);
+    for (let k2 = J.length - 1; k2 >= 0; k2--) if (!['apagar', 'encender', 'alumbrar', 'arma', 'equipar', 'beber', 'comer', 'cosechar'].includes(J[k2][0])) J.splice(k2, 1); // (la cosecha madura se recoge aunque sea tarde)
     J.push(['ocio', 6], ['pasear', 1]); if (hasTheater(g)) J.push(['ver_teatro', 3]); if (hasColiseum(g)) J.push(['ver_coliseo', 2.5]); if (hasTavern(g)) J.push(['ir_taberna', ageOf(v) < ADULT_H ? 1 : 4]);
   }
   let k = Math.random() * J.reduce((s, j) => s + j[1], 0);
@@ -389,9 +394,9 @@ function setupTask(v, g, job){
       return best ? { k:job, a:best } : null;
     }
     case 'campo': {
-      // Una parcela rectangular (de 4×3 a 6×4 casillas) de tierra buena junto al agua dulce
-      for (let k = 0; k < 50; k++) {
-        const w = 4 + Math.floor(Math.random() * 3), h = 3 + Math.floor(Math.random() * 2), a = Math.random() * Math.PI * 2, d = 15 + Math.random() * 14; // el centro queda para las casas
+      // Una parcela rectangular (de 5×3 a 8×5 casillas) de tierra buena (junto al agua dulce o de secano)
+      for (let k = 0; k < 120; k++) {
+        const w = 5 + Math.floor(Math.random() * 4), h = 3 + Math.floor(Math.random() * 3), a = Math.random() * Math.PI * 2, d = 12 + Math.random() * (16 + Math.min(20, popOf(g) / 2)); // el centro queda para las casas; con más gente, más afuera
         const x0 = Math.round(g.fx + Math.cos(a) * d - w / 2), y0 = Math.round(g.fy + Math.sin(a) * d * .8 - h / 2);
         let ok = x0 > 1 && y0 > 1 && x0 + w < W - 1 && y0 + h < H - 1;
         for (let y = y0; ok && y < y0 + h; y++) for (let x = x0; ok && x < x0 + w; x++) if (!farmable(g, x, y, y * W + x)) ok = false;
@@ -708,11 +713,13 @@ function runTask(v, g, dt){
     case 'campo': v.actT = 2; v.onDone = () => { // marca la parcela: aún hay que ararla
       const r = t.rect; let ok = true;
       for (let y = r.y0; ok && y < r.y0 + r.h; y++) for (let x = r.x0; ok && x < r.x0 + r.w; x++) if (!farmable(g, x, y, y * W + x)) ok = false;
-      if (ok) for (let y = r.y0; y < r.y0 + r.h; y++) for (let x = r.x0; x < r.x0 + r.w; x++) farmMap.set(y * W + x, { i:y * W + x, vid:g.id, g:0, st:'pradera', dry:0, field:r });
+      if (ok) { let felled = 0;
+        for (let y = r.y0; y < r.y0 + r.h; y++) for (let x = r.x0; x < r.x0 + r.w; x++) { const i = y * W + x; if (world.objs[i]) { if (OBJ[world.objs[i].key][1] === 'tree') { fallObj(i); felled++; } world.objs[i] = null; } farmMap.set(i, { i, vid:g.id, g:0, st:'pradera', dry:0, field:r }); }
+        if (felled) { g.wood += felled * 2; composeRegion(r.x0 - 8, r.y0 - 12, r.x0 + r.w + 8, r.y0 + r.h + 12); rareDirty = true; } } // desbrozan: la madera, al almacén
     }; break;
     case 'arar': v.actT = 2.5; v.onDone = () => { const f = t.farm; f.claim = false; if (farmMap.get(f.i) === f && (f.st === 'pradera' || f.st === 'muerta')) { f.st = 'arada'; f.why = null; } }; break;
     case 'sembrar': v.actT = 1.5; v.onDone = () => { const f = t.farm; f.claim = false; if (farmMap.get(f.i) === f && f.st === 'arada') { f.st = 'sembrado'; f.g = 0; f.dry = 0;
-      f.crop = SEASON_CROP[seasonInfo().i]; if ((f.crop === 'maiz' || tempAt(f.i) > 28) && !freshNear(f.i, (g.know || {}).acequias ? 11 : 5) && !wellsOf(g).some(w => Math.hypot((w.i % W) - (f.i % W), ((w.i / W) | 0) - ((f.i / W) | 0)) < 9)) f.crop = 'mijo'; /* sin agua cerca: lo que aguanta la sequía */ const kc = (g.crops ||= {}); if (!kc[f.crop]) { kc[f.crop] = true; if (Object.keys(kc).length > 1) notify(`En ${g.name} empiezan a sembrar ${CROPS[f.crop].n}: es lo que mejor crece en ${['primavera', 'verano', 'otoño', 'invierno'][seasonInfo().i]}`, { x:v.x, y:v.y }); } } }; break;
+      f.crop = SEASON_CROP[seasonInfo().i]; if ((f.crop === 'maiz' || tempAt(f.i) > 28) && !freshNear(f.i, (g.know || {}).acequias ? 12 : 8) && !wellsOf(g).some(w => Math.hypot((w.i % W) - (f.i % W), ((w.i / W) | 0) - ((f.i / W) | 0)) < 9)) f.crop = 'mijo'; /* sin agua cerca: lo que aguanta la sequía */ const kc = (g.crops ||= {}); if (!kc[f.crop]) { kc[f.crop] = true; if (Object.keys(kc).length > 1) notify(`En ${g.name} empiezan a sembrar ${CROPS[f.crop].n}: es lo que mejor crece en ${['primavera', 'verano', 'otoño', 'invierno'][seasonInfo().i]}`, { x:v.x, y:v.y }); } } }; break;
     case 'cosechar': v.actT = 2; v.onDone = () => { const f = t.farm; f.claim = false; if (farmMap.get(f.i) === f && f.st === 'madura') { f.st = 'arada'; const C = CROPS[f.crop || 'trigo']; v.carry = { k:'comida', t:'veg', n:C.y + (C.mill && g.mill != null && world.objs[g.mill] ? 3 : 0) + (hasForge(g) ? 2 : 0) }; } }; break;
     case 'ampliar': v.actT = 7; v.onDone = () => {
       const o = world.objs[t.i]; if (!o || o.key !== 'house:hut' || g.stone < 7 || g.wood < 1) return;

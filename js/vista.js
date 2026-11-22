@@ -55,6 +55,7 @@ function draw(t){
   drawWalls();
   drawCracks();
   vctx.drawImage(worldCv, 0, 0);
+  drawCamps(t);
   drawFires(t, true);
   drawVillageFx(t);
   drawSeasonTint();

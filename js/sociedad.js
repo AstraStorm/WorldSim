@@ -1701,6 +1701,33 @@ function drawTravelers(now){
   }
 }
 // ---- Guerra: asaltos de un pueblo a otro; los armados luchan, el resto huye; si llegan sin oposición, saquean ----
+// Campamentos de las tropas en marcha (solo de noche): hoguera, tiendas de pieles o esteras
+let warCamps = [];
+function drawCamps(t){
+  if (!warCamps.length) return;
+  warCamps = warCamps.filter(c => !c.done);
+  const [x0, y0, x1, y1] = visibleRect();
+  for (const c of warCamps) {
+    if (c.x < x0 - 30 || c.x > x1 + 30 || c.y < y0 - 30 || c.y > y1 + 30) continue;
+    const g = villageById(c.vid), [cr, cg, cb] = g ? villageColor(g) : [200, 200, 200];
+    for (let k = 0; k < c.tents; k++) { // tiendas alrededor de la hoguera
+      const a = c.seed + k / c.tents * Math.PI * 2, tx = Math.round(c.x + Math.cos(a) * 15), ty = Math.round(c.y + Math.sin(a) * 9 - 2);
+      if (c.hide) {
+        vctx.fillStyle = 'rgba(0,0,0,.25)'; vctx.fillRect(tx - 5, ty + 1, 11, 2);
+        vctx.fillStyle = 'rgba(0,0,0,.28)'; vctx.fillRect(tx - 7, ty + 1, 15, 2);
+        for (let h = 0; h < 10; h++) { const w = Math.round(h * .75); vctx.fillStyle = '#2a1a10'; vctx.fillRect(tx - w - 1, ty - 9 + h, 1, 1); vctx.fillRect(tx + w + 1, ty - 9 + h, 1, 1); vctx.fillStyle = h % 3 === 2 ? '#94683e' : '#b08656'; vctx.fillRect(tx - w, ty - 9 + h, w * 2 + 1, 1); vctx.fillStyle = '#7a5434'; vctx.fillRect(tx + Math.max(0, w - 1), ty - 9 + h, 1, 1); }
+        vctx.fillStyle = '#2a1a10'; vctx.fillRect(tx - 7, ty, 15, 1); vctx.fillRect(tx - 1, ty - 4, 3, 5); vctx.fillRect(tx, ty - 12, 1, 3); // entrada, base y palo
+        vctx.fillStyle = `rgb(${cr},${cg},${cb})`; vctx.fillRect(tx + 1, ty - 12, 4, 2); // banderín del pueblo
+      } else { vctx.fillStyle = '#8a7a5a'; vctx.fillRect(tx - 3, ty - 1, 7, 2); vctx.fillStyle = '#6a5a40'; vctx.fillRect(tx - 3, ty, 7, 1); } // esteras
+    }
+    // Hoguera con resplandor
+    const fl = Math.sin(t / 90 + c.seed) * .5 + .5;
+    vctx.fillStyle = `rgba(255,160,60,${.14 + fl * .08})`; vctx.beginPath(); vctx.ellipse(c.x, c.y, 16, 10, 0, 0, Math.PI * 2); vctx.fill();
+    vctx.fillStyle = '#3a2414'; vctx.fillRect(c.x - 3, c.y, 7, 2);
+    vctx.fillStyle = '#f08030'; vctx.fillRect(c.x - 1, c.y - 3 - Math.round(fl), 3, 3 + Math.round(fl)); vctx.fillStyle = '#ffd860'; vctx.fillRect(c.x, c.y - 2, 1, 2);
+    if (Math.random() < .05) smoke.push({ x:c.x, y:c.y - 4, vx:0, vy:-5, r:1, life:0, max:2 });
+  }
+}
 function launchRaid(att, def, r){
   if (!att || !def || att === def) return;
   const ps = villagers.filter(v => !v.dead && !v.away && v.vid === att.id && (yearT - v.born) / YEAR >= ADULT_H && v !== att.leader && (v.hp ?? 1) > .5).sort((a, b) => (b.weapon ? 1 : 0) - (a.weapon ? 1 : 0)).slice(0, Math.min(6, Math.max(2, Math.floor(popOf(att) / 3))));
@@ -2562,6 +2589,22 @@ function updateVillagers(dt){
     if (v.task && v.task.k === 'asalto') {
       const eg = villageById(v.task.enemy), r = eg && rels.get(relKey(eg, g));
       const G = v.task.grp;
+      // De noche y aún lejos del enemigo: campamento improvisado (tiendas de pieles si las tienen) y al amanecer, en marcha
+      if (G && G.camp && (!isNight() || !eg || !r || !r.war)) { G.camp.done = true; G.camp = null; G.campedT = yearT; }
+      if (G && eg && r && r.war && isNight() && !knowsT(g, 'noche') && yearT - (G.campedT ?? -1e9) > DAY_LEN * .3 && Math.hypot(v.x / T - eg.fx, v.y / T - eg.fy) > 18 && (G.camp || Math.hypot(v.x / T - g.fx, v.y / T - g.fy) > 15)) { // (cerca de casa, no: siguen)
+        const alive = G.ps.filter(u => !u.dead && u.task && u.task.k === 'asalto');
+        if (!G.camp && alive.length) {
+          const cx = alive.reduce((a, u) => a + u.x, 0) / alive.length, cy = alive.reduce((a, u) => a + u.y, 0) / alive.length;
+          const p = ringFind(Math.round(cx / T), Math.round(cy / T), 8, (x, y) => tileFree(x, y) && !WATER[world.biome[y * W + x]] && !pathMap.has(y * W + x) && !farmMap.has(y * W + x) && !villages.some(o => underBuilding(o, x, y)));
+          if (p) {
+            const hide = (g.hides || 0) >= 2, nT = Math.min(4, Math.ceil(alive.length / 2));
+            if (hide) g.hides -= Math.min(g.hides, nT); // las pieles, para las tiendas (se gastan)
+            G.camp = { x:p[0] * T + 2, y:p[1] * T + 3, tents:nT, hide, vid:g.id, seed:Math.random() * 100 }; warCamps.push(G.camp);
+            if (!r.war.campMsg || yearT - r.war.campMsg > DAY_LEN) { r.war.campMsg = yearT; notify(`Se hace de noche: las tropas de ${g.name} acampan de camino a ${eg.name}${hide ? ' en tiendas de pieles' : ''}`, { x:G.camp.x, y:G.camp.y }); }
+          }
+        }
+        if (G.camp) { const k = G.ps.indexOf(v), a = k / Math.max(1, G.ps.length) * Math.PI * 2; if (vGo(v, G.camp.x + Math.cos(a) * 9, G.camp.y + Math.sin(a) * 6 + 2, dt)) { v.moving = false; v.dir = G.camp.x < v.x ? -1 : 1; } continue; }
+      }
       if (eg && r && r.war && G && !G.go) {
         const alive = G.ps.filter(u => !u.dead && u.task && u.task.k === 'asalto');
         if (yearT > G.until || alive.every(u => Math.hypot(u.x - G.rx, u.y - G.ry) < 20)) { G.go = true; if (alive.length > 1) notify(`Las tropas de ${g.name} se han reunido: atacan ${eg.name} todas a la vez`, { x:G.rx, y:G.ry }); }
@@ -2690,12 +2733,14 @@ function updateVillages(dt){
     const g = villageById(f.vid); if (!g) { farmMap.delete(i); continue; }
     if (world.objs[i] || WATER[world.biome[i]] || world.biome[i] === B.LAVA) { farmMap.delete(i); continue; } // algo ha ocupado el campo
     if (f.st === 'muerta' || f.st === 'arada' || f.st === 'pradera') continue; // sin nada sembrado
-    const t = tempAt(i), C = CROPS[f.crop || 'trigo'], water = freshNear(i, (g.know || {}).acequias ? 11 : 5) || raining(i) || (floodA && floodA[i] > .2) || wellWater(g, i, dt);
+    const t = tempAt(i), C = CROPS[f.crop || 'trigo'], water = freshNear(i, (g.know || {}).acequias ? 12 : 8) || raining(i) || (floodA && floodA[i] > .2) || wellWater(g, i, dt);
+    const secano = !water && [B.GRASS, B.PLAINS, B.FOREST].includes(world.biome[i]) && droughtAt(i) < .3; // tierra húmeda: aguanta con la lluvia de vez en cuando
     if (fires.has(i) || burnt.has(i)) { f.st = 'muerta'; f.why = 'quemada'; misfortune(g, 'quemada'); continue; }
     if (floodA && floodA[i] > .6) { f.st = 'muerta'; f.why = 'inundada'; misfortune(g, 'inundada'); continue; }
     if (t < C.frost && f.st !== 'madura') { f.st = 'muerta'; f.why = 'helada'; misfortune(g, 'helada'); continue; }
-    if (f.st === 'madura') { if (yearT - f.ripeT > 50) { f.st = 'muerta'; f.why = 'podrida'; misfortune(g, 'podrida'); } continue; }
-    if (!water) { f.dry += dt * (C.dry ? .2 : 1); if (C.dry) f.g += .01 * C.grow[si] * dt; if (f.dry > 45) { f.st = 'muerta'; f.why = 'seca'; misfortune(g, 'seca');
+    if (f.st === 'madura') { if (yearT - f.ripeT > 130) { /* si nadie la recoge a tiempo */ f.st = 'muerta'; f.why = 'podrida'; misfortune(g, 'podrida'); } continue; }
+    if (secano) f.g += .013 * C.grow[si] * dt; // más despacio que con riego
+    else if (!water) { f.dry += dt * (C.dry ? .2 : 1); if (C.dry) f.g += .01 * C.grow[si] * dt; if (f.dry > 45) { f.st = 'muerta'; f.why = 'seca'; misfortune(g, 'seca');
         const kn = g.know ||= {}; if (!kn.acequias && (g.dryLoss = (g.dryLoss || 0) + 1) >= 6) { kn.acequias = true; notify(`En ${g.name}, tras perder cosechas por la sequía, aprenden a cavar acequias para llevar el agua a los campos`, { x:g.fx * T, y:g.fy * T }); }
         continue; } } else f.dry = Math.max(0, f.dry - dt);
     if (water) f.g += .022 * C.grow[si] * dt;
