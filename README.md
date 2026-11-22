@@ -1,10 +1,10 @@
 # Forja de Mundos (WorldSim)
 
-Simulador de mundos de pixel art en un solo archivo HTML: genera un mapa, crea vida y mira cómo los aldeanos levantan pueblos, inventan religiones, monedas y gobiernos, comercian, se alían y se declaran la guerra.
+Simulador de mundos de pixel art que funciona en el navegador: genera un mapa, crea vida y mira cómo los aldeanos levantan pueblos, inventan religiones, monedas y gobiernos, comercian, se alían y se declaran la guerra.
 
 **Jugar:** https://astrastorm.github.io/WorldSim/
 
-También se puede abrir `index.html` directamente en el navegador; no necesita instalar nada.
+También se puede abrir `index.html` directamente en el navegador (con la carpeta entera); no necesita instalar nada. Funciona en el móvil: se arrastra con un dedo y se hace zoom con dos.
 
 ## Qué pasa en el mundo
 
@@ -15,7 +15,33 @@ También se puede abrir `index.html` directamente en el navegador; no necesita i
 - Partidos, elecciones, monarquías, dictaduras, comunismo y fascismo; manifestaciones y golpes de estado.
 - Monedas, bancos, inflación, bancarrotas y alianzas con moneda común.
 - Enfermedades y epidemias, curanderos, hospitales y cuarentenas; migraciones y refugiados.
-- Teatro, coliseo, partidos de pelota y Juegos cada dos estaciones entre naciones en paz.
+- Teatro, coliseo, tabernas, partidos de pelota y Juegos cada dos estaciones entre naciones en paz; tazas de agua en el mercado.
+- Torbellinos en el mar que se tragan barcas y flotas.
 - Guerra con formaciones, caballería, abanderados, catapultas, flotas y murallas dobles.
-- Botones arriba a la derecha: Crónica, Historia (gráficas, línea del tiempo y Juegos), Guardar, Cargar y Sonido.
+- Botones arriba a la derecha: Crónica, Historia (gráficas, línea del tiempo y Juegos), Partidas y Sonido.
+- Partidas: cinco ranuras más el guardado automático, y descargar o abrir la partida en un archivo `.forja` (para no perderla o llevarla a otro ordenador).
 - Clic en una aldea para ver su ficha; clic en una persona para seguirla.
+
+## Cómo está organizado el código
+
+Sin dependencias ni compilación: cada archivo es un script normal y se cargan en este orden desde `index.html`.
+
+| Archivo | Qué contiene |
+|---|---|
+| `css/estilo.css` | Todo el aspecto: paneles, fichas, botones y la versión para móvil |
+| `js/nucleo.js` | Constantes, sprites de pixel art, ruido y estado global |
+| `js/mundo.js` | Generación del mundo y pintado del terreno |
+| `js/vista.js` | Cámara, zoom y dibujo de cada fotograma |
+| `js/clima.js` | Clima, tornados, huracanes, terremotos y estaciones |
+| `js/fauna.js` | Animales |
+| `js/desastres.js` | Temperatura, heladas, sequías, incendios, tormentas de arena y meteoritos |
+| `js/mapas.js` | Hierba de cerca y mapas de alturas, vientos y temperatura |
+| `js/humanos.js` | Aldeanos, pueblos, oficios, edificios, política, economía y guerra |
+| `js/partidas.js` | Guardar y cargar: ranuras y archivos `.forja` |
+| `js/vida.js` | Enfermedades, migraciones, historia y sonido |
+| `js/sociedad.js` | Ocio, Juegos, mar, fichas de pueblo y persona, crónica, leyes y diplomacia |
+| `js/vegetacion.js` | Crecimiento y muerte de la vegetación |
+| `js/aldeanos.js` | Movimiento y dibujo de los aldeanos |
+| `js/interfaz.js` | Herramientas del jugador, entrada, panel, pantalla de carga y oleaje |
+
+Todos comparten el mismo ámbito global, así que el orden importa: lo que un archivo ejecuta al cargarse solo puede usar lo que esté en archivos anteriores (las funciones se pueden llamar desde cualquier sitio una vez cargado todo).
