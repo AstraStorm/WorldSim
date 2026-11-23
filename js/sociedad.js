@@ -805,9 +805,11 @@ function drawNight(){
 function homeOf(v, g){
   if (housingOn(g)) return homeMarket(v, g); // con dueños y alquileres (vivienda.js)
   const hs = housesOf(g);
+  if (ageOf(v) < ADULT_H) return kidHome(v, hs); // los niños, con sus padres (vivienda.js)
   if (v.home != null && hs.includes(v.home)) return v.home;
   v.home = null;
   for (const h of hs) if (villagers.filter(u => !u.dead && u.home === h).length < houseRoom(h)) { v.home = h; break; }
+  bringKids(v, hs);
   return v.home;
 }
 // ---- Oficios: cada adulto tiene el suyo y lo prefiere (aunque si hace falta, hace de todo) ----

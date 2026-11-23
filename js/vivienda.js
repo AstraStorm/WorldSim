@@ -52,10 +52,25 @@ function canLive(v, g, h, byPid){
   const o = byPid.get(d.o); if (!o || familyOf(v, o)) return true;
   return !adultV(v) || v.home === h || (v.money || 0) >= rentOf(g, h);
 }
+// Los niños viven con sus padres aunque la casa esté llena (se apretujan); los huérfanos los acoge la casa con más sitio, sin pagar
+function kidHome(v, hs){
+  const p = (v.parents || []).find(u => !u.dead && u.vid === v.vid && u.home != null && hs.includes(u.home));
+  if (p) return v.home = p.home;
+  if ((v.parents || []).some(u => !u.dead && u.vid === v.vid)) return v.home = null; // sus padres tampoco tienen casa: con ellos, a la hoguera
+  if (v.home != null && hs.includes(v.home)) return v.home;
+  let best = null, bf = -Infinity; for (const h of hs) { const f = houseRoom(h) - residentsOf(h).length; if (f > bf) { bf = f; best = h; } }
+  return v.home = best;
+}
+// Cuando alguien consigue casa, sus hijos pequeños se van con él
+function bringKids(v, hs){
+  if (v.home == null) return;
+  for (const k of v.kids || []) if (!k.dead && k.vid === v.vid && ageOf(k) < ADULT_H && (k.home == null || !hs.includes(k.home) || !(k.parents || []).some(u => !u.dead && u.home === k.home))) k.home = v.home;
+}
 // Casa donde duerme cada uno con el mercado de la vivienda: la suya, la de su familia, una pública y, si no, el alquiler más barato.
 // Si aparece algo mejor que lo que tiene (se compra una casa, su familia se muda), se cambia
 function homeMarket(v, g){
   const hs = housesOf(g), byPid = peopleByPid(g);
+  if (!adultV(v)) return kidHome(v, hs);
   const famHomes = new Set([...(v.partners || []), ...(v.parents || []), ...(v.kids || [])].filter(u => !u.dead && u.home != null && u.home !== v.home).map(u => u.home));
   const score = h => {
     const d = deedOf(g, h), o = d && d.o > 0 ? byPid.get(d.o) : null;
@@ -71,7 +86,8 @@ function homeMarket(v, g){
     if (h === v.home || residentsOf(h).length >= houseRoom(h)) continue;
     const s = score(h); if (s < bs - .5) { bs = s; best = h; } // solo se muda si sale ganando de verdad
   }
-  return v.home = best;
+  v.home = best; bringKids(v, hs);
+  return best;
 }
 // Cómo vive cada uno (para su ficha)
 function homeTxt(v, g){
@@ -113,6 +129,7 @@ function housingTick(g, people){
   }
   // Demanda: cuanta más gente sin casa y menos casas en venta, más caras
   const adults = people.filter(adultV), homeless = adults.filter(u => !u.away && (u.home == null || !hs.includes(u.home))).length, sale = forSaleOf(g);
+  g.homelessKids = people.filter(u => !adultV(u) && !u.away && (u.home == null || !hs.includes(u.home))).length;
   g.homeless = homeless; g.hWage = wageStats(g).avg; // el sueldo medio marca lo que cuesta una casa
   g.hDem = clamp(1 + homeless / Math.max(6, adults.length) * 2.5 - sale.length * .12, .7, 2.5);
   // Compraventa: primero quien no tiene casa (al contado o con hipoteca), luego quien compra para alquilar. Una o dos por cobro
@@ -181,7 +198,7 @@ function housingCard(g){
     <div class="kv"><span>Alquiler al día</span><b>${rentOf(g)} ${coinPl(g)} por persona</b></div>
     <div class="kv"><span>Casas</span><b>${hs.length} · ${pubN} públicas · ${sale} en venta · ${own.size} propietarios</b></div>
     <div class="kv"><span>Inquilinos</span><b>${tenants}${big.length ? ` · ${big.length} casero${big.length > 1 ? 's' : ''}${top ? ` (${esc(top.name)}, ${big[0][1]} casas)` : ''}` : ''}</b></div>
-    <div class="kv"><span>Sin casa</span><b>${g.homeless ? `<span style="color:#f08a7a">${g.homeless}</span>` : 0}${g.evictions ? ` · ${g.evictions} desahucio${g.evictions > 1 ? 's' : ''} en total` : ''}</b></div></div>`;
+    <div class="kv"><span>Sin casa</span><b>${g.homeless ? `<span style="color:#f08a7a">${g.homeless}</span>` : 0}${g.homelessKids ? ` <span style="color:#f08a7a">(y ${g.homelessKids} niño${g.homelessKids > 1 ? 's' : ''})</span>` : ''}${g.evictions ? ` · ${g.evictions} desahucio${g.evictions > 1 ? 's' : ''} en total` : ''}</b></div></div>`;
 }
 // ---- Acampada por la vivienda: tiendas en la plaza donde duermen los que no tienen casa, hasta que haya casas o los desalojen ----
 function startCamp(g, who){
