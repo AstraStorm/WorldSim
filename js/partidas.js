@@ -1,7 +1,7 @@
 // Forja de Mundos · Guardar y cargar: ranuras, archivos .forja
 // ================= Guardar y cargar la partida (en el navegador, con IndexedDB) =================
 const SAVE_VARS = ['yearT', 'climT', 'vidSeq', 'nameIdx', 'uidSeq', 'herdSeq', 'aid', 'animals', 'fishes', 'villages', 'villagers', 'rels', 'travelers', 'alliances', 'farmMap', 'pathMap', 'bridgeSet', 'bridges', 'plazaSet', 'holySet',
-  'wallSet', 'gateSet', 'wallStone', 'gateOwner', 'wear', 'wornSet', 'desireSet', 'fires', 'burnt', 'chronicle', 'sieges', 'usedFlags', 'snowSet', 'snowA', 'floodSet', 'floodA', 'iceSet', 'drySet', 'snowDepth', 'soil', 'soilNorm', 'soilRain', 'drought', 'wetT', 'worldHist', 'olymp', 'epidemics'];
+  'wallSet', 'gateSet', 'wallStone', 'gateOwner', 'wear', 'wornSet', 'desireSet', 'fires', 'burnt', 'chronicle', 'sieges', 'usedFlags', 'snowSet', 'snowA', 'floodSet', 'floodA', 'iceSet', 'drySet', 'snowDepth', 'soil', 'soilNorm', 'soilRain', 'drought', 'wetT', 'worldHist', 'olymp', 'epidemics', 'market'];
 function idb(){ return new Promise((ok, ko) => { const r = indexedDB.open('forja-de-mundos', 1); r.onupgradeneeded = () => r.result.createObjectStore('saves'); r.onsuccess = () => ok(r.result); r.onerror = () => ko(r.error); }); }
 async function idbDo(mode, fn){ const db = await idb(); return new Promise((ok, ko) => { const tx = db.transaction('saves', mode), st = tx.objectStore('saves'), req = fn(st); tx.oncomplete = () => ok(req && req.result); tx.onerror = () => ko(tx.error); }); }
 // Resumen que se ve en la lista de ranuras
@@ -20,7 +20,7 @@ function takeSnap(){
   const getters = { yearT:() => yearT, climT:() => climT, vidSeq:() => vidSeq, nameIdx:() => nameIdx, uidSeq:() => uidSeq, herdSeq:() => herdSeq, aid:() => aid, animals:() => animals, fishes:() => fishes, villages:() => villages, villagers:() => villagers, rels:() => rels, travelers:() => travelers, alliances:() => alliances,
     farmMap:() => farmMap, pathMap:() => pathMap, bridgeSet:() => bridgeSet, bridges:() => bridges, plazaSet:() => plazaSet, holySet:() => holySet, wallSet:() => wallSet, gateSet:() => gateSet, wallStone:() => wallStone, gateOwner:() => gateOwner, wear:() => wear, wornSet:() => wornSet, desireSet:() => desireSet,
     fires:() => fires, burnt:() => burnt, chronicle:() => chronicle, sieges:() => sieges, usedFlags:() => usedFlags, snowSet:() => snowSet, snowA:() => snowA, floodSet:() => floodSet, floodA:() => floodA, iceSet:() => iceSet, drySet:() => drySet, snowDepth:() => snowDepth, soil:() => soil, soilNorm:() => soilNorm,
-    soilRain:() => soilRain, drought:() => drought, wetT:() => wetT, worldHist:() => worldHist, olymp:() => olymp, epidemics:() => epidemics };
+    soilRain:() => soilRain, drought:() => drought, wetT:() => wetT, worldHist:() => worldHist, olymp:() => olymp, epidemics:() => epidemics, market:() => market };
   for (const k of SAVE_VARS) snap.vars[k] = getters[k]();
   // Lo que no se puede guardar (funciones pendientes) se quita un momento y se devuelve después
   const seen = new Set(), stack = [...villagers, ...villages.map(g => g.leader).filter(Boolean)]; // los vivos y su familia (también los muertos a los que apuntan)
@@ -41,7 +41,7 @@ async function applySnap(snap){
   farmMap = V.farmMap; pathMap = V.pathMap; bridgeSet = V.bridgeSet; bridges = V.bridges; plazaSet = V.plazaSet; holySet = V.holySet; wallSet = V.wallSet; gateSet = V.gateSet; wallStone = V.wallStone || new Set(); gateOwner = V.gateOwner || new Map();
   wear = V.wear; wornSet = V.wornSet; desireSet = V.desireSet; fires = V.fires; burnt = V.burnt; chronicle = V.chronicle || []; sieges = V.sieges || []; usedFlags = V.usedFlags;
   snowSet = V.snowSet; snowA = V.snowA; floodSet = V.floodSet; floodA = V.floodA; iceSet = V.iceSet; drySet = V.drySet; snowDepth = V.snowDepth; soil = V.soil; soilNorm = V.soilNorm; soilRain = V.soilRain; drought = V.drought; wetT = V.wetT;
-  worldHist = V.worldHist || { t:[], n:{} }; olymp = V.olymp || { next:yearT + SEASON_LEN * 2, cur:null, past:[] }; epidemics = V.epidemics || [];
+  worldHist = V.worldHist || { t:[], n:{} }; olymp = V.olymp || { next:yearT + SEASON_LEN * 2, cur:null, past:[] }; epidemics = V.epidemics || []; market = V.market || null; // la bolsa (si no la había, se crea sola)
   for (const v of villagers) { if (v.task && v.task.k === 'trabajando') { v.task = null; v.actT = 0; } } // lo que estaban haciendo se retoma de cero
   stones = []; arrows = []; moneyFlows = []; chips = []; floats = []; smoke = []; ubCache = null; burntDirty = true; zoneCv = null; zoneT = 0; setFollow(null); cardVid = 0;
   spriteSeason = prevSeason = seasonInfo().i; repaintAll(); waveImg = null; buildWaves(); buildZones(); renderStats();

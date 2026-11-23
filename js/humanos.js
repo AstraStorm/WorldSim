@@ -292,6 +292,7 @@ function chooseJob(v, g){
   add('instruir', v.weapon && hasBarracks(g) && (v.vet || 0) < 3 && busyWith(g, 'instruir') < 4 ? (atWarJ ? 4 : 1.5) : 0);
   add('asedio', hasBarracks(g) && hasForge(g) && (g.siege || 0) < 2 && g.wood >= 12 && (g.iron || 0) >= 2 && (atWarJ || L.includes('ejercito')) && !busyWith(g, 'asedio') ? (atWarJ ? 5 : 1.5) : 0);
   add('lonja', g.port && g.market != null && !hasLonja(g) && g.wood >= 12 && g.stone >= 6 && !busyWith(g, 'lonja') ? 4 : 0);
+  add('bolsa', wantsBolsa(v, g) ? 2 : 0); // ir al banco a invertir en bolsa (bolsa.js)
   add('vender', g.market != null && world.objs[g.market] && busyWith(g, 'vender') < 3 ? (v.oficio === 'mercader' ? 3 : .3) : 0);
   add('taberna', !hasTavern(g) && houses >= 3 && pop >= 10 && g.wood >= 12 && g.stone >= 4 && !busyWith(g, 'taberna') ? 3.5 : 0);
   // El gran templo: con templo ya hecho, mucha fe y mucha piedra (más si es teocracia)
@@ -466,6 +467,7 @@ function setupTask(v, g, job){
       const P = g.port, p = ringFind(P.sx, P.sy, 10, (x, y) => tileFree(x, y) && clearable(x - 5, y - 6, x + 5, y + 1) && !buildingClash(x, y, 'lonja') && !pathIn(x - 5, y - 6, x + 5, y) && !plazaIn(x - 5, y - 6, x + 5, y));
       return p ? { k:job, i:p[1] * W + p[0], x:p[0] * T + 2, y:(p[1] + 1) * T + 3 } : null;
     }
+    case 'bolsa': { if (!hasBank(g)) return null; const sb = standBy(g.bank); return sb ? { k:job, x:sb[0], y:sb[1] } : null; }
     case 'vender': { const r = g.marketRect; if (!r) return null; return { k:job, x:(r.x0 + 1 + Math.random() * (r.x1 - r.x0 - 2)) * T + 2, y:(r.y0 + 2) * T + 3 }; }
     case 'taberna': { const p = bestSite(v, g, job); return p ? { k:job, i:p[1] * W + p[0], x:p[0] * T + 2, y:(p[1] + 1) * T + 3 } : null; }
     case 'escuela': { const p = bestSite(v, g, job); return p ? { k:job, i:p[1] * W + p[0], x:p[0] * T + 2, y:(p[1] + 1) * T + 3 } : null; }
@@ -997,6 +999,7 @@ function runTask(v, g, dt){
     }; break; }
     case 'instruir': v.actT = 7; v.dir = Math.random() < .5 ? -1 : 1; v.stab = .25; v.onDone = () => { v.vet = Math.min(3, (v.vet || 0) + 1); floats.push({ x:v.x, y:v.y - 12, txt:['recluta', 'soldado', 'veterano', 'veterano'][v.vet], col:'#c8d0dc', life:0 }); }; break;
     case 'asedio': v.actT = 14; v.onDone = () => { if (g.wood < 12 || (g.iron || 0) < 2) return; g.wood -= 12; g.iron -= 2; g.siege = (g.siege || 0) + 1; if (!g.siegeMsg) { g.siegeMsg = true; notify(`En ${g.name} construyen su primera catapulta para asediar murallas`, { x:v.x, y:v.y }); } }; break;
+    case 'bolsa': v.actT = 5; v.onDone = () => { v.bolsaT = yearT; tradeStocks(v, g); }; break;
     case 'vender': v.actT = 10; v.dir = 1; v.onDone = () => { snd('coin', v.x, v.y); g.trades = (g.trades || 0) + 2; const n = g.coin ? wageOf(g, 6) : 0; if (n) { v.money = (v.money || 0) + n; v.earned = (v.earned || 0) + n; } floats.push({ x:v.x, y:v.y - 12, txt:n ? `+${n} ${coinPl(g)}` : 'trueque', col:'#f0d060', life:0 }); }; break;
     case 'hospital': v.actT = 12; v.onDone = () => {
       const x = t.i % W, y = (t.i / W) | 0;

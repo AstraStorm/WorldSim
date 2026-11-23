@@ -1232,7 +1232,7 @@ function moodOf(v){
     if ([...rels.values()].some(r => r.war && (r.war.att === nationOf(g).id || r.war.def === nationOf(g).id))) add(-8, 'su pueblo está en guerra');
   }
   if (v.home == null || !world.objs[v.home]) { if (ageOf(v) >= ADULT_H) add(-6, 'no tiene casa'); } else add(5, 'tiene casa');
-  if (g) housingMood(v, g, add);
+  if (g) { housingMood(v, g, add); stockMood(v, g, add); }
   if (v.task && v.task.k === 'detenido') add(-30, 'está detenido');
   if (g && ageOf(v) >= ADULT_H) { if (hasLaw(g, 'jornada_larga')) add(-8, 'trabaja demasiadas horas'); else if (hasLaw(g, 'jornada_corta')) add(5, 'tiene una jornada corta'); }
   if (v.fun && yearT - v.fun < DAY_LEN) add(6, 'ha tenido tiempo libre');
@@ -1291,6 +1291,7 @@ function renderPersonCard(force){
       ${v.edu ? `<div class="kv"><span>Estudios</span><b>${v.edu >= .7 ? 'muy formad' + sexW(v, 'o', 'a') : v.edu >= .3 ? 'fue a la escuela' : 'algo de escuela'}${ageOf(v) >= ADULT_H ? ' <span class="muted">(cobra más)</span>' : ''}</b></div>` : ''}
       <div class="kv"><span>Dieta</span><b>${dietName(v)}</b></div>
       ${g && ageOf(v) >= ADULT_H ? (g.coin ? `<div class="kv"><span>Sueldo</span><b>${v.wage != null || v.dayPay ? `${wageDay(v)} ${coinPl(g)} al día <span class="muted">(vivir cuesta ${costOfLiving(g)})</span>${wageDay(v) < costOfLiving(g) ? ' · <span style="color:#f08a7a">no le llega</span>' : ''}` : '<span class="muted">aún no ha cobrado</span>'}</b></div><div class="kv"><span>Dinero</span><b>${v.money || 0} ${coinPl(g)} · ha ganado ${v.earned || 0} · impuestos ${Math.round(taxRateOf(g) * 100)} %</b></div>` : `<div class="kv"><span>Sueldo</span><b class="muted">en especie: su pueblo aún no tiene moneda</b></div>`) : ''}
+      ${stockLine(v, g)}
       <div class="kv"><span>Equipo</span><b>${[v.weapon && (v.weapon === 'lanza' && v.ironW ? 'lanza de hierro' : v.weapon), v.shield && 'escudo', v.armor && GEAR_TXT[v.armor], v.rod && 'caña', v.mount && 'caballo', v.cart && 'carro', v.swims === false && 'no sabe nadar'].filter(Boolean).join(', ') || 'nada'}</b></div></div>
     <h4>Ánimo</h4><div class="mood"><span class="mw" style="color:${moodCol(mood.score)}">${mood.word}</span>${bar(mood.score / 100, moodCol(mood.score), 120)} <span class="muted">${mood.score}/100</span></div>
     ${mood.good.length ? `<div class="why good">+ ${mood.good.join(' · ')}</div>` : ''}${mood.bad.length ? `<div class="why bad">− ${mood.bad.join(' · ')}</div>` : ''}
@@ -1591,7 +1592,7 @@ function diploTick(){
     // Caravanas de comercio y diplomáticos
     if (hasLaw(a, 'fronteras_abiertas') && hasLaw(b, 'fronteras_abiertas')) r.v = Math.min(100, r.v + .3);
     const closed = (hasLaw(a, 'fronteras_cerradas') || hasLaw(b, 'fronteras_cerradas')) && !(a.port && b.port && (hasLonja(a) || hasLonja(b)));
-    if (!closed && r.v > -15 && (a.market != null || b.market != null) && yearT - (r.tradeT ?? -1e9) > DAY_LEN * (hasLaw(a, 'comercio') || hasLaw(b, 'comercio') ? .3 : .6) * (hasLonja(a) || hasLonja(b) ? .5 : 1) * (hasTreaty(r, 'comercio') ? .5 : 1) * (hasLaw(a, 'fronteras_abiertas') || hasLaw(b, 'fronteras_abiertas') ? .7 : 1)) { r.tradeT = yearT; const from = a.market != null && Math.random() < .5 ? a : b.market != null ? b : a; sendTraveler('caravana', from, from === a ? b : a); }
+    if (!closed && !sanctionedPair(a, b) && r.v > -15 && (a.market != null || b.market != null) && yearT - (r.tradeT ?? -1e9) > DAY_LEN * (hasLaw(a, 'comercio') || hasLaw(b, 'comercio') ? .3 : .6) * (hasLonja(a) || hasLonja(b) ? .5 : 1) * (hasTreaty(r, 'comercio') ? .5 : 1) * (hasLaw(a, 'fronteras_abiertas') || hasLaw(b, 'fronteras_abiertas') ? .7 : 1)) { r.tradeT = yearT; const from = a.market != null && Math.random() < .5 ? a : b.market != null ? b : a; sendTraveler('caravana', from, from === a ? b : a); }
     if (r.v < 30 && yearT - (r.dipT ?? -1e9) > DAY_LEN * (hasLaw(a, 'paz') || hasLaw(b, 'paz') ? .6 : 1.2) && Math.random() < .5) { r.dipT = yearT; const from = (a.hall != null) !== (b.hall != null) ? (a.hall != null ? a : b) : Math.random() < .5 ? a : b; sendTraveler('diplomatico', from, from === a ? b : a); }
   }
 }
@@ -2315,7 +2316,7 @@ function resolveCoup(g){
 const wageOf = (g, n) => Math.max(1, Math.round(n / 3 * priceOf(g) * (hasLaw(g, 'salario_minimo') ? 1.5 : 1) * (regimeOf(g) === 'comunismo' ? .7 : 1) * (g.wageUp || 1)));
 // Lo que cuesta vivir un día (comer lo de cada día y algo más) y lo que gana cada uno al día
 const costOfLiving = g => Math.max(2, Math.round(priceOf(g) * 4.5)); // comida, casa, ropa y lo demás de un día
-const UNPAID = new Set(['ocio', 'pasear', 'comer', 'beber', 'dormir', 'ver_teatro', 'ver_coliseo', 'ir_taberna', 'jugar', 'volver', 'espectador', 'votar', 'protesta', 'golpe', 'detenido', 'ritual']);
+const UNPAID = new Set(['bolsa', 'ocio', 'pasear', 'comer', 'beber', 'dormir', 'ver_teatro', 'ver_coliseo', 'ir_taberna', 'jugar', 'volver', 'espectador', 'votar', 'protesta', 'golpe', 'detenido', 'ritual']);
 function payWage(v, g, n){
   if (!g || !g.coin || ageOf(v) < ADULT_H) return;
   const pay = Math.max(1, Math.round(wageOf(g, n) * (hasLaw(g, 'segregacion') && isMinority(v, g) ? .6 : 1) * (1 + Math.min(.4, (v.edu || 0) * .4)))), /* con estudios, más */ d = Math.floor(yearT / DAY_LEN);
@@ -2335,6 +2336,7 @@ const hasBank = g => g.bank != null && !!world.objs[g.bank];
 function econTick(g, people){
   const ec = ecOf(g), pop = Math.max(1, people.length), reg = regimeOf(g), bank = hasBank(g);
   const taxR = taxRateOf(g);
+  marketTick(); // la bolsa mundial, una vez al día (bolsa.js)
   housingTick(g, people); // la vivienda: compraventa, alquileres e hipotecas
   taxDay(g, people, ec); // los impuestos de cada día, y si crean o quitan alguno (impuestos.js)
   let tax = 0; for (const v of people) { const t0 = Math.floor((v.money || 0) * taxR); v.money = (v.money || 0) - t0; tax += t0; }
@@ -2505,6 +2507,7 @@ function econCard(g){
       <div class="kv"><span>Dinero en manos de la gente</span><b>${villagers.filter(v => !v.dead && v.vid === g.id).reduce((a, v) => a + (v.money || 0), 0)}</b></div></div>
     ${taxCard(g)}
     ${budgetCard(g)}
+    ${marketCard(g)}
     ${housingCard(g)}
     ${fx.length ? `<h4>Cambio de moneda</h4><div class="sec">${fx.map(o => `<div class="kv"><span>1 ${esc(g.coin)} =</span><b>${(ecOf(o).P / ec.P).toFixed(2)} ${coinPl(o)} <span class="muted">(${esc(o.name)})</span></b></div>`).join('')}</div>` : ''}`;
 }
