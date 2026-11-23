@@ -261,13 +261,14 @@ function chooseJob(v, g){
   const add = (k, w) => { if (w > 0 && !((g.jobFail || {})[k] > yearT)) J.push([k, w * (mine.includes(k) ? 3 : 1)]); }; // lo de su oficio, mucho más a menudo
   // Construir: uno por cada 6 de madera disponibles; el cercado lo hace una sola persona
   // Mientras falten casas, la madera es para ellas: lo demás solo se hace con la que sobre
-  const needHouse = houseCap(g) < pop + 4, spare = g.wood - (needHouse ? 4 + busyWith(g, 'construir') * 4 : 0);
+  // Cuando las casas ya tienen dueño, cuántas se hacen depende de la política de vivienda del gobierno
+  const needHouse = housingOn(g) ? houseNeed(g, pop) : houseCap(g) < pop + 4, spare = g.wood - (needHouse ? 4 + busyWith(g, 'construir') * 4 : 0);
   const L = lawsOf(g);
   const soldiersJ = villagers.filter(u => u.vid === g.id && !u.dead && u.weapon).length, atWarJ = [...rels.values()].some(r => r.war && (r.war.att === nationOf(g).id || r.war.def === nationOf(g).id || r.war.att === g.id || r.war.def === g.id));
   const huts = housesOf(g).filter(i => world.objs[i].key === 'house:hut');
   add('ampliar', needHouse && huts.length && g.stone >= 7 && g.wood >= 1 && busyWith(g, 'ampliar') < 2 ? (g.noSite ? 12 : 3) : 0);
   const canHouses = Math.floor(g.wood / 4) + (g.wood >= 1 ? Math.floor(g.stone / 10) : 0); // de madera, o de piedra con un poco de madera
-  add('construir', needHouse && !(g.noSite > yearT) && canHouses > busyWith(g, 'construir') ? 9 + Math.min(12, (canHouses - busyWith(g, 'construir')) * 2) : 0); // con material de sobra, más gente a construir
+  add('construir', needHouse && !(g.noSite > yearT) && canHouses > busyWith(g, 'construir') ? (9 + Math.min(12, (canHouses - busyWith(g, 'construir')) * 2)) * (housingOn(g) && hasLaw(g, 'vivienda_publica') ? 1.6 : 1) : 0); // con material de sobra, más gente a construir (y con vivienda pública, aún más)
   // El campo: se marca una parcela, se ara casilla a casilla, se siembra, crece y se cosecha
   // Cuanto más campo espera, más gente va a él
   let nRipe = 0, nPlowed = 0, nRaw = 0; for (const f of farms) if (!f.claim) { if (f.st === 'madura') nRipe++; else if (f.st === 'arada') nPlowed++; else if (f.st === 'pradera' || f.st === 'muerta') nRaw++; }
@@ -738,7 +739,7 @@ function runTask(v, g, dt){
       if (clearable(x - 4, y - 5, x + 4, y + 1)) clearSite(g, x - 4, y - 5, x + 4, y + 1); // despejan el solar
       if (g.wood < (stone ? 1 : 4) || !tileFree(x, y) || penOverlap(g, x - 4, y - 5, x + 4, y + 1) || buildingClash(x, y, 'casa', t.i)) return;
       world.objs[t.i] = { key:stone ? 'house:piedra' : 'house:hut', v:Math.floor(Math.random() * 20), ox:0, oy:0, vid:g.id };
-      g.houses.push(t.i); if (stone) { const w = Math.min(3, g.wood); g.wood -= w; g.stone -= 8 + (3 - w) * 1; } else g.wood -= 4; // la piedra suple la madera que falte
+      g.houses.push(t.i); newDeed(g, t.i); if (stone) { const w = Math.min(3, g.wood); g.wood -= w; g.stone -= 8 + (3 - w) * 1; } else g.wood -= 4; // la piedra suple la madera que falte
       composeRegion(x - 7, y - 11, x + 7, y + 12); addEffect(x * T + 2, y * T + 3, 'poof'); connect(g, x, y);
     }; break;
     case 'puente': { const b = t.br; v.actT = 4 + b.len * 1.5; v.onDone = () => {

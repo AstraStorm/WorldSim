@@ -47,6 +47,7 @@ Sin dependencias ni compilación: cada archivo es un script normal y se cargan e
 | `js/partidas.js` | Guardar y cargar: ranuras y archivos `.forja` |
 | `js/vida.js` | Enfermedades, migraciones, historia y sonido |
 | `js/sociedad.js` | Ocio, Juegos, mar, fichas de pueblo y persona, crónica, leyes y diplomacia |
+| `js/vivienda.js` | Casas con dueño, compraventa, hipotecas, alquileres, desahucios y la ley de la vivienda |
 | `js/cartografia.js` | Papel, expediciones de los cartógrafos y el mapa (impreciso) de cada aldea |
 | `js/convivencia.js` | Parejas y orientación, racismo y derechos, homofobia o igualdad |
 | `js/credos.js` | Migrantes con otra fe: predicadores, conversiones, persecución o libertad de culto |
