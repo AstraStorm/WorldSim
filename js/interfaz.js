@@ -38,7 +38,7 @@ function applyBrush(cx, cy){
   }
   paintRegion(x0 - 2, y0 - 2, x1 + 2, y1 + 2);
   composeRegion(x0 - 7, y0 - 11, x1 + 7, y1 + 12);
-  if (tool === 'plant' || tool === 'cut' || tool !== 'move') statsSoon();
+  if (tool === 'plant' || tool === 'cut' || tool !== 'move') statsSoon(tool !== 'plant' && tool !== 'cut');
 }
 
 // ================= Entrada =================
@@ -200,7 +200,9 @@ function renderStats(){
   document.querySelectorAll('canvas.ic[data-icon]').forEach(c => drawIcon(c, c.dataset.icon)); // los iconos de fauna se pintan aparte
 }
 let statsTimer = 0;
-function statsSoon(){ clearTimeout(statsTimer); statsTimer = setTimeout(() => { if (busy) return; buildRareList(); renderStats(); buildWaves(); }, 250); }
+// (rendimiento) como mucho cada 2 s, y el oleaje solo se rehace si ha cambiado la costa (talar o picar no la cambia)
+let coastDirty = false, statsLast = 0;
+function statsSoon(coast){ if (coast) coastDirty = true; if (statsTimer) return; statsTimer = setTimeout(() => { statsTimer = 0; statsLast = performance.now(); if (busy) return; buildRareList(); renderStats(); if (coastDirty) { coastDirty = false; buildWaves(); } }, Math.max(250, 2000 - (performance.now() - statsLast))); }
 $('finds').onclick = ev => {
   const b = ev.target.closest('button'); if (!b) return;
   const key = b.dataset.key, list = world.rare.filter(s => s.key === key); if (!list.length) return;
@@ -323,7 +325,7 @@ function updateWaves(t){
   // horizontal (y solo esa se copia al lienzo), así nunca se procesan millones de píxeles de golpe.
   // Con poco a la vista se anima todo cada fotograma (de cerca, sin saltos)
   const vr = visibleRect(), area = (vr[2] - vr[0] + 1) * (vr[3] - vr[1] + 1), bands = Math.min(10, Math.ceil(area / 5e5));
-  if (bands === 1 && zoom < 2 && t - waveLast < 50) return;
+  if (t - waveLast < (bands === 1 && zoom < 2 ? 50 : 45)) return; // (rendimiento) unas 20 veces por segundo bastan: el agua se mueve despacio
   waveLast = t;
   waveBand = (waveBand + 1) % bands;
   const hb = Math.ceil((vr[3] - vr[1] + 1) / bands);

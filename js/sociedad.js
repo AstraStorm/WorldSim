@@ -318,7 +318,7 @@ function groundSignature(){
 function drawGround(){
   if (!groundCv || groundCv.width !== PW || groundCv.height !== PH) { groundCv = document.createElement('canvas'); groundCv.width = PW; groundCv.height = PH; groundSig = ''; }
   const now = performance.now(), sig = groundSignature();
-  if (sig !== groundSig || now - groundT > 15000) { // (la nieve sobre los caminos cambia despacio)
+  if ((sig !== groundSig && (now - groundT > 5000 || !groundSig)) || now - groundT > 15000) { // (cambios de caminos: como mucho cada 5 s) // (la nieve sobre los caminos cambia despacio)
     groundSig = sig; groundT = now;
     const gc = groundCv.getContext('2d'), keep = vctx; gc.clearRect(0, 0, PW, PH);
     vctx = gc; vrOverride = [0, 0, PW - 1, PH - 1];

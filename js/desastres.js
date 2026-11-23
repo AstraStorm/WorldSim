@@ -78,11 +78,12 @@ function updateClimate(dt){
   // Nieve, hielo y cauces: se recorre todo el mapa cada ~1 s, un trozo por fotograma, en orden disperso
   // (saltando por el mapa con un paso primo) para que los cambios no avancen en franjas de arriba abajo
   seasonTempNow = seasonVal('temp');
+  const seasonLo = seasonTempNow < 0 ? seasonTempNow * 1.6 : seasonTempNow * .5; // lo más frío que puede dar la estación en una casilla (para descartar rápido)
   // Cambio climático lento: cada año el planeta tira hacia un nuevo objetivo, y la temperatura lo sigue despacio
   const yr = Math.floor(yearT / YEAR);
   if (yr !== globalYear) { globalYear = yr; globalTarget = clamp(globalTarget + (Math.random() - .5) * 3.2, -5, 5); }
   globalT += (globalTarget - globalT) * Math.min(1, dt / (YEAR * 1.2));
-  const chunk = Math.ceil(N / 120), el = dt * 120, vr = visibleRect(); // (todo el mapa cada ~2 s: la nieve y el hielo cambian despacio)
+  const chunk = Math.ceil(N / 240), el = dt * 240, vr = visibleRect(); // (todo el mapa cada ~4 s: la nieve y el hielo cambian despacio)
   const seen = i => { const x = (i % W) * T, y = ((i / W) | 0) * T; return x >= vr[0] && x <= vr[2] && y >= vr[1] && y <= vr[3]; };
   for (let n = 0; n < chunk; n++) {
     iceSweep = (iceSweep + 1) % N;
@@ -92,6 +93,7 @@ function updateClimate(dt){
       // Nieve en el suelo: donde hace mucho frío se mantiene y crece (neveros y glaciares de las cumbres);
       // por encima de 0 °C se derrite, más deprisa cuanto más calor
       if (b === B.LAVA) continue;
+      if (!snowA[i] && !(floodA && floodA[i] > .1) && world.baseT[i] + globalT + seasonLo - 11 > -6) continue; // (rendimiento) tan templado que no puede nevar: ni se calcula
       const t = tempAt(i);
       // Charco evaporándose: vapor que sube (más cuanto más calor)
       if (floodA && floodA[i] > .1 && t > 14 && Math.random() < (t - 14) / 20 && seen(i)) addVapor(i);
@@ -116,6 +118,7 @@ function updateClimate(dt){
       if (d > thr && w < .95 && Math.random() < .8 && seen(i)) addVapor(i); // se está secando: el agua se evapora
       if (w > .05) { world.ice[i] = 0; continue; }
     }
+    if (!world.ice[i] && world.baseT[i] + globalT + seasonLo - 11 > 0) continue; // (rendimiento) no puede helarse
     const t = tempAt(i) + (b === B.SHALLOW ? 3 : 0) + (b === B.RIVER && world.slope[i] > 120 ? 2 : 0); // el mar y los rápidos cuestan más de helar
     let v = world.ice[i];
     // Unos 5 días en helarse o deshelarse con 2-3 grados bajo o sobre cero (antes de 15 a 20)
@@ -601,7 +604,7 @@ function updateMeteors(dt){
         const x = i % W, y = (i / W) | 0;
         x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);
       }
-      if (x1 >= 0) { composeRegion(x0 - 7, y0 - 11, x1 + 7, y1 + 12); rareDirty = true; statsSoon(); }
+      if (x1 >= 0) { composeRegion(x0 - 7, y0 - 11, x1 + 7, y1 + 12); rareDirty = true; statsSoon(true); }
       b.drops = null;
     }
   }
@@ -691,7 +694,7 @@ function impact(m){
       col:wet ? '210,230,245' : Math.random() < .5 ? '96,78,60' : '150,140,128' });
   }
   for (let k = 0; k < 10 + m.size * 30; k++) smoke.push({ x:m.x + (Math.random() - .5) * R * T, y:m.y + (Math.random() - .5) * R * T * .6, vx:(Math.random() - .5) * 8, vy:-4 - Math.random() * 8, r:2 + Math.random() * 3, life:0, max:3 + Math.random() * 4 });
-  statsSoon();
+  statsSoon(true);
   notify(wet ? (m.size > .45 ? '¡Ha caído un meteorito en el mar! Alerta de tsunami' : 'Ha caído un meteorito en el mar') : m.size > .7 ? '¡Ha caído un gran meteorito!' : 'Ha caído un meteorito', { x:m.x, y:m.y });
 }
 // La roca en llamas bajando con su estela y la sombra en el suelo; después, la onda expansiva

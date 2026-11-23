@@ -630,7 +630,7 @@ function startQuake(x, y, M){
       break;
     }
   }
-  if (newRiver) { paintRegion(bx0 - 2, by0 - 2, bx1 + 2, by1 + 2); composeRegion(bx0 - 7, by0 - 11, bx1 + 7, by1 + 12); statsSoon(); }
+  if (newRiver) { paintRegion(bx0 - 2, by0 - 2, bx1 + 2, by1 + 2); composeRegion(bx0 - 7, by0 - 11, bx1 + 7, by1 + 12); statsSoon(true); }
   // Polvo que se levanta del suelo y piedras que saltan
   // En tierra se levanta polvo; bajo el agua, burbujas
   for (let k = 0; k < M * 14; k++) {
@@ -754,7 +754,7 @@ function updateTsunamis(dt){
       world.biome[i] = classify(i); if (WATER[world.biome[i]]) objs[i] = null;
       const x = i % W, y = (i / W) | 0; x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);
     }
-    paintRegion(x0 - 2, y0 - 2, x1 + 2, y1 + 2); composeRegion(x0 - 7, y0 - 11, x1 + 7, y1 + 12); statsSoon();
+    paintRegion(x0 - 2, y0 - 2, x1 + 2, y1 + 2); composeRegion(x0 - 7, y0 - 11, x1 + 7, y1 + 12); statsSoon(true);
     s.eroded = null;
   }
   if (tsunamis.length) tsunamis = tsunamis.filter(s => s.t - s.delay < 12);

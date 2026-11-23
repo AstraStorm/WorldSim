@@ -43,7 +43,7 @@ async function applySnap(snap){
   snowSet = V.snowSet; snowA = V.snowA; floodSet = V.floodSet; floodA = V.floodA; iceSet = V.iceSet; drySet = V.drySet; snowDepth = V.snowDepth; soil = V.soil; soilNorm = V.soilNorm; soilRain = V.soilRain; drought = V.drought; wetT = V.wetT;
   worldHist = V.worldHist || { t:[], n:{} }; olymp = V.olymp || { next:yearT + SEASON_LEN * 2, cur:null, past:[] }; epidemics = V.epidemics || []; market = V.market || null; // la bolsa (si no la había, se crea sola)
   for (const v of villagers) { if (v.task && v.task.k === 'trabajando') { v.task = null; v.actT = 0; } } // lo que estaban haciendo se retoma de cero
-  stones = []; arrows = []; moneyFlows = []; chips = []; floats = []; smoke = []; ubCache = null; burntDirty = true; zoneCv = null; zoneT = 0; setFollow(null); cardVid = 0;
+  groundSig = ''; stones = []; arrows = []; moneyFlows = []; chips = []; floats = []; smoke = []; ubCache = null; burntDirty = true; zoneCv = null; zoneT = 0; setFollow(null); cardVid = 0;
   spriteSeason = prevSeason = seasonInfo().i; repaintAll(); waveImg = null; buildWaves(); buildZones(); renderStats();
   notify(`Partida cargada: día ${Math.floor(yearT / DAY_LEN) + 1}`);
 }
