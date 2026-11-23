@@ -489,8 +489,11 @@ function setupTask(v, g, job){
       return p ? { k:job, i:p[1] * W + p[0], x:p[0] * T + 2, y:(p[1] + 1) * T + 3 } : null;
     }
     case 'cercar': {
-      for (let k = 0; k < 160; k++) {
-        const a = Math.random() * Math.PI * 2, d = 10 + Math.random() * 24, x0 = Math.round(g.fx + Math.cos(a) * d) - 4, y0 = Math.round(g.fy + Math.sin(a) * d * .8) - 3;
+      // Los cercados siguientes, primero junto al que ya tienen; si no, más lejos que el primero (cerca del centro ya no cabe)
+      const p0 = pensOf(g)[0], np = pensOf(g).length;
+      for (let k = 0; k < (np ? 320 : 160); k++) {
+        const near = p0 && k % 2 === 0, cx = near ? (p0.x0 + p0.x1) / 2 : g.fx, cy = near ? (p0.y0 + p0.y1) / 2 : g.fy;
+        const a = Math.random() * Math.PI * 2, d = near ? 10 + Math.random() * 8 : 10 + Math.random() * (24 + np * 16), x0 = Math.round(cx + Math.cos(a) * d) - 4, y0 = Math.round(cy + Math.sin(a) * d * .8) - 3;
         let ok = x0 > 1 && y0 > 1 && x0 + 9 < W - 1 && y0 + 7 < H - 1;
         for (let y = y0; ok && y <= y0 + 6; y++) for (let x = x0; ok && x <= x0 + 8; x++) { const i = y * W + x, o = world.objs[i]; if (WATER[world.biome[i]] || world.biome[i] === B.LAVA || pathMap.has(i) || bridgeSet.has(i) || farmMap.has(i) || (o && !['tree', 'berry'].includes(OBJ[o.key][1]))) ok = false; }
         for (let y = y0 - 1; ok && y <= y0 + 7; y++) for (let x = x0 - 1; ok && x <= x0 + 9; x++) if (underBuilding(g, x, y) || plazaSet.has(y * W + x) || holySet.has(y * W + x)) ok = false;
