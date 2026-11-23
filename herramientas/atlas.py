@@ -89,10 +89,10 @@ add('mill:molino', shrink(cut(H2, [(680, 800)]), 20)); add('mill:aspas', shrink(
 # ---- Naturaleza (hoja_06: cada árbol con su versión desnuda al lado) ----
 H6 = 'hoja_06.png'
 T6 = [  # clave, punto del árbol con hojas, punto del desnudo (o None), ancho
-  ('oak:forest', (80, 140), (160, 140), 24), ('pine:pine', (300, 140), None, 21), ('pine:snow', (497, 140), None, 25), ('acacia:dry', (700, 145), (797, 145), 33),
-  ('birch:birch', (80, 295), (168, 300), 23), ('pine:blue', (305, 295), None, 25), ('willow:swamp', (500, 300), (585, 305), 28), ('palm:palm', (708, 300), None, 13),
-  ('palm:coco', (82, 455), None, 13), ('oak:cherry', (293, 455), (380, 460), 30), ('pine:autumn', (498, 450), (574, 450), 21), ('acacia:sunset', (700, 455), (797, 460), 37),
-  ('willow:moss', (82, 607), (170, 610), 28), ('cactus:cactus', (304, 608), None, 8), ('cactus:bloom', (500, 606), None, 11),
+  ('oak:forest', (80, 140), (160, 140), 24), ('pine:pine', (300, 140), (376, 138), 21), ('pine:snow', (497, 140), (570, 138), 25), ('acacia:dry', (700, 145), (797, 145), 33),
+  ('birch:birch', (80, 295), (168, 300), 23), ('pine:blue', (305, 295), (376, 296), 25), ('willow:swamp', (500, 300), (585, 305), 28), ('palm:palm', (708, 300), (800, 305), 13),
+  ('palm:coco', (82, 455), (162, 459), 13), ('oak:cherry', (293, 455), (380, 460), 30), ('pine:autumn', (498, 450), (574, 450), 21), ('acacia:sunset', (700, 455), (797, 460), 37),
+  ('willow:moss', (82, 607), (170, 610), 28), ('cactus:cactus', (304, 608), (376, 608), 8), ('cactus:bloom', (500, 606), (569, 610), 11),
   ('ancient:elder', (980, 175), None, 40), ('ancient:frost', (1170, 178), None, 38), ('ancient:baobab', (1353, 178), None, 39), ('ancient:mangrove', (1528, 180), None, 38), ('ancient:life', (978, 395), None, 40),
 ]
 def trunk_clean(img):  # motas rosas o verdes sueltas en el tronco (restos de la reducción): color de tronco
@@ -102,7 +102,9 @@ def trunk_clean(img):  # motas rosas o verdes sueltas en el tronco (restos de la
     a[stray, :3] = (110, 70, 36); return Image.fromarray(a, 'RGBA')
 for key, p, bare, w in T6:
     img = shrink(cut(H6, [p]), w, 24); add(key, trunk_clean(img) if key == 'oak:cherry' else img)
-    if bare: add(key + ':bare', shrink(cut(H6, [bare]), w, 16))
+    if bare: # el desnudo, a la misma altura que el vivo (si no, los troncos estrechos salían gigantes)
+        b = cut(H6, [bare]); bw = max(3, min(w, round(b.width * img.height / b.height)))
+        add(key + ':bare', shrink(b, bw, 16))
 for key, p, w in [('bush:red', (1169, 405), 11), ('bush:blueb', (1343, 405), 11), ('bush:goldb', (1522, 405), 11), ('bush:moon', (978, 590), 11), ('bush:empty', (1167, 590), 11),
                   ('rock:stone', (1732, 262), 8), ('big:stone', (1898, 250), 11), ('ore:iron', (2073, 250), 11), ('ore:gold', (1732, 469), 11), ('gem:amethyst', (1902, 469), 10), ('gem:mana', (2074, 464), 9)]:
     add(key, shrink(cut(H6, [p]), w, 16))

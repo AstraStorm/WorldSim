@@ -9,7 +9,7 @@ const ART = { img:null, ready:false, cache:new Map() };
   if (typeof ART_MAP === 'undefined') return;
   const im = new Image();
   im.onload = () => { ART.img = im; ART.ready = true; ART.cache.clear(); if (typeof world !== 'undefined' && world && typeof composeRegion === 'function') composeRegion(0, 0, W - 1, H - 1); };
-  im.src = 'arte/atlas.png?v=202611230241';
+  im.src = 'arte/atlas.png?v=202611230248';
 })();
 const ART_DECID = new Set(['oak:forest', 'birch:birch', 'willow:swamp', 'willow:moss', 'acacia:dry', 'acacia:sunset', 'oak:cherry', 'pine:autumn']);
 const ART_EVER = new Set(['pine:pine', 'pine:snow', 'pine:blue', 'ancient:elder', 'ancient:mangrove', 'ancient:life', 'ancient:baobab']);
@@ -20,7 +20,7 @@ function artPiece(k){
   return c;
 }
 // Hojas: verdes (más verde que rojo y que azul)
-const isLeaf = (r, g, b) => g > r + 6 && g >= b;
+const isLeaf = (r, g, b) => g > b + 22 && g >= r - 14 && !(r > g + 10); // verdes y verde amarillento (acacias), no troncos ni tierra
 const ART_AUTUMN = [[[120, 46, 20], [184, 74, 28], [226, 120, 40], [246, 168, 70]], [[110, 24, 22], [168, 40, 32], [208, 70, 44], [236, 120, 80]], [[128, 84, 20], [196, 140, 30], [232, 188, 60], [248, 222, 120]]];
 function seasonal(c, key, season, variant){
   const x = c.getContext('2d'), d = x.getImageData(0, 0, c.width, c.height), p = d.data, w = c.width;
