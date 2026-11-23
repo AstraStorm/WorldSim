@@ -51,7 +51,8 @@ function taxDay(g, people, ec){
   if (ec.debt > 20 * P && !hasTax(g, 'deuda')) addTax(g, 'deuda', `para devolver los ${Math.round(ec.debt)} ${coinPl(g)} que deben al banco`);
   else if (ec.debt < 5 * P && hasTax(g, 'deuda')) dropTax(g, 'deuda', 'ya han pagado casi toda la deuda');
   // Déficit o superávit de los últimos días
-  const deficit = (ec.lastSpend || 0) > (ec.lastTax || 0) * 1.05 || ec.treas < 5 * P;
+  // Déficit: el tesoro está casi vacío o la deuda con el banco ha crecido desde ayer
+  const deficit = ec.treas < 5 * P || ec.debt > (g.debtPrev ?? ec.debt) + P; g.debtPrev = ec.debt;
   g.deficitDays = deficit ? (g.deficitDays || 0) + 1 : 0;
   g.surplusDays = !deficit && ec.treas > (ec.lastSpend || 0) * 3 + 20 * P ? (g.surplusDays || 0) + 1 : 0;
   const gi = govIdeo(g), reg = regimeOf(g), extra = taxesOf(g).filter(t => !['guerra', 'deuda'].includes(t.k));
@@ -68,7 +69,7 @@ function taxDay(g, people, ec){
       const why = k === 'alquileres' ? `porque falta dinero y ${landlords} casero${landlords > 1 ? 's' : ''} se lleva${landlords > 1 ? 'n' : ''} mucho con los alquileres`
         : k === 'patrimonio' ? 'porque falta dinero y quieren que pague más quien más tiene'
         : k === 'diezmo' ? `porque faltan fondos para los templos de ${g.faith.god}`
-        : `para tapar el déficit (gastaban ${Math.round(ec.lastSpend || 0)} y entraban ${Math.round(ec.lastTax || 0)})`;
+        : `para tapar el déficit (el tesoro tiene ${Math.round(ec.treas)} ${coinPl(g)}${ec.debt > P ? ` y deben ${Math.round(ec.debt)} al banco` : ''})`;
       addTax(g, k, why); g.deficitDays = 0;
     }
   } else if (g.surplusDays >= (hasLaw(g, 'impuestos_bajos') ? 1 : 3) && extra.length) {
