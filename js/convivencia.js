@@ -60,6 +60,7 @@ function exile(u, g, dest){
 function socialMood(v, g, add){
   if (!g || ageOf(v) < ADULT_H) return;
   creedMood(v, g, add);
+  if (holidayToday(g)) add(8, 'hoy es fiesta'); else if (restDaysOf(g) === 0) add(-8, 'no tiene ni un día libre'); else if (isRestDay(g)) add(4, 'hoy es su día libre');
   if (isMinority(v, g)) {
     if (hasLaw(g, 'segregacion')) add(-15, 'sufre el racismo de su pueblo');
     else if (hasLaw(g, 'derechos_humanos')) add(4, 'tiene los mismos derechos que todos');

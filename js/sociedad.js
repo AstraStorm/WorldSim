@@ -127,7 +127,7 @@ let pathMap = new Set(), bridgeSet = new Set(), bridges = [];
 // Desgaste de tanto pisar: hierba gastada y, si se sigue pasando, un camino; si se deja de usar, vuelve la hierba
 let wear = null, wornSet = new Set(), desireSet = new Set();
 const storesOf = g => (g.stores ||= []).filter(i => world.objs[i] && world.objs[i].key === 'store:almacen');
-const buildingsOf = g => [...g.houses, ...(g.wells || []).map(w => w.i), ...(g.mill != null ? [g.mill] : []), ...(g.quarry != null ? [g.quarry] : []), ...(g.hall != null ? [g.hall] : []), ...(g.stores || []), ...(g.towers || []), ...[g.altar, g.temple, g.monument, g.market, g.bank, g.wonder, g.forge, g.hospital, g.barracks, g.lonja, g.theater, g.coliseum, g.tavern, g.cathedral].filter(b => b != null)];
+const buildingsOf = g => [...g.houses, ...(g.wells || []).map(w => w.i), ...(g.mill != null ? [g.mill] : []), ...(g.quarry != null ? [g.quarry] : []), ...(g.hall != null ? [g.hall] : []), ...(g.stores || []), ...(g.towers || []), ...[g.altar, g.temple, g.monument, g.market, g.bank, g.wonder, g.forge, g.hospital, g.barracks, g.lonja, g.theater, g.coliseum, g.tavern, g.cathedral, g.school].filter(b => b != null)];
 // Capacidad del almacén: lo que cabe junto a la hoguera, más lo de cada almacén
 const capOf = g => Math.max(20, 80 * storesOf(g).length); // sin almacén, solo lo poco que cabe junto a la hoguera
 let plazaSet = new Set(), holySet = new Map();
@@ -207,9 +207,9 @@ function bestSite(v, g, kind){
   return best || planSite(g, kind);
 }
 // Tamaño de cada edificio (medio ancho y alto en casillas, por encima de su base): para que no se monten
-const BUILD_DIMS = { altar:[1, 2], temple:[4, 7], obelisk:[1, 4], market:[4, 4], house:[4, 6], hall:[5, 7], mill:[3, 8], well:[2, 4], store:[4, 5], tower:[2, 7], quarry:[4, 4], fire:[1, 1], bank:[4, 5], wonder:[6, 10], forge:[3, 5], hospital:[4, 5], barracks:[5, 6], tradehall:[5, 6], theater:[6, 6], coliseum:[6, 6], tavern:[5, 5], cathedral:[6, 13] };
-const KIND_DIMS = { altar:[1, 2], templo:[4, 7], mercado:[4, 4], casa:[4, 6], ayuntamiento:[5, 7], molino:[3, 8], pozo:[2, 4], almacen:[4, 5], torre:[2, 7], cantera:[4, 4], banco:[4, 5], maravilla:[6, 10], herreria:[3, 5], hospital:[4, 5], cuartel:[5, 6], lonja:[5, 6], teatro:[6, 6], coliseo:[6, 6], taberna:[5, 5], catedral:[6, 13] };
-const TASK_KIND = { templo:'templo', mercado:'mercado', construir:'casa', ayuntamiento:'ayuntamiento', molino:'molino', pozo:'pozo', almacen:'almacen', torre:'torre', cantera:'cantera', banco:'banco', maravilla:'maravilla', herreria:'herreria', hospital:'hospital', cuartel:'cuartel', lonja:'lonja', teatro:'teatro', coliseo:'coliseo', taberna:'taberna', catedral:'catedral' };
+const BUILD_DIMS = { altar:[1, 2], temple:[4, 7], obelisk:[1, 4], market:[4, 4], house:[4, 6], hall:[5, 7], mill:[3, 8], well:[2, 4], store:[4, 5], tower:[2, 7], quarry:[4, 4], fire:[1, 1], bank:[4, 5], wonder:[6, 10], forge:[3, 5], hospital:[4, 5], barracks:[5, 6], tradehall:[5, 6], theater:[6, 6], coliseum:[6, 6], tavern:[5, 5], cathedral:[6, 13], school:[5, 9] };
+const KIND_DIMS = { altar:[1, 2], templo:[4, 7], mercado:[4, 4], casa:[4, 6], ayuntamiento:[5, 7], molino:[3, 8], pozo:[2, 4], almacen:[4, 5], torre:[2, 7], cantera:[4, 4], banco:[4, 5], maravilla:[6, 10], herreria:[3, 5], hospital:[4, 5], cuartel:[5, 6], lonja:[5, 6], teatro:[6, 6], coliseo:[6, 6], taberna:[5, 5], catedral:[6, 13], escuela:[5, 9] };
+const TASK_KIND = { templo:'templo', mercado:'mercado', construir:'casa', ayuntamiento:'ayuntamiento', molino:'molino', pozo:'pozo', almacen:'almacen', torre:'torre', cantera:'cantera', banco:'banco', maravilla:'maravilla', herreria:'herreria', hospital:'hospital', cuartel:'cuartel', lonja:'lonja', teatro:'teatro', coliseo:'coliseo', taberna:'taberna', catedral:'catedral', escuela:'escuela' };
 // ¿Choca con un edificio ya hecho o con uno que alguien está a punto de levantar? (skip: el propio solar)
 function buildingClash(x, y, kind, skip){
   const [hw, hh] = KIND_DIMS[kind] || [4, 5];
@@ -720,7 +720,7 @@ function drawVillageNames(){
 }
 // ---- Al trabajar: herramienta que se balancea, astillas o esquirlas al golpear, y lo conseguido flotando ----
 let chips = [], floats = [], chipT = 0;
-const WORK_TOOLS = { taberna:'martillo', tazas:'hacha', teatro:'martillo', coliseo:'martillo', cuartel:'martillo', asedio:'martillo', lonja:'martillo', ampliar:'martillo', cementerio:'azada', hospital:'martillo', equipar:'martillo', minar:'pico', herreria:'martillo', arboleda:'azada', bayal:'azada', encender:'martillo', talar:'hacha', picar:'pico', cantear:'pico', arar:'azada', construir:'martillo', pozo:'martillo', molino:'martillo', cantera:'pico', cercar:'martillo', arma:'martillo', caña:'martillo', plantar:'azada', banco:'martillo', maravilla:'martillo' };
+const WORK_TOOLS = { escuela:'martillo', taberna:'martillo', tazas:'hacha', teatro:'martillo', coliseo:'martillo', cuartel:'martillo', asedio:'martillo', lonja:'martillo', ampliar:'martillo', cementerio:'azada', hospital:'martillo', equipar:'martillo', minar:'pico', herreria:'martillo', arboleda:'azada', bayal:'azada', encender:'martillo', talar:'hacha', picar:'pico', cantear:'pico', arar:'azada', construir:'martillo', pozo:'martillo', molino:'martillo', cantera:'pico', cercar:'martillo', arma:'martillo', caña:'martillo', plantar:'azada', banco:'martillo', maravilla:'martillo' };
 const CHIP_COL = { minar:['#b8c0cc', '#8a6a3a'],  encender:['#ffd060', '#ff8030'], talar:['#c89858', '#8a5a30'], picar:['#c8c4ba', '#8a867e'], cantear:['#c8c4ba', '#8a867e'], cantera:['#c8c4ba', '#8a867e'], arar:['#6e4a2c', '#8a6038'], plantar:['#6e4a2c', '#8a6038'] };
 function gainText(v){
   const c = v.carry, name = { madera:'madera', piedra:'piedra', comida:c.t === 'carne' ? 'carne' : 'comida', hierro:'hierro', oro:'oro', gemas:c.n > 1 ? 'gemas' : 'gema' }[c.k] || c.k;
@@ -796,14 +796,14 @@ function homeOf(v, g){
   return v.home;
 }
 // ---- Oficios: cada adulto tiene el suyo y lo prefiere (aunque si hace falta, hace de todo) ----
-const OFICIOS = { curandero:['curar'], soldado:['instruir', 'arma', 'equipar'], ingeniero:['asedio', 'muralla', 'cuartel', 'puente', 'herreria', 'lonja'], mercader:['vender', 'comerciar', 'mercado', 'lonja', 'banco', 'tazas', 'taberna'], 'cartógrafo':['explorar'], 'leñador':['talar', 'plantar', 'arboleda'], 'cantero':['picar', 'cantear', 'cantera', 'minar'], 'agricultor':['campo', 'arar', 'sembrar', 'cosechar', 'molino', 'bayal'],
+const OFICIOS = { curandero:['curar'], soldado:['instruir', 'arma', 'equipar'], ingeniero:['asedio', 'muralla', 'cuartel', 'puente', 'herreria', 'lonja'], mercader:['vender', 'comerciar', 'mercado', 'lonja', 'banco', 'tazas', 'taberna'], 'cartógrafo':['explorar'], maestro:['enseñar', 'escuela'], 'leñador':['talar', 'plantar', 'arboleda'], 'cantero':['picar', 'cantear', 'cantera', 'minar'], 'agricultor':['campo', 'arar', 'sembrar', 'cosechar', 'molino', 'bayal'],
   'pescador':['pescar', 'barca', 'muelle', 'caña'], 'cazador':['cazar', 'arma', 'equipar'], 'constructor':['construir', 'ampliar', 'pozo', 'almacen', 'ayuntamiento', 'puente', 'cercar', 'torre', 'muralla', 'carro', 'herreria', 'hospital', 'catedral'],
   'recolector':['bayas'], 'bombero':['apagar', 'quema'], 'comerciante':['comerciar', 'mercado', 'banco'], 'pastor':['capturar', 'cercar'], 'sacerdote':['orar', 'altar', 'templo', 'monumento', 'ofrenda', 'sacrificio', 'catedral'] };
-const OFICIO_MIX = { 'cartógrafo':.03, curandero:.04, soldado:.08, ingeniero:.04, mercader:.05, agricultor:.22, 'leñador':.16, constructor:.16, recolector:.1, pescador:.1, cazador:.1, cantero:.08, pastor:.08, sacerdote:.04, comerciante:.05, bombero:.03 };
+const OFICIO_MIX = { maestro:.04, 'cartógrafo':.03, curandero:.04, soldado:.08, ingeniero:.04, mercader:.05, agricultor:.22, 'leñador':.16, constructor:.16, recolector:.1, pescador:.1, cazador:.1, cantero:.08, pastor:.08, sacerdote:.04, comerciante:.05, bombero:.03 };
 function pickOficio(g){
   const ps = villagers.filter(u => !u.dead && u.vid === g.id && u.oficio), n = ps.length + 1;
   let best = 'recolector', bd = -Infinity;
-  for (const [o, w] of Object.entries(OFICIO_MIX)) { if ((o === 'cartógrafo' && !hasPaper(g)) || (o === 'soldado' && !hasBarracks(g)) || (o === 'ingeniero' && !hasBarracks(g) && !hasForge(g)) || (o === 'mercader' && g.market == null)) continue; const d = w * n - ps.filter(u => u.oficio === o).length + Math.random() * .3; if (d > bd) { bd = d; best = o; } }
+  for (const [o, w] of Object.entries(OFICIO_MIX)) { if (!oficioOk(g, o) || (o === 'cartógrafo' && !hasPaper(g)) || (o === 'soldado' && !hasBarracks(g)) || (o === 'ingeniero' && !hasBarracks(g) && !hasForge(g)) || (o === 'mercader' && g.market == null)) continue; const d = w * n - ps.filter(u => u.oficio === o).length + Math.random() * .3; if (d > bd) { bd = d; best = o; } }
   return best;
 }
 // ---- Defensa: torres de vigía con arquero y murallas (empalizada) alrededor del pueblo ----
@@ -1110,7 +1110,7 @@ function techsOf(g){
   if (villagers.some(v => !v.dead && v.vid === g.id && v.weapon)) t.push('Lanzas y arcos');
   if (k.pozo) t.push('Pozos'); if (k.molino) t.push('Molinos'); if (k.cantera) t.push('Canteras'); if (k.puente) t.push('Puentes');
   if (k.barca) t.push('Barcas'); if (k.montar) t.push('Equitación y carros'); if (k.antorchas) t.push('Antorchas'); if (k.bomberos) t.push('Cubos contra el fuego'); if (g.ctrlBurns) t.push('Quemas controladas');
-  if (g.market != null) t.push('Comercio'); if (g.coin) t.push('Moneda'); if (hasBank(g)) t.push('Banca'); if (k.mineria) t.push('Minería'); if (hasForge(g)) t.push('Herrería'); if (hasHosp(g)) t.push('Hospital'); if (hasCathedral(g)) t.push(OBJ[world.objs[g.cathedral].key][0]); if (hasPaper(g)) t.push('Papel y mapas'); if (hasTavern(g)) t.push('Taberna'); if (hasTheater(g)) t.push('Teatro'); if (hasColiseum(g)) t.push('Coliseo'); if (g.track) t.push('Pista de atletismo'); if (hasBarracks(g)) t.push('Cuartel'); if (g.siegeMsg) t.push('Asedio'); if (hasLonja(g)) t.push('Lonja'); if (g.cemetery) t.push('Cementerio'); if (k.acequias) t.push('Acequias'); if (g.grove) t.push('Arboledas'); if (g.berryPlot) t.push('Bayales'); if (g.jarMsg) t.push('Cántaros');
+  if (g.market != null) t.push('Comercio'); if (g.coin) t.push('Moneda'); if (hasBank(g)) t.push('Banca'); if (k.mineria) t.push('Minería'); if (hasForge(g)) t.push('Herrería'); if (hasHosp(g)) t.push('Hospital'); if (hasSchool(g)) t.push('Escuela'); if (hasCathedral(g)) t.push(OBJ[world.objs[g.cathedral].key][0]); if (hasPaper(g)) t.push('Papel y mapas'); if (hasTavern(g)) t.push('Taberna'); if (hasTheater(g)) t.push('Teatro'); if (hasColiseum(g)) t.push('Coliseo'); if (g.track) t.push('Pista de atletismo'); if (hasBarracks(g)) t.push('Cuartel'); if (g.siegeMsg) t.push('Asedio'); if (hasLonja(g)) t.push('Lonja'); if (g.cemetery) t.push('Cementerio'); if (k.acequias) t.push('Acequias'); if (g.grove) t.push('Arboledas'); if (g.berryPlot) t.push('Bayales'); if (g.jarMsg) t.push('Cántaros');
   for (const c of Object.keys(g.crops || {})) t.push(`Cultivo de ${CROPS[c].n}`); if (g.temple != null) t.push('Templos');
   if (g.wallPlan) t.push('Murallas'); if (towersOf(g).length) t.push('Torres de vigía'); if (g.flag) t.push('Bandera');
   return t;
@@ -1181,7 +1181,8 @@ const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '
 const ageOf = v => (yearT - v.born) / YEAR;
 const stageOf = v => { const a = ageOf(v); return a < ADULT_H ? (v.sex === 'm' ? 'niña' : 'niño') : a > v.life * .8 ? (v.sex === 'm' ? 'anciana' : 'anciano') : (v.sex === 'm' ? 'adulta' : 'adulto'); };
 const pietyOf = v => v.piety ??= clamp((v.parents ? ((v.parents[0].piety ?? .5) + (v.parents[1].piety ?? .5)) / 2 : .5) + (Math.random() - .5), 0, 1);
-const oficioTxt = v => !v.oficio ? '' : v.oficio + (v.sex === 'm' && /or$/.test(v.oficio) ? 'a' : '');
+const ofW = (o, v) => !o ? '' : v.sex !== 'm' ? o : /or$/.test(o) ? o + 'a' : /o$/.test(o) ? o.slice(0, -1) + 'a' : o; // agricultora, maestra, bombera
+const oficioTxt = v => ofW(v.oficio, v);
 function doingOf(v){ const s0 = villagerInfo(v), m = s0.match(/años · ([^·]+) ·/); return m ? m[1].trim() : ''; }
 function partyOf(v){ const n = nationOf(villageById(v.vid) || {}); if (!n || !n.parties) return null; let best = null, bd = Infinity; for (const p of n.parties) { const d = Math.abs((v.ideo || 0) - p.ideo); if (d < bd) { bd = d; best = p; } } return best; }
 // Ánimo: lo que le pasa a esa persona (hambre, sed, salud, luto, dinero, hogar) y a su pueblo (descontento, fe, gobierno)
@@ -1257,6 +1258,7 @@ function renderPersonCard(force){
     <div class="sec"><div class="kv"><span>Oficio</span><b>${a < ADULT_H ? 'Ninguno (es pequeñ' + sexW(v, 'o', 'a') + ')' : oficioTxt(v) || 'Sin oficio'}</b></div>
       <div class="kv"><span>Ahora</span><b>${esc(doingOf(v))}</b></div>
       ${ageOf(v) >= ADULT_H ? `<div class="kv"><span>Orientación</span><b>${ORIENT_TXT[orientOf(v)]}${partnerOf(v) ? ` · pareja: ${esc(partnerOf(v).name)}${v.secret ? ' <span class="muted">(en secreto)</span>' : ''}` : ''}${g && isMinority(v, g) ? ' · <span class="muted">de piel distinta a la mayoría</span>' : ''}</b></div>` : ''}
+      ${v.edu ? `<div class="kv"><span>Estudios</span><b>${v.edu >= .7 ? 'muy formad' + sexW(v, 'o', 'a') : v.edu >= .3 ? 'fue a la escuela' : 'algo de escuela'}${ageOf(v) >= ADULT_H ? ' <span class="muted">(cobra más)</span>' : ''}</b></div>` : ''}
       <div class="kv"><span>Dieta</span><b>${dietName(v)}</b></div>
       ${g && ageOf(v) >= ADULT_H ? (g.coin ? `<div class="kv"><span>Sueldo</span><b>${v.wage != null || v.dayPay ? `${wageDay(v)} ${coinPl(g)} al día <span class="muted">(vivir cuesta ${costOfLiving(g)})</span>${wageDay(v) < costOfLiving(g) ? ' · <span style="color:#f08a7a">no le llega</span>' : ''}` : '<span class="muted">aún no ha cobrado</span>'}</b></div><div class="kv"><span>Dinero</span><b>${v.money || 0} ${coinPl(g)} · ha ganado ${v.earned || 0} · impuestos ${Math.round(taxRateOf(g) * 100)} %</b></div>` : `<div class="kv"><span>Sueldo</span><b class="muted">en especie: su pueblo aún no tiene moneda</b></div>`) : ''}
       <div class="kv"><span>Equipo</span><b>${[v.weapon && (v.weapon === 'lanza' && v.ironW ? 'lanza de hierro' : v.weapon), v.shield && 'escudo', v.armor && GEAR_TXT[v.armor], v.rod && 'caña', v.mount && 'caballo', v.cart && 'carro', v.swims === false && 'no sabe nadar'].filter(Boolean).join(', ') || 'nada'}</b></div></div>
@@ -1323,7 +1325,7 @@ function renderVillageCard(force){
       ${(nationOf(g).lawHist || []).length ? `<h4>Historia de las leyes</h4><ul class="log">${nationOf(g).lawHist.slice().reverse().map(e => `<li class="pol"><span class="d">día ${e.d}</span>${esc(e.txt.replace(`En ${nationOf(g).name} `, ''))}</li>`).join('')}</ul>` : ''}
       <h4>Horario</h4><div>${shiftTxt(g)}${inShift(g) ? ' · <b>ahora trabajan</b>' : isNight() ? ' · ahora duermen' : ' · <b>ahora es su tiempo libre</b>'}</div>
       <h4>Nación</h4><div>${status}${provinces.length ? `: ${provinces.map(o => `<button class="lnk" data-vid="${o.id}">${esc(o.name)}</button>`).join(', ')}` : ''}${n !== g ? ` · descontento con la capital ${Math.round(g.unrest || 0)} %` : ''}</div>
-      ${allyCard(g)}${warCard(g)}${treatyCard(g)}
+      ${calendarCard(g)}${allyCard(g)}${warCard(g)}${treatyCard(g)}
       <h4>Relaciones</h4><div class="chips rel">${villages.filter(o => o !== g && popOf(o) && rels.get(relKey(g, o)) && rels.get(relKey(g, o)).known).map(o => { const r = rels.get(relKey(g, o)), w = relWord(r), c = r.war ? '#d8483a' : r.v > 40 ? '#7ab04a' : r.v > 0 ? '#a8c060' : r.v > -30 ? '#d8b848' : '#e08a3a'; return `<button class="relb" data-vid="${o.id}" style="border-color:${c}" title="Ver la ficha de ${esc(o.name)}">${o.flagUrl ? `<img src="${o.flagUrl}" alt="">` : ''}${esc(o.name)} · <b style="color:${c}">${r.war ? 'en guerra' : w}</b></button>`; }).join('') || 'Aún no conocen a nadie'}</div>`;
   } else if (cardTab === 'mapa') {
     body = chartCard(g);
@@ -1337,7 +1339,7 @@ function renderVillageCard(force){
     <div class="cbody">${body}</div>`, force);
 }
 // ---- Daños en los edificios: tormentas, terremotos, tsunamis y fuego ----
-const BLD = new Set(['house', 'hall', 'store', 'market', 'mill', 'tower', 'well', 'temple', 'obelisk', 'altar', 'bank', 'wonder', 'forge', 'hospital', 'barracks', 'tradehall', 'theater', 'coliseum', 'tavern', 'cathedral']);
+const BLD = new Set(['house', 'hall', 'store', 'market', 'mill', 'tower', 'well', 'temple', 'obelisk', 'altar', 'bank', 'wonder', 'forge', 'hospital', 'barracks', 'tradehall', 'theater', 'coliseum', 'tavern', 'cathedral', 'school']);
 const isBuilding = o => !!o && BLD.has(o.key.split(':')[0]);
 const wooden = o => /^(house:hut|store|market|mill|tower)/.test(o.key); // de madera: arden; los de piedra, apenas
 const bldName = o => OBJ[o.key][0].toLowerCase();
@@ -1396,18 +1398,30 @@ function ritualSpots(shape, cx, cy, n){
 }
 // Cada fe ofrece a su manera: sobre el altar, quemándolo en una hoguera sagrada, arrojándolo al agua o enterrándolo
 const RITES = ['altar', 'hoguera', 'agua', 'tierra'];
-const RITE_TXT = { altar:'sobre el altar', hoguera:'quemados en una hoguera sagrada', agua:'arrojados al agua', tierra:'enterrados en la tierra' };
-const riteOf = g => g.faith.rite ||= RITES[Math.floor(Math.random() * RITES.length)];
+const RITE_TXT = { altar:'sobre el altar', hoguera:'quemados en una hoguera sagrada', agua:'arrojados al agua', tierra:'enterrados en la tierra', volcan:'arrojados al cráter del volcán' };
+// Los fieles de un dios del fuego, de las montañas o del inframundo con un volcán cerca le llevan las ofrendas al cráter
+const VOLC_DOMS = ['el fuego', 'las montañas', 'el inframundo'];
+const volcanoNear = g => { let best = null, bd = 50; for (const vo of (world.volcanoes || [])) { const d = Math.hypot(vo.cx - g.fx, vo.cy - g.fy); if (d < bd) { bd = d; best = vo; } } return best; };
+const riteOf = g => { const f = g.faith; if (f.rite !== 'volcan' && VOLC_DOMS.includes(f.dom) && volcanoNear(g)) f.rite = 'volcan'; if (f.rite === 'volcan' && !volcanoNear(g)) f.rite = null; return f.rite ||= RITES[Math.floor(Math.random() * RITES.length)]; };
+// Un sitio en el borde del cráter, por el lado del pueblo, donde se pueda estar de pie
+function craterSpot(g){
+  const vo = volcanoNear(g); if (!vo) return null;
+  const dx = g.fx - vo.cx, dy = g.fy - vo.cy, d = Math.hypot(dx, dy) || 1, rr = Math.max(2, (vo.r || 6) * .55);
+  const p = ringFind(Math.round(vo.cx + dx / d * rr), Math.round(vo.cy + dy / d * rr), 6, (x, y) => tileFree(x, y) && world.biome[y * W + x] !== B.LAVA && !WATER[world.biome[y * W + x]]);
+  return p ? [p[0] * T + 2, p[1] * T + 3] : null;
+}
 // Dónde se hace la ofrenda según su rito (el agua: la orilla más cercana al lugar sagrado)
 function riteSpot(g, v){
   const sp = altarSpot(g); if (!sp) return null;
   if (riteOf(g) === 'agua') { const w = waterSpot(Math.floor(sp[0] / T), Math.floor(sp[1] / T), v); if (w) return w; }
+  if (riteOf(g) === 'volcan') { const c = craterSpot(g); if (c) return c; }
   return sp;
 }
 function riteFx(g, x, y, big){
   const r = riteOf(g), n = big ? 14 : 8;
   if (r === 'hoguera') { for (let k = 0; k < n; k++) chips.push({ x:x + (Math.random() - .5) * 6, y:y - 3, vx:(Math.random() - .5) * 10, vy:-14 - Math.random() * 14, life:0, max:.7 + Math.random() * .5, col:k % 3 ? '#ff8a2a' : '#ffd860' }); for (let k = 0; k < 4; k++) smoke.push({ x:x + (Math.random() - .5) * 4, y:y - 6, vx:0, vy:-6 - Math.random() * 4, r:1.5, life:0, max:2.5 + Math.random() }); }
   else if (r === 'agua') for (let k = 0; k < n; k++) chips.push({ x, y:y - 2, vx:(Math.random() - .5) * 26, vy:-8 - Math.random() * 10, life:0, max:.6, col:k % 2 ? '#7ab8f0' : '#e0f0fc' });
+  else if (r === 'volcan') { for (let k = 0; k < n + 6; k++) chips.push({ x:x + (Math.random() - .5) * 8, y:y - 4, vx:(Math.random() - .5) * 30, vy:-18 - Math.random() * 20, life:0, max:.9, col:k % 3 ? '#ff6a1a' : '#ffd040' }); smoke.push({ x, y:y - 6, vx:0, vy:-10, r:3, life:0, max:2.5 }); const vo = volcanoNear(g); if (vo) vo.heat = Math.max(0, vo.heat - (big ? .12 : .05)); } // la lava salta y el volcán se calma un poco
   else if (r === 'tierra') for (let k = 0; k < n; k++) chips.push({ x, y:y - 1, vx:(Math.random() - .5) * 20, vy:-6 - Math.random() * 8, life:0, max:.6, col:k % 2 ? '#6e4a2c' : '#8a6038' });
   else holyGlow(x, y, n);
 }
@@ -1565,7 +1579,7 @@ function becomeIndependent(g){
 }
 function conquer(cap, eg, r){
   const old = nationOf(eg);
-  r.war = null; r.v = -30; eg.nation = cap.id; eg.unrest = 50;
+  r.war = null; r.v = -30; eg.nation = cap.id; eg.unrest = 50; addFiesta(cap, `Día de la Victoria sobre ${eg.name}`);
   // Si el conquistado era la capital de una nación, el resto de sus pueblos queda suelto (cada uno, independiente)
   for (const o of villages) if (o !== eg && o.nation === eg.id) { becomeIndependent(o); notify(`Con la caída de ${eg.name}, ${o.name} queda independiente`, { x:o.fx * T, y:o.fy * T }); }
   if (cap.faith && eg.faith && cap.faith.god !== eg.faith.god && Math.random() < .5) { eg.faith = { ...cap.faith, pantheon:[...(cap.faith.pantheon || [])] }; eg.unrest += 20; }
@@ -1573,7 +1587,7 @@ function conquer(cap, eg, r){
   for (const v of villagers) if (v.task && v.task.k === 'asalto' && (v.vid === cap.id || villageById(v.vid) && nationOf(villageById(v.vid)) === cap)) v.task = { k:'volver' };
 }
 function makePeace(a, b, r, why){
-  r.lastWar = r.war; r.war = null; r.v = -12; r.peaceT = yearT;
+  r.lastWar = r.war; r.war = null; r.v = -12; r.peaceT = yearT; addFiesta(a, `Día de la Paz con ${b.name}`); addFiesta(b, `Día de la Paz con ${a.name}`);
   notify(`${a.name} y ${b.name} firman la paz${why ? `, ${why}` : ''}`, { x:(a.fx + b.fx) / 2 * T, y:(a.fy + b.fy) / 2 * T });
   peaceTreaty(a, b, r);
   for (const v of villagers) if (v.task && v.task.k === 'asalto' && (v.vid === a.id || v.vid === b.id)) v.task = { k:'volver' };
@@ -2070,7 +2084,7 @@ function succession(g, people){
   }
 }
 // ---- Descontento, manifestaciones y golpes de estado ----
-const SLOGANS = { jornada:['¡Queremos descansar!', '¡Menos horas!'], impuestos:['¡Menos impuestos!', '¡No más tributos!'], hambre:['¡Pan!', '¡Tenemos hambre!', '¡Comida para todos!'], 'inflación':['¡Precios justos!', '¡Nuestro dinero no vale nada!', '¡Salarios dignos!'],
+const SLOGANS = { jornada:['¡Queremos descansar!', '¡Menos horas!', '¡Días libres!'], impuestos:['¡Menos impuestos!', '¡No más tributos!'], hambre:['¡Pan!', '¡Tenemos hambre!', '¡Comida para todos!'], 'inflación':['¡Precios justos!', '¡Nuestro dinero no vale nada!', '¡Salarios dignos!'],
   'tiranía':['¡Libertad!', '¡Abajo el tirano!', '¡Fuera!'], ideas:['¡Fuera el gobierno!', '¡Otro gobierno!', '¡No nos representan!'], guerra:['¡Paz!', '¡No a la guerra!'], bancarrota:['¡Devolved nuestros ahorros!', '¡Ladrones!'], salarios:['¡Sueldos dignos!', '¡No llegamos a fin de mes!', '¡Más salario!'], culto:['¡Libertad de culto!', '¡Dejadnos rezar!'], racismo:['¡No al racismo!', '¡Todos somos iguales!', '¡Derechos para todos!'], derechos:['¡Amar no es delito!', '¡Igualdad!', '¡Libres de amar!'] };
 const GRIEF_TXT = { jornada:'las jornadas interminables', impuestos:'los impuestos', hambre:'el hambre', 'inflación':'la subida de precios', 'tiranía':'la tiranía', ideas:'el gobierno', guerra:'la guerra', bancarrota:'la bancarrota', salarios:'los sueldos bajos', culto:'la persecución religiosa', racismo:'la segregación racial', derechos:'la persecución por amar' };
 const BUSY_POL = ['asalto', 'apagar', 'viaje', 'votar', 'golpe', 'protesta', 'reprimir', 'detenido', 'ritual'];
@@ -2083,7 +2097,7 @@ function politicsTick(g, dt, people){
     'tiranía':tyranny(g) ? .22 + (g.repressed || 0) * .02 : regimeOf(g) === 'monarquia' ? .06 : 0,
     ideas:cap.parties ? Math.max(0, Math.abs(avg - govIdeo(g)) - .5) * 1.1 : 0,
     guerra:[...rels.values()].some(r => r.war && r.war.def === g.id && r.war.dead > 2) ? .5 : 0,
-    bancarrota:ec && yearT - (ec.bankruptT ?? -1e9) < DAY_LEN * 2 ? 1 : 0, jornada:hasLaw(g, 'jornada_larga') ? .25 : 0, impuestos:hasLaw(g, 'impuestos_altos') ? .12 : 0, salarios:0 };
+    bancarrota:ec && yearT - (ec.bankruptT ?? -1e9) < DAY_LEN * 2 ? 1 : 0, jornada:(hasLaw(g, 'jornada_larga') ? .25 : 0) + (restDaysOf(g) === 0 ? .25 : 0) + (restDaysOf(g) === 1 && avg < -.35 ? .1 : 0), impuestos:hasLaw(g, 'impuestos_altos') ? .12 : 0, salarios:0 };
   { const ad = adults.length || 1, mins = adults.filter(u => isMinority(u, g)).length, gays = adults.filter(lgtb).length, left = adults.filter(u => (u.ideo || 0) < -.2).length / ad;
     if (hasLaw(g, 'segregacion') && (mins / ad > .12 || left > .4)) f.racismo = .25 + mins / ad;
     if (hasLaw(g, 'persecucion') && (gays >= 2 || left > .4)) f.derechos = .2 + gays / ad * 2;
@@ -2157,6 +2171,7 @@ function respondProtest(g, who){
     else if (g.grief === 'guerra') { what = 'prometen buscar la paz'; for (const r of rels.values()) if (r.war && (r.war.def === g.id || r.war.att === g.id) && Math.random() < .5) { const a = villageById(r.war.att), b = villageById(r.war.def); if (a && b) makePeace(a, b, r, 'tras las protestas'); } }
     else if (g.grief === 'inflación' && g.coin) { what = 'congelan los precios'; ecOf(g).infl *= .3; }
     else if ((g.grief === 'racismo' || g.grief === 'derechos' || g.grief === 'culto') && cap.parties && cap.ruling != null) { const law = g.grief === 'racismo' ? 'segregacion' : g.grief === 'culto' ? 'persecucion_religiosa' : 'persecucion', P = cap.parties[cap.ruling]; P.laws = P.laws.filter(l => l !== law); what = `derogan la ley de «${LAW_TXT[law]}»`; lawLog(g, `En ${g.name}, tras las protestas, se deroga la ley de «${LAW_TXT[law]}»`); }
+    else if (g.grief === 'jornada' && restDaysOf(g) < 2 && !(g.restBonus > 0)) { g.restBonus = 1; what = `les dan un día libre más a la semana (ahora, ${restDaysOf(g)})`; }
     else if (g.grief === 'salarios' && g.coin) { g.wageUp = Math.min(2.5, (g.wageUp || 1) * 1.3); what = 'suben los sueldos un 30 %'; }
     else if (votes(g) && cap.parties && !cap.election) { what = 'convocan elecciones anticipadas'; cap.voteT = -1e9; }
     else if (reg === 'monarquia') { what = `${leaderRef(cap)} reparte grano y promete reformas`; g.food = Math.max(0, g.food - who.length * .3); }
@@ -2231,7 +2246,7 @@ const costOfLiving = g => Math.max(2, Math.round(priceOf(g) * 4.5)); // comida, 
 const UNPAID = new Set(['ocio', 'pasear', 'comer', 'beber', 'dormir', 'ver_teatro', 'ver_coliseo', 'ir_taberna', 'jugar', 'volver', 'espectador', 'votar', 'protesta', 'golpe', 'detenido', 'ritual']);
 function payWage(v, g, n){
   if (!g || !g.coin || ageOf(v) < ADULT_H) return;
-  const pay = Math.max(1, Math.round(wageOf(g, n) * (hasLaw(g, 'segregacion') && isMinority(v, g) ? .6 : 1))), d = Math.floor(yearT / DAY_LEN);
+  const pay = Math.max(1, Math.round(wageOf(g, n) * (hasLaw(g, 'segregacion') && isMinority(v, g) ? .6 : 1) * (1 + Math.min(.4, (v.edu || 0) * .4)))), /* con estudios, más */ d = Math.floor(yearT / DAY_LEN);
   if (v.payDay !== d) { if (v.payDay != null) v.wage = v.wage == null ? v.dayPay || 0 : Math.round(v.wage * .5 + (v.dayPay || 0) * .5); v.payDay = d; v.dayPay = 0; }
   v.dayPay += pay; v.money = (v.money || 0) + pay; v.earned = (v.earned || 0) + pay; v.lastPay = pay;
 }
@@ -2703,7 +2718,7 @@ function updateVillagers(dt){
       const [fx, fy] = fireXY(g);
       if (v.water < .5) { const p = drinkSpot(v, g); v.task = p ? { k:'beber', ...p } : null; }
       else if (v.food < .5 && canEat(v, g)) v.task = { k:'comer', ...eatSpot(v, g) };
-      else if (child) { const p = siteNear(g, 1, 4, (x, y) => tileFree(x, y)); v.task = p ? { k:'pasear', x:p[0] * T + 2, y:p[1] * T + 3 } : null; }
+      else if (child) { v.task = kidTask(v, g); if (!v.task) { const p = siteNear(g, 1, 4, (x, y) => tileFree(x, y)); v.task = p ? { k:'pasear', x:p[0] * T + 2, y:p[1] * T + 3 } : null; } }
       else { let job = chooseJob(v, g); if (job === 'pescar' && !v.rod && g.wood >= 2 && housesOf(g).length * 4 >= popOf(g) + 2 && villagers.filter(u => u.rod && u.vid === g.id).length < Math.ceil(popOf(g) / 3)) job = 'caña'; let tk = setupTask(v, g, job); if (!tk) (g.jobFail ||= {})[job] = yearT + 30; for (let k = 0; k < 3 && !tk; k++) { const j2 = chooseJob(v, g); tk = setupTask(v, g, j2); if (!tk) g.jobFail[j2] = yearT + 30; } /* lo que no encuentra sitio se aparca un rato */ v.task = tk || setupTask(v, g, 'pasear'); maybeRide(v, g); }
       v.lastD = Infinity; v.stuckT = 0;
       if (!v.task) { v.wait = 1 + Math.random(); continue; }
@@ -2804,7 +2819,7 @@ function updateVillages(dt){
     if (!know.montar && penAnimals(g).some(a => a.sp === 'caballo' && (yearT - a.born) / YEAR >= ADULT)) {
       know.montar = true; notify(`En ${g.name} aprenden a montar a caballo (y a hacer carros)`, { x:g.fx * T, y:g.fy * T });
     }
-    chartTick(g, dt, people); socialTick(g, dt, people);
+    chartTick(g, dt, people); socialTick(g, dt, people); workTick(g, dt, people); holidayTick(g, dt, people);
     // Un pueblo grande con gobierno acuña su moneda aunque apenas comercie (y desde entonces se pagan sueldos)
     if (!g.coin && ((g.hall != null && people.length >= 12) || people.length >= 22 || g.market != null) && Math.random() < dt * .012) { g.coin = coinName(); notify(`En ${g.name} el gobierno acuña su propia moneda, el ${g.coin}: desde ahora el trabajo se paga con sueldo`, { x:g.fx * T, y:g.fy * T }); }
     // Un cementerio encima de una plaza sagrada (partidas de antes): se traslada (se vuelve a hacer en otro sitio)
@@ -2817,13 +2832,14 @@ function updateVillages(dt){
       for (const a of animals) { if (a.dead || a.dom || (a.sp !== 'lobo' && a.sp !== 'oso')) continue; const d = Math.hypot(a.x - tx, a.y - ty - 20); if (d < bd) { bd = d; tgt = a; } }
       if (tgt) arrows.push({ x0:tx, y0:ty, a:tgt, v:o.archer, t:0, dur:Math.max(.2, bd / 140), hit:Math.random() < .75 });
     }
-    if (g.faith && (g.wrath || 0) >= 8 && (g.devotion || 0) >= 2 && altarSpot(g) && yearT - (g.humanT ?? -1e9) > DAY_LEN * 3 && Math.random() < dt * .02) {
+    const angryVolc = g.faith && riteOf(g) === 'volcan' && (volcanoNear(g) || {}).state === 'erupcion';
+    if (g.faith && ((g.wrath || 0) >= 8 || (angryVolc && (g.wrath || 0) >= 3 && !penAnimals(g).length)) && (g.devotion || 0) >= 2 && altarSpot(g) && !hasLaw(g, 'derechos_humanos') && !hasLaw(g, 'laicidad') && yearT - (g.humanT ?? -1e9) > DAY_LEN * 3 && Math.random() < dt * .02) {
       const cands = people.filter(u => (yearT - u.born) / YEAR >= ADULT_H && u !== g.leader && !u.sleep && !u.boat && !u.mount);
       if (cands.length > 6) {
         const vic = cands[Math.floor(Math.random() * cands.length)], sp = riteSpot(g, vic) || altarSpot(g);
         releaseTask(vic); vic.task = null; vic.x = sp[0]; vic.y = sp[1];
         g.humanT = yearT; g.wrath = 0; g.devotion = (g.devotion || 0) + 2; riteFx(g, sp[0], sp[1], true);
-        notify(`En ${g.name}, desesperados, sacrifican a ${vic.name} para aplacar a ${g.faith.god}`, { x:sp[0], y:sp[1] });
+        notify(riteOf(g) === 'volcan' ? `En ${g.name}, desesperados, arrojan a ${vic.name} al volcán para aplacar a ${g.faith.god}` : `En ${g.name}, desesperados, sacrifican a ${vic.name} para aplacar a ${g.faith.god}`, { x:sp[0], y:sp[1] });
         killVillager(vic, 'sacrificio');
       }
     }
@@ -2885,7 +2901,7 @@ function updateVillages(dt){
       g.unrest = clamp((g.unrest || 0) + up * dt, 0, 100);
       if (g.unrest > 70) {
         const why = Object.entries(f).sort((a2, b2) => b2[1] - a2[1])[0][0];
-        becomeIndependent(g); const r = relOf(g, cap); r.known = true; r.v = -35; r.reason = why === 'religión' ? 'religión' : why === 'hambre' ? 'recursos' : 'territorio';
+        becomeIndependent(g); addFiesta(g, 'Día de la Independencia'); const r = relOf(g, cap); r.known = true; r.v = -35; r.reason = why === 'religión' ? 'religión' : why === 'hambre' ? 'recursos' : 'territorio';
         notify(`¡${g.name} se independiza de ${cap.name}! (por ${{ distancia:'estar tan lejos', 'religión':'la religión', hambre:'el hambre', impuestos:'los impuestos y las levas' }[why]})`, { x:g.fx * T, y:g.fy * T });
       }
     } else if (g.nation && g.nation !== g.id) becomeIndependent(g); // la capital ya no existe
@@ -3146,7 +3162,7 @@ function updateVillagePanel(){
 }
 function villagerInfo(v){
   const age = (yearT - v.born) / YEAR, g = villageById(v.vid);
-  const job = { talar:'talando', picar:'picando piedra', bayas:'recogiendo bayas', pescar:'pescando', cazar:'cazando', sembrar:'sembrando', caña:'fabricando una caña', arma:'fabricando un arma', pozo:'construyendo un pozo', cantera:'abriendo una cantera', cantear:'sacando piedra de la cantera', molino:'construyendo un molino', plantar:'plantando un árbol', votar:'votando en la plaza', taberna:'construyendo la taberna', tazas:'tallando tazas de madera', ir_taberna:'tomando algo en la taberna', explorar:'preparando una expedición', catedral:'levantando el gran templo', teatro:'construyendo el teatro', coliseo:'construyendo el coliseo', ver_teatro:'viendo una obra en el teatro', ver_coliseo:'viendo los juegos del coliseo', curar:'atendiendo a un enfermo', jugar:'jugando a la pelota', atleta:'compitiendo en los Juegos', espectador:'viendo los Juegos', emigrante:'emigrando', cuartel:'construyendo el cuartel', instruir:'instruyéndose en el cuartel', asedio:'construyendo una catapulta', lonja:'construyendo la lonja', vender:'vendiendo en el mercado', ampliar:'ampliando una casa', cementerio:'preparando el cementerio', hospital:'construyendo el hospital', curarse:'curándose en el hospital', ocio:'charlando en su tiempo libre', equipar:'forjando equipo para los soldados', minar:'sacando mineral de una veta', herreria:'construyendo la herrería', arboleda:'preparando una arboleda', bayal:'preparando un bayal', protesta:'manifestándose', golpe:'dando un golpe de estado', reprimir:'reprimiendo una protesta', detenido:'detenido', banco:'construyendo el banco', maravilla:'levantando una maravilla', asalto:'yendo a la guerra', guardia:'defendiendo su puesto', viaje:'de viaje', ritual:'yendo al ritual', ofrenda:'llevando una ofrenda', sacrificio:'llevando un animal al altar', quema:'haciendo una quema controlada', reparar:'reparando un edificio', derribar:'tirando abajo un edificio quemado', apagar:'apagando el fuego', antorcha:'poniendo una antorcha', alumbrar:'encendiendo las antorchas', comerciar:'comerciando en el mercado', encender:'encendiendo la hoguera', orar:'rezando', altar:'levantando un altar', templo:'construyendo el templo', monumento:'tallando una estatua', mercado:'montando el mercado', dormir:'yendo a dormir', torre:'construyendo una torre', muralla:'levantando la muralla', ayuntamiento:'construyendo el ayuntamiento', almacen:'construyendo un almacén', puente:'construyendo un puente', muelle:'construyendo un muelle', barca:'pescando en barca', carro:'construyendo un carro', montar:'yendo a por un caballo', campo:'marcando un campo', arar:'arando', cosechar:'cosechando', construir:'construyendo una casa', cercar:'haciendo un cercado', capturar:'trayendo un animal', pasear:'paseando', beber:'yendo a beber', comer:'comiendo', volver:'volviendo a la aldea', trabajando:'trabajando' };
+  const job = { talar:'talando', picar:'picando piedra', bayas:'recogiendo bayas', pescar:'pescando', cazar:'cazando', sembrar:'sembrando', caña:'fabricando una caña', arma:'fabricando un arma', pozo:'construyendo un pozo', cantera:'abriendo una cantera', cantear:'sacando piedra de la cantera', molino:'construyendo un molino', plantar:'plantando un árbol', votar:'votando en la plaza', taberna:'construyendo la taberna', tazas:'tallando tazas de madera', ir_taberna:'tomando algo en la taberna', explorar:'preparando una expedición', catedral:'levantando el gran templo', escuela:'construyendo la escuela', 'enseñar':'dando clase en la escuela', clase:'en clase, en la escuela', fiesta:'de fiesta en la plaza', teatro:'construyendo el teatro', coliseo:'construyendo el coliseo', ver_teatro:'viendo una obra en el teatro', ver_coliseo:'viendo los juegos del coliseo', curar:'atendiendo a un enfermo', jugar:'jugando a la pelota', atleta:'compitiendo en los Juegos', espectador:'viendo los Juegos', emigrante:'emigrando', cuartel:'construyendo el cuartel', instruir:'instruyéndose en el cuartel', asedio:'construyendo una catapulta', lonja:'construyendo la lonja', vender:'vendiendo en el mercado', ampliar:'ampliando una casa', cementerio:'preparando el cementerio', hospital:'construyendo el hospital', curarse:'curándose en el hospital', ocio:'charlando en su tiempo libre', equipar:'forjando equipo para los soldados', minar:'sacando mineral de una veta', herreria:'construyendo la herrería', arboleda:'preparando una arboleda', bayal:'preparando un bayal', protesta:'manifestándose', golpe:'dando un golpe de estado', reprimir:'reprimiendo una protesta', detenido:'detenido', banco:'construyendo el banco', maravilla:'levantando una maravilla', asalto:'yendo a la guerra', guardia:'defendiendo su puesto', viaje:'de viaje', ritual:'yendo al ritual', ofrenda:'llevando una ofrenda', sacrificio:'llevando un animal al altar', quema:'haciendo una quema controlada', reparar:'reparando un edificio', derribar:'tirando abajo un edificio quemado', apagar:'apagando el fuego', antorcha:'poniendo una antorcha', alumbrar:'encendiendo las antorchas', comerciar:'comerciando en el mercado', encender:'encendiendo la hoguera', orar:'rezando', altar:'levantando un altar', templo:'construyendo el templo', monumento:'tallando una estatua', mercado:'montando el mercado', dormir:'yendo a dormir', torre:'construyendo una torre', muralla:'levantando la muralla', ayuntamiento:'construyendo el ayuntamiento', almacen:'construyendo un almacén', puente:'construyendo un puente', muelle:'construyendo un muelle', barca:'pescando en barca', carro:'construyendo un carro', montar:'yendo a por un caballo', campo:'marcando un campo', arar:'arando', cosechar:'cosechando', construir:'construyendo una casa', cercar:'haciendo un cercado', capturar:'trayendo un animal', pasear:'paseando', beber:'yendo a beber', comer:'comiendo', volver:'volviendo a la aldea', trabajando:'trabajando' };
   const beast = v.foe && !v.foe.dead ? (v.foe.sp === 'oso' ? 'un oso' : 'un lobo') : null;
   const doing = v.sleep ? 'durmiendo' : beast ? (v.weapon && age >= ADULT_H ? `luchando contra ${beast}` : `huyendo de ${beast}`) : v.task ? (v.task.k === 'trabajando' ? job[v.task.job] || 'trabajando' : job[v.task.k] || v.task.k) : 'descansando';
   return `<b>${v.name}</b> · ${v.sex === 'h' ? 'hombre' : 'mujer'}${age < ADULT_H ? ' (niño)' : v.oficio ? `, ${v.oficio}${v.sex === 'm' && /or$/.test(v.oficio) ? 'a' : ''}` : ''} · ${age.toFixed(1).replace('.', ',')} años · ${doing}${g ? ` · de ${g.name}` : ''} · ${dietName(v)}${v.mal ? ' (mal alimentado)' : ''}${v.rod ? ' · con caña' : ''}${v.weapon ? ` · con ${v.weapon}${v.shield ? ' y escudo' : ''}${v.armor ? `, ${GEAR_TXT[v.armor]}` : ''}` : ''}${v.swims === false ? ' · no sabe nadar' : ''}${v.mount ? ` · a caballo${v.cart ? ' con carro' : ''}` : ''}${v.boat ? ' · en barca' : ''}${g && g.coin && v.money ? ` · ${v.money} ${coinPl(g)}` : ''}${v.hp < .95 ? ` · herido (${Math.round(v.hp * 100)} %)` : ''} · comida ${Math.round(v.food * 100)} % · agua ${Math.round(v.water * 100)} %`;

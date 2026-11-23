@@ -879,7 +879,7 @@ const dayT = () => (yearT % DAY_LEN) / DAY_LEN;
 const isNight = () => { const d = dayT(); return d > .52 && d < .97; };
 // Jornada laboral (fracción del día): corta, normal o larga según la ley; antes y después, tiempo libre
 const shiftOf = g => hasLaw(g, 'jornada_corta') ? [.12, .36] : hasLaw(g, 'jornada_larga') ? [.02, .5] : [.06, .44];
-const inShift = g => { const d = dayT(), [a, b] = shiftOf(g); return d >= a && d <= b; };
+const inShift = g => { if (typeof isFreeDay === 'function' && isFreeDay(g)) return false; const d = dayT(), [a, b] = shiftOf(g); return d >= a && d <= b; }; // (los días libres y los festivos, nada)
 const shiftTxt = g => hasLaw(g, 'jornada_corta') ? 'jornada corta: de media mañana a media tarde' : hasLaw(g, 'jornada_larga') ? 'jornada larga: de sol a sol' : 'jornada normal: de la mañana a la tarde';
 const darkness = () => { const d = dayT(); return d < .04 ? .22 * (1 - d / .04) : d < .42 ? 0 : d < .54 ? .48 * (d - .42) / .12 : d < .96 ? .48 : .48 - .26 * (d - .96) / .04; };
 const dayPart = () => { const d = dayT(); return d < .06 ? 'amanecer' : d < .25 ? 'mañana' : d < .42 ? 'tarde' : d < .54 ? 'atardecer' : 'noche'; };

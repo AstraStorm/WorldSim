@@ -288,6 +288,8 @@ function chooseJob(v, g){
   add('vender', g.market != null && world.objs[g.market] && busyWith(g, 'vender') < 3 ? (v.oficio === 'mercader' ? 3 : .3) : 0);
   add('taberna', !hasTavern(g) && houses >= 3 && pop >= 10 && g.wood >= 12 && g.stone >= 4 && !busyWith(g, 'taberna') ? 3.5 : 0);
   // El gran templo: con templo ya hecho, mucha fe y mucha piedra (más si es teocracia)
+  add('escuela', hasLaw(g, 'educacion') && !hasSchool(g) && g.hall != null && pop >= 10 && g.wood >= 12 && g.stone >= 6 && !busyWith(g, 'escuela') ? 5 : 0);
+  add('enseñar', hasSchool(g) && v.oficio === 'maestro' && !isFreeDay(g) && villagers.some(u => !u.dead && u.vid === g.id && u.task && u.task.k === 'clase') ? 6 : 0);
   add('catedral', g.faith && g.temple != null && world.objs[g.temple] && !hasCathedral(g) && pop >= 20 && g.stone >= 30 && g.wood >= 15 && (g.devotion || 0) >= 3 && !busyWith(g, 'catedral') ? (2 + Math.min(4, (g.devotion || 0) * .2)) * (regimeOf(g) === 'teocracia' ? 2 : 1) : 0);
   add('explorar', hasPaper(g) && pop >= 8 && !(g.noExplore > yearT) && !travelers.some(t => t.kind === 'expedicion' && t.from === g.id) && !busyWith(g, 'explorar') ? (v.oficio === 'cartógrafo' ? 4 : 1) * ((g.expeditions || 0) < 3 ? 2 : 1) : 0);
   add('tazas', g.market != null && world.objs[g.market] && (g.cups || 0) < 6 + pop && g.wood >= 4 && !busyWith(g, 'tazas') ? ((g.cups || 0) < 3 ? 3 : 1.2) : 0);
@@ -349,7 +351,8 @@ function chooseJob(v, g){
   const sacred = g.faith && altarSpot(g);
   add('santuario', g.faith && !g.holy && popOf(g) >= 5 && !busyWith(g, 'santuario') ? 4 + (g.wrath || 0) : 0);
   add('ofrenda', sacred && (g.wrath || 0) > 2 && g.food >= 4 && busyWith(g, 'ofrenda') < 2 ? 4 + g.wrath : 0);
-  add('sacrificio', sacred && (g.wrath || 0) > 5 && penAnimals(g).length >= 2 && !busyWith(g, 'sacrificio') ? 7 : 0);
+  const volcAwake = sacred && riteOf(g) === 'volcan' && ['erupcion', 'activo'].includes((volcanoNear(g) || {}).state);
+  add('sacrificio', sacred && ((g.wrath || 0) > 5 || (volcAwake && (g.wrath || 0) > 1)) && penAnimals(g).length >= 2 && !busyWith(g, 'sacrificio') ? (volcAwake ? 9 : 7) : 0); // con el volcán despierto, más a menudo
   add('plantar', (plotSlot(g, 'berryPlot') || plotSlot(g, 'grove') || (g.cut || 0) > (g.planted || 0) + 1 || (g.treesNear ?? 99) < 14) && busyWith(g, 'plantar') < 2 ? (plotSlot(g, 'berryPlot') || plotSlot(g, 'grove') ? 4 : (g.treesNear ?? 99) < 14 ? 5 : 2) : 0);
   add('picar', (wantHall && g.stone < 6 ? 4 : wantStone ? 2 : .3) + ((g.rocksNear || 0) > 0 ? 2.5 : 0)); // y despejan las piedras del pueblo
   add('pasear', .3);
@@ -362,7 +365,7 @@ function chooseJob(v, g){
   // Fuera de su horario, los adultos descansan: solo atienden lo urgente (fuego, defensa, la hoguera, las antorchas)
   if (!inShift(g) && !isNight() && ageOf(v) >= ADULT_H && !(g.danger > 0) && !(famine && g.food < pop * 1.5)) {
     for (let k2 = J.length - 1; k2 >= 0; k2--) if (!['apagar', 'encender', 'alumbrar', 'arma', 'equipar', 'beber', 'comer', 'cosechar'].includes(J[k2][0])) J.splice(k2, 1); // (la cosecha madura se recoge aunque sea tarde)
-    J.push(['ocio', 6], ['pasear', 1]); if (hasTheater(g)) J.push(['ver_teatro', 3]); if (hasColiseum(g)) J.push(['ver_coliseo', 2.5]); if (hasTavern(g)) J.push(['ir_taberna', ageOf(v) < ADULT_H ? 1 : 4]);
+    J.push(['ocio', 6], ['pasear', 1]); if (holidayToday(g)) J.push(['fiesta', 10]); if (hasTheater(g)) J.push(['ver_teatro', 3]); if (hasColiseum(g)) J.push(['ver_coliseo', 2.5]); if (hasTavern(g)) J.push(['ir_taberna', ageOf(v) < ADULT_H ? 1 : 4]);
   }
   let k = Math.random() * J.reduce((s, j) => s + j[1], 0);
   for (const [job, w] of J) if ((k -= w) < 0) return job;
@@ -457,8 +460,11 @@ function setupTask(v, g, job){
     }
     case 'vender': { const r = g.marketRect; if (!r) return null; return { k:job, x:(r.x0 + 1 + Math.random() * (r.x1 - r.x0 - 2)) * T + 2, y:(r.y0 + 2) * T + 3 }; }
     case 'taberna': { const p = bestSite(v, g, job); return p ? { k:job, i:p[1] * W + p[0], x:p[0] * T + 2, y:(p[1] + 1) * T + 3 } : null; }
+    case 'escuela': { const p = bestSite(v, g, job); return p ? { k:job, i:p[1] * W + p[0], x:p[0] * T + 2, y:(p[1] + 1) * T + 3 } : null; }
+    case 'enseñar': { const sb = hasSchool(g) && standBy(g.school); return sb ? { k:job, x:sb[0], y:sb[1] - 2 } : null; }
     case 'catedral': { const p = bestSite(v, g, job); return p ? { k:job, i:p[1] * W + p[0], x:p[0] * T + 2, y:(p[1] + 1) * T + 3 } : null; }
     case 'explorar': { const [fx, fy] = fireSpot(v, g); return { k:job, x:fx, y:fy }; }
+    case 'fiesta': { const [fx, fy] = fireXY(g), a = Math.random() * Math.PI * 2, r0 = 8 + Math.random() * 14; return { k:job, x:fx + Math.cos(a) * r0, y:fy + Math.sin(a) * r0 * .7 }; }
     case 'tazas': { const sb = standBy(g.market); return sb ? { k:job, x:sb[0], y:sb[1] } : null; }
     case 'ir_taberna': { const sb = hasTavern(g) && standBy(g.tavern); return sb ? { k:job, x:sb[0] + (Math.random() - .5) * 14, y:sb[1] + 2 + Math.random() * 5 } : null; }
     case 'teatro': case 'coliseo': { const p = bestSite(v, g, job); return p ? { k:job, i:p[1] * W + p[0], x:p[0] * T + 2, y:(p[1] + 1) * T + 3 } : null; }
@@ -867,7 +873,7 @@ function runTask(v, g, dt){
       const a = t.a; if (!a || a.dead) return;
       a.lead = null; riteFx(g, a.x, a.y, true); killAnimal(a, 'sacrificio');
       g.wrath = Math.max(0, (g.wrath || 0) - 3.5); g.devotion = (g.devotion || 0) + 1;
-      notify(`En ${g.name} sacrifican ${ANIMALS[a.sp].n === 'Oveja' || ANIMALS[a.sp].n === 'Vaca' ? 'una' : 'un'} ${ANIMALS[a.sp].n.toLowerCase()} a ${g.faith.god} (${RITE_TXT[riteOf(g)]}) para calmar su ira`, { x:a.x, y:a.y });
+      notify(riteOf(g) === 'volcan' ? `En ${g.name} arrojan ${ANIMALS[a.sp].n === 'Oveja' || ANIMALS[a.sp].n === 'Vaca' ? 'una' : 'un'} ${ANIMALS[a.sp].n.toLowerCase()} al volcán como ofrenda a ${g.faith.god}` : `En ${g.name} sacrifican ${ANIMALS[a.sp].n === 'Oveja' || ANIMALS[a.sp].n === 'Vaca' ? 'una' : 'un'} ${ANIMALS[a.sp].n.toLowerCase()} a ${g.faith.god} (${RITE_TXT[riteOf(g)]}) para calmar su ira`, { x:a.x, y:a.y });
     }; break;
     case 'carro': v.actT = 7; v.onDone = () => { if (g.wood >= 10) { g.wood -= 10; g.carts = (g.carts || 0) + 1; if (g.carts === 1) notify(`En ${g.name} han construido su primer carro`, { x:g.fx * T, y:g.fy * T }); } }; break;
     case 'cantera': v.actT = 8; v.onDone = () => {
@@ -915,6 +921,24 @@ function runTask(v, g, dt){
       composeRegion(x - 10, y - 14, x + 10, y + 12); addEffect(x * T + 2, y * T + 3, 'poof'); connect(g, x, y); snd('build', x * T, y * T);
       notify(`En ${g.name} abren una taberna: al acabar la jornada van a beber y charlar`, { x:x * T, y:y * T });
     }; break;
+    case 'escuela': v.actT = 12; v.onDone = () => {
+      const x = t.i % W, y = (t.i / W) | 0;
+      if (hasSchool(g) || g.wood < 12 || g.stone < 6) return;
+      if (clearable(x - 5, y - 9, x + 5, y + 1)) clearSite(g, x - 5, y - 9, x + 5, y + 1);
+      if (!tileFree(x, y) || buildingClash(x, y, 'escuela', t.i)) return;
+      world.objs[t.i] = { key:'school:escuela', v:0, ox:0, oy:0, vid:g.id }; g.school = t.i; g.wood -= 12; g.stone -= 6;
+      composeRegion(x - 10, y - 16, x + 10, y + 12); addEffect(x * T + 2, y * T + 3, 'poof'); connect(g, x, y); snd('bell', x * T, y * T);
+      notify(`En ${g.name} abren una escuela: los niños aprenderán lo que saben los mayores`, { x:x * T, y:y * T });
+    }; break;
+    case 'enseñar': v.actT = 10; v.dir = -1; v.onDone = () => { // el maestro enseña a los que están en clase
+      for (const u of villagers) if (!u.dead && u.vid === g.id && u.task && u.task.k === 'clase' && Math.hypot(u.x - v.x, u.y - v.y) < 50) u.edu = Math.min(1, (u.edu || 0) + .06);
+      if (Math.random() < .3) floats.push({ x:v.x, y:v.y - 12, txt:['a, b, c…', '2 + 2 = 4', 'el río va al mar', '¡atención!'][Math.floor(Math.random() * 4)], col:'#c8e0f0', life:0 });
+    }; break;
+    case 'clase': v.actT = 10 + Math.random() * 5; v.dir = 1; v.onDone = () => { // en clase: algo se aprende aunque no esté el maestro
+      v.edu = Math.min(1, (v.edu || 0) + .015); if (hasLaw(g, 'educacion') && !v.swims && Math.random() < .2) v.swims = true;
+      if (!v.rod && Math.random() < .03) v.rodSkill = true;
+    }; break;
+    case 'fiesta': v.actT = 6 + Math.random() * 6; v.dirT = .4; v.onDone = () => { v.fun = yearT; if (Math.random() < .4) floats.push({ x:v.x, y:v.y - 12, txt:['¡Fiesta!', '♪', '¡Viva!', '♫'][Math.floor(Math.random() * 4)], col:'#f0d060', life:0 }); }; break;
     case 'catedral': v.actT = 28; v.onDone = () => {
       const x = t.i % W, y = (t.i / W) | 0, st = holyStyleOf(g);
       if (hasCathedral(g) || !g.faith || g.stone < 30 || g.wood < 15) return;

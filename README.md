@@ -15,6 +15,9 @@ También se puede abrir `index.html` directamente en el navegador (con la carpet
 - Banderas propias, territorio, diplomacia, comercio por tierra y mar, guerras, conquistas e independencias.
 - Convivencia: cada persona tiene su orientación (heterosexual, homosexual o bisexual) y forma pareja; los hijos nacen de parejas de hombre y mujer, y las del mismo sexo pueden adoptar donde hay matrimonio igualitario. Leyes de derechos humanos o segregación racial, de matrimonio igualitario o persecución, y de libertad de culto o persecución religiosa: cambian el ánimo, los sueldos, quién emigra o es desterrado, las protestas y las relaciones con los vecinos.
 - Migrantes con su propia fe: unos la viven en paz y se integran; otros predican, y si llegan a ser mayoría imponen su religión.
+- Oficios que se reparten según hace falta (maestro, bombero, curandero, cartógrafo, mercader…); escuelas con la ley de escuelas, donde los niños aprenden y de mayores cobran más.
+- Calendario: días libres a la semana según la jornada (y protestas si no los hay) y festivos que recuerdan lo que les pasó (la paz, la independencia, una victoria), con fiesta en la plaza y fuegos artificiales.
+- Los fieles de un dios del fuego, de las montañas o del inframundo con un volcán cerca arrojan sus ofrendas al cráter.
 - Tratados: pactos de no agresión (romperlos es traición), acuerdos comerciales, libre circulación, tratados de paz y tributos.
 - Partidos, elecciones, monarquías, dictaduras, comunismo y fascismo; manifestaciones y golpes de estado.
 - Monedas, bancos, inflación, bancarrotas y alianzas con moneda común.
@@ -48,6 +51,7 @@ Sin dependencias ni compilación: cada archivo es un script normal y se cargan e
 | `js/convivencia.js` | Parejas y orientación, racismo y derechos, homofobia o igualdad |
 | `js/credos.js` | Migrantes con otra fe: predicadores, conversiones, persecución o libertad de culto |
 | `js/tratados.js` | Pactos, acuerdos comerciales, libre circulación, tratados de paz y tributos |
+| `js/trabajo.js` | Reparto de oficios, escuelas, días libres y festivos |
 | `js/vegetacion.js` | Crecimiento y muerte de la vegetación |
 | `js/aldeanos.js` | Movimiento y dibujo de los aldeanos |
 | `js/interfaz.js` | Herramientas del jugador, entrada, panel, pantalla de carga y oleaje |
