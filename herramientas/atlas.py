@@ -147,6 +147,11 @@ HP = 'puertas.png'
 add('gate:piedra', shrink(cut(HP, [(220, 250)]), 14, 14)); add('gate:piedra_abierta', shrink(cut(HP, [(1550, 250)]), 14, 14))
 add('gate:madera', shrink(cut(HP, [(220, 690)]), 14, 14)); add('gate:madera_abierta', shrink(cut(HP, [(1020, 690), (1195, 690)]), 14, 14))  # (entreabierta: se ven las hojas)
 
+# Cementerio, vallas y antorchas (hoja 07B)
+add('tumba:lapida', shrink(cut(H7B, [(177, 784)]), 6, 12)); add('tumba:flores', shrink(cut(H7B, [(477, 784)]), 8, 12)); add('tumba:estela', shrink(cut(H7B, [(777, 772)]), 6, 12))
+add('tex:valla_h', tex(H7B, (984, 752, 1094, 802), 10, 5)); add('tex:valla_v', tex(H7B, (1142, 718, 1176, 834), 3, 10))
+add('antorcha:encendida', shrink(cut(H7B, [(774, 1066)]), 4, 10)); add('antorcha:apagada', shrink(cut(H7B, [(1077, 1066)]), 4, 10))
+
 # ---- Atlas: en filas, con 1 píxel de separación ----
 keys = list(S); W = 512; x = y = rowh = 0; pos = {}
 for k in sorted(keys, key=lambda k: -S[k]['img'].height):

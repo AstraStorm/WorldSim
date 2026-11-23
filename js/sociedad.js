@@ -1116,7 +1116,8 @@ function drawTorches(g, t){
     const px = (tc.i % W) * T + 2, py = ((tc.i / W) | 0) * T + 4;
     if (px < x0 - 6 || px > x1 + 6 || py < y0 - 12 || py > y1 + 4) continue;
     vctx.fillStyle = 'rgba(0,0,0,.25)'; vctx.fillRect(px - 1, py, 3, 1);
-    vctx.fillStyle = '#5a3a20'; vctx.fillRect(px, py - 7, 1, 8); vctx.fillStyle = '#3a2414'; vctx.fillRect(px - 1, py - 8, 3, 2);
+    const ta = artFrame(tc.lit ? 'antorcha:encendida' : 'antorcha:apagada');
+    if (ta) vctx.drawImage(ta, px - (ta.width >> 1), py + 1 - ta.height); else { vctx.fillStyle = '#5a3a20'; vctx.fillRect(px, py - 7, 1, 8); vctx.fillStyle = '#3a2414'; vctx.fillRect(px - 1, py - 8, 3, 2); }
     if (tc.lit) {
       const f = Math.floor(t / 110 + tc.i) % 3;
       vctx.fillStyle = '#ff8a2a'; vctx.fillRect(px - 1, py - 10, 3, 2);
@@ -3058,13 +3059,16 @@ function drawCemeteries(){
     const px = c.x0 * T, py = c.y0 * T, pw = c.w * T, ph = c.h * T;
     if (px > x1 || px + pw < x0 || py > y1 || py + ph < y0) continue;
     vctx.fillStyle = 'rgba(30,50,26,.35)'; vctx.fillRect(px, py, pw, ph);
+    if (fence(px, py, pw, ph, (c.w >> 1) * T)) { /* valla dibujada */ } else {
     vctx.fillStyle = '#6a5a48';
     vctx.fillRect(px, py, pw, 1); vctx.fillRect(px, py, 1, ph); vctx.fillRect(px + pw - 1, py, 1, ph);
     const gate = px + (c.w >> 1) * T; vctx.fillRect(px, py + ph - 1, gate - px - 1, 1); vctx.fillRect(gate + T + 1, py + ph - 1, px + pw - gate - T - 1, 1); // la puerta, abajo
-    for (let k = 0; k < c.w; k += 2) { vctx.fillRect(px + k * T, py - 1, 1, 2); vctx.fillRect(px + k * T, py + ph - 2, 1, 2); }
+    for (let k = 0; k < c.w; k += 2) { vctx.fillRect(px + k * T, py - 1, 1, 2); vctx.fillRect(px + k * T, py + ph - 2, 1, 2); } }
     for (const [i, gr] of c.graves) {
       const gx = (i % W) * T + 1, gy = ((i / W) | 0) * T;
       vctx.fillStyle = 'rgba(40,30,20,.45)'; vctx.fillRect(gx - 1, gy + 3, 5, 2); // tierra removida
+      const ts = artFrame(gr.cross ? 'tumba:estela' : i % 3 === 0 ? 'tumba:flores' : 'tumba:lapida');
+      if (ts) { vctx.drawImage(ts, gx + 1 - (ts.width >> 1), gy + 4 - ts.height); continue; } // el dibujo
       if (gr.cross) { vctx.fillStyle = '#6a4a2c'; vctx.fillRect(gx + 1, gy - 2, 1, 5); vctx.fillRect(gx, gy - 1, 3, 1); }
       else { vctx.fillStyle = '#4a4844'; vctx.fillRect(gx, gy - 2, 3, 5); vctx.fillStyle = '#a8a49c'; vctx.fillRect(gx, gy - 1, 3, 3); vctx.fillRect(gx + 1, gy - 2, 1, 1); vctx.fillStyle = '#6a6660'; vctx.fillRect(gx + 1, gy, 1, 1); }
     }
@@ -3115,7 +3119,7 @@ function drawPens(){
     // Cercado: postes y travesaños de madera alrededor
     if (g.pen) {
       const p = g.pen, ax = p.x0 * T, ay = p.y0 * T, bx = (p.x1 + 1) * T, by = (p.y1 + 1) * T;
-      if (!(bx < x0 || ax > x1 || by < y0 || ay > y1)) {
+      if (!(bx < x0 || ax > x1 || by < y0 || ay > y1) && !fence(ax, ay, bx - ax, by - ay)) {
         vctx.fillStyle = '#7a5230';
         vctx.fillRect(ax, ay, bx - ax, 1); vctx.fillRect(ax, by - 1, bx - ax, 1); vctx.fillRect(ax, ay, 1, by - ay); vctx.fillRect(bx - 1, ay, 1, by - ay);
         vctx.fillStyle = '#4a3018';

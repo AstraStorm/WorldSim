@@ -9,7 +9,7 @@ const ART = { img:null, ready:false, cache:new Map() };
   if (typeof ART_MAP === 'undefined') return;
   const im = new Image();
   im.onload = () => { ART.img = im; ART.ready = true; ART.cache.clear(); if (typeof world !== 'undefined' && world && typeof composeRegion === 'function') composeRegion(0, 0, W - 1, H - 1); };
-  im.src = 'arte/atlas.png?v=202611230233';
+  im.src = 'arte/atlas.png?v=202611230235';
 })();
 const ART_DECID = new Set(['oak:forest', 'birch:birch', 'willow:swamp', 'willow:moss', 'acacia:dry', 'acacia:sunset', 'oak:cherry', 'pine:autumn']);
 const ART_EVER = new Set(['pine:pine', 'pine:snow', 'pine:blue', 'ancient:elder', 'ancient:mangrove', 'ancient:life', 'ancient:baobab']);
@@ -78,6 +78,15 @@ function artFill(ctx, k, x, y, w, h, ox = 0, oy = 0){
 const FIELD_TEX = { arada:'tex:arada', sembrado:'tex:sembrado', muerta:'tex:muerta' };
 const CROP_TEX = { trigo:'tex:trigo', maiz:'tex:maiz', mijo:'tex:mijo', calabaza:'tex:huerta', col:'tex:huerta' };
 const fieldTex = f => f.st === 'madura' ? CROP_TEX[f.crop || 'trigo'] || 'tex:trigo' : f.st === 'creciendo' ? (f.g > .55 ? CROP_TEX[f.crop || 'trigo'] || 'tex:trigo' : 'tex:brotes') : FIELD_TEX[f.st];
+// Valla dibujada alrededor de un rectángulo (cercado, cementerio); gate: hueco abajo para la entrada (en píxeles desde la izquierda)
+function fence(x, y, w, h, gate){
+  if (!artPattern('tex:valla_h') || !artPattern('tex:valla_v')) return false;
+  artFill(vctx, 'tex:valla_h', x, y - 3, w, 5, 0, y - 3);                                          // fondo
+  artFill(vctx, 'tex:valla_v', x - 1, y - 1, 3, h, x - 1, 0); artFill(vctx, 'tex:valla_v', x + w - 2, y - 1, 3, h, x + w - 2, 0); // lados
+  if (gate == null) artFill(vctx, 'tex:valla_h', x, y + h - 4, w, 5, 0, y + h - 4);                // frente
+  else { artFill(vctx, 'tex:valla_h', x, y + h - 4, gate - 1, 5, 0, y + h - 4); artFill(vctx, 'tex:valla_h', x + gate + T + 1, y + h - 4, w - gate - T - 1, 5, 0, y + h - 4); }
+  return true;
+}
 // Aspas de los molinos: al final de todo, para que nada (ni la gente que pasa por detrás) las tape
 let millSails = [];
 function drawMillSails(){
