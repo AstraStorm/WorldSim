@@ -55,6 +55,7 @@ function lifeFields(v, tx, ty, ageYears, r){
   return v;
 }
 function makeVillage(tx, ty){
+  if (volcDanger(tx, ty, 6)) return null; // nadie se asienta al pie de un volcán (volcanes.js)
   let fi = -1;
   // Tierra firme a su alrededor (al menos 3 casillas sin agua): si no, la aldea queda medio en el agua
   const dryAround = (x, y) => { for (let b = -3; b <= 3; b++) for (let a = -3; a <= 3; a++) { const xx = x + a, yy = y + b; if (xx < 0 || yy < 0 || xx >= W || yy >= H) return false; const j = yy * W + xx; if (WATER[world.biome[j]] || world.biome[j] === B.LAVA) return false; } return true; };
@@ -337,13 +338,14 @@ function chooseJob(v, g){
   institutionJobs(v, g, add); // tribunal, cárcel, imprenta, sindicato, parlamento y academia (instituciones.js)
   mineJobs(v, g, add); // abrir la mina y trabajar en ella (minas.js)
   umbrellaJobs(v, g, add); // coser paraguas (lluvia.js)
+  volcanoJobs(v, g, add); // cercar el volcán (volcanes.js)
   seasonJobs(v, g, add); shackJobs(v, g, add); // conservas, leña, árboles (estaciones.js) y chabolas (riqueza.js)
   scienceJobs(v, g, add); // investigar en la universidad (ciencia.js)
   add('carro', know.montar && houses >= 3 && (g.carts || 0) < 1 + Math.floor(pop / 10) && spare >= 10 && !busyWith(g, 'carro') ? 2.5 : 0);
   add('ayuntamiento', g.hall == null && pop >= 8 && houses >= 2 && ((g.wood >= 10 && g.stone >= 6) || g.wood >= 18) && !busyWith(g, 'ayuntamiento') ? 12 : 0);
   add('almacen', Math.max(g.food, g.wood, g.stone) > capOf(g) * .8 && g.wood >= 8 && !busyWith(g, 'almacen') ? 8 : 0);
   add('torre', g.hall != null && (g.sawBeast || pop >= 16) && towersOf(g).length < 1 + Math.floor(pop / 10) && spare >= 12 && g.stone >= 4 && !busyWith(g, 'torre') ? 3 : 0);
-  if (g.hall != null && g.wallPlan && wallLeft(g) === 0 && (g.wallRing || 1) < 2 && (pop >= 25 || atWarJ)) { g.wallRing = 2; g.wallPlan = null; notify(`En ${g.name} empiezan una segunda muralla, más amplia`, { x:g.fx * T, y:g.fy * T }); }
+  if (g.hall != null && g.wallPlan && wallLeft(g) === 0 && (g.wallRing || 1) < 2 && (pop >= 25 || atWarJ)) { g.wallRing = 2; g.wallPlan1 = g.wallPlan; g.wallPlan = null; notify(`En ${g.name} empiezan una segunda muralla, más amplia`, { x:g.fx * T, y:g.fy * T }); }
   add('muralla', wallJob(g, pop, needHouse, atWarJ)); // antes, con más gente y, tras un ataque, con prisa (defensa.js)
   add('orar', g.faith ? ((g.wrath || 0) > .3 ? 2 + g.wrath : dayT() < .12 ? .6 : .05) : 0);
   add('altar', g.faith && g.holy && pop >= 5 && (g.altar == null || !world.objs[g.altar]) && g.stone >= 4 && !busyWith(g, 'altar') ? 3 : 0);
@@ -400,6 +402,7 @@ function setupTask(v, g, job){
     case 'conservar': return seasonTarget(v, g, job);
     case 'chabola': return shackTarget(v, g);
     case 'paraguas': return umbrellaTarget(v, g);
+    case 'cercar_volcan': return volcFenceTarget(v, g);
     case 'talar': {
       const i = objNear(g, (g.treesNear ?? 99) < 12 ? 60 : 30, o => OBJ[o.key][1] === 'tree' && o.st !== 'b' && o.st !== 'j', v); const p = i != null && standBy(i); // sin árboles cerca, van más lejos
       return p ? { k:job, i, x:p[0], y:p[1] } : null;
@@ -706,6 +709,7 @@ function runTask(v, g, dt){
     case 'conservar': seasonArrive(v, g, t); break;
     case 'chabola': shackArrive(v, g, t); break;
     case 'paraguas': umbrellaArrive(v, g, t); break;
+    case 'cercar_volcan': volcFenceArrive(v, g, t); break;
     case 'dormir': dismount(v); v.sleep = true; v.home = t.h ?? null; v.task = null; return;
     case 'beber': v.actT = 2; v.onDone = () => { v.water = 1; v.hot = Math.max(0, (v.hot || 0) - .6);
       if (t.cup) { g.cups = Math.max(0, (g.cups || 0) - 1); const pr = Math.min(v.money || 0, 1); if (pr > 0) { v.money -= pr; ecOf(g).treas += pr * .5; } floats.push({ x:v.x, y:v.y - 12, txt:'taza de agua', col:'#9cc8f0', life:0 }); }
@@ -842,13 +846,13 @@ function runTask(v, g, dt){
       const stretch = wallStretch(g), cost = wallCost(g); // con la ley de fortificación, el doble y a mitad de precio (defensa.js)
       while (k < pl.length && built < stretch && (g.wood >= 1 || g.stone >= 10)) { // (lo que se gasta abajo: piedra solo con 10 o más; si no, madera)
         const i = pl[k], o = world.objs[i]; k++;
-        if (WATER[world.biome[i]] || bridgeSet.has(i) || farmMap.has(i) || plazaSet.has(i)) continue;
+        if (WATER[world.biome[i]] || bridgeSet.has(i) || plazaSet.has(i)) continue;
         if (pathMap.has(i) || midGate(g, i)) { gateSet.add(i); gateOwner.set(i, g.id); continue; } // puerta donde cruza un camino y en el centro de cada lado
-        if (o && !['tree', 'berry'].includes(OBJ[o.key][1])) continue;
+        if (o && (isBuilding(o) || o.key.startsWith('fire') || o.vid != null)) continue; // rocas, flores y matas se quitan; los edificios no
         if (underBuilding(g, i % W, (i / W) | 0) || plotIn(i % W, (i / W) | 0, i % W, (i / W) | 0) || villages.some(o => inPen(o, i % W, (i / W) | 0, 1))) continue; // ni a través de un edificio, una parcela o un cercado
         if (o) { if (OBJ[o.key][1] === 'tree') fallObj(i); world.objs[i] = null; composeRegion((i % W) - 7, ((i / W) | 0) - 11, (i % W) + 7, ((i / W) | 0) + 12); }
         if (villagers.some(u => !u.dead && Math.floor(u.x / T) === i % W && Math.floor(u.y / T) === ((i / W) | 0))) { k--; break; } // alguien encima: luego
-        wallSet.add(i); built++;
+        farmMap.delete(i); wallSet.add(i); built++; // (si pasa por el borde de un campo, se come esa casilla)
         if (g.stone >= 10) { if ((half += cost) >= 1) { half -= 1; g.stone -= 1; } wallStone.add(i); } else if ((half += .5 * cost) >= 1) { half = 0; g.wood -= 1; }
       }
       g.wallIdx = k;

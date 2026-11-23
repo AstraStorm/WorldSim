@@ -52,6 +52,7 @@ function draw(t){
   drawBridges();
   drawFarms(); drawCemeteries(); drawTracks(); drawAeros();
   drawPens();
+  drawVolcFences(); // vallas alrededor de los volcanes (volcanes.js)
   drawWalls();
   drawCracks();
   vctx.drawImage(worldCv, 0, 0);
@@ -251,6 +252,7 @@ function flowPath(v){
 function igniteTile(i, v){
   if (world.biome[i] === B.LAVA) return;
   const x = i % W, y = (i / W) | 0;
+  lavaHitsBuildings(i); // los edificios que pilla, arden (volcanes.js)
   if (world.objs[i]) { if (!fallObj(i, true)) addEffect(x * T + 2, y * T + 3, 'poof'); world.objs[i] = null; buildRareList(); } // la lava quema lo que pilla
   world.lavaT[i] = 1; world.volc[i] = 3; world.vid[i] = v.id;
   world.lavaTiles.set(i, { born:performance.now(), v, cool:30 + Math.random() * 25 });

@@ -107,6 +107,7 @@ Sin dependencias ni compilación: cada archivo es un script normal y se cargan e
 | `js/vegetacion.js` | Crecimiento y muerte de la vegetación |
 | `js/aldeanos.js` | Movimiento y dibujo de los aldeanos |
 | `js/sonido.js` | Sonido sintetizado: música generativa, ambiente según lo que se ve (olas, ríos, viento, lluvia, grillos, pájaros, tormentas, fuego), voces, animales, trabajos y rezos de cerca, y los volúmenes |
+| `js/volcanes.js` | No se construye en las faldas de un volcán, los pueblos cercanos cercan el cráter y la lava quema edificios |
 | `js/edificios.js` | Clic en un edificio: su ficha (qué es, de quién, quién vive, qué guarda) y lista de edificios del pueblo |
 | `js/calendario.js` | Días de la semana en cada lengua y calendario laboral con festivos (pestaña Calendario de la ficha) |
 | `js/ui.js` | Pestañas del panel y de la barra de abajo, y el resumen del mundo |

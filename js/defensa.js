@@ -15,6 +15,25 @@ function wallJob(g, pop, needHouse, atWar){
   if (busyWith(g, 'muralla') >= cap) return 0;
   return threat ? 14 : fortified(g) ? 9 : g.hall != null ? 5 : 3;
 }
+// El pueblo ha crecido más allá de su muralla (casas fuera o encima de la línea): se derriba (devuelve algo de madera)
+// y se planea una nueva alrededor de todo, para que no queden tramos sueltos cruzando el pueblo
+function wallGrow(g){
+  if (!g.wallRect || !popOf(g)) return;
+  if (g.wallRing === 2 && !g.wallPlan1) g.wallPlan1 = []; // (partidas de antes: no se guardaba cuál era la de dentro)
+  // Piezas sueltas de planes viejos (o de pueblos que ya no están) que no forman parte de ninguna muralla: fuera
+  const ring = new Set(villages.filter(o => popOf(o)).flatMap(o => [...(o.wallPlan || []), ...(o.wallPlan1 || [])]));
+  for (const i of [...wallSet, ...gateSet]) if (!ring.has(i)) { wallSet.delete(i); wallStone.delete(i); gateSet.delete(i); gateOwner.delete(i); }
+  // ¿El pueblo se ha salido de la muralla, o la muralla es mucho más grande de lo que hace falta?
+  const R = g.wallRect, m = g.wallRing === 2 ? 8 : 3; let x0 = g.fx - 4, y0 = g.fy - 3, x1 = g.fx + 4, y1 = g.fy + 4;
+  for (const h of coreBuildings(g)) { const x = h % W, y = (h / W) | 0; x0 = Math.min(x0, x - 5); x1 = Math.max(x1, x + 5); y0 = Math.min(y0, y - 7); y1 = Math.max(y1, y + 2); }
+  const out = x0 < R.x0 || x1 > R.x1 || y0 < R.y0 || y1 > R.y1, big = (R.x1 - R.x0) * (R.y1 - R.y0) > 2 * (x1 - x0 + 2 * m + 4) * (y1 - y0 + 2 * m + 4);
+  if (!out && !big) return;
+  // Se derriba (las dos, si hay doble) y se vuelve a empezar por la de dentro, a la medida del pueblo
+  let n = 0;
+  for (const i of [...(g.wallPlan || []), ...(g.wallPlan1 || [])]) { if (wallSet.has(i)) { wallSet.delete(i); wallStone.delete(i); n++; } if (gateOwner.get(i) === g.id) { gateSet.delete(i); gateOwner.delete(i); } }
+  g.wallRing = 1; g.wallPlan1 = null; g.wallPlan = null; g.wallMsg = g.wall2Msg = false; wallPlan(g); g.wood += Math.round(n * .3);
+  if (n > 6) notify(out ? `${g.name} ha crecido más allá de su muralla: la derriban y empiezan otra más grande` : `En ${g.name} rehacen la muralla, más ceñida al pueblo`, { x:g.fx * T, y:g.fy * T });
+}
 // Lo que levanta cada tramo y lo que cuesta
 const wallStretch = g => fortified(g) ? 20 : underThreat(g) ? 14 : 10;
 const wallCost = g => fortified(g) ? .5 : 1;
