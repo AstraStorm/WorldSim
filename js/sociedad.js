@@ -85,7 +85,7 @@ function olympicsTick(dt){
   // Los atletas llegan a la pista; los del país anfitrión (y los vecinos en paz) van a mirar
   athletes.forEach((a, k) => { const [x, y] = trackPoint(host.track, 0, k % 4); a.v.x = x; a.v.y = y; });
   const tr = host.track, spect = villagers.filter(u => !u.dead && !u.away && !u.boat && !u.task?.k?.startsWith('asalto') && !athletes.some(a => a.v === u) && villageById(u.vid) && Math.hypot(villageById(u.vid).fx - host.fx, villageById(u.vid).fy - host.fy) < 60 && !(rels.get(relKey(villageById(u.vid), host)) || {}).war);
-  for (const u of spect) { const a = Math.random() * Math.PI * 2, rx = tr.w * T / 2 + 6 + Math.random() * 8, ry = tr.h * T / 2 + 5 + Math.random() * 6; releaseTask(u); if (u.actT > 0) { u.actT = 0; u.onDone = null; } u.sleep = false; u.task = { k:'espectador', x:(tr.x0 + tr.w / 2) * T + Math.cos(a) * rx, y:(tr.y0 + tr.h / 2) * T + Math.sin(a) * ry, until:yearT + 90 }; u.lastD = Infinity; }
+  for (const u of payTickets(host, spect, 'Juegos')) { const a = Math.random() * Math.PI * 2, rx = tr.w * T / 2 + 6 + Math.random() * 8, ry = tr.h * T / 2 + 5 + Math.random() * 6; releaseTask(u); if (u.actT > 0) { u.actT = 0; u.onDone = null; } u.sleep = false; u.task = { k:'espectador', x:(tr.x0 + tr.w / 2) * T + Math.cos(a) * rx, y:(tr.y0 + tr.h / 2) * T + Math.sin(a) * ry, until:yearT + 90 }; u.lastD = Infinity; }
   const EV = [['Carrera de velocidad', 1], ['Carrera de fondo', 3], ['Relevos', 2]];
   olymp.cur = { host:host.id, hostName:host.name, athletes, nats:nats.map(n => n.id), ev:0, EV, race:null, results:[], medals:{}, t:0 };
   notify(`¡Empiezan los Juegos en ${host.name}! Compiten ${nats.map(n => n.name).join(', ')}`, { x:(tr.x0 + 8) * T, y:(tr.y0 + 4) * T }); snd('horn');

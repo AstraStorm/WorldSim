@@ -144,7 +144,7 @@ function startMatch(home, away){
     for (const p of [c.bench, c.coach]) { const u = byPid(p); if (!freeFor(u)) continue; if (c === A0) u.matchHome = [u.x, u.y]; releaseTask(u); if (u.actT > 0) { u.actT = 0; u.onDone = null; } u.x = c === A0 ? cx + side * 14 : u.x; u.y = c === A0 ? (r.y1 + 2) * T : u.y; u.task = { k:'espectador', x:cx + side * (p === c.coach ? 18 : 12), y:(r.y1 + 2) * T + 2, until }; }
   }
   // Público del pueblo local, alrededor del campo
-  const off = villagers.filter(u => !u.dead && u.vid === home.id && freeFor(u) && !teams.has(u) && (!u.task || ['ocio', 'pasear'].includes(u.task.k) || !inShift(home))).slice(0, 12);
+  const off = payTickets(home, villagers.filter(u => !u.dead && u.vid === home.id && freeFor(u) && !teams.has(u) && (!u.task || ['ocio', 'pasear'].includes(u.task.k) || !inShift(home))).slice(0, 12), 'partido', H0);
   for (const u of off) { const a = Math.random() * Math.PI * 2; releaseTask(u); if (u.actT > 0) { u.actT = 0; u.onDone = null; } u.task = { k:'espectador', x:cx + Math.cos(a) * (home.pitch.w * T / 2 + 6), y:cy + Math.sin(a) * (home.pitch.h * T / 2 + 5), until }; }
   ballGames.push({ vid:home.id, ps:[...hs, ...as], teams, x:cx + 2, y:cy + 3, vx:0, vy:0, r, until, goals:[0, 0], match:{ home:home.id, away:away.id } });
   notify(`¡Partido! ${H0.name} contra ${A0.name}, en el campo de ${home.name}`, { x:cx, y:cy }); snd('horn', cx, cy);
@@ -171,6 +171,7 @@ function ballGameEnd(b){
   if (gh > ga) { H0.w++; A0.l++; } else if (gh < ga) { A0.w++; H0.l++; } else { H0.d++; A0.d++; }
   const txt = `${H0.name} ${gh} – ${ga} ${A0.name}`;
   for (const c of [H0, A0]) { c.res.push({ txt, d:day }); if (c.res.length > 8) c.res.shift(); }
+  for (const c of [H0, A0]) { const team = [...c.players, c.bench, c.coach].map(byPid).filter(u => u && !u.dead), pay = Math.floor((c.cash || 0) * .5 / Math.max(1, team.length)); if (pay > 0) { for (const u of team) u.money = (u.money || 0) + pay; c.cash -= pay * team.length; } } // sueldos del club
   for (const u of villagers) if (u.matchHome && !u.dead) { const [x, y] = u.matchHome; u.matchHome = null; u.x = x; u.y = y; if (u.task && ['jugar', 'espectador'].includes(u.task.k)) u.task = null; }
   const r = relOf(home, away); r.known = true; r.v = Math.min(100, r.v + (gh === ga ? 4 : 2));
   const win = gh > ga ? home : gh < ga ? away : null, lose = win === home ? away : win === away ? home : null;
@@ -193,6 +194,22 @@ function sportsTick(g, dt, people){
     const o = rivals[Math.floor(Math.random() * rivals.length)];
     if (o && startMatch(g, o)) { C.matchT = DAY_LEN * (2.5 + Math.random() * 2); o.club.matchT = Math.max(o.club.matchT, DAY_LEN * 1.5); }
   }
+}
+// ---- Entradas: para ver un partido o los Juegos hay que pagar (quien no tiene, se queda fuera) ----
+// Con moneda, cada entrada cuesta medio sueldo; sin moneda, se paga en especie (un poco de comida para el pueblo que organiza)
+const ticketPrice = (g, big) => g.coin ? Math.max(1, Math.round(wageOf(g, big ? 1.5 : 1) / 2)) : 0;
+function payTickets(host, list, what, club){
+  const price = ticketPrice(host, what === 'Juegos'), paid = []; let cash = 0, food = 0;
+  for (const u of list) {
+    if (price) { if ((u.money || 0) < price) continue; u.money -= price; cash += price; }
+    else food += .3;
+    paid.push(u);
+  }
+  const ec = ecOf(host);
+  if (club) { club.cash = (club.cash || 0) + Math.round(cash * .6); if (ec) ec.treas += cash - Math.round(cash * .6); } else if (ec) ec.treas += cash;
+  host.food += food; host.tickets = (host.tickets || 0) + cash;
+  if (paid.length && (cash || food >= 1)) notify(`Taquilla ${what === 'Juegos' ? 'de los Juegos' : 'del partido'} en ${host.name}: ${paid.length} entradas${price ? ` a ${price} ${host.coin} (${cash} ${host.coin})` : ', pagadas con comida'}${list.length > paid.length ? `; ${list.length - paid.length} se quedan fuera sin dinero` : ''}`, { x:host.fx * T, y:host.fy * T });
+  return paid;
 }
 // ---- Ánimo de la nación con los resultados: ganar alegra a todo el país unos días; perder, lo contrario ----
 function sportResult(g, delta, why){
@@ -253,7 +270,7 @@ function sportsTab(g){
   let club = '';
   if (C) {
     const row = (p, role) => { const u = byPid(p); return u ? `<div class="kv"><span>${role}</span><b>${esc(u.name)} ${role !== 'Entrenador' ? bar(u.fit, '#58a842') : ''}</b></div>` : ''; };
-    club = `<h4>Club de fútbol</h4><div class="club"><img src="${crestUrl(C)}" alt="Escudo"><div><b>${esc(C.name)}</b><div class="muted">fundado el día ${C.founded} · ${C.w} victorias, ${C.d} empates, ${C.l} derrotas · goles ${C.gf}–${C.ga}</div></div></div>
+    club = `<h4>Club de fútbol</h4><div class="club"><img src="${crestUrl(C)}" alt="Escudo"><div><b>${esc(C.name)}</b><div class="muted">fundado el día ${C.founded} · ${C.w} victorias, ${C.d} empates, ${C.l} derrotas · goles ${C.gf}–${C.ga}${g.coin ? ` · caja ${Math.round(C.cash || 0)} ${esc(g.coin)} · entrada ${ticketPrice(g)} ${esc(g.coin)}` : ''}</div></div></div>
       <div class="sec">${C.players.map(p => row(p, 'Titular')).join('')}${row(C.bench, 'Banquillo')}${row(C.coach, 'Entrenador')}</div>
       ${C.res.length ? `<div class="muted" style="font-size:12.5px;margin-top:6px">${C.res.slice().reverse().map(r => `día ${r.d}: ${esc(r.txt)}`).join('<br>')}</div>` : '<div class="muted" style="font-size:12.5px;margin-top:6px">Aún no ha jugado ningún partido</div>'}`;
   } else if (S.futbol) club = '<h4>Club de fútbol</h4><div class="muted">Se fundará cuando haya 12 habitantes</div>';
