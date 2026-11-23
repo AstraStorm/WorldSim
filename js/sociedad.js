@@ -482,6 +482,12 @@ function paintBridges(part){
       const px = (i % W) * T, py = ((i / W) | 0) * T;
       if (px + T < x0 - 4 || px > x1 + 4 || py + T < y0 - 4 || py > y1 + 4) return;
       const a0 = k === 0 ? -2 : 0, a1 = k === n - 1 ? 2 : 0; // los extremos se apoyan en la orilla
+      if (ART.ready && artPattern(b.h ? 'tex:puente_h' : 'tex:puente_v')) { // el dibujo: tablero con barandillas
+        vctx.fillStyle = 'rgba(0,0,0,.25)';
+        if (b.h) { vctx.fillRect(px + a0, py + T + 2, T - a0 + a1, 2); artFill(vctx, 'tex:puente_h', px + a0, py - 2, T - a0 + a1, 9, 0, py - 2); }
+        else { vctx.fillRect(px + T + 2, py + a0, 2, T - a0 + a1); artFill(vctx, 'tex:puente_v', px - 2, py + a0, 9, T - a0 + a1, px - 2, 0); }
+        return;
+      }
       if (b.h) {
         vctx.fillStyle = 'rgba(0,0,0,.25)'; vctx.fillRect(px + a0, py + T + 2, T - a0 + a1, 2);
         vctx.fillStyle = '#9a6a3e'; vctx.fillRect(px + a0, py - 2, T - a0 + a1, T + 4);
@@ -501,6 +507,7 @@ function paintBridges(part){
     const px = (i % W) * T, py = ((i / W) | 0) * T;
     if (px + T < x0 || px > x1 || py + T < y0 || py > y1) continue;
     vctx.fillStyle = 'rgba(0,0,0,.25)'; vctx.fillRect(px + 1, py + 1, T, T);          // sombra en el agua
+    if (ART.ready && (b.h ? artFill(vctx, 'tex:puente_h5', px, py, T, T, 0, py) : artFill(vctx, 'tex:puente_v5', px, py, T, T, px, 0))) continue; // el dibujo
     vctx.fillStyle = '#9a6a3e'; vctx.fillRect(px, py, T, T);                            // tablones
     vctx.fillStyle = '#7a5030';
     if (b.h) { vctx.fillRect(px + 1, py, 1, T); vctx.fillRect(px + 3, py, 1, T); } else { vctx.fillRect(px, py + 1, T, 1); vctx.fillRect(px, py + 3, T, 1); }
@@ -838,6 +845,15 @@ function drawWalls(){
     const px = (i % W) * T, py = ((i / W) | 0) * T;
     if (px + T < x0 || px > x1 || py + T < y0 - 8 || py > y1) continue;
     const vert = (wallSet.has(i - W) || wallSet.has(i + W) || gateSet.has(i - W) || gateSet.has(i + W)) && !wallSet.has(i - 1) && !wallSet.has(i + 1);
+    if (ART.ready) { // el dibujo: tramo horizontal o vertical, de piedra o de madera
+      const stn = wallStone.has(i), k = stn ? (vert ? 'tex:piedra_v' : 'tex:piedra_h') : (vert ? 'tex:empalizada_v' : 'tex:empalizada_h'), p = artPattern(k);
+      if (p) {
+        vctx.fillStyle = 'rgba(0,0,0,.25)'; vctx.fillRect(px - (vert ? 1 : 0), py + T - 1, T + (vert ? 2 : 0), 2);
+        if (vert) { const w = p.w, top = wallSet.has(i - W) || gateSet.has(i - W) ? py : py - 4; artFill(vctx, k, px + (T >> 1) - (w >> 1), top, w, py + T - top, px + (T >> 1) - (w >> 1), 0); }
+        else artFill(vctx, k, px, py + T - p.h, T, p.h, 0, py + T - p.h);
+        continue;
+      }
+    }
     if (vert && !wallStone.has(i)) { // tramo que va de arriba abajo: se ve de lado, más ancho (dos filas de estacas y el adarve)
       vctx.fillStyle = 'rgba(0,0,0,.25)'; vctx.fillRect(px - 1, py + T - 1, T + 3, 2);
       for (let k = -1; k <= T; k++) {
@@ -865,8 +881,10 @@ function drawWalls(){
   for (const i of gateSet) { // puerta: dos postes más altos a los lados
     const px = (i % W) * T, py = ((i / W) | 0) * T;
     if (px + T < x0 || px > x1 || py + T < y0 - 8 || py > y1) continue;
-    vctx.fillStyle = '#5a3a20'; vctx.fillRect(px, py - 5, 1, T + 5); vctx.fillRect(px + T - 1, py - 5, 1, T + 5); vctx.fillRect(px, py - 5, T, 1);
-    const go = villageById(gateOwner.get(i)); if (go && hasLaw(go, 'fronteras_cerradas')) { vctx.fillStyle = '#6a4426'; vctx.fillRect(px + 1, py - 2, T - 2, 4); vctx.fillStyle = '#3a2614'; vctx.fillRect(px + 1, py, T - 2, 1); } // frontera cerrada: puerta atrancada
+    const go = villageById(gateOwner.get(i)), shut = go && hasLaw(go, 'fronteras_cerradas'), stn = [i - 1, i + 1, i - W, i + W].some(j => wallStone.has(j));
+    const gs = artFrame(`gate:${stn ? 'piedra' : 'madera'}${shut ? '' : '_abierta'}`);
+    if (gs) { vctx.drawImage(gs, px + (T >> 1) - (gs.width >> 1), py + T - gs.height); continue; } // el dibujo: cerrada si la frontera está cerrada
+    vctx.fillStyle = '#5a3a20'; vctx.fillRect(px, py - 5, 1, T + 5); vctx.fillRect(px + T - 1, py - 5, 1, T + 5); vctx.fillRect(px, py - 5, T, 1); if (go && hasLaw(go, 'fronteras_cerradas')) { vctx.fillStyle = '#6a4426'; vctx.fillRect(px + 1, py - 2, T - 2, 4); vctx.fillStyle = '#3a2614'; vctx.fillRect(px + 1, py, T - 2, 1); } // frontera cerrada: puerta atrancada
   }
 }
 // ---- Religión: cada aldea venera a su dios; las desgracias se las atribuyen a algo y actúan en consecuencia ----
@@ -3067,8 +3085,9 @@ function drawFarmTiles(x0, y0, x1, y1){
   for (const [i, f] of farmMap) {
     const tx = i % W, ty = (i / W) | 0, px = tx * T, py = ty * T;
     if (px + T < x0 || px > x1 || py + T < y0 || py > y1) continue;
-    const st = f.st;
-    if (st !== 'pradera') {
+    const st = f.st, tk = st !== 'pradera' && ART.ready && fieldTex(f);
+    if (tk && artFill(vctx, tk, px, py, T, T)) { /* dibujado: tierra y cultivo de la textura */ }
+    else if (st !== 'pradera') {
       vctx.fillStyle = '#6e4a2c'; vctx.fillRect(px, py, T, T);                                    // tierra arada
       vctx.fillStyle = '#58391f'; for (let r = 1; r < T; r += 2) vctx.fillRect(px, py + r, T, 1);  // surcos
     }
@@ -3079,7 +3098,7 @@ function drawFarmTiles(x0, y0, x1, y1){
     if (!same(i + W)) vctx.fillRect(px, py + T - 1, T, 1);
     if (tx === 0 || !same(i - 1)) vctx.fillRect(px, py, 1, T);
     if (tx === W - 1 || !same(i + 1)) vctx.fillRect(px + T - 1, py, 1, T);
-    if (st === 'pradera' || st === 'arada') continue;
+    if (st === 'pradera' || st === 'arada' || tk) continue;
     const h = st === 'sembrado' ? 1 : st === 'creciendo' ? 1 + Math.round(f.g * 4) : st === 'madura' ? 5 : 1;
     const C = CROPS[f.crop || 'trigo'], col = st === 'madura' ? C.ripe : st === 'muerta' ? ['#7a6a4a', '#5a4c36'] : C.leaf;
     for (let k = 0; k < T; k += 2) for (let r = 0; r < 2; r++) {

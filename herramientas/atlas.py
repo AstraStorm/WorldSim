@@ -123,6 +123,30 @@ def frames(name, cols, rows, w, skip_small=True):
 for k, f in enumerate(frames('barco.png', 4, 2, 30)): add(f'boat:{k}', f)
 for k, f in enumerate(frames('catapulta.png', 4, 2, 18)): add(f'catapult:{k}', f)
 
+# ---- Texturas que se repiten (campos, murallas, puentes): tamaño exacto, sin conservar proporción ----
+def tex(name, box, w, h, opaque=False, colors=16):
+    x0, y0, x1, y1 = box; img = cut(name, [((x0 + x1) // 2, (y0 + y1) // 2)], box=box)
+    small = img.convert('RGBa').resize((w, h), Image.BOX).convert('RGBA'); arr = np.array(small)
+    alpha = np.ones(arr.shape[:2], bool) if opaque else arr[..., 3] >= 110
+    rgb = Image.fromarray(arr[..., :3]).quantize(colors=colors, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE).convert('RGB')
+    out = np.zeros((h, w, 4), np.uint8); out[..., :3] = np.array(rgb); out[..., 3] = alpha * 255
+    return Image.fromarray(out, 'RGBA')
+H7B = 'hoja_07B.png'
+for k, (x, y) in {'arada':(131, 133), 'sembrado':(430, 134), 'brotes':(731, 134), 'trigo':(1031, 133), 'maiz':(131, 430), 'mijo':(430, 431), 'muerta':(731, 431), 'huerta':(1031, 432)}.items():
+    add('tex:' + k, tex(H7B, (x + 10, y + 10, x + 84, y + 84), 10, 10, True, 12))
+# Murallas: tramos horizontales (se repiten a lo ancho) y verticales (a lo alto)
+add('tex:empalizada_h', tex(H7, (695, 439, 786, 538), 9, 10)) # tres troncos afilados (se repiten)
+add('tex:empalizada_v', tex(H7, (1072, 391, 1120, 564), 6, 18))
+add('tex:piedra_h', tex(H7, (380, 752, 563, 833), 15, 9))
+add('tex:piedra_v', tex(H7, (750, 704, 819, 857), 7, 15))
+# Puentes: tablero con barandillas (sin los postes de los extremos)
+add('tex:puente_h', tex(H7, (398, 141, 545, 252), 10, 9)); add('tex:puente_v', tex(H7, (733, 102, 835, 247), 9, 10))
+add('tex:puente_h5', tex(H7, (398, 141, 545, 252), 10, 5)); add('tex:puente_v5', tex(H7, (733, 102, 835, 247), 5, 10))
+# Puertas de la muralla: cerradas y abiertas (de piedra y de madera)
+HP = 'puertas.png'
+add('gate:piedra', shrink(cut(HP, [(220, 250)]), 14, 14)); add('gate:piedra_abierta', shrink(cut(HP, [(1550, 250)]), 14, 14))
+add('gate:madera', shrink(cut(HP, [(220, 690)]), 14, 14)); add('gate:madera_abierta', shrink(cut(HP, [(1020, 690), (1195, 690)]), 14, 14))  # (entreabierta: se ven las hojas)
+
 # ---- Atlas: en filas, con 1 píxel de separación ----
 keys = list(S); W = 512; x = y = rowh = 0; pos = {}
 for k in sorted(keys, key=lambda k: -S[k]['img'].height):

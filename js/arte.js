@@ -9,7 +9,7 @@ const ART = { img:null, ready:false, cache:new Map() };
   if (typeof ART_MAP === 'undefined') return;
   const im = new Image();
   im.onload = () => { ART.img = im; ART.ready = true; ART.cache.clear(); if (typeof world !== 'undefined' && world && typeof composeRegion === 'function') composeRegion(0, 0, W - 1, H - 1); };
-  im.src = 'arte/atlas.png?v=202611230227';
+  im.src = 'arte/atlas.png?v=202611230233';
 })();
 const ART_DECID = new Set(['oak:forest', 'birch:birch', 'willow:swamp', 'willow:moss', 'acacia:dry', 'acacia:sunset', 'oak:cherry', 'pine:autumn']);
 const ART_EVER = new Set(['pine:pine', 'pine:snow', 'pine:blue', 'ancient:elder', 'ancient:mangrove', 'ancient:life', 'ancient:baobab']);
@@ -63,6 +63,21 @@ function artSprite(o){
 }
 // Un fotograma suelto (barca, catapulta, tienda…), ya recortado
 const artFrame = k => { if (!ART.ready || !ART_MAP[k]) return null; let c = ART.cache.get('f|' + k); if (!c) { c = artPiece(k); ART.cache.set('f|' + k, c); } return c; };
+// Texturas que se repiten (campos, murallas, puentes), alineadas con el mapa para que encajen casilla con casilla
+const artPatterns = new Map();
+function artPattern(k){
+  if (!ART.ready || !ART_MAP[k]) return null;
+  let p = artPatterns.get(k); if (p) return p;
+  const c = artPiece(k); p = c.getContext('2d').createPattern(c, 'repeat'); p.w = c.width; p.h = c.height; artPatterns.set(k, p); return p;
+}
+// Rellena un rectángulo con la textura; ox/oy: dónde empieza la textura (si no, alineada con el mapa)
+function artFill(ctx, k, x, y, w, h, ox = 0, oy = 0){
+  const p = artPattern(k); if (!p) return false;
+  p.setTransform(new DOMMatrix([1, 0, 0, 1, ox, oy])); ctx.fillStyle = p; ctx.fillRect(x, y, w, h); return true;
+}
+const FIELD_TEX = { arada:'tex:arada', sembrado:'tex:sembrado', muerta:'tex:muerta' };
+const CROP_TEX = { trigo:'tex:trigo', maiz:'tex:maiz', mijo:'tex:mijo', calabaza:'tex:huerta', col:'tex:huerta' };
+const fieldTex = f => f.st === 'madura' ? CROP_TEX[f.crop || 'trigo'] || 'tex:trigo' : f.st === 'creciendo' ? (f.g > .55 ? CROP_TEX[f.crop || 'trigo'] || 'tex:trigo' : 'tex:brotes') : FIELD_TEX[f.st];
 // Aspas de los molinos: al final de todo, para que nada (ni la gente que pasa por detrás) las tape
 let millSails = [];
 function drawMillSails(){
