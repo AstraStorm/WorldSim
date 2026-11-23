@@ -19,6 +19,12 @@ const INSTS = {
     want:g => PARLIAMENT.includes(regimeOf(g)) && nationOf(g) === g && popOf(g) >= 12, w:g => 6 },
   academia: { key:'academy:academia', field:'academy', wood:10, stone:15, flag:[.76, 0], t:14, name:'una academia de la lengua', why:'decidirá cómo se habla y se escribe',
     want:g => (hasLaw(g, 'reforma_lengua') || hasLaw(g, 'pureza_lengua')) && (g.know || {}).escritura && popOf(g) >= 12, w:g => 5 },
+  universidad: { key:'university:universidad', field:'university', wood:15, stone:25, gold:2, t:16, name:'una universidad', why:'sus sabios investigarán y harán descubrimientos', flag:[.5, 0],
+    want:g => (g.know || {}).escritura && hasSchool(g) && popOf(g) >= 16, w:g => 5 },
+  consejo: { key:'council:consejo', field:'councilHall', wood:15, stone:30, gold:3, t:18, name:'el palacio del Consejo de las Naciones', why:'allí se reunirán los delegados de todo el mundo', flag:[.5, 0],
+    want:g => !!(world.council && world.council.seat === g.id), w:g => 7 },
+  espias: { key:'spy:espias', field:'spyHouse', wood:10, stone:8, t:10, name:'una casa discreta (de espías, aunque nadie lo dice)', why:'sus espías saldrán más a menudo y con más éxito',
+    want:g => nationOf(g) === g && (g.know || {}).escritura && popOf(g) >= 14 && hasRival(g), w:g => 3 },
 };
 const hasInst = (g, k) => { const f = INSTS[k].field; return g[f] != null && !!world.objs[g[f]] && world.objs[g[f]].key === INSTS[k].key; };
 const hasPress = g => hasInst(g, 'imprenta');

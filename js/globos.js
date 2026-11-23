@@ -197,7 +197,7 @@ function stepBalloon(g, b, dt){
   } else if (b.state === 'vuelo') {
     // Se dirige hacia su destino, pero el viento lo arrastra: va algo de lado y con cierta inercia
     const home = b.phase === 'vuelta', tx = home ? px : m.tx, ty = home ? py : m.ty, d = Math.hypot(tx - b.x, ty - b.y) || 1;
-    const dvx = (tx - b.x) / d * 13 + w[0] * .7, dvy = (ty - b.y) / d * 13 + w[1] * .7;
+    const spd = knowsSci(g, 'aeronautica') ? 18 : 13, dvx = (tx - b.x) / d * spd + w[0] * .7, dvy = (ty - b.y) / d * spd + w[1] * .7; // aeronáutica (ciencia.js)
     b.vx += (dvx - b.vx) * Math.min(1, dt * .8); b.vy += (dvy - b.vy) * Math.min(1, dt * .8);
     b.x += b.vx * dt; b.y += b.vy * dt; b.alt = BAL_CRUISE + Math.sin(yearT * .7) * 2;
     if ((b.burnT = (b.burnT || 0) - dt) <= 0) b.burnT = 2.5 + Math.random() * 2; burn = b.burnT > 2.2; // fogonazos de vez en cuando para no perder altura
@@ -264,7 +264,7 @@ function shootAtBalloon(g, b, dt){
     const hit = Math.random() < .3 - b.alt / 300, tgt = { x:b.x, y:b.y - b.alt - 10, dead:false };
     u.dir = b.x < u.x ? -1 : 1; arrows.push({ x0:u.x, y0:u.y - 5, a:tgt, v:u, t:0, dur:.4, hit, vis:true, bolt:u.weapon === 'ballesta' }); snd('arrow', u.x, u.y);
     if (!hit) continue;
-    b.hp = (b.hp ?? 1) - (u.weapon === 'ballesta' ? .14 : .07);
+    b.hp = (b.hp ?? 1) - (u.weapon === 'ballesta' ? .14 : .07) * (knowsSci(g, 'aeronautica') ? .65 : 1);
     if (b.hp <= 0 && b.state !== 'cayendo') {
       b.state = 'cayendo'; b.vz = 0; b.rocks = 0;
       notify(`¡Los arqueros de ${villageById(u.vid).name} derriban a flechazos el globo de ${g.name}!`, { x:b.x, y:b.y });

@@ -22,7 +22,7 @@ function addFiesta(g, name){
 }
 // Oficios: cuáles puede tener cada pueblo y reparto poco a poco
 function oficioOk(g, o){
-  return !((o === 'cartógrafo' && !hasPaper(g)) || (o === 'soldado' && !hasBarracks(g)) || (o === 'ingeniero' && !hasBarracks(g) && !hasForge(g)) || (o === 'mercader' && g.market == null)
+  return !((o === 'cartógrafo' && !hasPaper(g)) || (o === 'sabio' && !hasInst(g, 'universidad')) || (o === 'soldado' && !hasBarracks(g)) || (o === 'ingeniero' && !hasBarracks(g) && !hasForge(g)) || (o === 'mercader' && g.market == null)
     || (o === 'bombero' && !(g.know || {}).bomberos) || (o === 'maestro' && !hasSchool(g)) || (o === 'curandero' && !hasHosp(g) && popOf(g) < 15));
 }
 // Falta de maestros, médicos (curanderos) o bomberos: si hay para qué y son pocos, la gente se queja
@@ -54,7 +54,7 @@ function workTick(g, dt, people){
   if (need && (!over || over === need)) { const common = [...new Set(adults.map(v => v.oficio))].filter(o => o !== need && o !== 'soldado').sort((a, b) => cnt(b) - cnt(a))[0]; if (common && cnt(common) >= 2) over = common; } // el que más abunda cede a alguien
   if (!need || !over || need === over || ((g.staffKeep || {})[over] || 0) > yearT) return; // los que se prometieron tras una protesta, se quedan
   const cands = adults.filter(v => v.oficio === over && !(v.task && ['asalto', 'guardia'].includes(v.task.k)));
-  const who = cands.sort((a, b) => ((['cartógrafo', 'maestro', 'curandero', 'ingeniero'].includes(need) ? (b.edu || 0) - (a.edu || 0) : 0)))[0]; if (!who) return; // los que fueron a la escuela, a los oficios de saber
+  const who = cands.sort((a, b) => ((['cartógrafo', 'maestro', 'curandero', 'ingeniero', 'sabio'].includes(need) ? (b.edu || 0) - (a.edu || 0) : 0)))[0]; if (!who) return; // los que fueron a la escuela, a los oficios de saber
   const first = cnt(need) === 0; who.oficio = need;
   if (first && !(g.newJobs ||= {})[need]) { g.newJobs[need] = true; notify(`En ${g.name}, ${who.name} deja de ser ${ofW(over, who)} y se hace ${ofW(need, who)}: es ${who.sex === 'm' ? 'la primera' : 'el primero'} del pueblo`, { x:who.x, y:who.y }); }
 }

@@ -31,6 +31,9 @@ También se puede abrir `index.html` directamente en el navegador (con la carpet
 - Justicia: con escritura y ayuntamiento hay tribunal y cárcel. Se juzga la corrupción, a los golpistas de un golpe fallido, los robos, las huelgas ilegales y a los periodistas que cierra el gobierno; los jueces son más o menos independientes según el régimen (en una dictadura no juzgan al líder y condenan a los opositores). Al caer una dictadura, amnistía.
 - Sindicatos y huelgas: los trabajadores se organizan y, si hay quejas por sueldos o jornada, un oficio entero se pone en huelga (deja de entrar ese recurso) con piquete en la plaza. Con derecho a huelga se negocia antes; si están prohibidas, se rompen y los cabecillas van a juicio.
 - Minas: quien sabe minería abre una mina donde más vetas hay cerca del pueblo; da hierro, oro o gemas (según las vetas de alrededor) en mucha cantidad y su reserva es casi infinita. En la cantera, entre la piedra, a veces sale algo de mineral.
+- Ciencia: con escuela y escritura se levanta la universidad, donde los sabios investigan. Cada nación descubre, por orden, la medicina, la rotación de cultivos, la metalurgia, la astronomía, la ciencia económica, la aeronáutica, la pólvora y las vacunas, y cada descubrimiento se nota en el juego. Se contagian al comerciar y la crónica dice quién fue el primero del mundo.
+- Consejo de las Naciones: cuando hay naciones que saben escribir, la más poblada en paz lo funda y levanta su palacio. Vota altos el fuego en las guerras y sanciones contra quien persigue a su gente (con inflación y peores relaciones). Se debate en la lengua común: quien no la habla, no se entera.
+- Espionaje: las naciones con rivales mandan espías a robar mapas o descubrimientos, sabotear, sembrar discordia o preparar golpes; si los pillan, juicio y crisis diplomática.
 - Edificios de las instituciones: tribunal (sin él no hay juicios), cárcel, imprenta (sin ella no hay periódicos), casa del sindicato (negocia mejor), parlamento (en los regímenes parlamentarios) y academia de la lengua (con ley de reforma o de pureza de la lengua). Piden madera y piedra, y la cárcel e imprenta también hierro y el parlamento oro; si les falta algo, más gente se pone a talar, a la cantera o a la mina. Los del gobierno llevan la bandera de su nación en lo alto.
 - Prensa: periódicos afines a cada partido con su titular del día (contado a su manera), que van moviendo las ideas de sus lectores y destapan escándalos. Con censura solo queda el oficial.
 - Guerra con formaciones, caballería, abanderados, catapultas, flotas y murallas dobles.
@@ -71,6 +74,9 @@ Sin dependencias ni compilación: cada archivo es un script normal y se cargan e
 | `js/monedas.js` | Tipos de moneda (conchas, sal, cobre, plata, oro, billetes), su nombre en la lengua del pueblo y cómo mejoran |
 | `js/minas.js` | Minas: dónde se abren, qué sacan y su reserva; el mineral que sale en la cantera |
 | `js/instituciones.js` | Edificios de tribunal, cárcel, imprenta, casa del sindicato, parlamento y academia: cuándo se levantan y qué cuestan |
+| `js/ciencia.js` | Universidad, sabios, descubrimientos y sus efectos |
+| `js/consejo.js` | Consejo de las Naciones: sede, sesiones, altos el fuego y sanciones |
+| `js/espionaje.js` | Espías: misiones, éxitos y capturas |
 | `js/justicia.js` | Tribunal, juicios, cárcel, presos políticos y amnistías |
 | `js/sindicatos.js` | Sindicatos, huelgas por oficios, piquetes y negociación |
 | `js/prensa.js` | Periódicos, titulares, influencia en las ideas, escándalos y censura |

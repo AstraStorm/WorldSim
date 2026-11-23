@@ -15,7 +15,7 @@ const COIN_TYPES = {
   billetes:{ txt:'billetes', long:'billetes de papel', infl:1.5, rank:4 },
 };
 const coinType = g => COIN_TYPES[g.coinType] ? g.coinType : 'cobre';
-const coinInfl = g => COIN_TYPES[coinType(g)].infl;
+const coinInfl = g => COIN_TYPES[coinType(g)].infl * (knowsSci(g, 'economia') ? .85 : 1); // ciencia económica (ciencia.js)
 const coinTypeTxt = g => COIN_TYPES[coinType(g)].long;
 // Con qué empiezan: lo que hay a su alrededor
 function firstCoinType(g){

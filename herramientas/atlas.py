@@ -190,6 +190,11 @@ for f in glob.glob(os.path.join(SRC, '*mina*.png')):
     name = os.path.basename(f); _, _, parts = sheet(name)
     add('mine:mina', shrink(cut(name, [((p['x0'] + p['x1']) // 2, (p['y0'] + p['y1']) // 2) for p in parts if p['area'] > 300]), 52, 64)); break
 
+# ---- Universidad, palacio del Consejo y casa de espías (hoja 10, si ya está) ----
+if os.path.exists(os.path.join(SRC, 'hoja_10_ciencia.png')):
+    for key, pt, w in [('university:universidad', (256, 300), 50), ('council:consejo', (768, 300), 62), ('spy:espias', (1280, 320), 30)]:
+        add(key, shrink(cut('hoja_10_ciencia.png', [pt]), w))
+
 # ---- Atlas: en filas, con 1 píxel de separación ----
 keys = list(S); W = 512; x = y = rowh = 0; pos = {}
 for k in sorted(keys, key=lambda k: -S[k]['img'].height):

@@ -221,7 +221,7 @@ function choirTick(style, ch, now){
 // ---- Lo que hacen los aldeanos cerca: cada uno con su ritmo ----
 const ACT_SND = {}, ACT_EVERY = { chop:.75, hammer:.45, pick:.6, anvil:.9, dig:1.5, splash:3.5, coin:3, drum:.9 };
 for (const k of ['talar']) ACT_SND[k] = 'chop';
-for (const k of ['mina', 'tribunal', 'carcel', 'imprenta', 'sindicato', 'parlamento', 'academia', 'construir', 'ampliar', 'reparar', 'muralla', 'puente', 'muelle', 'torre', 'templo', 'catedral', 'maravilla', 'monumento', 'santuario', 'altar', 'almacen', 'molino', 'pozo', 'mercado', 'escuela', 'hospital', 'banco', 'lonja', 'cuartel', 'coliseo', 'teatro', 'taberna', 'ayuntamiento', 'cementerio', 'barca', 'carro', 'cercar', 'antorcha']) ACT_SND[k] = 'hammer';
+for (const k of ['universidad', 'consejo', 'espias', 'mina', 'tribunal', 'carcel', 'imprenta', 'sindicato', 'parlamento', 'academia', 'construir', 'ampliar', 'reparar', 'muralla', 'puente', 'muelle', 'torre', 'templo', 'catedral', 'maravilla', 'monumento', 'santuario', 'altar', 'almacen', 'molino', 'pozo', 'mercado', 'escuela', 'hospital', 'banco', 'lonja', 'cuartel', 'coliseo', 'teatro', 'taberna', 'ayuntamiento', 'cementerio', 'barca', 'carro', 'cercar', 'antorcha']) ACT_SND[k] = 'hammer';
 for (const k of ['picar', 'minar', 'cantear', 'extraer']) ACT_SND[k] = 'pick';
 for (const k of ['herreria', 'arma']) ACT_SND[k] = 'anvil';
 for (const k of ['arar', 'sembrar', 'cosechar', 'plantar', 'arboleda']) ACT_SND[k] = 'dig';

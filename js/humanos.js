@@ -333,6 +333,7 @@ function chooseJob(v, g){
   balloonJobs(v, g, add); // tela, manga de viento, globo, cesta y vuelos (globos.js)
   institutionJobs(v, g, add); // tribunal, cárcel, imprenta, sindicato, parlamento y academia (instituciones.js)
   mineJobs(v, g, add); // abrir la mina y trabajar en ella (minas.js)
+  scienceJobs(v, g, add); // investigar en la universidad (ciencia.js)
   add('carro', know.montar && houses >= 3 && (g.carts || 0) < 1 + Math.floor(pop / 10) && spare >= 10 && !busyWith(g, 'carro') ? 2.5 : 0);
   add('ayuntamiento', g.hall == null && pop >= 8 && houses >= 2 && ((g.wood >= 10 && g.stone >= 6) || g.wood >= 18) && !busyWith(g, 'ayuntamiento') ? 12 : 0);
   add('almacen', Math.max(g.food, g.wood, g.stone) > capOf(g) * .8 && g.wood >= 8 && !busyWith(g, 'almacen') ? 8 : 0);
@@ -387,7 +388,8 @@ function setupTask(v, g, job){
   const [fx, fy] = fireXY(g);
   switch (job) {
     case 'tejer': case 'manga': case 'globo': case 'cesta': case 'volar': return balloonTarget(v, g, job);
-    case 'tribunal': case 'carcel': case 'imprenta': case 'sindicato': case 'parlamento': case 'academia': return institutionTarget(v, g, job);
+    case 'tribunal': case 'carcel': case 'imprenta': case 'sindicato': case 'parlamento': case 'academia': case 'universidad': case 'consejo': case 'espias': return institutionTarget(v, g, job);
+    case 'investigar': return scienceTarget(v, g, job);
     case 'mina': case 'extraer': return mineTarget(v, g, job);
     case 'talar': {
       const i = objNear(g, (g.treesNear ?? 99) < 12 ? 60 : 30, o => OBJ[o.key][1] === 'tree' && o.st !== 'b' && o.st !== 'j', v); const p = i != null && standBy(i); // sin árboles cerca, van más lejos
@@ -688,7 +690,8 @@ function runTask(v, g, dt){
   switch (t.k) {
     case 'tejer': case 'manga': case 'globo': case 'cesta': case 'volar': balloonArrive(v, g, t); break;
     case 'embarcar': balloonArrive(v, g, t); return;
-    case 'tribunal': case 'carcel': case 'imprenta': case 'sindicato': case 'parlamento': case 'academia': institutionArrive(v, g, t); break;
+    case 'tribunal': case 'carcel': case 'imprenta': case 'sindicato': case 'parlamento': case 'academia': case 'universidad': case 'consejo': case 'espias': institutionArrive(v, g, t); break;
+    case 'investigar': scienceArrive(v, g, t); break;
     case 'mina': case 'extraer': mineArrive(v, g, t); break;
     case 'dormir': dismount(v); v.sleep = true; v.home = t.h ?? null; v.task = null; return;
     case 'beber': v.actT = 2; v.onDone = () => { v.water = 1; v.hot = Math.max(0, (v.hot || 0) - .6);

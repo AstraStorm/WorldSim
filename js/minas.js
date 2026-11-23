@@ -58,7 +58,7 @@ function mineArrive(v, g, t){
     const m = g.mineMix || { hierro:1, oro:0, gemas:0 }, tot = m.hierro * 1 + m.oro * .8 + m.gemas * .5 || 1;
     let r = Math.random() * tot, kind = 'hierro';
     if ((r -= m.hierro) >= 0) kind = (r -= m.oro * .8) < 0 ? 'oro' : 'gemas';
-    const n = kind === 'hierro' ? 4 : kind === 'oro' ? 2 : 1;
+    const n = Math.round((kind === 'hierro' ? 4 : kind === 'oro' ? 2 : 1) * (knowsSci(g, 'metalurgia') ? 1.5 : 1)); // metalurgia (ciencia.js)
     v.carry = { k:kind, n }; g.mineLeft = (g.mineLeft ?? MINE_RESERVE) - n;
     if (g.mineLeft <= 0) notify(`La mina de ${g.name} se ha agotado después de tantos años`, { x:(g.mine % W) * T, y:((g.mine / W) | 0) * T });
   }; return true; }
