@@ -6,7 +6,7 @@ const SND = (() => {
   const vol = { gen:.8, mus:.4, amb:.8, sfx:.8 };
   try { Object.assign(vol, JSON.parse(localStorage.getItem('forja-vol') || '{}')); } catch (err) {}
   let on = true; try { on = localStorage.getItem('forja-snd') !== '0'; } catch (err) {}
-  return { on, vol, ctx:null, last:{}, loops:{}, choirs:{}, busy:0, scanT:0, scene:null, vt:new WeakMap(), song:{ next:0, bar:0 }, ev:{} };
+  return { on, vol, ctx:null, last:{}, loops:{}, choirs:{}, busy:0, scanT:0, scene:null, vt:new WeakMap(), talk:new WeakMap(), song:{ next:0, bar:0 }, ev:{} };
 })();
 function onScreen(x, y){ const [x0, y0, x1, y1] = visibleRect(); return x >= x0 - 20 && x <= x1 + 20 && y >= y0 - 20 && y <= y1 + 20; }
 function saveSndVol(){ try { localStorage.setItem('forja-vol', JSON.stringify(SND.vol)); localStorage.setItem('forja-snd', SND.on ? '1' : '0'); } catch (err) {} }
@@ -77,7 +77,7 @@ const SND_PEOPLE = new Set(['build', 'coin', 'cough', 'cheer', 'clash', 'arrow',
 const SND_REACH = { thunder:4, boom:6, rumble:5, bell:1.6, cheer:1.3, clash:1.3, horn:3 };
 const SND_GAP = { clash:.07, arrow:.08, build:.25, coin:.3, cheer:2, bell:1.5, horn:3, thunder:.8, cough:1.2, boom:.3, rumble:2 };
 function snd(kind, x, y, k = 1){
-  if (!SND.on || !SND.ctx || SND.ctx.state !== 'running' || SND.busy > 40) return;
+  if (!SND.on || !SND.ctx || SND.ctx.state !== 'running' || SND.busy > 70) return;
   let g = 1, pan = 0, far = 0;
   if (x != null) {
     const h = heard(x, y, SND_REACH[kind] || 1); g = h.g; pan = h.pan; far = h.d;
@@ -228,6 +228,91 @@ for (const k of ['pescar', 'caña']) ACT_SND[k] = 'splash';
 for (const k of ['vender', 'comerciar']) ACT_SND[k] = 'coin';
 ACT_SND.sacrificio = 'drum';
 const PRAY_TASKS = new Set(['orar', 'ritual', 'ofrenda']);
+// ---- Voces: un oscilador con dos filtros de formante (las vocales) y la altura que sube o baja ----
+// pitch y vow son listas de [segundo, valor]; trem hace temblar el volumen (balido) y vib la altura
+function sVox(dst, at, dur, vol, pitch, vow, o = {}){
+  const c = SND.ctx, t0 = c.currentTime + at, osc = c.createOscillator(), f1 = c.createBiquadFilter(), f2 = c.createBiquadFilter(), body = c.createBiquadFilter(), g = c.createGain();
+  osc.type = o.type || 'sawtooth'; f1.type = f2.type = 'bandpass'; f1.Q.value = o.q || 5; f2.Q.value = (o.q || 5) * 1.4; body.type = 'lowpass'; body.frequency.value = o.body || 500;
+  osc.frequency.setValueAtTime(pitch[0][1], t0); for (const [t, f] of pitch.slice(1)) osc.frequency.linearRampToValueAtTime(f, t0 + t);
+  const F = v => typeof v === 'string' ? VOWELS[v] : v, v0 = F(vow[0][1]);
+  f1.frequency.setValueAtTime(v0[0], t0); f2.frequency.setValueAtTime(v0[1], t0);
+  for (const [t, v] of vow.slice(1)) { const q = F(v); f1.frequency.linearRampToValueAtTime(q[0], t0 + t); f2.frequency.linearRampToValueAtTime(q[1], t0 + t); }
+  const atk = o.atk || .015, base = o.trem ? vol * .55 : vol;
+  g.gain.setValueAtTime(.0001, t0); g.gain.linearRampToValueAtTime(base, t0 + atk); g.gain.setValueAtTime(base, t0 + Math.max(atk, dur - (o.rel || .05))); g.gain.linearRampToValueAtTime(.0001, t0 + dur);
+  const stops = [osc];
+  if (o.trem) { const l = c.createOscillator(), lg = c.createGain(); l.frequency.value = o.trem; lg.gain.value = vol * .45; l.connect(lg); lg.connect(g.gain); stops.push(l); }
+  if (o.vib) { const l = c.createOscillator(), lg = c.createGain(); l.frequency.value = o.vibF || 5.5; lg.gain.value = o.vib; l.connect(lg); lg.connect(osc.detune); stops.push(l); }
+  const bg = c.createGain(); bg.gain.value = o.bodyV ?? .25;
+  osc.connect(f1); osc.connect(f2); osc.connect(body); body.connect(bg); f1.connect(g); f2.connect(g); bg.connect(g); g.connect(dst);
+  for (const n of stops) { n.start(t0); n.stop(t0 + dur + .05); }
+  SND.busy++; osc.onended = () => SND.busy--;
+}
+// Balbuceo: sílabas inventadas con su entonación (al final sube si pregunta y baja si afirma); f0 es su voz
+function babble(o, f0, n, kind){
+  const r = Math.random, ask = r() < .3, shout = kind === 'grito', laugh = kind === 'risa';
+  let t = 0;
+  for (let k = 0; k < n; k++) {
+    const last = k === n - 1, dur = laugh ? .1 : shout ? .16 + r() * .12 : .06 + r() * .09;
+    const p = f0 * (laugh ? 1.25 - k * .06 : shout ? 1.3 + r() * .2 : .88 + r() * .3) * (last ? (ask ? 1.25 : .85) : 1);
+    const vw = laugh ? 'a' : 'aeiou'[Math.floor(r() * 5)];
+    if (laugh) sNoise(o, .04, .03, 1500, 1, 'bandpass', t);                                  // la jota de «ja»
+    else if (r() < .6) sNoise(o, .03, shout ? .05 : .025, 2500 + r() * 3000, 1.5, 'bandpass', t); // consonante
+    sVox(o, t + .015, dur, shout ? .1 : .07, [[0, p], [dur, p * (last ? (ask ? 1.15 : .88) : .97 + r() * .08)]], [[0, vw]], { q:6, atk:.012, rel:.03 });
+    t += dur + .015 + (laugh ? .04 : r() < .2 ? .12 : .02);
+  }
+}
+// Quién habla: de charla, de fiesta, en el mercado o en la taberna hablan a menudo; trabajando, de vez en cuando
+const SOCIAL = new Set(['ocio', 'pasear', 'fiesta', 'ir_taberna', 'comerciar', 'vender', 'votar', 'espectador', 'ver_teatro', 'ver_coliseo', 'comer', 'beber', 'clase', 'enseñar', 'curar', 'jugar', 'protesta', 'reprimir', 'mercado']);
+function sndVoices(now){
+  const e = ear(); if (e.near <= 0 || !gameSpeed) return;
+  for (const v of villagers) {
+    if (v.dead || v.away || v.sleep || Math.abs(v.x - e.cx) > e.rad || Math.abs(v.y - e.cy) > e.rad) continue;
+    const k = v.task && v.task.k, social = !k || SOCIAL.has(k), nx = SND.talk.get(v);
+    if (nx == null || now >= nx) SND.talk.set(v, now + (nx == null ? Math.random() * 3 : social ? 3 + Math.random() * 5 : 12 + Math.random() * 16) / Math.min(2, gameSpeed));
+    if (nx == null || now < nx || PRAY_TASKS.has(k)) continue; // la primera vez solo se apunta (para que no hablen todos a la vez)
+    const h = heard(v.x, v.y); if (h.g * e.near < .05) continue;
+    const kid = ageOf(v) < ADULT_H, f0 = (kid ? 290 : v.sex === 'm' ? 200 : 120) * (.9 + ((v.id || 0) % 7) * .03); // cada uno con su voz
+    const kind = k === 'protesta' ? 'grito' : (k === 'fiesta' || k === 'ir_taberna' || k === 'ver_teatro') && Math.random() < .35 ? 'risa' : 'charla';
+    babble(sndOut(SND.sfx, h.g * e.near, h.pan), f0, kind === 'risa' ? 4 + Math.floor(Math.random() * 3) : 2 + Math.floor(Math.random() * 6), kind);
+  }
+}
+// ---- Animales: cada especie con su voz y su ritmo; los lobos aúllan de noche ----
+const ANIM_EVERY = { vaca:22, oveja:16, pollo:7, cerdo:13, caballo:30, perro:16, gato:35, lobo:25, oso:40 };
+function animalCall(sp, o, a){
+  const r = Math.random, kid = a && (yearT - a.born) / YEAR < .5, up = kid ? 1.6 : 1;
+  switch (sp) {
+    case 'vaca': { const f = (100 + r() * 25) * up, d = 1 + r() * .6; sVox(o, 0, d, .09, [[0, f * .9], [.25, f * 1.1], [d, f * .8]], [[0, 'u'], [.3, 'o'], [d, 'u']], { atk:.15, rel:.3, vib:8, body:700, bodyV:.6 }); break; } // muuu
+    case 'oveja': { const f = (330 + r() * 80) * up, d = .55 + r() * .4; sVox(o, 0, d, .07, [[0, f], [d, f * .92]], [[0, 'e'], [d, 'a']], { trem:16 + r() * 6, atk:.04, rel:.15 }); break; } // beee
+    case 'pollo': { // co-co-co; al amanecer, el gallo
+      if (dayT() < .06 && r() < .5) { const f = 520; sVox(o, 0, 1.1, .05, [[0, f], [.15, f * 1.5], [.35, f * 1.4], [.6, f * 1.8], [1.1, f * 1.1]], [[0, 'o'], [.3, 'o'], [.6, 'i'], [1.1, 'o']], { atk:.02, vib:12, vibF:7 }); break; }
+      for (let k = 2 + Math.floor(r() * 4), t = 0; k > 0; k--, t += .12 + r() * .1) sVox(o, t, .07, .04, [[0, 700 * up], [.07, 560 * up]], [[0, 'o']], { atk:.005, rel:.02 });
+      break; }
+    case 'cerdo': for (let k = 1 + Math.floor(r() * 3), t = 0; k > 0; k--, t += .22) { sVox(o, t, .16, .07, [[0, 170 * up], [.16, 120 * up]], [[0, 'o'], [.16, 'u']], { trem:45, q:3, atk:.01 }); sNoise(o, .14, .05, 400, 1, 'bandpass', t, true); } break; // oinc
+    case 'caballo': { // relincho, o un resoplido
+      if (r() < .4) { sNoise(o, .35, .08, 700, .7, 'bandpass', 0, false, .02); break; }
+      sVox(o, 0, 1.2, .06, [[0, 700], [.2, 1100], [.6, 900], [1.2, 380]], [[0, 'i'], [.5, 'e'], [1.2, 'a']], { vib:60, vibF:11, atk:.03, rel:.3 }); break; }
+    case 'perro': { const f = kid ? 700 : 420 + r() * 120, n = a && (a.state === 'atacando' || a.state === 'huyendo') ? 4 : 1 + Math.floor(r() * 3); // guau
+      for (let k = 0, t = 0; k < n; k++, t += .2 + r() * .15) { sVox(o, t, .13, .09, [[0, f], [.05, f * 1.1], [.13, f * .7]], [[0, 'a'], [.13, 'u']], { atk:.005, rel:.04, q:3 }); sNoise(o, .05, .05, 1200, 1, 'bandpass', t); }
+      break; }
+    case 'gato': { const f = (kid ? 900 : 560) + r() * 80, d = .5 + r() * .3; sVox(o, 0, d, .05, [[0, f], [d * .4, f * 1.35], [d, f * .8]], [[0, 'i'], [d * .45, 'a'], [d, 'u']], { atk:.03, rel:.12, q:7 }); break; } // miau
+    case 'lobo': { // de noche aúlla; cazando, gruñe
+      if (a && (a.state === 'cazando' || a.state === 'atacando')) { sVox(o, 0, .8, .07, [[0, 110], [.8, 95]], [[0, 'u']], { trem:30, q:2, body:300, bodyV:.8 }); break; }
+      const f = 380 + r() * 60, d = 2.2 + r() * 1.2; sVox(o, 0, d, .06, [[0, f], [.6, f * 1.6], [d * .8, f * 1.5], [d, f * 1.1]], [[0, 'u'], [.6, 'o'], [d, 'u']], { type:'triangle', atk:.4, rel:.6, vib:18, vibF:5, bodyV:.6 }); break; }
+    case 'oso': sVox(o, 0, 1.1 + r() * .5, .1, [[0, 75], [.4, 90], [1.2, 60]], [[0, 'o'], [1.2, 'u']], { trem:25, q:2, body:250, bodyV:1 }); sNoise(o, 1, .06, 200, .8, 'lowpass', 0, true, .1); break; // gruñido
+  }
+}
+function sndAnimals(now){
+  const e = ear(); if (e.near <= 0 || !gameSpeed) return;
+  for (const a of animals) {
+    if (a.dead || a.rider || Math.abs(a.x - e.cx) > e.rad * 1.5 || Math.abs(a.y - e.cy) > e.rad * 1.5) continue;
+    const nx = SND.talk.get(a), every = (ANIM_EVERY[a.sp] || 20) * (a.sp === 'lobo' && isNight() ? .5 : 1) * (a.state === 'huyendo' || a.state === 'atacando' ? .25 : 1);
+    if (nx == null || now >= nx) SND.talk.set(a, now + every * (nx == null ? Math.random() * .4 : .6 + Math.random() * .8) / Math.min(2, gameSpeed));
+    if (nx == null || now < nx) continue;
+    const h = heard(a.x, a.y, a.sp === 'lobo' ? 2.2 : a.sp === 'vaca' || a.sp === 'perro' ? 1.4 : 1), g = h.g * (a.sp === 'lobo' ? Math.max(e.near, .5) : e.near);
+    if (g < .04 || now - (SND.last['a:' + a.sp] || -9) < .35) continue; SND.last['a:' + a.sp] = now;
+    animalCall(a.sp, sndOut(SND.amb, g, h.pan), a);
+  }
+}
 function sndPeople(now){
   const e = ear(), pray = {};
   if (e.near <= 0 || !gameSpeed) return pray;
@@ -303,7 +388,7 @@ function sndTick(dt){
   sLevel('tornado', s.tor * .9, 200 + s.tor * 150); sLevel('silbido', s.tor * .12 * (.6 + .4 * Math.sin(now * 1.7)), 600 + 250 * Math.sin(now * .9));
   sLevel('huracan', s.hur * .45, 400 + 200 * Math.sin(now * .5));
   sLevel('fuego', s.fire * .25); sLevel('lava', s.lava * .5);
-  sLevel('gente', Math.min(.07, s.crowd * .006) * s.near * (isNight() ? .4 : 1) * (.7 + Math.random() * .6), 450 + Math.random() * 250, .12);
+  sLevel('gente', Math.min(.04, Math.max(0, s.crowd - 6) * .004) * s.near * (isNight() ? .4 : 1) * (.7 + Math.random() * .6), 450 + Math.random() * 250, .12);
   // Sonidos sueltos del ambiente: grillos y ranas de noche, pájaros y gaviotas de día, chasquidos del fuego
   const ev = SND.ev, rnd = (k, rate) => { ev[k] = (ev[k] || 0) + dt * rate; if (ev[k] < 1) return false; ev[k] = Math.random() * .5; return true; };
   const calm = s.rain < .2 && s.tor < .1 && s.hur < .1, e = ear(), spot = () => [e.cx + (Math.random() - .5) * e.rad * 1.4, e.cy + (Math.random() - .5) * e.rad * 1.4];
@@ -317,6 +402,7 @@ function sndTick(dt){
   for (const m of meteors) if (m.t >= 0 && !m.sndW) { m.sndW = true; const h = heard(m.x, m.y, 6); if (h.g > .02) sndAmbient('whistle', sndOut(SND.sfx, h.g, h.pan), Math.max(.4, m.dur - m.t)); }
   // Gente: trabajos con su ritmo y rezos según su fe
   const pray = sndPeople(now);
+  sndVoices(now); sndAnimals(now);
   for (const st of ['canto', 'coro', 'tambor', 'mantra', 'susurro']) {
     const p = pray[st], lv = p ? Math.min(.6, p.g) * s.near * (st === 'susurro' ? .5 : st === 'mantra' ? .45 : .22) : 0;
     let ch = SND.choirs[st];
