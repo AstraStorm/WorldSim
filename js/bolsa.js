@@ -29,7 +29,7 @@ function marketTick(){
     const now = nationSnap(n), prev = s.prev; s.name = n.name;
     const causes = [], add = (d, txt, by) => { if (Math.abs(d) > .004) causes.push({ d, txt, by }); };
     if (prev) {
-      const gp = (now.pop - prev.pop) / Math.max(10, prev.pop); add(gp * 1.2, gp >= 0 ? 'crece su población' : 'pierde población');
+      const gp = (now.pop - prev.pop) / Math.max(10, prev.pop); add(clamp(gp * .4, -.08, .08), gp >= 0 ? 'crece su población' : 'pierde población');
       add(Math.min(.04, Math.max(0, now.trades - prev.trades) * .002), 'comercia');
       if (now.wonder && !prev.wonder) add(.12, 'construye una maravilla');
       if (now.riots > prev.riots) add(-.05 * Math.min(3, now.riots - prev.riots), 'disturbios');
@@ -49,13 +49,13 @@ function marketTick(){
     if (!causes.some(c => c.d < 0) && prev && now.pop >= prev.pop) add(.01, 'estabilidad');
     // Lo que compran o venden los inversores también mueve el precio; y siempre hay algo de azar y de vuelta a lo normal
     const cap = Math.max(50, s.price * 40); if (Math.abs(s.flow) > 1) add(clamp(s.flow / cap, -.08, .08), s.flow > 0 ? 'la compran los inversores' : 'los inversores venden');
-    let d = causes.reduce((a, c) => a + c.d, 0) + (Math.random() - .5) * .04 - Math.log(s.price / 10) * .015;
-    d = clamp(d, -.35, .3); s.price = Math.max(.5, s.price * (1 + d)); s.last = d;
+    let d = causes.reduce((a, c) => a + c.d, 0) + (Math.random() - .5) * .04 - Math.log(s.price / 10) * .04; // con el tiempo, vuelve hacia lo normal
+    d = clamp(d, -.35, .2); s.price = Math.max(.5, s.price * (1 + d)); s.last = d;
     s.hist.push(s.price); if (s.hist.length > 30) s.hist.shift();
     s.causes = causes.sort((a, b) => Math.abs(b.d) - Math.abs(a.d)).slice(0, 3);
     const at = { x:n.fx * T, y:n.fy * T };
-    if (d <= -.12) notify(`Bolsa: las acciones de ${n.name} se desploman un ${Math.round(-d * 100)} %${s.causes[0] && s.causes[0].d < 0 ? ` (${s.causes[0].txt})` : ''}`, at);
-    else if (d >= .1) notify(`Bolsa: las acciones de ${n.name} suben un ${Math.round(d * 100)} %${s.causes[0] && s.causes[0].d > 0 ? ` (${s.causes[0].txt})` : ''}`, at);
+    if (d <= -.15) notify(`Bolsa: las acciones de ${n.name} se desploman un ${Math.round(-d * 100)} %${s.causes[0] && s.causes[0].d < 0 ? ` (${s.causes[0].txt})` : ''}`, at);
+    else if (d >= .15) notify(`Bolsa: las acciones de ${n.name} suben un ${Math.round(d * 100)} %${s.causes[0] && s.causes[0].d > 0 ? ` (${s.causes[0].txt})` : ''}`, at);
     // Denuncia: una caída fuerte por culpa de otra nación (la ataca o sus inversores venden en masa)
     if (d <= -.1) {
       const spec = Object.entries(s.flowBy).filter(([id, f]) => +id !== n.id && f < -Math.max(20, s.price * 8)).sort((a, b) => a[1] - b[1])[0];
