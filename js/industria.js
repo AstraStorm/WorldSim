@@ -48,9 +48,11 @@ function paintRoads(){
   for (const i of S) {
     const px = (i % W) * T, py = ((i / W) | 0) * T; if (px + T < x0 || px > x1 || py + T < y0 || py > y1) continue;
     const tx = i % W, ty = (i / W) | 0, L = S.has(i - 1) || bridgeSet.has(i - 1), R = S.has(i + 1) || bridgeSet.has(i + 1), U = S.has(i - W), D = S.has(i + W);
-    vctx.fillStyle = '#9a948a'; vctx.fillRect(px, py, T, T);
-    vctx.fillStyle = '#7c766c'; vctx.fillRect(px, py + 2, T, 1); vctx.fillRect(px + ((tx + ty) % 2 ? 1 : 3), py, 1, 2); vctx.fillRect(px + ((tx + ty) % 2 ? 3 : 1), py + 3, 1, 2); // adoquines
-    vctx.fillStyle = '#b4aea2'; vctx.fillRect(px + (i % 3), py + 1, 1, 1);
+    if (!artFill(vctx, 'tex:carretera', px, py, T, T)) { // adoquines del atlas; si no está, dibujados a mano
+      vctx.fillStyle = '#9a948a'; vctx.fillRect(px, py, T, T);
+      vctx.fillStyle = '#7c766c'; vctx.fillRect(px, py + 2, T, 1); vctx.fillRect(px + ((tx + ty) % 2 ? 1 : 3), py, 1, 2); vctx.fillRect(px + ((tx + ty) % 2 ? 3 : 1), py + 3, 1, 2);
+      vctx.fillStyle = '#b4aea2'; vctx.fillRect(px + (i % 3), py + 1, 1, 1);
+    }
     vctx.fillStyle = '#5c574f'; if (!L) vctx.fillRect(px, py, 1, T); if (!R) vctx.fillRect(px + T - 1, py, 1, T); if (!U) vctx.fillRect(px, py, T, 1); if (!D) vctx.fillRect(px, py + T - 1, T, 1); // bordillo
     snowTile(i, px, py);
   }
@@ -120,7 +122,7 @@ function drawStation(x, y, g, now){
   if (zoom >= 2) { vctx.font = 'bold 4px sans-serif'; vctx.textAlign = 'center'; vctx.fillStyle = '#22201e'; vctx.fillRect(x - 10, y - 25, 21, 5); vctx.fillStyle = '#f8e080'; vctx.fillText(g.name.slice(0, 12), x + .5, y - 21.3); vctx.textAlign = 'start'; } // letrero
 }
 function drawTrain(x, y, ux, uy, now){
-  if (artFrame('train:locomotora')) { const flip = ux < 0; for (let k = 2; k >= 0; k--) artAt(k ? (k === 1 ? 'train:vagon_p' : 'train:vagon_m') : 'train:locomotora', x - ux * k * 12, y - uy * k * 12, flip); if (Math.random() < .35) chips.push({ x:x + ux * 3, y:y - 12, vx:-ux * 8, vy:-6, life:0, max:1.1, col:'rgba(210,210,205,.7)' }); return; }
+  if (artFrame('train:locomotora')) { const flip = ux < 0; for (let k = 2; k >= 0; k--) artAt(k ? (k === 1 ? 'train:vagon_p' : 'train:vagon_m') : 'train:locomotora', x - ux * k * 23, y - uy * k * 23, flip); if (Math.random() < .4) chips.push({ x:x + (flip ? -3 : 3), y:y - 15, vx:-ux * 9 + (Math.random() - .5) * 3, vy:-6 - Math.random() * 3, life:0, max:1.2, col:'rgba(215,215,210,.75)' }); return; } // (humo: lo pone el juego)
   const parts = [['#22201e', '#3a3a40'], ['#8a3a2a', '#a8583a'], ['#2a5a3a', '#3a7a4a']]; // locomotora y dos vagones
   for (let k = parts.length - 1; k >= 0; k--) {
     const cx = x - ux * k * 9, cy = y - uy * k * 9, [c1, c2] = parts[k];
@@ -161,7 +163,15 @@ function drawObservatory(x, y, now){
 }
 // Barcos en las rutas por mar: galeón (o vapor) con las velas del color del país
 function drawShip(x, y, dir, steam, col, now){
-  if (artAt(steam ? 'ship:vapor' : 'ship:galeon', x, y + 2, dir < 0)) return;
+  const sk = steam ? 'ship:vapor' : 'ship:galeon', sc = artFrame(sk);
+  if (sc) { // el casco, medio metido en el agua: se pinta solo lo que asoma y una línea de olas encima
+    const f = ART_MAP[sk], w = f[2], h = f[3], vis = Math.round(h * .8), bx = Math.round(x) - f[4], by = Math.round(y) + 2 - vis, bob = Math.round(Math.sin(now / 500 + x) * .6);
+    if (dir < 0) { vctx.save(); vctx.translate(Math.round(x), 0); vctx.scale(-1, 1); vctx.drawImage(sc, 0, 0, w, vis, -f[4], by + bob, w, vis); vctx.restore(); } else vctx.drawImage(sc, 0, 0, w, vis, bx, by + bob, w, vis);
+    const wl = Math.round(y) + 2 + bob; vctx.fillStyle = 'rgba(225,242,255,.8)'; for (let k = 0; k < w; k += 2) vctx.fillRect(bx + k, wl - ((k / 2 + Math.floor(now / 250)) % 2), 2, 1); // olas contra el casco
+    vctx.fillStyle = 'rgba(225,242,255,.45)'; for (let k = 1; k < 4; k++) vctx.fillRect(Math.round(x) - (dir >= 0 ? 1 : -1) * (f[4] + k * 4), wl + (k % 2), 3, 1); // estela
+    if (steam && Math.random() < .3) chips.push({ x:x + (dir >= 0 ? 1 : -1), y:by + bob, vx:-(dir >= 0 ? 1 : -1) * 6, vy:-5, life:0, max:1.3, col:'rgba(90,90,95,.6)' }); // humo de la chimenea
+    return;
+  }
   const s = dir >= 0 ? 1 : -1;
   vctx.fillStyle = 'rgba(0,0,0,.2)'; vctx.fillRect(x - 7, y + 1, 15, 1);
   vctx.fillStyle = '#22201e'; vctx.fillRect(x - 7, y - 3, 15, 4); vctx.fillStyle = steam ? '#3a3a40' : '#7a4a28'; vctx.fillRect(x - 6, y - 2, 13, 2); vctx.fillStyle = steam ? '#c83a2a' : '#a86a38'; vctx.fillRect(x - 6, y - 3, 13, 1);

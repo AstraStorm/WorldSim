@@ -66,6 +66,7 @@ function drawFairs(now){
   const [vx0, vy0, vx1, vy1] = visibleRect(); if (F.x < vx0 - 60 || F.x > vx1 + 60 || F.y < vy0 - 60 || F.y > vy1 + 60) return;
   const C = [['#c83a2a', '#f4f0e8'], ['#3a6ab8', '#f4f0e8'], ['#e8b030', '#c83a2a'], ['#5aa84a', '#f4f0e8'], ['#9a50b8', '#f8d850']];
   for (const [x, y, k] of F.stalls) { // puesto: toldo a rayas, mostrador con mercancía
+    if (artAt('fair:puesto', x, y + 1, k % 2 === 1)) continue; // (el dibujo del atlas, si está)
     const [c1, c2] = C[k % C.length];
     vctx.fillStyle = 'rgba(0,0,0,.25)'; vctx.fillRect(x - 5, y + 1, 11, 1);
     vctx.fillStyle = '#6e4626'; vctx.fillRect(x - 5, y - 7, 1, 8); vctx.fillRect(x + 5, y - 7, 1, 8);

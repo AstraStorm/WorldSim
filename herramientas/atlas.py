@@ -213,6 +213,23 @@ if H12:
         pts = [((p['x0'] + p['x1']) // 2, (p['y0'] + p['y1']) // 2) for p in parts if x0 <= (p['x0'] + p['x1']) / 2 < x0 + 512 and y0 <= (p['y0'] + p['y1']) / 2 < y0 + 512 and p['area'] > 150]
         add(key, shrink(cut(H12, pts), w, 64))
 
+# ---- Era industrial (hojas 13A, 13B y 13C) ----
+def box_parts(name, box, min_area=80):  # todas las piezas cuyo centro cae en la caja (sin el marco de la casilla)
+    _, _, parts = sheet(name); x0, y0, x1, y1 = box
+    return cut(name, [((p['x0'] + p['x1']) // 2, (p['y0'] + p['y1']) // 2) for p in parts if x0 <= (p['x0'] + p['x1']) / 2 < x1 and y0 <= (p['y0'] + p['y1']) / 2 < y1 and p['area'] > min_area])
+if os.path.exists(os.path.join(SRC, '13A.png')):
+    for key, box, w in [('station:estacion', (60, 230, 470, 470), 44), ('factory:fabrica', (560, 160, 980, 470), 44), ('clock:reloj', (1190, 80, 1360, 470), 12),
+                        ('observatory:observatorio', (150, 690, 360, 930), 24), ('embassy:embajada', (600, 690, 920, 930), 32),
+                        ('ruin:ruinas_a', (1050, 720, 1270, 930), 26), ('ruin:ruinas_b', (1275, 790, 1480, 930), 22)]:
+        add(key, shrink(box_parts('13A.png', box), w, 48))
+if os.path.exists(os.path.join(SRC, '13B.png')):  # los grandes de la izquierda de cada fila (miran a la derecha)
+    for key, box, w in [('train:locomotora', (22, 25, 250, 178), 22), ('train:vagon_p', (22, 210, 250, 340), 22), ('train:vagon_m', (22, 375, 250, 505), 21),
+                        ('airship:dirigible', (22, 530, 250, 668), 34), ('ship:galeon', (22, 688, 250, 835), 28), ('ship:vapor', (22, 860, 250, 1005), 30)]:
+        add(key, shrink(box_parts('13B.png', box, 40), w, 48))
+if os.path.exists(os.path.join(SRC, '13C.png')):
+    add('tex:carretera', tex('13C.png', (95, 112, 305, 160), 22, 5, True, 12)) # solo los adoquines (el bordillo lo pone el juego)
+    add('fair:puesto', shrink(box_parts('13C.png', (200, 620, 620, 940)), 20, 40)); add('camp:oro', shrink(box_parts('13C.png', (860, 620, 1380, 940)), 32, 48))
+
 # ---- Atlas: en filas, con 1 píxel de separación ----
 keys = list(S); W = 512; x = y = rowh = 0; pos = {}
 for k in sorted(keys, key=lambda k: -S[k]['img'].height):

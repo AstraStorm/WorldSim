@@ -490,6 +490,8 @@ function drawBalloons(now){
 }
 // Dirigible (con el descubrimiento del dirigible): cigarro alargado con costillas, timones, góndola y hélice
 function drawAirship(col, mouthY, inf, now){
+  const art = tintedArt('airship:dirigible', col);
+  if (art) { const w = art.width * inf, h = art.height * inf; vctx.drawImage(art, -w / 2, mouthY - h + 6, w, h); const sp = Math.abs(Math.sin(now / 40)); vctx.fillStyle = 'rgba(230,220,200,.9)'; vctx.fillRect(-w / 2 - 1, mouthY - h * .3, 1, 1 + 3 * sp); return; } // (hélice girando)
   const L = 26 * inf, Hh = 9 * inf, cy = mouthY - Hh / 2 - 1;
   vctx.fillStyle = '#22201e'; vctx.beginPath(); vctx.ellipse(0, cy, L / 2 + 1, Hh / 2 + 1, 0, 0, Math.PI * 2); vctx.fill();
   vctx.fillStyle = `rgb(${col.join(',')})`; vctx.beginPath(); vctx.ellipse(0, cy, L / 2, Hh / 2, 0, 0, Math.PI * 2); vctx.fill();

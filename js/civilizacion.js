@@ -144,7 +144,7 @@ function drawEmbassies(now){
     if (!g.embassies || !popOf(g)) continue;
     for (const [id, E] of Object.entries(g.embassies)) {
       const o = villageById(+id), x = E.x * T + 2, y = E.y * T + 3; if (!o || !onScreen(x, y)) continue;
-      if (artAt('embassy:embajada', x, y)) { const f = nationOf(o).flag, top = y - ART_MAP['embassy:embajada'][3]; vctx.fillStyle = '#4a3018'; vctx.fillRect(x + 9, top - 6, 1, 10); if (f) drawFlag(f, x + 10, top - 6, 7, 5, 1, now); continue; }
+      if (artAt('embassy:embajada', x, y)) { const f = nationOf(o).flag, top = y - ART_MAP['embassy:embajada'][3]; if (f) drawFlag(f, x + 14, top + 3, 7, 5, 1, now); continue; } // (en su mástil)
       vctx.fillStyle = 'rgba(0,0,0,.25)'; vctx.fillRect(x - 7, y + 1, 15, 2);
       vctx.fillStyle = '#22201e'; vctx.fillRect(x - 7, y - 9, 15, 10); vctx.fillStyle = '#ece4d4'; vctx.fillRect(x - 6, y - 8, 13, 8);
       vctx.fillStyle = '#c8c0ae'; for (const dx of [-5, -2, 2, 5]) vctx.fillRect(x + dx, y - 7, 1, 7); // columnas
@@ -184,6 +184,7 @@ function goldTick(g){
 function drawGoldRush(now){
   for (const g of villages) {
     if (!g.goldRush || g.goldRush.over || !popOf(g)) continue; const x = g.fx * T + 14, y = g.fy * T + 6; if (!onScreen(x, y)) continue;
+    if (artAt('camp:oro', x + 4, y + 2)) { if (Math.random() < .06) floats.push({ x:x + 4, y:y - 18, txt:'✦', col:'#f8d850', life:0 }); continue; }
     vctx.fillStyle = '#6e4626'; vctx.fillRect(x - 6, y - 1, 13, 3); vctx.fillStyle = '#f0c840'; for (let k = 0; k < 5; k++) vctx.fillRect(x - 5 + k * 2 + (Math.sin(now / 300 + k) > 0 ? 1 : 0), y - 2, 1, 1); // pepitas
     vctx.fillStyle = '#4a3018'; vctx.fillRect(x + 8, y - 9, 1, 9); vctx.fillStyle = '#a8a8b0'; vctx.fillRect(x + 6, y - 9, 5, 1); // pico
   }
