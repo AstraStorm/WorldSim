@@ -26,6 +26,7 @@ También se puede abrir `index.html` directamente en el navegador (con la carpet
 - Torbellinos en el mar que se tragan barcas y flotas.
 - Guerra con formaciones, caballería, abanderados, catapultas, flotas y murallas dobles.
 - Botones arriba a la derecha: Crónica, Historia (gráficas, línea del tiempo y Juegos), Partidas y Sonido.
+- Sonido: música que cambia de día, de noche y en guerra; ambiente según lo que se ve (olas, ríos, viento, lluvia, grillos y ranas de noche, pájaros y gaviotas de día, tornados, huracanes, fuego, lava y meteoritos) y, al acercarse, la gente talando, construyendo, picando, en la herrería, luchando o rezando (canto llano, coro, tambores, mantra o susurros según su fe). Volumen general, de música, de ambiente y de efectos.
 - Partidas: cinco ranuras más el guardado automático, y descargar o abrir la partida en un archivo `.forja` (para no perderla o llevarla a otro ordenador).
 - Clic en una aldea para ver su ficha; clic en una persona para seguirla.
 
@@ -45,7 +46,7 @@ Sin dependencias ni compilación: cada archivo es un script normal y se cargan e
 | `js/mapas.js` | Hierba de cerca y mapas de alturas, vientos y temperatura |
 | `js/humanos.js` | Aldeanos, pueblos, oficios, edificios, política, economía y guerra |
 | `js/partidas.js` | Guardar y cargar: ranuras y archivos `.forja` |
-| `js/vida.js` | Enfermedades, migraciones, historia y sonido |
+| `js/vida.js` | Enfermedades, migraciones e historia |
 | `js/sociedad.js` | Ocio, Juegos, mar, fichas de pueblo y persona, crónica, leyes y diplomacia |
 | `js/impuestos.js` | Impuestos que cada pueblo crea y quita (guerra, deuda, patrimonio, casas, caseros, por cabeza, diezmo) y por qué |
 | `js/presupuestos.js` | Presupuestos y sus partidas, obras públicas que cuestan dinero, corrupción, ciudades amenazadas y líderes linchados |
@@ -59,6 +60,7 @@ Sin dependencias ni compilación: cada archivo es un script normal y se cargan e
 | `js/arte_mapa.js`, `js/arte.js`, `arte/atlas.png` | Arte dibujado (edificios, árboles, rocas, barca, catapulta…) con colores por estación; si un objeto no tiene dibujo, se usa el de siempre |
 | `js/vegetacion.js` | Crecimiento y muerte de la vegetación |
 | `js/aldeanos.js` | Movimiento y dibujo de los aldeanos |
+| `js/sonido.js` | Sonido sintetizado: música generativa, ambiente según lo que se ve (olas, ríos, viento, lluvia, grillos, pájaros, tormentas, fuego), trabajos y rezos de cerca, y los volúmenes |
 | `js/interfaz.js` | Herramientas del jugador, entrada, panel, pantalla de carga y oleaje |
 
 Todos comparten el mismo ámbito global, así que el orden importa: lo que un archivo ejecuta al cargarse solo puede usar lo que esté en archivos anteriores (las funciones se pueden llamar desde cualquier sitio una vez cargado todo).

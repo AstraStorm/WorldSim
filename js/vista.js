@@ -274,7 +274,7 @@ function updateVolcanoes(dt, t){
       if (v.state === 'dormido') { v.state = 'activo'; v.t = 10 + Math.random() * 20; }
       else if (v.state === 'activo') {
         if (Math.random() < .55 * Math.min(1.6, disasterF())) {
-          v.state = 'erupcion'; v.t = 8 + Math.random() * 10;
+          v.state = 'erupcion'; v.t = 8 + Math.random() * 10; snd('boom', v.x, v.y, .8);
           // Cada erupción abre coladas nuevas en direcciones al azar y suelta una gran nube de ceniza
           for (let k = 1 + Math.floor(Math.random() * (v.kind === 'escudo' ? 4 : 3)); k > 0; k--) v.flows.push(flowPath(v));
           emitAsh(v, 80);

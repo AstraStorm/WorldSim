@@ -611,6 +611,7 @@ function impact(m){
   const { e, sea, lake, river, objs } = world, cx = Math.floor(m.x / T), cy = Math.floor(m.y / T);
   if (cx < 0 || cy < 0 || cx >= W || cy >= H) return;
   const R = m.R, blastR = m.blastR, wet = surfaceWater(m.x, m.y), ci = cy * W + cx;
+  snd('boom', m.x, m.y, m.size);
   const depth = .025 + m.size * .06, rim = .012 + m.size * .02;
   // Cráter: cuenco hundido y borde levantado; la tierra de alrededor queda removida (tierra y roca)
   let x0 = W, y0 = H, x1 = -1, y1 = -1;

@@ -128,12 +128,12 @@ function tileCost(tx, ty){
   if (bridgeSet.has(i)) return 1; // puente o muelle
   if (wallSet.has(i)) return Infinity; // muralla
   if (world.objs[i] || b === B.LAVA) return Infinity;
-  if (WATER[b] && dried(i)) return 1.3; // cauce seco: se cruza andando por el barro
+  if (WATER[b] && (dried(i) || frozen(i))) return 1.3; // cauce seco o agua helada: se cruza andando (por el barro o por el hielo)
   if (!WATER[b]) return isFlooded(i) ? SWIM : 1; // zona inundada: hay que nadar
   return b === B.RIVER || b === B.LAKE || b === B.SHALLOW ? SWIM : Infinity;
 }
 const tileFree = (tx, ty) => tileCost(tx, ty) === 1 && !bridgeSet.has(ty * W + tx); // tierra firme y libre (un puente no sirve para construir)
-const inWater = (px, py) => { const i = Math.floor(py / T) * W + Math.floor(px / T); return !bridgeSet.has(i) && ((!!WATER[world.biome[i]] && !dried(i)) || isFlooded(i)); };
+const inWater = (px, py) => { const i = Math.floor(py / T) * W + Math.floor(px / T); return !bridgeSet.has(i) && ((!!WATER[world.biome[i]] && !dried(i) && !frozen(i)) || isFlooded(i)); }; // sobre el hielo se anda
 const walkable = (px, py) => tileCost(Math.floor(px / T), Math.floor(py / T)) < Infinity;
 // Dijkstra en un radio de 8 casillas: el destino siempre es tierra y el camino rodea el agua salvo que no haya otra
 function findPath(v){

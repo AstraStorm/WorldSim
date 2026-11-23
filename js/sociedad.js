@@ -1717,7 +1717,7 @@ function updateTravelers(dt){
     const from = villageById(t.from), to = villageById(t.to); let v = t.v;
     if (t.crew) { t.v = t.crew.find(u => !u.dead) || t.v; if (!t.crew.some(u => !u.dead)) { t.done = true; continue; } } // la flota sigue mientras quede alguien
     if (t.v.dead || !from) { t.done = true; if (!t.v.dead) { t.v.away = false; t.v.task = null; } continue; }
-    v = t.v; let d = Math.hypot(t.tx - t.x, t.ty - t.y); const sp = (t.sea ? 14 : 10) * dt;
+    v = t.v; let d = Math.hypot(t.tx - t.x, t.ty - t.y); const sp = (t.sea && inWater(t.x, t.y) ? 14 : 10) * dt; // sobre el hielo bajan de la barca y van andando
     if (d <= 2 && t.path && t.path.length) { const nx = t.path.shift(); t.tx = nx[0]; t.ty = nx[1]; d = Math.hypot(t.tx - t.x, t.ty - t.y); } // siguiente punto de la ruta
     if (d > 2) { t.x += (t.tx - t.x) / d * Math.min(d, sp); t.y += (t.ty - t.y) / d * Math.min(d, sp); if (Math.abs(t.tx - t.x) > .3) t.dir = t.tx < t.x ? -1 : 1; t.walk = (t.walk || 0) + dt; v.x = t.x; v.y = t.y; if (t.crew) for (const u of t.crew) if (!u.dead) { u.x = t.x; u.y = t.y; } continue; }
     if (t.kind === 'expedicion' && t.phase === 'ida') { t.phase = 'vuelta'; t.path = t.back.slice(); const nx = t.path.shift(); t.tx = nx[0]; t.ty = nx[1]; continue; }
@@ -1749,7 +1749,7 @@ function drawTravelers(now){
   for (const t of travelers) {
     if (t.x < x0 - 20 || t.x > x1 + 20 || t.y < y0 - 20 || t.y > y1 + 20) continue;
     const g = villageById(t.from), s = personSprite(t.v, Math.floor((t.walk || 0) * 8) % 2, t.dir < 0), x = Math.round(t.x), y = Math.round(t.y);
-    const wet = inWater(t.x, t.y); // en un cauce seco o en tierra no se dibuja la barca: van andando
+    const wet = inWater(t.x, t.y); // en un cauce seco, sobre el hielo o en tierra no se dibuja la barca: van andando
     if (t.crew && wet) { const crew = t.crew.filter(u => !u.dead); crew.forEach((u, k) => { if (k % 2) return; const ox = -t.dir * Math.floor(k / 2) * 14, oy = (Math.floor(k / 2) % 2 ? 6 : -4); drawBoat(x + ox, y + oy, t.dir, now, true, personSprite(u, 0, t.dir < 0)); }); if (crew.length) { vctx.fillStyle = '#c8302a'; vctx.fillRect(x + t.dir * 2, y - 22, 3, 2); vctx.fillStyle = '#5a3a20'; vctx.fillRect(x + t.dir, y - 22, 1, 8); } continue; }
     if (wet) { drawBoat(x, y, t.dir, now, true, s); continue; }
     if (t.kind === 'caravana') drawCart(x - t.dir * 8, y, t.dir, now, '#c8a050');

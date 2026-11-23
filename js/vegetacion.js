@@ -92,6 +92,7 @@ function loop(t){
     }
   }
   updateEffects(dt);
+  try { sndTick(dt); } catch (err) { console.error(err); }
   const popTxt = `${villagers.length} ${villagers.length === 1 ? 'habitante' : 'habitantes'}`;
   if ($('pop').textContent !== popTxt) $('pop').textContent = popTxt;
   if (follow && cw) {

@@ -515,9 +515,9 @@ new ResizeObserver(() => { $('speed').style.left = ($('season').offsetLeft + $('
 $('season').onclick = () => { yearT = (Math.floor(yearT / SEASON_LEN) + 1) * SEASON_LEN + .01; };
 $('noticeGo').onclick = () => { if (noticeTarget) { setFollow(null); centerOn(noticeTarget.x, noticeTarget.y - 10, Math.max(zoom, 5)); } $('notice').hidden = true; };
 $('followStop').onclick = () => setFollow(null);
-$('histBtn').onclick = () => { const h = $('histPanel'); h.hidden = !h.hidden; if (!h.hidden) { $('chron').hidden = $('savePanel').hidden = true; recordHistory(); renderHistory(); } };
+$('histBtn').onclick = () => { const h = $('histPanel'); h.hidden = !h.hidden; if (!h.hidden) { $('chron').hidden = $('savePanel').hidden = $('sndPanel').hidden = true; recordHistory(); renderHistory(); } };
 $('histPanel').addEventListener('click', e => { if (e.target.closest('.x')) { $('histPanel').hidden = true; return; } const b = e.target.closest('[data-h]'); if (b) { histTab = b.dataset.h; for (const q of $('histPanel').querySelectorAll('[data-h]')) q.classList.toggle('on', q === b); renderHistory(); } });
-$('saveBtn').onclick = () => { const h = $('savePanel'); h.hidden = !h.hidden; if (!h.hidden) { $('chron').hidden = $('histPanel').hidden = true; renderSlots(); } };
+$('saveBtn').onclick = () => { const h = $('savePanel'); h.hidden = !h.hidden; if (!h.hidden) { $('chron').hidden = $('histPanel').hidden = $('sndPanel').hidden = true; renderSlots(); } };
 $('savePanel').addEventListener('click', async e => {
   if (e.target.closest('.x')) { $('savePanel').hidden = true; return; }
   const b = e.target.closest('button'); if (!b) return;
@@ -528,11 +528,19 @@ $('savePanel').addEventListener('click', async e => {
   else if (b.id === 'upSave') $('upFile').click();
 });
 $('upFile').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) openSaveFile(f); };
-addEventListener('pointerdown', () => { if (SND.ctx && SND.ctx.state === 'suspended') SND.ctx.resume().catch(() => {}); }); // el navegador solo deja sonar tras un clic
+addEventListener('pointerdown', () => { if (SND.on) sndInit(); }); // el navegador solo deja sonar tras un clic
 
 const sndLabel = () => { $('sndBtn').textContent = SND.on ? 'Sonido: sí' : 'Sonido: no'; }; sndLabel();
-$('sndBtn').onclick = () => { SND.on = !SND.on; try { localStorage.setItem('forja-snd', SND.on ? '1' : '0'); } catch (err) {} sndLabel(); if (SND.on) snd('bell'); };
-$('chronBtn').onclick = () => { const c = $('chron'); c.hidden = !c.hidden; $('toasts').hidden = !c.hidden; if (!c.hidden) { renderChronicle(); chronUnread = 0; delete $('chronBtn').dataset.n; } };
+const sndPanelSync = () => { $('sndOn').checked = SND.on; for (const r of $('sndPanel').querySelectorAll('input[type=range]')) { r.value = Math.round(SND.vol[r.dataset.v] * 100); r.nextElementSibling.textContent = r.value; } };
+$('sndBtn').onclick = () => { const p = $('sndPanel'); p.hidden = !p.hidden; if (!p.hidden) { $('chron').hidden = $('histPanel').hidden = $('savePanel').hidden = true; sndPanelSync(); } };
+$('sndPanel').addEventListener('click', e => { if (e.target.closest('.x')) $('sndPanel').hidden = true; });
+$('sndOn').onchange = e => { SND.on = e.target.checked; saveSndVol(); sndLabel(); if (SND.on) sndInit(); applySndVol(); };
+$('sndPanel').addEventListener('input', e => {
+  const r = e.target.closest('input[type=range]'); if (!r) return;
+  SND.vol[r.dataset.v] = r.value / 100; r.nextElementSibling.textContent = r.value; saveSndVol(); applySndVol();
+});
+$('sndPanel').addEventListener('change', e => { if (e.target.dataset.v === 'sfx' || e.target.dataset.v === 'gen') snd('bell'); }); // al soltar, una campana de prueba
+$('chronBtn').onclick = () => { const c = $('chron'); c.hidden = !c.hidden; $('toasts').hidden = !c.hidden; if (!c.hidden) { $('sndPanel').hidden = true; renderChronicle(); chronUnread = 0; delete $('chronBtn').dataset.n; } };
 $('chron').addEventListener('click', e => {
   if (e.target.closest('.x')) { $('chron').hidden = true; $('toasts').hidden = false; return; }
   const fb = e.target.closest('[data-f]'); if (fb) { $('chron').dataset.f = fb.dataset.f; renderChronicle(); return; }
@@ -543,7 +551,7 @@ $('panelTog').onclick = () => setPanel(!document.querySelector('.app').classList
 try { if (localStorage.getItem('forja-panel') === '1') setPanel(true); } catch (err) {}
 window.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
-  if (!$('chron').hidden) { $('chron').hidden = true; $('toasts').hidden = false; } else if (follow) setFollow(null); else if (!$('vcard').hidden) { cardVid = 0; $('vcard').hidden = true; }
+  if (!$('sndPanel').hidden) $('sndPanel').hidden = true; else if (!$('chron').hidden) { $('chron').hidden = true; $('toasts').hidden = false; } else if (follow) setFollow(null); else if (!$('vcard').hidden) { cardVid = 0; $('vcard').hidden = true; }
   else for (const t of [...$('toasts').children]) t.remove();
 });
 const openVillage = id => { cardVid = id; cardTab = 'resumen'; renderVillageCard(true); };

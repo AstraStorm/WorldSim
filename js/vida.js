@@ -1,4 +1,4 @@
-// Forja de Mundos · Enfermedades, migraciones, historia y sonido
+// Forja de Mundos · Enfermedades, migraciones e historia
 // ================= Enfermedades y epidemias =================
 let epidemics = [];
 const DIS_A = ['Fiebre', 'Peste', 'Tos', 'Viruela', 'Gripe', 'Mal'], DIS_B = ['roja', 'negra', 'del pantano', 'de los ríos', 'gris', 'de invierno', 'amarilla', 'de los puertos'];
@@ -83,26 +83,4 @@ function renderHistory(){
   const line = e => e[key].map((y, k) => y == null ? null : `${((e.from + k) / (n - 1) * 400).toFixed(1)},${(150 - y / mx * 140).toFixed(1)}`).filter(Boolean).join(' ');
   body.innerHTML = `<svg viewBox="0 0 400 160" class="hchart"><line x1="0" y1="150" x2="400" y2="150" stroke="#2c3640"/>${series.map(e => `<polyline fill="none" stroke="${e.col}" stroke-width="2" vector-effect="non-scaling-stroke" points="${line(e)}"/>`).join('')}</svg>
     <div class="hleg">${series.map(e => `<span><i style="background:${e.col}"></i>${esc(e.name)} <b>${e[key][e[key].length - 1] ?? '†'}</b></span>`).join('')}</div><div class="muted" style="font-size:11px">Máximo: ${mx} · desde el día ${worldHist.t[0]} hasta el ${worldHist.t[n - 1]}</div>`;
-}
-// ================= Sonido (sintetizado, sin archivos) =================
-const SND = { on:(() => { try { return localStorage.getItem('forja-snd') !== '0'; } catch (err) { return true; } })(), ctx:null, last:{} };
-function onScreen(x, y){ const [x0, y0, x1, y1] = visibleRect(); return x >= x0 - 20 && x <= x1 + 20 && y >= y0 - 20 && y <= y1 + 20; }
-function snd(kind, x, y){
-  if (!SND.on || (x != null && !onScreen(x, y))) return;
-  try { SND.ctx ||= new (window.AudioContext || window.webkitAudioContext)(); } catch (err) { return; }
-  const c = SND.ctx; if (c.state === 'suspended') c.resume().catch(() => {});
-  const now = c.currentTime, gap = { clash:.12, arrow:.15, build:.25, coin:.3, cheer:2, bell:1.5, horn:3, thunder:1, cough:1.2 }[kind] || .2;
-  if (now - (SND.last[kind] || -9) < gap) return; SND.last[kind] = now;
-  const out = c.createGain(); out.connect(c.destination); out.gain.value = .0001;
-  const tone = (type, f0, f1, dur, vol, at = 0) => { const o = c.createOscillator(), gn = c.createGain(); o.type = type; o.frequency.setValueAtTime(f0, now + at); if (f1) o.frequency.exponentialRampToValueAtTime(f1, now + at + dur); gn.gain.setValueAtTime(vol, now + at); gn.gain.exponentialRampToValueAtTime(.0001, now + at + dur); o.connect(gn); gn.connect(c.destination); o.start(now + at); o.stop(now + at + dur + .02); };
-  const noise = (dur, vol, freq, q, type = 'bandpass', at = 0) => { const len = Math.floor(c.sampleRate * dur), b = c.createBuffer(1, len, c.sampleRate), d = b.getChannelData(0); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len); const s = c.createBufferSource(), f = c.createBiquadFilter(), gn = c.createGain(); s.buffer = b; f.type = type; f.frequency.value = freq; f.Q.value = q; gn.gain.value = vol; s.connect(f); f.connect(gn); gn.connect(c.destination); s.start(now + at); };
-  if (kind === 'clash') { noise(.08, .25, 3000, 3); tone('triangle', 1900, 1400, .12, .05); }
-  else if (kind === 'arrow') noise(.18, .12, 1600, 1, 'highpass');
-  else if (kind === 'horn') { tone('sawtooth', 196, 196, .5, .06); tone('sawtooth', 262, 262, .7, .05, .45); }
-  else if (kind === 'bell') { tone('sine', 880, 870, 1.4, .08); tone('sine', 1320, 1300, 1, .03); }
-  else if (kind === 'build') { tone('square', 220, 180, .06, .04); tone('square', 200, 170, .06, .035, .14); }
-  else if (kind === 'coin') { tone('sine', 1400, 1400, .08, .05); tone('sine', 1900, 1900, .12, .05, .07); }
-  else if (kind === 'cheer') { noise(1.6, .12, 900, .6); noise(1.2, .08, 1800, .8, 'bandpass', .3); }
-  else if (kind === 'thunder') noise(1.6, .35, 120, .5, 'lowpass');
-  else if (kind === 'cough') noise(.12, .1, 600, 2);
 }

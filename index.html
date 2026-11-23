@@ -6,7 +6,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600&family=Nunito+Sans:wght@400;600;700&display=swap">
-<link rel="stylesheet" href="css/estilo.css?v=202611230411">
+<link rel="stylesheet" href="css/estilo.css?v=202611231209">
 
 <div class="app">
   <section class="stage" id="stage">
@@ -46,6 +46,13 @@
       <div class="hp-body"><div class="sv-file"><button id="dlSave">Descargar partida actual</button><button id="upSave">Abrir partida desde archivo…</button><input type="file" id="upFile" accept=".forja,.json,.gz" hidden></div>
         <div class="slots" id="slotList"></div>
         <p class="muted sv-note">Las ranuras se guardan en este navegador. Para no perderla, o para llevarla a otro ordenador, descarga la partida en un archivo <b>.forja</b>.</p></div></div>
+    <div class="chron sndp" id="sndPanel" hidden><div class="ch-h"><b>Sonido</b><button class="x" aria-label="Cerrar sonido">×</button></div>
+      <div class="hp-body"><label class="sn-on"><input type="checkbox" id="sndOn"> Sonido activado</label>
+        <label class="sn-row"><span>General</span><input type="range" min="0" max="100" data-v="gen" aria-label="Volumen general"><output></output></label>
+        <label class="sn-row"><span>Música</span><input type="range" min="0" max="100" data-v="mus" aria-label="Volumen de la música"><output></output></label>
+        <label class="sn-row"><span>Ambiente</span><input type="range" min="0" max="100" data-v="amb" aria-label="Volumen del ambiente"><output></output></label>
+        <label class="sn-row"><span>Efectos</span><input type="range" min="0" max="100" data-v="sfx" aria-label="Volumen de los efectos"><output></output></label>
+        <p class="muted sv-note">El ambiente (olas, ríos, viento, lluvia, grillos, pájaros, tormentas) suena siempre según lo que ves. Lo que hace la gente (talar, construir, picar, rezar, luchar) solo se oye al acercarte. Cada fe reza a su manera.</p></div></div>
     <div class="chron" id="chron" hidden><div class="ch-h"><b>Crónica del mundo</b><button class="x" aria-label="Cerrar crónica">×</button></div>
       <div class="cl-f"><button data-f="all">Todo</button><button data-f="war">Guerra</button><button data-f="pol">Política</button><button data-f="dip">Diplomacia</button><button data-f="eco">Economía</button><button data-f="rel">Religión</button><button data-f="dis">Catástrofes</button><button data-f="death">Muertes</button></div>
       <ul class="cl-list"></ul></div>
@@ -155,28 +162,29 @@
 </div>
 
 <!-- El juego, en el orden en que se carga -->
-<script src="js/nucleo.js?v=202611230411"></script>
-<script src="js/mundo.js?v=202611230411"></script>
-<script src="js/vista.js?v=202611230411"></script>
-<script src="js/clima.js?v=202611230411"></script>
-<script src="js/fauna.js?v=202611230411"></script>
-<script src="js/desastres.js?v=202611230411"></script>
-<script src="js/mapas.js?v=202611230411"></script>
-<script src="js/humanos.js?v=202611230411"></script>
-<script src="js/partidas.js?v=202611230411"></script>
-<script src="js/vida.js?v=202611230411"></script>
-<script src="js/sociedad.js?v=202611230411"></script>
-<script src="js/impuestos.js?v=202611230411"></script>
-<script src="js/presupuestos.js?v=202611230411"></script>
-<script src="js/bolsa.js?v=202611230411"></script>
-<script src="js/vivienda.js?v=202611230411"></script>
-<script src="js/cartografia.js?v=202611230411"></script>
-<script src="js/convivencia.js?v=202611230411"></script>
-<script src="js/credos.js?v=202611230411"></script>
-<script src="js/tratados.js?v=202611230411"></script>
-<script src="js/trabajo.js?v=202611230411"></script>
-<script src="js/arte_mapa.js?v=202611230411"></script>
-<script src="js/arte.js?v=202611230411"></script>
-<script src="js/vegetacion.js?v=202611230411"></script>
-<script src="js/aldeanos.js?v=202611230411"></script>
-<script src="js/interfaz.js?v=202611230411"></script>
+<script src="js/nucleo.js?v=202611231209"></script>
+<script src="js/mundo.js?v=202611231209"></script>
+<script src="js/vista.js?v=202611231209"></script>
+<script src="js/clima.js?v=202611231209"></script>
+<script src="js/fauna.js?v=202611231209"></script>
+<script src="js/desastres.js?v=202611231209"></script>
+<script src="js/mapas.js?v=202611231209"></script>
+<script src="js/humanos.js?v=202611231209"></script>
+<script src="js/partidas.js?v=202611231209"></script>
+<script src="js/vida.js?v=202611231209"></script>
+<script src="js/sociedad.js?v=202611231209"></script>
+<script src="js/impuestos.js?v=202611231209"></script>
+<script src="js/presupuestos.js?v=202611231209"></script>
+<script src="js/bolsa.js?v=202611231209"></script>
+<script src="js/vivienda.js?v=202611231209"></script>
+<script src="js/cartografia.js?v=202611231209"></script>
+<script src="js/convivencia.js?v=202611231209"></script>
+<script src="js/credos.js?v=202611231209"></script>
+<script src="js/tratados.js?v=202611231209"></script>
+<script src="js/trabajo.js?v=202611231209"></script>
+<script src="js/arte_mapa.js?v=202611231209"></script>
+<script src="js/arte.js?v=202611231209"></script>
+<script src="js/vegetacion.js?v=202611231209"></script>
+<script src="js/aldeanos.js?v=202611231209"></script>
+<script src="js/sonido.js?v=202611231209"></script>
+<script src="js/interfaz.js?v=202611231209"></script>

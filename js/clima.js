@@ -123,7 +123,7 @@ function strike(c){
 function strikeAt(gx, gy, top){
   const pts = [[gx + (Math.random() - .5) * 6, top]];
   for (let s = 1; s <= 7; s++) pts.push([gx + (s < 7 ? (Math.random() - .5) * 8 : 0), top + (gy - top) * s / 7]);
-  bolts.push({ pts, life:0 }); snd('thunder');
+  bolts.push({ pts, life:0 }); snd('thunder', gx, gy);
   if (Math.random() < .3) nearDisaster('rayo', gx, gy, 14);
   const sx = offX + gx * zoom, sy = offY + gy * zoom;
   // Solo algunos rayos iluminan el cielo (uno de cada cuatro, más o menos)
@@ -584,7 +584,7 @@ let quakes = [], cracks = [], tsunamis = [], dust = [], shake = 0;
 const CRACK_LIFE = 4 * 60; // 4 estaciones = 1 año
 function startQuake(x, y, M){
   const r = 30 + (M - 4) * 32;
-  quakes.push({ x, y, M, r, age:0, water:surfaceWater(x, y) });
+  quakes.push({ x, y, M, r, age:0, water:surfaceWater(x, y) }); snd('rumble', x, y, M - 4);
   shake = Math.max(shake, (M - 3.5) * 2.4);
   notify(`Terremoto de magnitud ${M.toFixed(1).replace('.', ',')}`, { x, y });
   // Grietas que se abren desde el epicentro y se ramifican; se borran con el tiempo
