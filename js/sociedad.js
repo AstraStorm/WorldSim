@@ -1609,6 +1609,7 @@ function diploTick(){
     if (r.war) {
       const att = villageById(r.war.att), def = villageById(r.war.def);
       if (!att || !def || !popOf(att) || !popOf(def)) { r.war = null; continue; }
+      fieldBattleTick(att, def, r); // batallas en campo abierto (guerra.js)
       if (r.war.dead >= warCap(att, def) || (yearT - r.war.start > DAY_LEN * 6 && Math.random() < .02)) makePeace(a, b, r, r.war.dead >= warCap(att, def) ? 'agotados por tantas muertes' : 'cansados de luchar'); // (guerras más largas: guerra.js)
       else if (yearT - r.war.raidT > 80) { const back = Math.random() < .25, A = back ? def : att; if (!(knowsT(A, 'noche') && !isNight() && yearT - r.war.raidT < 170)) { r.war.raidT = yearT; const D = back ? att : def, far = Math.hypot(A.fx - D.fx, A.fy - D.fy); if (!(A.port && (far > 60 || Math.random() < .45) && launchNavalRaid(A, D, r))) launchRaid(A, D, r); } } // a veces contraataca el atacado
       continue;
@@ -2839,7 +2840,7 @@ function updateVillagers(dt){
       const G = v.task.grp;
       // De noche y aún lejos del enemigo: campamento improvisado (tiendas de pieles si las tienen) y al amanecer, en marcha
       if (G && G.camp && (!isNight() || !eg || !r || !r.war)) { G.camp.done = true; G.camp = null; G.campedT = yearT; }
-      if (G && eg && r && r.war && isNight() && !knowsT(g, 'noche') && yearT - (G.campedT ?? -1e9) > DAY_LEN * .3 && Math.hypot(v.x / T - eg.fx, v.y / T - eg.fy) > 18 && (G.camp || Math.hypot(v.x / T - g.fx, v.y / T - g.fy) > 15)) { // (cerca de casa, no: siguen)
+      if (G && !G.field && eg && r && r.war && isNight() && !knowsT(g, 'noche') && yearT - (G.campedT ?? -1e9) > DAY_LEN * .3 && Math.hypot(v.x / T - eg.fx, v.y / T - eg.fy) > 18 && (G.camp || Math.hypot(v.x / T - g.fx, v.y / T - g.fy) > 15)) { // (cerca de casa, no: siguen)
         const alive = G.ps.filter(u => !u.dead && u.task && u.task.k === 'asalto');
         if (!G.camp && alive.length) {
           const cx = alive.reduce((a, u) => a + u.x, 0) / alive.length, cy = alive.reduce((a, u) => a + u.y, 0) / alive.length;

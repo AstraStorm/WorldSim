@@ -128,6 +128,14 @@ function pickMission(g){
     if (slot) { const [sx, sy] = aeroSpot(o, slot); opts.push([2, { kind:'visita', to:o.id, tx:sx, ty:sy, slot }]); }
     else { const p = ringFind(o.fx, o.fy + 8, 14, ftile); if (p) opts.push([2, { kind:'visita', to:o.id, tx:p[0] * T + 2, ty:p[1] * T + 3 }]); }
   }
+  // Comercio: con algo que sobre en el almacén, a vendérselo a un pueblo amigo con mercado o ruta comercial
+  const GOODS_B = { food:'comida', wood:'madera', stone:'piedra' };
+  const sell = Object.keys(GOODS_B).map(k => [k, k === 'food' ? g.food - popOf(g) * 4 : (g[k] || 0) - 40]).filter(([, n]) => n > 10).sort((a, b) => b[1] - a[1])[0];
+  const buyers = friends.filter(o => o.market != null || (rels.get(relKey(g, o)) || {}).route);
+  if (sell && buyers.length) {
+    const o = buyers[Math.floor(Math.random() * buyers.length)], p = ringFind(o.fx, o.fy + 8, 14, ftile);
+    if (p) opts.push([4, { kind:'comercio', to:o.id, tx:p[0] * T + 2, ty:p[1] * T + 3, good:sell[0], gname:GOODS_B[sell[0]] }]);
+  }
   // En guerra: a soltar rocas sobre un pueblo enemigo (si tienen piedra para cargarlas)
   if ((g.stone || 0) >= 4) {
     const foes = villages.filter(o => o !== g && popOf(o) && atWar(g, o) && Math.hypot(o.fx - g.fx, o.fy - g.fy) < 170);
@@ -151,6 +159,7 @@ function startFlight(v, g){
   const b = parkedReady(g)[0]; if (!b || !flyWeather(g)) return;
   const m = pickMission(g); if (!m) { b.ready = yearT + 40; return; }
   b.mission = m; b.crew = []; board(v, b); b.state = 'embarque'; b.waitT = 7; b.pilot = v;
+  if (m.kind === 'comercio') { const have = m.good === 'food' ? g.food - popOf(g) * 4 : (g[m.good] || 0) - 40, n = Math.max(0, Math.min(25, Math.floor(have))); g[m.good] -= n; b.goods = { k:m.good, n }; } // la carga, en la cesta
   // Avisan a quien esté libre cerca para que suba (hasta llenar la cesta)
   const [px, py] = homeSpot(g, b);
   const free = villagers.filter(u => !u.dead && !u.away && u.vid === g.id && u !== g.leader && !u.sleep && !u.boat && !u.mount && !(u.actT > 0) && ageOf(u) >= ADULT_H && (!u.task || ['pasear', 'ocio'].includes(u.task.k)) && Math.hypot(u.x - px, u.y - py) < 160);
@@ -195,7 +204,7 @@ function stepBalloon(g, b, dt){
         if (m.kind === 'bombardeo') { const n = Math.min(Math.floor((g.stone || 0) / 2), 2 + b.cap * 2); g.stone -= n * 2; b.rocks = n; if (!n) { m.kind = 'explorar'; b.phase = 'vuelta'; } }
         for (const u of villagers) if (u.task && u.task.k === 'embarcar' && u.task.bid === b.id && u.vid === g.id) u.task = null; // los que no llegaron, se quedan
         if (m.kind === 'bombardeo') notify(`¡El globo de ${g.name} despega cargado con ${b.rocks} rocas para bombardear ${villageById(m.to)?.name || 'al enemigo'}!`, { x:b.x, y:b.y });
-        else if (b.flights <= 2 || b.flights % 6 === 0) notify(`El globo de ${g.name} despega con ${b.crew.length} ${b.crew.length === 1 ? 'persona' : 'personas'} ${m.kind === 'explorar' ? 'a cartografiar desde el aire' : m.kind === 'visita' ? `a visitar ${villageById(m.to)?.name || 'otro pueblo'}` : `a por ${m.res === 'tree' ? 'madera' : 'piedra'}`}`, { x:b.x, y:b.y });
+        else if (b.flights <= 2 || b.flights % 6 === 0) notify(`El globo de ${g.name} despega con ${b.crew.length} ${b.crew.length === 1 ? 'persona' : 'personas'} ${m.kind === 'explorar' ? 'a cartografiar desde el aire' : m.kind === 'visita' ? `a visitar ${villageById(m.to)?.name || 'otro pueblo'}` : m.kind === 'comercio' ? `a vender ${b.goods ? b.goods.n : ''} de ${m.gname} a ${villageById(m.to)?.name || 'otro pueblo'}` : `a por ${m.res === 'tree' ? 'madera' : 'piedra'}`}`, { x:b.x, y:b.y });
       }
       if (!b.crew.length) { b.state = 'aparcado'; b.mission = null; }
     }
@@ -317,6 +326,14 @@ function missionDone(g, b){
     const k = m.res === 'tree' ? 'madera' : 'piedra', amt = 3 + n * 3; b.cargo = { k, n:amt };
     floats.push({ x:b.x, y:b.y - 16, txt:`+${amt} ${k}`, col:k === 'madera' ? '#e0b070' : '#d8d4cc', life:0 });
     snd(m.res === 'tree' ? 'chop' : 'pick', b.x, b.y);
+  } else if (m.kind === 'comercio') {
+    const o = villageById(m.to), G = b.goods; b.goods = null; if (!o || !popOf(o) || !G || !G.n) { if (G) g[G.k] += G.n; return; }
+    o[G.k] = (o[G.k] || 0) + G.n; const r = relOf(g, o); r.v = clamp(r.v + 3, -100, 100); tradeTrip(g, o, r); g.trades = (g.trades || 0) + 1; o.trades = (o.trades || 0) + 1;
+    const eg = ecOf(g), eo = ecOf(o), pay = Math.round(G.n * priceOf(o) * (G.k === 'food' ? .7 : .5));
+    if (eg && eo) { eo.treas -= pay; eg.treas += pay; moneyFlow(o, g, `${pay} ${o.coin} por ${G.n} de ${m.gname}`); }
+    else { const back = o.food > popOf(o) * 4 ? 'food' : 'wood', n2 = Math.round(G.n * .8); o[back] -= n2; b.cargo = { k:back === 'food' ? 'comida' : 'madera', n:n2 }; }
+    floats.push({ x:b.x, y:b.y - 16, txt:`vendido: ${G.n} de ${m.gname}`, col:'#f0d060', life:0 });
+    notify(`El globo comercial de ${g.name} aterriza en ${o.name} y vende ${G.n} de ${m.gname}${eg && eo ? ` por ${pay} ${o.coin}` : ''}`, { x:b.x, y:b.y });
   } else if (m.kind === 'visita') {
     const o = villageById(m.to); if (!o || !popOf(o)) return;
     const r = relOf(g, o); r.v = clamp(r.v + 4 + n * 2, -100, 100);
@@ -326,7 +343,8 @@ function missionDone(g, b){
   }
 }
 function arriveHome(g, b){
-  if (b.cargo) { if (b.cargo.k === 'madera') g.wood += b.cargo.n; else g.stone += b.cargo.n; clampStore(g); b.cargo = null; }
+  if (b.cargo) { if (b.cargo.k === 'madera') g.wood += b.cargo.n; else if (b.cargo.k === 'comida') g.food += b.cargo.n; else g.stone += b.cargo.n; clampStore(g); b.cargo = null; }
+  if (b.goods) { g[b.goods.k] += b.goods.n; b.goods = null; } // (si no llegó a venderla, la carga vuelve al almacén)
   disembark(g, b); b.state = 'aparcado'; b.mission = null; b.phase = null; b.ready = yearT + 50 + Math.random() * 60;
 }
 // ---- Dibujo ----

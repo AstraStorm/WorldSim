@@ -113,7 +113,7 @@ function draw(t){
   drawHeightmap(t);
   drawThermal(t);
   drawWindmap(t);
-  drawTradeRoutes(performance.now()); drawWarLines(performance.now()); drawWarCamps(performance.now()); drawVillageNames(); // (campamentos y marcador: guerra.js)
+  drawTradeRoutes(performance.now()); drawWarLines(performance.now()); drawWarCamps(performance.now()); drawBattlefields(performance.now()); drawVillageNames(); // (campamentos y marcador: guerra.js)
   if (params.objects) {
     // Destellos sobre los objetos épicos y legendarios
     for (const s of world.rare) {
@@ -144,7 +144,7 @@ function draw(t){
   // Flecha sobre cada aldeano para encontrarlo a cualquier zoom, del color de su nación (con borde dorado si la cámara lo sigue)
   const natCol = new Map(), colOf = v => { let c = natCol.get(v.vid); if (!c) { const g = villageById(v.vid); c = g ? villageColor(nationOf(g)) : [255, 255, 255]; natCol.set(v.vid, c); } return c; };
   for (const v of villagers) {
-    if (v.appear < .25 || (zoom >= 4 && v !== follow)) continue; // de cerca ya se ven sin flecha
+    if (v.appear < .25 || v.dead || v.away || (v.sleep && v.home != null) || (zoom >= 4 && v !== follow)) continue; // de cerca ya se ven sin flecha; quien va en globo, en barco o de viaje (o duerme en casa) no está ahí
     const sx = offX + v.x * zoom, sy = offY + (v.y - 8) * zoom - 4 - (reduceMotion ? 0 : Math.abs(Math.sin(t / 300)) * 3);
     if (sx < -10 || sy < -10 || sx > cw + 10 || sy > ch + 10) continue;
     const c = colOf(v), fol = v === follow;
