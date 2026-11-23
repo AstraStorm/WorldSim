@@ -264,7 +264,7 @@ function chooseJob(v, g){
   const pop = popOf(g), houses = housesOf(g).length, farms = [...farmMap.values()].filter(f => f.vid === g.id);
   const si = seasonInfo().i, J = [];
   const mine = OFICIOS[v.oficio] || [];
-  const add = (k, w) => { if (w > 0 && !((g.jobFail || {})[k] > yearT)) J.push([k, w * (mine.includes(k) ? 3 : 1)]); }; // lo de su oficio, mucho más a menudo
+  const add = (k, w) => { if (w > 0 && !((g.jobFail || {})[k] > yearT) && worksOk(g, k)) J.push([k, w * (mine.includes(k) ? 3 : 1)]); }; // lo de su oficio, mucho más a menudo
   // Construir: uno por cada 6 de madera disponibles; el cercado lo hace una sola persona
   // Mientras falten casas, la madera es para ellas: lo demás solo se hace con la que sobre
   // Cuando las casas ya tienen dueño, cuántas se hacen depende de la política de vivienda del gobierno

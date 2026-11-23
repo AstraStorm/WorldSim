@@ -2123,9 +2123,9 @@ function succession(g, people){
   }
 }
 // ---- Descontento, manifestaciones y golpes de estado ----
-const SLOGANS = { vivienda:['¡Casas para todos!', '¡Alquileres justos!', '¡Ni gente sin casa ni casas sin gente!', '¡Stop desahucios!'], jornada:['¡Queremos descansar!', '¡Menos horas!', '¡Días libres!'], impuestos:['¡Menos impuestos!', '¡No más tributos!'], hambre:['¡Pan!', '¡Tenemos hambre!', '¡Comida para todos!'], 'inflación':['¡Precios justos!', '¡Nuestro dinero no vale nada!', '¡Salarios dignos!'],
+const SLOGANS = { presupuestos:['¡Presupuestos ya!', '¡Queremos saber en qué se gasta!', '¡Las cuentas claras!'], 'corrupción':['¡Ladrones!', '¡Devolved lo robado!', '¡Fuera los corruptos!'], vivienda:['¡Casas para todos!', '¡Alquileres justos!', '¡Ni gente sin casa ni casas sin gente!', '¡Stop desahucios!'], jornada:['¡Queremos descansar!', '¡Menos horas!', '¡Días libres!'], impuestos:['¡Menos impuestos!', '¡No más tributos!'], hambre:['¡Pan!', '¡Tenemos hambre!', '¡Comida para todos!'], 'inflación':['¡Precios justos!', '¡Nuestro dinero no vale nada!', '¡Salarios dignos!'],
   'tiranía':['¡Libertad!', '¡Abajo el tirano!', '¡Fuera!'], ideas:['¡Fuera el gobierno!', '¡Otro gobierno!', '¡No nos representan!'], guerra:['¡Paz!', '¡No a la guerra!'], bancarrota:['¡Devolved nuestros ahorros!', '¡Ladrones!'], salarios:['¡Sueldos dignos!', '¡No llegamos a fin de mes!', '¡Más salario!'], culto:['¡Libertad de culto!', '¡Dejadnos rezar!'], racismo:['¡No al racismo!', '¡Todos somos iguales!', '¡Derechos para todos!'], derechos:['¡Amar no es delito!', '¡Igualdad!', '¡Libres de amar!'] };
-const GRIEF_TXT = { vivienda:'la falta de vivienda', jornada:'las jornadas interminables', impuestos:'los impuestos', hambre:'el hambre', 'inflación':'la subida de precios', 'tiranía':'la tiranía', ideas:'el gobierno', guerra:'la guerra', bancarrota:'la bancarrota', salarios:'los sueldos bajos', culto:'la persecución religiosa', racismo:'la segregación racial', derechos:'la persecución por amar' };
+const GRIEF_TXT = { presupuestos:'la falta de presupuestos', 'corrupción':'la corrupción', vivienda:'la falta de vivienda', jornada:'las jornadas interminables', impuestos:'los impuestos', hambre:'el hambre', 'inflación':'la subida de precios', 'tiranía':'la tiranía', ideas:'el gobierno', guerra:'la guerra', bancarrota:'la bancarrota', salarios:'los sueldos bajos', culto:'la persecución religiosa', racismo:'la segregación racial', derechos:'la persecución por amar' };
 const BUSY_POL = ['asalto', 'apagar', 'viaje', 'votar', 'golpe', 'protesta', 'reprimir', 'detenido', 'ritual'];
 function politicsTick(g, dt, people){
   if (g.coin && (g.econT = (g.econT ?? 20) - dt) <= 0) { g.econT = 20; econTick(g, people); }
@@ -2136,7 +2136,7 @@ function politicsTick(g, dt, people){
     'tiranía':tyranny(g) ? .22 + (g.repressed || 0) * .02 : regimeOf(g) === 'monarquia' ? .06 : 0,
     ideas:cap.parties ? Math.max(0, Math.abs(avg - govIdeo(g)) - .5) * 1.1 : 0,
     guerra:[...rels.values()].some(r => r.war && r.war.def === g.id && r.war.dead > 2) ? .5 : 0,
-    bancarrota:ec && yearT - (ec.bankruptT ?? -1e9) < DAY_LEN * 2 ? 1 : 0, jornada:(hasLaw(g, 'jornada_larga') ? .25 : 0) + (restDaysOf(g) === 0 ? .25 : 0) + (restDaysOf(g) === 1 && avg < -.35 ? .1 : 0), impuestos:(hasLaw(g, 'impuestos_altos') ? .12 : 0) + taxGrief(g), salarios:0, vivienda:housingGrief(g) };
+    bancarrota:ec && yearT - (ec.bankruptT ?? -1e9) < DAY_LEN * 2 ? 1 : 0, jornada:(hasLaw(g, 'jornada_larga') ? .25 : 0) + (restDaysOf(g) === 0 ? .25 : 0) + (restDaysOf(g) === 1 && avg < -.35 ? .1 : 0), impuestos:(hasLaw(g, 'impuestos_altos') ? .12 : 0) + taxGrief(g), salarios:0, vivienda:housingGrief(g), presupuestos:budgetGrief(g), 'corrupción':corruptGrief(g) };
   { const ad = adults.length || 1, mins = adults.filter(u => isMinority(u, g)).length, gays = adults.filter(lgtb).length, left = adults.filter(u => (u.ideo || 0) < -.2).length / ad;
     if (hasLaw(g, 'segregacion') && (mins / ad > .12 || left > .4)) f.racismo = .25 + mins / ad;
     if (hasLaw(g, 'persecucion') && (gays >= 2 || left > .4)) f.derechos = .2 + gays / ad * 2;
@@ -2149,7 +2149,7 @@ function politicsTick(g, dt, people){
   if (g.protestN) for (const k in g.protestN) if (!(f[k] > 0)) delete g.protestN[k]; // ya no hay motivo: se olvida
   if (g.protest) { runProtest(g); return; }
   if (g.coup) { if (yearT > g.coup.until) resolveCoup(g); return; }
-  if (g.anger > (hasLaw(g, 'orden') ? 50 : 35) && g.grief && !isNight() && g.plaza && !cap.election && yearT - (g.protestT ?? -1e9) > DAY_LEN * .5) { startProtest(g, adults); return; }
+  if (g.anger > (hasLaw(g, 'orden') ? 50 : 35) && !afraid(g) && g.grief && !isNight() && g.plaza && !cap.election && yearT - (g.protestT ?? -1e9) > DAY_LEN * .5) { startProtest(g, adults); return; }
   if (cap === g && g.faith && ['republica', 'monarquia', 'tribu'].includes(regimeOf(g)) && (g.devotion || 0) > 8 && (g.wrath || 0) > 3 && !isNight() && Math.random() < .0004 * dt) {
     const priest = adults.filter(u => u.oficio === 'sacerdote').sort((a, b) => pietyOf(b) - pietyOf(a))[0] || adults.slice().sort((a, b) => pietyOf(b) - pietyOf(a))[0];
     if (priest) { const old = g.leader; setRegime(g, 'teocracia', priest); notify(`Los sacerdotes de ${g.name} toman el poder en nombre de ${g.faith.god}${old && old !== priest && !old.dead ? ` y apartan a ${old.name}` : ''}: ${priest.name} es ${leaderTitle(g)} de una teocracia`, { x:g.fx * T, y:g.fy * T }); return; }
@@ -2180,7 +2180,7 @@ function proposeLaw(g, adults){
   } else { const txt = `En ${g.name} el pueblo rechaza la ley de «${LAW_TXT[law]}» que proponía ${artP(p)} ${p.name} (solo un ${pct} % a favor)`; lawLog(g, txt); notify(txt, at); g.anger = Math.min(100, (g.anger || 0) + 3); }
 }
 function startProtest(g, adults){
-  const gi = govIdeo(g), econ = ['hambre', 'inflación', 'bancarrota', 'guerra', 'jornada', 'impuestos', 'vivienda'].includes(g.grief); g.protestT = yearT;
+  const gi = govIdeo(g), econ = ['hambre', 'inflación', 'bancarrota', 'guerra', 'jornada', 'impuestos', 'vivienda', 'presupuestos', 'corrupción'].includes(g.grief); g.protestT = yearT;
   let who = adults.filter(u => u !== g.leader && !u.away && !u.boat && !u.sleep && !(u.task && BUSY_POL.includes(u.task.k)) && (econ ? Math.random() < .6 : Math.abs((u.ideo || 0) - gi) > .3));
   if (g.grief === 'vivienda') who.sort((a, b) => (a.home == null ? 0 : 1) - (b.home == null ? 0 : 1)); // los que no tienen casa, delante
   if (who.length < 3) return;
@@ -2189,7 +2189,7 @@ function startProtest(g, adults){
   const r0 = g.plaza, pts = [[r0.x0, r0.y0], [r0.x1, r0.y0], [r0.x1, r0.y1], [r0.x0, r0.y1]].map(([x, y]) => [x * T + 2, y * T + 3]);
   const slog = SLOGANS[g.grief], col = ['#f2efe6', '#f0d060', '#f08a7a'][Math.floor(Math.random() * 3)];
   who.forEach((u, k) => { releaseTask(u); if (u.actT > 0) { u.actT = 0; u.onDone = null; } u.task = { k:'protesta', pts, idx:k % 4, until:yearT + 30, slogan:slog[k % slog.length], col }; u.lastD = Infinity; u.hitBy = null; });
-  g.protest = { until:yearT + 30, who, said:false, riot:g.anger > 60 || pn[g.grief] >= 3 }; // muy enfadados, o hartos de protestar por lo mismo: disturbios
+  g.protest = { until:yearT + 30, who, said:false, riot:g.anger > 60 || pn[g.grief] >= 3, lynch:['corrupción', 'presupuestos'].includes(g.grief) && g.anger > 75 }; // furiosos con su líder: van a por él // muy enfadados, o hartos de protestar por lo mismo: disturbios
   if (g.grief === 'vivienda') startCamp(g, who);
   notify(`¡Manifestación en ${g.name}! ${who.length} personas salen con carteles contra ${GRIEF_TXT[g.grief]}: «${slog[0]}»`, { x:g.fx * T, y:g.fy * T });
 }
@@ -2197,6 +2197,7 @@ function runProtest(g){
   const p = g.protest, live = p.who.filter(u => !u.dead && u.task && u.task.k === 'protesta');
   if (live.length && Math.random() < .6) { const u = live[Math.floor(Math.random() * live.length)]; floats.push({ x:u.x, y:u.y - 16, txt:u.task.slogan, col:'#f8f0d8', life:0 }); }
   if (p.riot && !p.said) riotTick(g, p, live);
+  if (p.lynch && !p.said && yearT > p.until - 24 && live.length >= 3) { p.lynch = false; if (lynchLeader(g, live)) { p.said = true; g.grief = null; } }
   if (!p.said && yearT > p.until - 20) { p.said = true; const rep = g.repressed || 0; respondProtest(g, live); if (g.camp && (g.repressed || 0) > rep) endCamp(g, 'desalojo'); }
   if (yearT > p.until || !live.length) { for (const u of p.who) if (u.task && u.task.k === 'protesta') u.task = null; g.protest = null; }
 }
@@ -2239,6 +2240,8 @@ function respondProtest(g, who){
     else if (g.grief === 'inflación' && g.coin) { what = 'congelan los precios'; ecOf(g).infl *= .3; }
     else if ((g.grief === 'racismo' || g.grief === 'derechos' || g.grief === 'culto') && cap.parties && cap.ruling != null) { const law = g.grief === 'racismo' ? 'segregacion' : g.grief === 'culto' ? 'persecucion_religiosa' : 'persecucion', P = cap.parties[cap.ruling]; P.laws = P.laws.filter(l => l !== law); what = `derogan la ley de «${LAW_TXT[law]}»`; lawLog(g, `En ${g.name}, tras las protestas, se deroga la ley de «${LAW_TXT[law]}»`); }
     else if (g.grief === 'jornada' && restDaysOf(g) < 2 && !(g.restBonus > 0)) { g.restBonus = 1; what = `les dan un día libre más a la semana (ahora, ${restDaysOf(g)})`; }
+    else if (g.grief === 'corrupción' && g.scandal) { const L = budgetLeader(g); if (L) { const back = Math.min(L.money || 0, g.scandal.amt); L.money -= back; ecOf(g).treas += back; if (g.leader === L) g.leader = null; if (cap.leader === L) cap.leader = null; if (votes(g)) cap.voteT = -1e9; } what = `${g.scandal.who} devuelve lo que se llevó y deja el cargo`; g.scandal = null; }
+    else if (g.grief === 'presupuestos' && g.budget) { g.budget.how = 'votados'; g.budget.d = Math.floor(yearT / DAY_LEN) + 1; g.noBudgetDays = 0; what = 'aprueban unos presupuestos de urgencia'; }
     else if (g.grief === 'vivienda' && cap.parties && cap.ruling != null && !hasLaw(g, 'vivienda_publica')) { const P = cap.parties[cap.ruling], law = hasLaw(g, 'tope_alquiler') || Math.random() < .5 ? 'vivienda_publica' : 'tope_alquiler'; P.laws = [...P.laws.filter(l => l !== 'mercado_vivienda'), law]; what = `aprueban la ley de «${LAW_TXT[law]}»`; lawLog(g, `En ${g.name}, tras las protestas, se aprueba la ley de «${LAW_TXT[law]}»`); }
     else if (g.grief === 'vivienda') { g.hDem = Math.max(.7, (g.hDem || 1) * .8); what = 'prometen más casas y bajan los precios de la vivienda'; }
     else if (g.grief === 'salarios' && g.coin) { g.wageUp = Math.min(2.5, (g.wageUp || 1) * 1.3); what = 'suben los sueldos un 30 %'; }
@@ -2338,7 +2341,7 @@ function econTick(g, people){
   if (bank) for (const v of people) if ((v.money || 0) > 10 * ec.P) { const d = Math.floor(v.money * .3); v.money -= d; ec.dep += d; }
   const atWar = [...rels.values()].some(r => r.war && (r.war.att === g.id || r.war.def === g.id));
   const extra = (reg === 'teocracia' ? .15 : 0) + (hasLaw(g, 'sanidad') ? .2 : 0) + (hasLaw(g, 'educacion') ? .15 : 0) + (hasLaw(g, 'obras') ? .25 : 0) + (hasLaw(g, 'ejercito') ? .3 : 0) + (hasLaw(g, 'reparto') ? .15 : 0) + (hasLaw(g, 'vivienda_publica') ? .2 : 0) + (atWar ? .6 : 0) + (reg === 'monarquia' ? .15 : 0) + (reg === 'fascismo' ? .2 : 0);
-  const spend = tax * (.9 + extra) + pop * ec.P * .05 * extra;
+  const spend = budgetTick(g, ec, people, tax * (.9 + extra) + pop * ec.P * .05 * extra); // repartido en partidas (presupuestos.js)
   ec.treas += tax - spend; ec.lastTax = tax; ec.lastSpend = spend;
   let printed = 0;
   if (ec.treas < 0) {
@@ -2501,6 +2504,7 @@ function econCard(g){
       <div class="kv"><span>Tratos en el mercado</span><b>${g.trades || 0}</b></div>
       <div class="kv"><span>Dinero en manos de la gente</span><b>${villagers.filter(v => !v.dead && v.vid === g.id).reduce((a, v) => a + (v.money || 0), 0)}</b></div></div>
     ${taxCard(g)}
+    ${budgetCard(g)}
     ${housingCard(g)}
     ${fx.length ? `<h4>Cambio de moneda</h4><div class="sec">${fx.map(o => `<div class="kv"><span>1 ${esc(g.coin)} =</span><b>${(ecOf(o).P / ec.P).toFixed(2)} ${coinPl(o)} <span class="muted">(${esc(o.name)})</span></b></div>`).join('')}</div>` : ''}`;
 }
@@ -2791,7 +2795,7 @@ function updateVillagers(dt){
       if (v.water < .5) { const p = drinkSpot(v, g); v.task = p ? { k:'beber', ...p } : null; }
       else if (v.food < .5 && canEat(v, g)) v.task = { k:'comer', ...eatSpot(v, g) };
       else if (child) { v.task = kidTask(v, g); if (!v.task) { const p = siteNear(g, 1, 4, (x, y) => tileFree(x, y)); v.task = p ? { k:'pasear', x:p[0] * T + 2, y:p[1] * T + 3 } : null; } }
-      else { let job = chooseJob(v, g); if (job === 'pescar' && !v.rod && g.wood >= 2 && housesOf(g).length * 4 >= popOf(g) + 2 && villagers.filter(u => u.rod && u.vid === g.id).length < Math.ceil(popOf(g) / 3)) job = 'caña'; let tk = setupTask(v, g, job); if (!tk) (g.jobFail ||= {})[job] = yearT + 30; for (let k = 0; k < 3 && !tk; k++) { const j2 = chooseJob(v, g); tk = setupTask(v, g, j2); if (!tk) g.jobFail[j2] = yearT + 30; } /* lo que no encuentra sitio se aparca un rato */ v.task = tk || setupTask(v, g, 'pasear'); maybeRide(v, g); }
+      else { let job = chooseJob(v, g); if (job === 'pescar' && !v.rod && g.wood >= 2 && housesOf(g).length * 4 >= popOf(g) + 2 && villagers.filter(u => u.rod && u.vid === g.id).length < Math.ceil(popOf(g) / 3)) job = 'caña'; let tk = setupTask(v, g, job); if (!tk) (g.jobFail ||= {})[job] = yearT + 30; for (let k = 0; k < 3 && !tk; k++) { const j2 = chooseJob(v, g); tk = setupTask(v, g, j2); if (!tk) g.jobFail[j2] = yearT + 30; } /* lo que no encuentra sitio se aparca un rato */ v.task = tk || setupTask(v, g, 'pasear'); if (tk) chargeWork(g, tk.k); /* las obras públicas se pagan del fondo de obras */ maybeRide(v, g); }
       v.lastD = Infinity; v.stuckT = 0;
       if (!v.task) { v.wait = 1 + Math.random(); continue; }
     }
