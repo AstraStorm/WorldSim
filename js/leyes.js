@@ -11,13 +11,13 @@
 // · Libertad de prensa: los periódicos dicen lo que quieren (no casa con la censura); la gente se fía más
 // · Impuesto a los ricos: los que más tienen pagan una parte cada día al tesoro
 Object.assign(LAW_TXT, { ley_seca:'ley seca', toque_queda:'toque de queda', renta_basica:'renta básica', loteria:'lotería nacional', servicio_militar:'servicio militar',
-  deporte:'fomento del deporte', mas_festivos:'más festivos', animales:'protección de los animales', libertad_prensa:'libertad de prensa', impuesto_ricos:'impuesto a los ricos' });
+  deporte:'fomento del deporte', entradas_gratis:'entradas gratis', mas_festivos:'más festivos', animales:'protección de los animales', libertad_prensa:'libertad de prensa', impuesto_ricos:'impuesto a los ricos' });
 Object.assign(LAW_DESC, { ley_seca:'prohibido el alcohol: la taberna cierra, la gente se enfada y alguno lo vende a escondidas',
   toque_queda:'de noche nadie sale a divertirse: menos delitos, pero más enfado', renta_basica:'cada día todos los adultos cobran algo del tesoro, trabajen o no',
   loteria:'el tesoro gana con los boletos y cada pocos días a alguien le toca un buen pellizco', servicio_militar:'los jóvenes hacen la mili y reciben una lanza: más gente sabe defender el pueblo',
-  deporte:'se construyen instalaciones deportivas antes y se entrena más', mas_festivos:'un día libre más a la semana', animales:'no hay batidas de caza y se sacrifica menos ganado',
+  deporte:'se construyen instalaciones deportivas antes y se entrena más', entradas_gratis:'ver los partidos y los Juegos no cuesta nada (el club y el tesoro no cobran taquilla)', mas_festivos:'un día libre más a la semana', animales:'no hay batidas de caza y se sacrifica menos ganado',
   libertad_prensa:'los periódicos dicen lo que quieren: la gente se fía más del gobierno (o se entera de todo)', impuesto_ricos:'los que más dinero tienen pagan una parte cada día al tesoro' });
-Object.assign(LAW_LEAN, { ley_seca:.35, toque_queda:.6, renta_basica:-.65, loteria:.1, servicio_militar:.5, deporte:-.1, mas_festivos:-.4, animales:-.35, libertad_prensa:-.4, impuesto_ricos:-.6 });
+Object.assign(LAW_LEAN, { ley_seca:.35, toque_queda:.6, renta_basica:-.65, loteria:.1, servicio_militar:.5, deporte:-.1, entradas_gratis:-.5, mas_festivos:-.4, animales:-.35, libertad_prensa:-.4, impuesto_ricos:-.6 });
 LAW_CLASH.push(['libertad_prensa', 'censura'], ['impuesto_ricos', 'impuestos_bajos'], ['mas_festivos', 'jornada_larga'], ['renta_basica', 'impuestos_bajos']);
 REGIME_LAWS.fascismo.push('servicio_militar', 'toque_queda'); REGIME_LAWS.dictadura.push('toque_queda'); REGIME_LAWS.comunismo.push('impuesto_ricos'); REGIME_LAWS.teocracia.push('ley_seca');
 // Efectos que van con el tiempo (desde el ciclo de cada pueblo)

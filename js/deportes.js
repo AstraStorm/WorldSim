@@ -184,6 +184,7 @@ function ballGameEnd(b){
 function sportsTick(g, dt, people){
   if ((g.sportT = (g.sportT ?? Math.random() * 10) - dt) > 0) return; g.sportT = 10;
   for (const u of people) if (u.matchHome && !ballGames.some(b => b.ps.includes(u))) { [u.x, u.y] = u.matchHome; u.matchHome = null; } // (si se cortó un partido, vuelven a casa)
+  ticketPolicyTick(g); // el precio de las entradas
   if (!g.pitch) return;
   if (!g.club) { if (popOf(g) >= 12) makeClub(g); return; }
   clubRoster(g, people); const C = g.club, law = hasLaw(g, 'deporte');
@@ -197,19 +198,42 @@ function sportsTick(g, dt, people){
 }
 // ---- Entradas: para ver un partido o los Juegos hay que pagar (quien no tiene, se queda fuera) ----
 // Con moneda, cada entrada cuesta medio sueldo; sin moneda, se paga en especie (un poco de comida para el pueblo que organiza)
-const ticketPrice = (g, big) => g.coin ? Math.max(1, Math.round(wageOf(g, big ? 1.5 : 1) / 2)) : 0;
+// El precio lo decide el gobierno (o el pueblo, donde se vota): gratis, barato, normal o caro. La ley «entradas gratis» lo deja a cero
+const TICKET_LVL = ['gratis', 'baratas', 'normales', 'caras'], TICKET_MULT = [0, .5, 1, 1.8];
+const ticketLvl = g => hasLaw(g, 'entradas_gratis') ? 0 : g.ticketLvl ?? 2;
+const ticketPrice = (g, big) => g.coin && ticketLvl(g) ? Math.max(1, Math.round(wageOf(g, big ? 6 : 4) * TICKET_MULT[ticketLvl(g)])) : 0;
 function payTickets(host, list, what, club){
   const price = ticketPrice(host, what === 'Juegos'), paid = []; let cash = 0, food = 0;
   for (const u of list) {
     if (price) { if ((u.money || 0) < price) continue; u.money -= price; cash += price; }
-    else food += .3;
+    else if (!host.coin) food += .3;
     paid.push(u);
   }
+  host.tkSeen = (host.tkSeen || 0) + list.length; host.tkOut = (host.tkOut || 0) + list.length - paid.length; // para las quejas
   const ec = ecOf(host);
   if (club) { club.cash = (club.cash || 0) + Math.round(cash * .6); if (ec) ec.treas += cash - Math.round(cash * .6); } else if (ec) ec.treas += cash;
   host.food += food; host.tickets = (host.tickets || 0) + cash;
-  if (paid.length && (cash || food >= 1)) notify(`Taquilla ${what === 'Juegos' ? 'de los Juegos' : 'del partido'} en ${host.name}: ${paid.length} entradas${price ? ` a ${price} ${host.coin} (${cash} ${host.coin})` : ', pagadas con comida'}${list.length > paid.length ? `; ${list.length - paid.length} se quedan fuera sin dinero` : ''}`, { x:host.fx * T, y:host.fy * T });
+  if (paid.length && (cash || food >= 1) && Math.random() < .5) notify(`Taquilla ${what === 'Juegos' ? 'de los Juegos' : 'del partido'} en ${host.name}: ${paid.length} entradas${price ? ` a ${price} ${host.coin} (${cash} ${host.coin})` : ', pagadas con comida'}${list.length > paid.length ? `; ${list.length - paid.length} se quedan fuera sin dinero` : ''}`, { x:host.fx * T, y:host.fy * T });
   return paid;
+}
+// Cada día: la gente se queja si muchos se quedan fuera; el gobierno (o una votación) sube o baja el precio
+function ticketPolicyTick(g){
+  if (!g.coin || !(g.pitch || g.track) || hasLaw(g, 'entradas_gratis')) return;
+  if ((g.tpT = (g.tpT ?? DAY_LEN) - 10) > 0) return; g.tpT = DAY_LEN;
+  const at = { x:g.fx * T, y:g.fy * T }, lvl = ticketLvl(g), out = (g.tkOut || 0) / Math.max(1, g.tkSeen || 0), ec = ecOf(g), ideo = govIdeo(g);
+  const adults = villagers.filter(u => !u.dead && u.vid === g.id && ageOf(u) >= ADULT_H), poor = adults.filter(u => (u.money || 0) < ticketPrice(g) * 3).length / Math.max(1, adults.length);
+  const angry = lvl > 0 && (out > .35 || poor > .5); g.tkSeen = g.tkOut = 0;
+  if (angry) { g.ticketGrief = yearT + DAY_LEN * 1.5; g.anger = (g.anger || 0) + 2; if (!g.tkMsgT || yearT - g.tkMsgT > DAY_LEN * 3) { g.tkMsgT = yearT; notify(`En ${g.name} se quejan: las entradas para ver deporte están carísimas${out > .35 ? ` (${Math.round(out * 100)} % se quedan fuera)` : ''}`, at); } }
+  let to = lvl, why = '';
+  if (popularVote(g) && angry && Math.random() < .6) {
+    const yes = adults.filter(u => (u.money || 0) < ticketPrice(g) * 4 || (u.ideo || 0) < -.2).length;
+    if (yes > adults.length / 2) { to = lvl - 1; why = `votan bajar las entradas (${yes} de ${adults.length} a favor)`; } else why = `votan dejar las entradas como están (solo ${yes} de ${adults.length} quieren bajarlas)`;
+  } else if (angry && ((g.anger || 0) > 30 || ideo < -.2) && Math.random() < .5) { to = lvl - 1; why = 'el gobierno baja las entradas para calmar a la gente'; }
+  // (subirlas: no justo después de una votación o de las quejas)
+  else if (!angry && yearT - (g.tkDecT ?? -1e9) > DAY_LEN * 5 && !(g.ticketGrief > yearT - DAY_LEN * 2) && ec && (ec.treas < 0 || ec.debt > 0 || ideo > .3) && lvl < 3 && Math.random() < .35) { to = lvl + 1; why = ec.treas < 0 || ec.debt > 0 ? 'el gobierno sube las entradas para sanear el tesoro' : 'el gobierno sube las entradas: que pague quien quiera verlo'; }
+  else if (!angry && ideo < -.4 && lvl > 1 && Math.random() < .25) { to = lvl - 1; why = 'el gobierno abarata las entradas: el deporte, para todos'; }
+  to = clamp(to, 0, 3); if (why && to <= lvl) g.tkDecT = yearT; // lo que se decide por las quejas o en votación se respeta unos días
+  if (why) { if (to !== lvl) { g.ticketLvl = to; notify(`En ${g.name} ${why}: ahora son ${TICKET_LVL[to]}${to ? ` (${ticketPrice(g)} ${g.coin})` : ''}`, at); (g.log ||= []).push({ d:Math.floor(yearT / DAY_LEN) + 1, txt:`Entradas ${TICKET_LVL[to]}: ${why}` }); } else if (popularVote(g)) notify(`En ${g.name} ${why}`, at); }
 }
 // ---- Ánimo de la nación con los resultados: ganar alegra a todo el país unos días; perder, lo contrario ----
 function sportResult(g, delta, why){
@@ -219,7 +243,11 @@ function sportResult(g, delta, why){
   for (const o of villages) if (popOf(o) && nationOf(o) === n) o.anger = Math.max(0, (o.anger || 0) - delta * .5);
 }
 // (desde socialMood, convivencia.js)
-function sportMoodAdd(v, g, add){ const n = nationOf(g), M = n && n.sportMood; if (M && M.until > yearT && M.v) add(Math.round(M.v), M.why); }
+function sportMoodAdd(v, g, add){
+  const n = nationOf(g), M = n && n.sportMood; if (M && M.until > yearT && M.v) add(Math.round(M.v), M.why);
+  if (g.ticketGrief > yearT && (v.money || 0) < ticketPrice(g) * 4) add(-5, 'no se puede pagar la entrada para ver deporte');
+  else if ((g.pitch || g.track) && g.coin && ticketLvl(g) === 0) add(2, 'ver deporte es gratis');
+}
 // ---- Dibujo: campo, piscina, y marcador con los escudos durante los partidos ----
 function drawSports(){
   const [vx0, vy0, vx1, vy1] = visibleRect(), now = performance.now();
@@ -270,13 +298,14 @@ function sportsTab(g){
   let club = '';
   if (C) {
     const row = (p, role) => { const u = byPid(p); return u ? `<div class="kv"><span>${role}</span><b>${esc(u.name)} ${role !== 'Entrenador' ? bar(u.fit, '#58a842') : ''}</b></div>` : ''; };
-    club = `<h4>Club de fútbol</h4><div class="club"><img src="${crestUrl(C)}" alt="Escudo"><div><b>${esc(C.name)}</b><div class="muted">fundado el día ${C.founded} · ${C.w} victorias, ${C.d} empates, ${C.l} derrotas · goles ${C.gf}–${C.ga}${g.coin ? ` · caja ${Math.round(C.cash || 0)} ${esc(g.coin)} · entrada ${ticketPrice(g)} ${esc(g.coin)}` : ''}</div></div></div>
+    club = `<h4>Club de fútbol</h4><div class="club"><img src="${crestUrl(C)}" alt="Escudo"><div><b>${esc(C.name)}</b><div class="muted">fundado el día ${C.founded} · ${C.w} victorias, ${C.d} empates, ${C.l} derrotas · goles ${C.gf}–${C.ga}${g.coin ? ` · caja ${Math.round(C.cash || 0)} ${esc(g.coin)}` : ''}</div></div></div>
       <div class="sec">${C.players.map(p => row(p, 'Titular')).join('')}${row(C.bench, 'Banquillo')}${row(C.coach, 'Entrenador')}</div>
       ${C.res.length ? `<div class="muted" style="font-size:12.5px;margin-top:6px">${C.res.slice().reverse().map(r => `día ${r.d}: ${esc(r.txt)}`).join('<br>')}</div>` : '<div class="muted" style="font-size:12.5px;margin-top:6px">Aún no ha jugado ningún partido</div>'}`;
   } else if (S.futbol) club = '<h4>Club de fútbol</h4><div class="muted">Se fundará cuando haya 12 habitantes</div>';
   const cats = k => { const a = ps.filter(u => u.sports && u.sports[k]); if (!a.length) return '<span class="muted">nadie todavía</span>'; return SPORT_CATS.map(c => { const n = a.filter(u => sportCat(u) === c).length; return n ? `${c} ${n}` : ''; }).filter(Boolean).join(' · '); };
   const swim = ps.filter(u => u.swims !== false).length, fitAvg = ps.length ? ps.reduce((s, u) => s + (u.fit || 0), 0) / ps.length : 0;
-  return `<h4>Instalaciones</h4><div class="sec">${fac}</div>${club}
+  const tk = g.coin ? `<div class="kv"><span>🎟 Entradas</span><b>${TICKET_LVL[ticketLvl(g)]}${ticketLvl(g) ? ` · ${ticketPrice(g)} ${esc(g.coin)} (Juegos ${ticketPrice(g, true)})` : ''}${hasLaw(g, 'entradas_gratis') ? ' <span class="muted">(por ley)</span>' : ''}${g.ticketGrief > yearT ? ' <span style="color:#f08a7a">· la gente se queja</span>' : ''}</b></div><div class="kv"><span>Recaudado</span><b>${Math.round(g.tickets || 0)} ${esc(g.coin)}</b></div>` : '<div class="kv"><span>🎟 Entradas</span><b>sin moneda: se paga con comida</b></div>';
+  return `<h4>Instalaciones</h4><div class="sec">${fac}${tk}</div>${club}
     <h4>Deportistas por categoría</h4><div class="sec">${Object.keys(SPORT_NAME).map(k => `<div class="kv"><span>${SPORT_NAME[k]}</span><b>${cats(k)}</b></div>`).join('')}</div>
     <h4>Forma física</h4><div class="sec"><div class="kv"><span>Saben nadar</span><b>${swim} de ${ps.length}</b></div><div class="kv"><span>Forma media</span><b>${bar(fitAvg, '#e9b949')}</b></div></div>
     <p class="muted" style="font-size:12px">La piscina enseña a nadar y da velocidad en el agua; la pista mejora la forma (más rápidos y aguantan mejor el frío y el calor). Los Juegos se celebran cada año en una pista de atletismo.</p>`;
