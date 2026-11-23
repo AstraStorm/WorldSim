@@ -107,6 +107,8 @@ Sin dependencias ni compilación: cada archivo es un script normal y se cargan e
 | `js/vegetacion.js` | Crecimiento y muerte de la vegetación |
 | `js/aldeanos.js` | Movimiento y dibujo de los aldeanos |
 | `js/sonido.js` | Sonido sintetizado: música generativa, ambiente según lo que se ve (olas, ríos, viento, lluvia, grillos, pájaros, tormentas, fuego), voces, animales, trabajos y rezos de cerca, y los volúmenes |
+| `js/ambiente.js` | Vida en el mapa: almiares, muñecos de nieve, patinadores, flores y mariposas; farolillos, luciérnagas, estrellas fugaces y sueños; bueyes arando y esquileo |
+| `js/fama.js` | Héroes de guerra (capa, estatua y baladas), castillos para las naciones victoriosas y la feria ambulante |
 | `js/guerra.js` | Campamentos de guerra, bajas de cada bando, guerras más largas y guerras civiles |
 | `js/titulares.js` | Barra de titulares arriba: guerras con su marcador y las noticias más importantes |
 | `js/rutas.js` | Rutas comerciales: se ven en el mapa, dan negocio y mueven comida de quien sobra a quien falta |

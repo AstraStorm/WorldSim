@@ -3,7 +3,7 @@
 // · A la izquierda, las guerras en curso con su marcador (días y bajas de cada bando); a la derecha, las últimas
 //   noticias importantes (guerras, paces, conquistas, golpes, revoluciones, bancarrotas y rescates, rutas
 //   comerciales, Juegos y partidos), que van rotando. Tocar una lleva la cámara allí
-const HEADLINE = /guerra|paz|conquist|arrasad|extingu|independiza|golpe|revoluci|régimen|bancarrota|rescate|recortes|reestructura|ruta comercial|Juegos|Final del partido|cisma|guerra civil|epidemia|erupción|tsunami|hiperinflación|se rinde|alianza|Consejo/i;
+const HEADLINE = /guerra|paz|conquist|arrasad|extingu|independiza|golpe|revoluci|régimen|bancarrota|rescate|recortes|reestructura|ruta comercial|Juegos|Final del partido|cisma|guerra civil|epidemia|erupción|tsunami|hiperinflación|se rinde|alianza|Consejo|feria|castillo|famoso|batalla/i;
 const NOT_HEADLINE = /ha muerto en la guerra|marchan a atacar|Taquilla|aprenden|caravana/i;
 let headlines = [], tickIdx = 0;
 {

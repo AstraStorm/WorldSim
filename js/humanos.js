@@ -348,6 +348,7 @@ function chooseJob(v, g){
   umbrellaJobs(v, g, add); // coser paraguas (lluvia.js)
   volcanoJobs(v, g, add); // cercar el volcán (volcanes.js)
   sportsJobs(v, g, add); // campo de fútbol, piscina y pista (deportes.js)
+  shearJobs(v, g, add); // esquilar las ovejas (ambiente.js)
   seasonJobs(v, g, add); shackJobs(v, g, add); // conservas, leña, árboles (estaciones.js) y chabolas (riqueza.js)
   scienceJobs(v, g, add); // investigar en la universidad (ciencia.js)
   add('carro', know.montar && houses >= 3 && (g.carts || 0) < 1 + Math.floor(pop / 10) && spare >= 10 && !busyWith(g, 'carro') ? 2.5 : 0);
@@ -395,7 +396,7 @@ function chooseJob(v, g){
   if (!inShift(g) && !isNight() && ageOf(v) >= ADULT_H && !(g.danger > 0) && !(famine && g.food < pop * 1.5)) {
     for (let k2 = J.length - 1; k2 >= 0; k2--) if (!['apagar', 'encender', 'alumbrar', 'arma', 'equipar', 'beber', 'comer', 'cosechar'].includes(J[k2][0])) J.splice(k2, 1); // (la cosecha madura se recoge aunque sea tarde)
     if (hasLaw(g, 'toque_queda') && dayT() > .62) J.push(['ocio', 6]); // toque de queda: al caer la tarde, nada de salir (leyes.js)
-    else { J.push(['ocio', 6], ['pasear', 1]); sportsLeisure(v, g, J); if (holidayToday(g)) J.push(['fiesta', 10]); if (hasTheater(g)) J.push(['ver_teatro', 3]); if (hasColiseum(g)) J.push(['ver_coliseo', 2.5]); if (hasTavern(g) && !hasLaw(g, 'ley_seca')) J.push(['ir_taberna', ageOf(v) < ADULT_H ? 1 : 4]); }
+    else { J.push(['ocio', 6], ['pasear', 1]); sportsLeisure(v, g, J); fairLeisure(v, g, J); if (holidayToday(g)) J.push(['fiesta', 10]); if (hasTheater(g)) J.push(['ver_teatro', 3]); if (hasColiseum(g)) J.push(['ver_coliseo', 2.5]); if (hasTavern(g) && !hasLaw(g, 'ley_seca')) J.push(['ir_taberna', ageOf(v) < ADULT_H ? 1 : 4]); }
   }
   let k = Math.random() * J.reduce((s, j) => s + j[1], 0);
   for (const [job, w] of J) if ((k -= w) < 0) return job;
@@ -414,6 +415,8 @@ function setupTask(v, g, job){
     case 'paraguas': return umbrellaTarget(v, g);
     case 'cercar_volcan': return volcFenceTarget(v, g);
     case 'instalacion': return sportBuildTarget(v, g);
+    case 'esquilar': return shearTarget(v, g);
+    case 'feria': return fairTarget(v, g);
     case 'nadar': case 'correr': return sportTarget(v, g, job);
     case 'talar': {
       const i = objNear(g, (g.treesNear ?? 99) < 12 ? 60 : 30, o => OBJ[o.key][1] === 'tree' && o.st !== 'b' && o.st !== 'j', v); const p = i != null && standBy(i); // sin árboles cerca, van más lejos
@@ -723,6 +726,8 @@ function runTask(v, g, dt){
     case 'paraguas': umbrellaArrive(v, g, t); break;
     case 'cercar_volcan': volcFenceArrive(v, g, t); break;
     case 'instalacion': sportBuildArrive(v, g, t); break;
+    case 'esquilar': shearArrive(v, g, t); break;
+    case 'feria': fairArrive(v, g, t); break;
     case 'nadar': case 'correr': sportArrive(v, g, t); break;
     case 'dormir': dismount(v); v.sleep = true; v.home = t.h ?? null; v.task = null; return;
     case 'beber': v.actT = 2; v.onDone = () => { v.water = 1; v.hot = Math.max(0, (v.hot || 0) - .6);

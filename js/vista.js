@@ -50,7 +50,7 @@ function draw(t){
   drawZones();
   drawPaths();
   drawBridges();
-  drawFarms(); drawCemeteries(); drawTracks(); drawSports(); drawAeros();
+  drawFarms(); drawCemeteries(); drawTracks(); drawSports(); drawSeasonLife(performance.now()); drawFairs(performance.now()); drawAeros();
   drawPens();
   drawVolcFences(); // vallas alrededor de los volcanes (volcanes.js)
   drawWalls();
@@ -59,6 +59,7 @@ function draw(t){
   drawArtFlames(t);
   drawInstFlags(t); // la bandera en los edificios del gobierno (instituciones.js)
   drawSelBuilding(t); // el edificio elegido, marcado (edificios.js)
+  drawCastles(t); // torres de los castillos (fama.js)
   drawMatchBoards(); // marcador con los escudos en los partidos (deportes.js)
   drawCamps(t);
   drawFires(t, true);
@@ -105,6 +106,7 @@ function draw(t){
     vctx.fillRect(x - (s / 3 | 0), y - (s >> 1), Math.max(1, s * 2 / 3 | 0), s);
   }
   drawNight();
+  drawNightLife(t); // farolas, sueños y estrellas fugaces (ambiente.js)
   drawEffects();
   drawQuakes(t);
   drawWeather(t);

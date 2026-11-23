@@ -61,6 +61,7 @@ function socialMood(v, g, add){
   if (!g || ageOf(v) < ADULT_H) return;
   creedMood(v, g, add);
   sportMoodAdd(v, g, add); // victorias y derrotas de su país (deportes.js)
+  fairMood(v, g, add); // hay feria (fama.js)
   if (holidayToday(g)) add(8, 'hoy es fiesta'); else if (restDaysOf(g) === 0) add(-8, 'no tiene ni un día libre'); else if (isRestDay(g)) add(4, 'hoy es su día libre');
   if (isMinority(v, g)) {
     if (hasLaw(g, 'segregacion')) add(-15, 'sufre el racismo de su pueblo');

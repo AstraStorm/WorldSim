@@ -16,7 +16,7 @@ function warCamp(att, def, r){
 function warLoss(r, loser){ if (!r || !r.war || !loser) return; if (nationOf(loser).id === r.war.att || loser.id === r.war.att) r.war.lossA = (r.war.lossA || 0) + 1; else r.war.lossD = (r.war.lossD || 0) + 1; }
 // Quién va ganando (texto corto)
 function warScore(r){
-  const a = villageById(r.war.att), d = villageById(r.war.def), la = r.war.lossA || 0, ld = r.war.lossD || 0, days = Math.floor((yearT - r.war.start) / DAY_LEN) + 1;
+  const a = villageById(r.war.att), d = villageById(r.war.def), la = r.war.lossA || 0, ld = r.war.lossD || 0, days = Math.max(1, Math.floor((yearT - r.war.start) / DAY_LEN) + 1);
   const lead = la === ld ? 'igualados' : la < ld ? `gana ${a.name}` : `gana ${d.name}`;
   return { a, d, la, ld, days, lead };
 }
@@ -110,7 +110,7 @@ function fieldBattleTick(att, def, r){
       notify(`Termina la batalla ${deName(Bt.name)}: ${tie ? 'nadie gana' : `gana ${nationOf(win).name}`} (bajas ${la}-${ld})`, { x:Bt.x, y:Bt.y });
       for (let k = 0; k < Math.min(12, la + ld); k++) battlefields.push({ x:Bt.x + (Math.random() - .5) * 40, y:Bt.y + (Math.random() - .5) * 20, until:yearT + DAY_LEN * 4 });
       if (win) sportResult(win, 4, `su ejército ganó la batalla ${deName(Bt.name)}`); if (win) sportResult(win === att ? def : att, -4, `su ejército perdió la batalla ${deName(Bt.name)}`);
-      W0.battles = (W0.battles || 0) + 1; W0.battle = null; W0.battleT = yearT;
+      W0.battles = (W0.battles || 0) + 1; W0.battle = null; W0.battleT = yearT; if (win) nationOf(win).battleWins = (nationOf(win).battleWins || 0) + 1;
     }
     return;
   }

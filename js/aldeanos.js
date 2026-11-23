@@ -361,6 +361,7 @@ function drawVillagers(){
       const ac = auraCol(v), aa = .6 + .2 * Math.sin(now / 400 + v.x);
       vctx.fillStyle = `rgba(${ac},${aa * .35})`; vctx.fillRect(x - 3, y, 7, 2);
       vctx.fillStyle = `rgba(${ac},${aa})`; vctx.fillRect(x - 2, y + 2, 5, 1); vctx.fillRect(x - 4, y + 1, 1, 1); vctx.fillRect(x + 4, y + 1, 1, 1); vctx.fillRect(x - 3, y, 1, 1); vctx.fillRect(x + 3, y, 1, 1);
+      drawPersonExtras(v, x, y, s, now); // buey al arar, capa de los héroes (ambiente.js)
       // A caballo: primero el caballo (y el carro detrás), y el jinete encima
       let lift = 0;
       if (v.mount) {
