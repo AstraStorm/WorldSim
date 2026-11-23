@@ -1310,7 +1310,7 @@ function renderPersonCard(force){
 }
 // ---- Ficha del pueblo, por pestañas ----
 let cardTab = 'resumen';
-const CARD_TABS = [['resumen', 'Resumen'], ['gente', 'Gente'], ['economia', 'Economía'], ['politica', 'Política'], ['mapa', 'Mapa'], ['historia', 'Historia']];
+const CARD_TABS = [['resumen', 'Resumen'], ['gente', 'Gente'], ['economia', 'Economía'], ['politica', 'Política'], ['calendario', 'Calendario'], ['mapa', 'Mapa'], ['historia', 'Historia']];
 function logKind(t){ return /guerra|ataca|saque|conquist|muerto en|Emboscada|rechaz|asalto/.test(t) ? 'war' : /elecciones|golpe|Golpe|revoluc|Manifest|partido|corona|régimen|independiza|rey|reina/.test(t) ? 'pol' : /moneda|banco|precios|Bancarrota|inflación|Flujo|presta|mercado|caravana/.test(t) ? 'eco' : /dios|diosa|ritual|templo|venerar|sacrific|ofrenda|fe /.test(t) ? 'rel' : /Murió|muere|ahogado/.test(t) ? 'death' : 'misc'; }
 function tile(label, val, sub){ return `<div class="tile"><span>${label}</span><b>${val}</b>${sub ? `<em>${sub}</em>` : ''}</div>`; }
 function renderVillageCard(force){
@@ -1361,10 +1361,12 @@ function renderVillageCard(force){
       ${colonyCard(g)}${justiceCard(g)}${pressCard(g)}${scienceCard(g)}${councilCard(g)}${spyCard(g)}${cultureCard(g)}
       <h4>Horario</h4><div>${shiftTxt(g)}${inShift(g) ? ' · <b>ahora trabajan</b>' : isNight() ? ' · ahora duermen' : ' · <b>ahora es su tiempo libre</b>'}</div>
       <h4>Nación</h4><div>${status}${provinces.length ? `: ${provinces.map(o => `<button class="lnk" data-vid="${o.id}">${esc(o.name)}</button>`).join(', ')}` : ''}${n !== g ? ` · descontento con la capital ${Math.round(g.unrest || 0)} %` : ''}</div>
-      ${calendarCard(g)}${allyCard(g)}${warCard(g)}${treatyCard(g)}
+      ${allyCard(g)}${warCard(g)}${treatyCard(g)}
       <h4>Relaciones</h4><div class="chips rel">${villages.filter(o => o !== g && popOf(o) && rels.get(relKey(g, o)) && rels.get(relKey(g, o)).known).map(o => { const r = rels.get(relKey(g, o)), w = relWord(r), c = r.war ? '#d8483a' : r.v > 40 ? '#7ab04a' : r.v > 0 ? '#a8c060' : r.v > -30 ? '#d8b848' : '#e08a3a'; return `<button class="relb" data-vid="${o.id}" style="border-color:${c}" title="Ver la ficha de ${esc(o.name)}">${o.flagUrl ? `<img src="${o.flagUrl}" alt="">` : ''}${esc(o.name)} · <b style="color:${c}">${r.war ? 'en guerra' : w}</b></button>`; }).join('') || 'Aún no conocen a nadie'}</div>`;
+  } else if (cardTab === 'calendario') {
+    body = calendarTab(g);
   } else if (cardTab === 'mapa') {
-    body = chartCard(g);
+    body = chartCard(g) + buildingsList(g);
   } else {
     body = `<ul class="log">${(g.log || []).slice(-30).reverse().map(e => `<li class="${logKind(e.txt)}"><span class="d">día ${e.d}</span>${esc(e.txt.startsWith(`En ${g.name} `) ? capFirst(e.txt.slice(g.name.length + 4)) : e.txt)}</li>`).join('') || '<li>Nada destacable aún</li>'}</ul>`;
   }

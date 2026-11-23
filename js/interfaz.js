@@ -82,7 +82,9 @@ view.addEventListener('pointermove', e => {
 const endPtr = e => {
   const p0 = pts.get(e.pointerId);
   if (e.type === 'pointerup' && p0 && p0.pan && p0.btn === 0 && pts.size === 1 && params.tool === 'move' && Math.hypot(e.offsetX - p0.sx, e.offsetY - p0.sy) < (e.pointerType === 'touch' ? 12 : 5)) { // con el dedo, algo más de margen
-    const g = villageAt(e.offsetX, e.offsetY); if (g) { cardVid = g.id; renderVillageCard(true); }
+    const bi = buildingAt(e.offsetX, e.offsetY); // ¿un edificio? su ficha (edificios.js)
+    if (bi != null) selectBuilding(bi);
+    else { if (selBld != null) selectBuilding(null); const g = villageAt(e.offsetX, e.offsetY); if (g) { cardVid = g.id; renderVillageCard(true); } }
   }
   pts.delete(e.pointerId); if (pts.size < 2) pinch = null; if (!pts.size) { painting = false; lastTile = null; view.style.cursor = ''; } };
 view.addEventListener('pointerup', endPtr);

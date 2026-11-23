@@ -57,6 +57,7 @@ function draw(t){
   vctx.drawImage(worldCv, 0, 0);
   drawArtFlames(t);
   drawInstFlags(t); // la bandera en los edificios del gobierno (instituciones.js)
+  drawSelBuilding(t); // el edificio elegido, marcado (edificios.js)
   drawCamps(t);
   drawFires(t, true);
   drawVillageFx(t);
@@ -138,15 +139,18 @@ function draw(t){
       vctx.beginPath(); vctx.moveTo(sx, sy - 3.5); vctx.lineTo(sx + 3.5, sy); vctx.lineTo(sx, sy + 3.5); vctx.lineTo(sx - 3.5, sy); vctx.fill();
     }
   }
-  // Flecha sobre cada aldeano para encontrarlo a cualquier zoom (dorada si la cámara lo sigue)
+  // Flecha sobre cada aldeano para encontrarlo a cualquier zoom, del color de su nación (con borde dorado si la cámara lo sigue)
+  const natCol = new Map(), colOf = v => { let c = natCol.get(v.vid); if (!c) { const g = villageById(v.vid); c = g ? villageColor(nationOf(g)) : [255, 255, 255]; natCol.set(v.vid, c); } return c; };
   for (const v of villagers) {
     if (v.appear < .25 || (zoom >= 4 && v !== follow)) continue; // de cerca ya se ven sin flecha
     const sx = offX + v.x * zoom, sy = offY + (v.y - 8) * zoom - 4 - (reduceMotion ? 0 : Math.abs(Math.sin(t / 300)) * 3);
     if (sx < -10 || sy < -10 || sx > cw + 10 || sy > ch + 10) continue;
-    vctx.fillStyle = 'rgba(0,0,0,.75)';
-    vctx.beginPath(); vctx.moveTo(sx - 6, sy - 8); vctx.lineTo(sx + 6, sy - 8); vctx.lineTo(sx, sy + 1); vctx.fill();
-    vctx.fillStyle = v === follow ? '#e9b949' : '#ffffff';
-    vctx.beginPath(); vctx.moveTo(sx - 4, sy - 6.8); vctx.lineTo(sx + 4, sy - 6.8); vctx.lineTo(sx, sy - 1); vctx.fill();
+    const c = colOf(v), fol = v === follow;
+    vctx.fillStyle = fol ? '#e9b949' : 'rgba(0,0,0,.8)';
+    vctx.beginPath(); vctx.moveTo(sx - 6.5, sy - 8.5); vctx.lineTo(sx + 6.5, sy - 8.5); vctx.lineTo(sx, sy + 1.5); vctx.fill();
+    vctx.fillStyle = `rgb(${c[0]},${c[1]},${c[2]})`;
+    vctx.beginPath(); vctx.moveTo(sx - 4.5, sy - 7); vctx.lineTo(sx + 4.5, sy - 7); vctx.lineTo(sx, sy - 1); vctx.fill();
+    vctx.fillStyle = 'rgba(255,255,255,.55)'; vctx.fillRect(sx - 3.5, sy - 7, 7, 1.2); // brillo arriba
   }
   if (mouse && params.tool !== 'move') {
     const r = brushRadius() + .5;

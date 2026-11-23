@@ -320,8 +320,11 @@ function spawnVillagers(){
   }
   updateVillagePanel();
 }
+const auraCache = new Map();
+const auraCol = v => { const g = villageById(v.vid); if (!g) return '255,255,255'; let c = auraCache.get(g); if (!c) { c = (g.col || villageColor(g)).join(','); auraCache.set(g, c); } return c; };
 function drawVillagers(){
   if (!villagers.length && !villages.length) return;
+  auraCache.clear();
   const objs = world.objs, now = performance.now(), [vx0, vy0, vx1, vy1] = visibleRect();
   const camps = villages.filter(g => !g.fireOut && world.objs[g.fy * W + g.fx] && g.fx * T > vx0 - 10 && g.fx * T < vx1 + 10 && g.fy * T > vy0 - 20 && g.fy * T < vy1 + 10).sort((a, b) => a.fy - b.fy);
   let ci = 0, qi = 0;
@@ -353,6 +356,10 @@ function drawVillagers(){
     } else {
       vctx.fillStyle = 'rgba(0,0,0,.3)';
       vctx.fillRect(x - 2, y + 1, 5, 1);
+      // Aura a los pies, del color de su pueblo
+      const ac = auraCol(v), aa = .6 + .2 * Math.sin(now / 400 + v.x);
+      vctx.fillStyle = `rgba(${ac},${aa * .35})`; vctx.fillRect(x - 3, y, 7, 2);
+      vctx.fillStyle = `rgba(${ac},${aa})`; vctx.fillRect(x - 2, y + 2, 5, 1); vctx.fillRect(x - 4, y + 1, 1, 1); vctx.fillRect(x + 4, y + 1, 1, 1); vctx.fillRect(x - 3, y, 1, 1); vctx.fillRect(x + 3, y, 1, 1);
       // A caballo: primero el caballo (y el carro detrás), y el jinete encima
       let lift = 0;
       if (v.mount) {

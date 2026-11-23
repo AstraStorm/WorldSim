@@ -251,3 +251,44 @@ canvas.ic{width:28px;height:28px;flex:none;image-rendering:pixelated;background:
   .spawn{left:6px;right:6px;width:auto;overflow-x:auto}
   .zoom{top:auto;bottom:auto;position:absolute;top:44px}
 }
+/* Ficha de edificio (edificios.js) */
+.bcard{position:absolute;z-index:5;left:10px;bottom:64px;width:min(320px,calc(100% - 20px));background:linear-gradient(180deg,rgba(26,32,39,.97),rgba(15,19,24,.97));border:1px solid var(--line);border-radius:8px;padding:10px 12px 12px;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.45)}
+.bcard[hidden]{display:none !important}
+.bcard .bh{display:flex;align-items:flex-start;gap:8px}.bcard .bh>div{flex:1;min-width:0}
+.bcard h3{margin:0;font-family:var(--f-display);font-size:20px;line-height:1.15}
+.bcard .btype{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent)}
+.bcard .lnk{display:inline-flex;align-items:center;gap:6px;margin-top:3px;font-size:13px;padding:2px 8px}
+.bcard .lnk img{width:18px;height:12px;image-rendering:pixelated}
+.bcard p{margin:8px 0 4px;line-height:1.4;color:var(--fg)}
+.bcard .x{width:30px;height:30px;flex:none;background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:6px;color:var(--fg);font-size:20px;cursor:pointer;padding:0}
+.bcard .x:hover{background:rgba(216,72,58,.35);border-color:#d8483a}
+/* Lista de edificios del pueblo */
+.blist{display:flex;flex-direction:column;gap:6px}.bgrp{display:flex;flex-wrap:wrap;align-items:center;gap:4px}.bgrp>span{width:100%;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.chipb{font-size:12.5px;padding:3px 9px;border-radius:12px}.chipb em{font-style:normal;color:var(--accent)}
+/* Pestañas de la ficha: caben las siete */
+.tabs{padding:0 6px;overflow-x:auto;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
+.tabs button{font-size:12.5px;padding:8px 5px 7px;white-space:nowrap}
+/* Calendario (calendario.js) */
+.cal-today{font-size:15px}.cal-wd{font-family:var(--f-display);font-size:19px;color:var(--accent)}.cal-fest{color:#f0d060}
+.cal{border:1px solid var(--line);border-radius:6px;overflow:hidden;background:rgba(0,0,0,.18)}
+.cal-h,.cal-g{display:grid;grid-template-columns:repeat(7,1fr)}
+.cal-h span{font-size:11px;text-align:center;padding:5px 1px;font-weight:700;border-bottom:1px solid var(--line);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;flex-direction:column;line-height:1.2}
+.cal-h span em{font-style:normal;font-weight:400;color:var(--muted);font-size:10px}
+.cal-h span:nth-child(n+6){color:#9cd0f8}
+.cal-g{gap:3px;padding:4px}
+.cal-d{position:relative;height:34px;border-radius:4px;display:flex;align-items:flex-start;justify-content:flex-start;padding:3px 5px;font-style:normal;box-sizing:border-box;border-bottom:3px solid var(--sc)}
+.cal-d b{font-size:13px;font-variant-numeric:tabular-nums}.cal-d s{position:absolute;right:4px;bottom:2px;text-decoration:none;color:#f0d060;font-size:12px}
+.cal-d.lab,.cal-leg .lab{background:rgba(255,255,255,.07)}.cal-d.libre,.cal-leg .libre{background:rgba(70,130,200,.32)}.cal-d.fest,.cal-leg .fest{background:rgba(220,150,40,.42)}
+.cal-d.pas{opacity:.45}.cal-d.hoy,.cal-leg .hoy{outline:2px solid var(--accent);outline-offset:-1px}
+.cal-leg{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:6px;font-size:11.5px;color:var(--muted)}.cal-leg i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.cal-fl{display:grid;grid-template-columns:1fr 1fr;gap:6px}.cal-fl>div{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:6px;padding:5px 8px;font-size:12.5px;line-height:1.35}
+@media (max-width:760px){.bcard{left:6px;right:6px;width:auto;bottom:58px}}
+/* La casilla, dentro del bloque de arriba; los avisos, debajo de ese bloque (no tapan la ficha de la derecha) */
+.topleft{flex-direction:row;max-width:min(560px,calc(100% - 470px))}
+.topleft .hud{position:static;flex-basis:100%;max-width:100%;width:max-content;box-sizing:border-box}
+.notice{left:10px;transform:none;top:auto;bottom:64px;max-width:min(520px,calc(100% - 470px))}
+.bcard{bottom:120px}
+@media (max-width:760px){.topleft{max-width:calc(100% - 12px)}.notice{left:6px;right:6px;max-width:none;bottom:58px}.bcard{bottom:110px}}
+.toasts{left:10px;transform:none;top:auto;bottom:64px;width:min(460px,calc(100% - 470px));min-width:0;flex-direction:column-reverse}
+.bcard{z-index:7}
+@media (max-width:760px){.toasts{left:6px;right:6px;width:auto;bottom:58px;top:auto}}

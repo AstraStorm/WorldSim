@@ -4,6 +4,8 @@
 //   aldeas), Herramientas (pincel de dios y cámara), Ajustes (generar el mundo, capas y clima) y Datos (rarezas,
 //   fauna, recursos y biomas). Se recuerda la última pestaña
 // · La barra de abajo, también: Crear vida o Desatar, una sola fila cada una
+// La información de la casilla va dentro del bloque de arriba a la izquierda: siempre debajo de la fecha y la velocidad
+document.querySelector('.topleft').appendChild(document.getElementById('hud'));
 function setPanelTab(k){
   for (const b of document.querySelectorAll('.ptabs button')) b.classList.toggle('on', b.dataset.pt === k);
   for (const el of document.querySelectorAll('.panel > [data-pt]')) el.classList.toggle('pt-off', el.dataset.pt !== k);

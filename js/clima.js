@@ -906,7 +906,7 @@ function drawSeasonTint(){
   vctx.fillRect(0, 0, PW, PH);
 }
 function updateSeasonHud(){
-  const { s, day, year, f } = seasonInfo(), txt = `${s.n} · día ${day} (${dayPart()}) · año ${year}`;
+  const { s, day, year, f } = seasonInfo(), wd = weekdayIdx(day - 1), txt = `${s.n} · ${weekNames(LANG_COMMON)[wd].toLowerCase() === DAYS_ES[wd] ? DAYS_ES[wd] : `${weekNames(LANG_COMMON)[wd]} (${DAYS_ES[wd]})`}, día ${day} · ${dayPart()} · año ${year}`; // el día de la semana, en la lengua común (calendario.js)
   if ($('seasonTxt').textContent !== txt) { $('seasonTxt').textContent = txt; $('seasonDot').style.background = s.dot; }
   $('seasonBar').style.width = (f * 100).toFixed(1) + '%';
   const g = `${globalT >= 0 ? '+' : '−'}${Math.abs(globalT).toFixed(1).replace('.', ',')} °C · ${globalTarget > globalT + .2 ? 'subiendo' : globalTarget < globalT - .2 ? 'bajando' : 'estable'}`;

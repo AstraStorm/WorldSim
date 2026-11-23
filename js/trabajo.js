@@ -10,13 +10,13 @@ const dayOfYear = () => Math.floor((yearT % (SEASON_LEN * 4)) / DAY_LEN); // 0..
 const hasSchool = g => g && g.school != null && !!world.objs[g.school];
 const restDaysOf = g => clamp((hasLaw(g, 'jornada_corta') ? 2 : hasLaw(g, 'jornada_larga') ? 0 : 1) + (g.restBonus || 0), 0, 3);
 const isRestDay = g => { const n = restDaysOf(g); return n > 0 && dayNum() % WEEK >= WEEK - n; };
-const holidayToday = g => (g.fiestas || []).find(f => f.doy === dayOfYear() && dayNum() > f.day); // (no el mismo día en que pasó)
+const holidayToday = g => fiestasOf(g).find(f => f.doy === dayOfYear() && dayNum() > f.day); // (no el mismo día en que pasó)
 const isFreeDay = g => isRestDay(g) || !!holidayToday(g);
 // Un festivo para recordar algo que ha pasado (como mucho, seis)
 function addFiesta(g, name){
   if (!g || !popOf(g)) return; g.fiestas ||= [];
   if (g.fiestas.some(f => f.name === name) || g.fiestas.length >= 6) return;
-  const doy = dayOfYear(); if (g.fiestas.some(f => f.doy === doy)) return;
+  const doy = dayOfYear(); if (fiestasOf(g).some(f => f.doy === doy)) return; // (calendario.js)
   g.fiestas.push({ name, doy, day:dayNum() });
   const txt = `En ${g.name} declaran festivo cada día ${doy + 1} del año: «${name}»`; notify(txt, { x:g.fx * T, y:g.fy * T }); (g.log ||= []).push({ d:dayNum() + 1, txt });
 }
@@ -76,9 +76,4 @@ function holidayTick(g, dt, people){
     const x = g.fx * T + (Math.random() - .5) * 60, y = g.fy * T - 30 - Math.random() * 30, col = ['#f0d060', '#f08a7a', '#9cd0f8', '#c8f0a0', '#f0a0e0'][Math.floor(Math.random() * 5)];
     for (let k = 0; k < 14; k++) { const a = k / 14 * Math.PI * 2; chips.push({ x, y, vx:Math.cos(a) * 22, vy:Math.sin(a) * 22 - 4, life:0, max:.9, col }); }
   }
-}
-function calendarCard(g){
-  const n = restDaysOf(g), f = g.fiestas || [], next = dayNum() % WEEK >= WEEK - n ? 'hoy' : `dentro de ${WEEK - n - dayNum() % WEEK} días`;
-  return `<h4>Calendario</h4><div class="sec"><div class="kv"><span>Días libres</span><b>${n ? `${n} de cada ${WEEK} (el próximo, ${next})` : '<span style="color:#f08a7a">ninguno: trabajan todos los días</span>'}${g.restBonus ? ` <span class="muted">(+${g.restBonus} por las protestas)</span>` : ''}</b></div>
-    <div class="kv"><span>Festivos</span><b>${f.length ? f.map(x => `${esc(x.name)} (día ${x.doy + 1})`).join(' · ') : 'ninguno todavía'}</b></div>${holidayToday(g) ? `<div class="kv"><span>Hoy</span><b style="color:#f0d060">¡es fiesta!</b></div>` : isRestDay(g) ? `<div class="kv"><span>Hoy</span><b>día libre</b></div>` : ''}</div>`;
 }
