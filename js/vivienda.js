@@ -21,11 +21,20 @@ const housePrice = (g, h, stone = !!(world.objs[h] && world.objs[h].key === 'hou
 const rentOf = (g, h) => { const r = Math.max(1, Math.round(housePrice(g, h) * .06)); return hasLaw(g, 'tope_alquiler') ? Math.min(r, Math.max(1, Math.round(costOfLiving(g) * .2))) : r; };
 const socialRent = g => hasLaw(g, 'vivienda_publica') ? 0 : Math.max(1, Math.round(costOfLiving(g) * .1)); // lo que se paga al pueblo por una casa pública
 const adultV = v => ageOf(v) >= ADULT_H;
+// Hipoteca: entrada del 30 %; el resto, con un 10 % de intereses, en 15 cuotas diarias. El banco solo la da si la cuota
+// no pasa del 40 % del sueldo de quien compra
+const MORT_DOWN = .3, MORT_INT = 1.1, MORT_DAYS = 15;
+const mortgageOf = p => { const owed = Math.round((p - Math.ceil(p * MORT_DOWN)) * MORT_INT); return { down:Math.ceil(p * MORT_DOWN), owed, q:Math.max(1, Math.ceil(owed / MORT_DAYS)) }; };
+function howBuy(g, u, p){ // 'contado', 'hipoteca' o null
+  if ((u.money || 0) >= p) return 'contado';
+  if (!hasBank(g)) return null;
+  const m = mortgageOf(p); return (u.money || 0) >= m.down && u.wage != null && m.q <= wageDay(u) * .4 ? 'hipoteca' : null;
+}
 // Quién podría comprar ahora mismo: sin casa propia (al contado, o con hipoteca si hay banco) o con mucho dinero para invertir
 const ownersOf = g => { const s = new Set(); for (const h of housesOf(g)) { const d = deedOf(g, h); if (d && d.o > 0) s.add(d.o); } return s; };
 function buyersOf(g, people){
-  const p = housePrice(g), bank = hasBank(g), owners = ownersOf(g);
-  return people.filter(u => adultV(u) && !u.away && (owners.has(pidOf(u)) ? (u.money || 0) >= p * (hasLaw(g, 'tope_alquiler') ? 2.5 : 1.5) : (u.money || 0) >= p * (bank ? .3 : 1)));
+  const p = housePrice(g), owners = ownersOf(g);
+  return people.filter(u => adultV(u) && !u.away && (owners.has(pidOf(u)) ? (u.money || 0) >= p * (hasLaw(g, 'tope_alquiler') ? 2.5 : 1.5) : howBuy(g, u, p)));
 }
 // Cuántas casas hacen falta según la política del gobierno (lo usa chooseJob al decidir si se construye)
 function houseNeed(g, pop){
@@ -94,7 +103,7 @@ function homeTxt(v, g){
   if (v.home == null || !world.objs[v.home]) return v.evictT != null && yearT - v.evictT < DAY_LEN * 3 ? 'desahuciad' + sexW(v, 'o', 'a') : 'sin casa';
   if (!housingOn(g)) return 'tiene casa';
   const d = deedOf(g, v.home), o = d && d.o > 0 ? peopleByPid(g).get(d.o) : null;
-  if (o === v) return d.m > 0 ? 'en su casa (con hipoteca)' : 'en su casa';
+  if (o === v) return d.m > 0 ? `en su casa (hipoteca: le quedan ${d.m}, ${Math.min(d.m, d.q || 1)}/día${d.miss ? ` · ${d.miss} cuota${d.miss > 1 ? 's' : ''} sin pagar` : ''})` : 'en su casa';
   if (o && familyOf(v, o)) return 'en casa de su familia';
   if (!d || d.o === PUBLIC || !o) return 'en vivienda pública';
   return adultV(v) && v.rentPay ? `de alquiler (${v.rentPay}/día)` : 'de alquiler';
@@ -119,7 +128,7 @@ function housingTick(g, people){
     const d = D[h] ||= { o:pub ? PUBLIC : FOR_SALE };
     if (d.o > 0 && !byPid.has(d.o)) {
       const dead = villagers.find(u => u.pid === d.o), heir = dead && [...(dead.kids || []), ...(dead.partners || [])].find(u => !u.dead && u.vid === g.id && adultV(u));
-      D[h] = heir ? { o:pidOf(heir), m:d.m } : { o:pub ? PUBLIC : FOR_SALE };
+      D[h] = heir ? { ...d, o:pidOf(heir), miss:0 } : { o:pub ? PUBLIC : FOR_SALE }; // el heredero se queda también con lo que falte de hipoteca
     }
   }
   // Economía estatal: el estado se queda con todas las casas
@@ -136,12 +145,13 @@ function housingTick(g, people){
   let sold = 0;
   for (const h of sale.sort((a, b) => housePrice(g, a) - housePrice(g, b))) {
     if (sold >= 2) break;
-    const p = housePrice(g, h), bank = hasBank(g);
-    const firsts = adults.filter(u => !u.away && !ownedBy(g, u).length && (u.money || 0) >= p * (bank ? .3 : 1)).sort((a, b) => (b.money || 0) - (a.money || 0));
+    const p = housePrice(g, h);
+    const firsts = adults.filter(u => !u.away && !ownedBy(g, u).length && howBuy(g, u, p)).sort((a, b) => (b.money || 0) - (a.money || 0));
     const inv = adults.filter(u => !u.away && ownedBy(g, u).length && (u.money || 0) >= p * (hasLaw(g, 'tope_alquiler') ? 2.5 : 1.5)).sort((a, b) => (b.money || 0) - (a.money || 0));
     const b = firsts[0] || inv[0]; if (!b) break;
-    const cash = Math.min(b.money || 0, p), loan = p - cash; b.money -= cash; ec.treas += p; if (loan > 0) ec.dep = Math.max(0, ec.dep - loan); // lo que falta lo adelanta el banco, con los ahorros de la gente
-    D[h] = { o:pidOf(b), m:loan > 0 ? loan : 0, m0:loan };
+    const mort = howBuy(g, b, p) === 'hipoteca', m = mortgageOf(p), loan = mort ? p - m.down : 0;
+    b.money -= mort ? m.down : p; ec.treas += p; if (loan) ec.dep = Math.max(0, ec.dep - loan); // lo que falta lo adelanta el banco, con los ahorros de la gente
+    D[h] = mort ? { o:pidOf(b), m:m.owed, q:m.q, miss:0 } : { o:pidOf(b) }; if (mort) g.mortgages = (g.mortgages || 0) + 1;
     sold++; g.houseSales = (g.houseSales || 0) + 1;
     if (!ownedBy(g, b).filter(x => x !== h).length && (b.home == null || !hs.includes(b.home))) b.home = h; // se muda
     const n = ownedBy(g, b).length;
@@ -155,9 +165,9 @@ function housingTick(g, people){
   for (const h of hs) {
     const d = D[h], o = d.o > 0 ? byPid.get(d.o) : null;
     if (o && d.m > 0) { // la cuota de la hipoteca
-      const q = Math.min(d.m, Math.max(1, Math.ceil(d.m0 / 8)));
-      if ((o.money || 0) >= q) { o.money -= q; d.m -= q; ec.dep += q; d.miss = 0; }
-      else if (++d.miss >= 3) { D[h] = { o:FOR_SALE }; repo++; o.ideo = clamp((o.ideo || 0) - .1, -1, 1); continue; } // el banco se queda la casa
+      const q = Math.min(d.m, d.q || Math.max(1, Math.ceil(d.m / MORT_DAYS)));
+      if ((o.money || 0) >= q) { o.money -= q; d.m -= q; ec.dep += q; d.miss = 0; if (d.m <= 0) { delete d.m; delete d.q; delete d.miss; } } // pagada del todo: la casa ya es suya
+      else if ((d.miss = (d.miss || 0) + 1) >= 3) { D[h] = { o:FOR_SALE }; repo++; g.repos = (g.repos || 0) + 1; o.ideo = clamp((o.ideo || 0) - .1, -1, 1); continue; } // tres cuotas sin pagar: el banco se queda la casa
     }
     for (const u of residentsOf(h)) {
       if (!adultV(u) || u.away) continue;
@@ -198,6 +208,7 @@ function housingCard(g){
     <div class="kv"><span>Alquiler al día</span><b>${rentOf(g)} ${coinPl(g)} por persona</b></div>
     <div class="kv"><span>Casas</span><b>${hs.length} · ${pubN} públicas · ${sale} en venta · ${own.size} propietarios</b></div>
     <div class="kv"><span>Inquilinos</span><b>${tenants}${big.length ? ` · ${big.length} casero${big.length > 1 ? 's' : ''}${top ? ` (${esc(top.name)}, ${big[0][1]} casas)` : ''}` : ''}</b></div>
+    ${hasBank(g) || g.mortgages ? `<div class="kv"><span>Hipotecas</span><b>${hs.filter(h => D[h] && D[h].m > 0).length} pagándose · quedan ${hs.reduce((a, h) => a + (D[h] && D[h].m > 0 ? D[h].m : 0), 0)} ${coinPl(g)} por pagar${g.repos ? ` · ${g.repos} embargo${g.repos > 1 ? 's' : ''}` : ''}<br><span class="muted">entrada del 30 %, el resto con un 10 % de intereses en ${MORT_DAYS} días; solo si la cuota no pasa del 40 % del sueldo</span></b></div>` : ''}
     <div class="kv"><span>Sin casa</span><b>${g.homeless ? `<span style="color:#f08a7a">${g.homeless}</span>` : 0}${g.homelessKids ? ` <span style="color:#f08a7a">(y ${g.homelessKids} niño${g.homelessKids > 1 ? 's' : ''})</span>` : ''}${g.evictions ? ` · ${g.evictions} desahucio${g.evictions > 1 ? 's' : ''} en total` : ''}</b></div></div>`;
 }
 // ---- Acampada por la vivienda: tiendas en la plaza donde duermen los que no tienen casa, hasta que haya casas o los desalojen ----

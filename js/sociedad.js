@@ -161,7 +161,7 @@ function dropSpot(v, g){
 function clampStore(g){
   const cap = capOf(g); g.food = Math.min(g.food, cap); g.wood = Math.min(g.wood, cap); g.stone = Math.min(g.stone, cap); g.meat = Math.min(g.meat || 0, g.food);
 }
-const penOverlap = (g, x0, y0, x1, y1) => villages.some(o => o.pen && !(x1 < o.pen.x0 - 1 || x0 > o.pen.x1 + 1 || y1 < o.pen.y0 - 1 || y0 > o.pen.y1 + 1));
+const penOverlap = (g, x0, y0, x1, y1) => villages.some(o => pensOf(o).some(p => !(x1 < p.x0 - 1 || x0 > p.x1 + 1 || y1 < p.y0 - 1 || y0 > p.y1 + 1)));
 // ¿Esta casilla queda bajo el dibujo de una casa, pozo o molino de la aldea?
 // Rejilla de casillas ocupadas por la huella de los edificios de todos los pueblos: se rehace solo si cambian
 let ubCache = null, ubT = -1, ubGrid = null, ubSig = '';
@@ -659,7 +659,7 @@ function buildZones(){
     for (const w of wellsOf(g)) src.push([w.i % W, (w.i / W) | 0, 4]);
     for (const b of [g.mill, g.quarry]) if (b != null && world.objs[b]) src.push([b % W, (b / W) | 0, 5]);
     for (const f of farmMap.values()) if (f.vid === g.id) src.push([f.i % W, (f.i / W) | 0, 2.5]);
-    if (g.pen) src.push([(g.pen.x0 + g.pen.x1) / 2, (g.pen.y0 + g.pen.y1) / 2, 5]);
+    for (const p of pensOf(g)) src.push([(p.x0 + p.x1) / 2, (p.y0 + p.y1) / 2, 5]);
     if (g.hall != null && world.objs[g.hall]) src.push([g.hall % W, (g.hall / W) | 0, 10]);
     for (const i of storesOf(g)) src.push([i % W, (i / W) | 0, 5]);
     for (const i of towersOf(g)) src.push([i % W, (i / W) | 0, 7]);
@@ -2817,7 +2817,7 @@ function decayRuins(g, dt){
     o.dmg = Math.max(o.dmg || 0, .6) + dt * (o.burnt || wooden(o) ? .0009 : .0005) * (.5 + h2(b % W, (b / W) | 0, 7));
     if (o.dmg >= 1) { world.objs[b] = null; addEffect((b % W) * T + 2, ((b / W) | 0) * T + 3, 'poof'); composeRegion((b % W) - 8, ((b / W) | 0) - 12, (b % W) + 8, ((b / W) | 0) + 12); }
   }
-  if (g.pen && age > DAY_LEN) { const p = g.pen; g.pen = null; composeRegion(p.x0 - 2, p.y0 - 4, p.x1 + 2, p.y1 + 2); }
+  if (pensOf(g).length && age > DAY_LEN) { for (const p of g.pens) composeRegion(p.x0 - 2, p.y0 - 4, p.x1 + 2, p.y1 + 2); g.pens = []; g.pen = null; }
   if (g.ruinTiles && g.ruinTiles.length && age > DAY_LEN * .5) {
     g.ruinAcc = (g.ruinAcc || 0) + dt * Math.max(.2, g.ruinTiles.length / (DAY_LEN * 3));
     while (g.ruinAcc >= 1 && g.ruinTiles.length) { g.ruinAcc--; const i = g.ruinTiles.pop(); pathMap.delete(i); plazaSet.delete(i); holySet.delete(i); desireSet.delete(i); }
@@ -3056,13 +3056,13 @@ function domesticStep(a, S, dt){
     else { a.x = a.rider.x; a.y = a.rider.y + .5; a.dir = a.rider.dir; a.moving = a.rider.moving; a.walk = a.rider.walk; a.state = 'montado'; return true; }
   }
   const g = villageById(a.dom);
-  if (!g || (!g.pen && !a.lead)) { a.dom = 0; return false; }
+  if (!g || (!pensOf(g).length && !a.lead)) { a.dom = 0; return false; }
   a.water = 1; if (g.food > 0) a.food = 1;
   if (a.lead) {
     if (a.lead.dead || !villagers.includes(a.lead)) { a.lead = null; return true; }
     moveTo(a, a.lead.x - 6 * a.lead.dir, a.lead.y + 2, S.speed * 1.4, dt); a.state = 'llevado'; return true;
   }
-  const p = g.pen, cx = (p.x0 + p.x1 + 1) / 2 * T, cy = (p.y0 + p.y1 + 1) / 2 * T;
+  const p = penOfAnimal(g, a), cx = (p.x0 + p.x1 + 1) / 2 * T, cy = (p.y0 + p.y1 + 1) / 2 * T; // cada animal, en el suyo
   const inside = a.x > p.x0 * T + 2 && a.x < (p.x1 + 1) * T - 2 && a.y > p.y0 * T + 2 && a.y < (p.y1 + 1) * T - 1;
   a.state = 'en el cercado';
   if (!inside) { // vuelve andando; solo si se queda atascado mucho rato aparece dentro
@@ -3161,8 +3161,8 @@ function drawPens(){
   const [x0, y0, x1, y1] = visibleRect();
   for (const g of villages) {
     // Cercado: postes y travesaños de madera alrededor
-    if (g.pen) {
-      const p = g.pen, ax = p.x0 * T, ay = p.y0 * T, bx = (p.x1 + 1) * T, by = (p.y1 + 1) * T;
+    for (const p of pensOf(g)) {
+      const ax = p.x0 * T, ay = p.y0 * T, bx = (p.x1 + 1) * T, by = (p.y1 + 1) * T;
       if (!(bx < x0 || ax > x1 || by < y0 || ay > y1) && !fence(ax, ay, bx - ax, by - ay)) {
         vctx.fillStyle = '#7a5230';
         vctx.fillRect(ax, ay, bx - ax, 1); vctx.fillRect(ax, by - 1, bx - ax, 1); vctx.fillRect(ax, ay, 1, by - ay); vctx.fillRect(bx - 1, ay, 1, by - ay);

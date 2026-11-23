@@ -231,7 +231,13 @@ function siteNear(g, rMin, rMax, test){
   }
   return null;
 }
-const inPen = (g, x, y, m = 0) => g.pen && x >= g.pen.x0 - m && x <= g.pen.x1 + m && y >= g.pen.y0 - m && y <= g.pen.y1 + m;
+// Cercados de animales: un pueblo puede tener varios (g.pen es siempre el primero, por las partidas guardadas de antes)
+const pensOf = g => { if (!g.pens) g.pens = g.pen ? [g.pen] : []; g.pen = g.pens[0] || null; return g.pens; };
+const PEN_CAP = 12; // animales por cercado
+const penLimit = g => Math.min(4, 1 + Math.floor(popOf(g) / 15)); // uno más por cada 15 habitantes
+const penOfAnimal = (g, a) => { const ps = pensOf(g); return ps[a.penK] || ps[0] || null; };
+const emptiestPen = g => { const ps = pensOf(g), n = ps.map(() => 0); for (const a of penAnimals(g)) n[ps[a.penK] ? a.penK : 0]++; let k = 0; for (let j = 1; j < ps.length; j++) if (n[j] < n[k]) k = j; return k; };
+const inPen = (g, x, y, m = 0) => pensOf(g).some(p => x >= p.x0 - m && x <= p.x1 + m && y >= p.y0 - m && y <= p.y1 + m);
 // Ningún objeto (árbol, roca, casa) en el rectángulo
 function areaClear(x0, y0, x1, y1){
   for (let y = Math.max(0, y0); y <= Math.min(H - 1, y1); y++) for (let x = Math.max(0, x0); x <= Math.min(W - 1, x1); x++) if (world.objs[y * W + x]) return false;
@@ -307,8 +313,9 @@ function chooseJob(v, g){
   add('bayas', (hungry ? 3 : .5) * (needVeg ? 2 : needMeat ? .5 : 1));
   add('pescar', (hungry ? 2.5 : .3) * (needMeat ? 2 : needVeg ? .5 : 1)); add('cazar', (hungry ? 2 : .2) * (needMeat ? 2 : needVeg ? .5 : 1));
   if (g.port && openWater(g.port.launch)) add('barca', g.boatOut || busyWith(g, 'barca') ? 0 : (hungry || needMeat ? 3.5 : 1));
-  add('cercar', pop >= 4 && !g.pen && spare >= 8 && !busyWith(g, 'cercar') && houses >= 1 ? 4 : 0);
-  add('capturar', g.pen && penAnimals(g).length + busyWith(g, 'capturar') < 14 && busyWith(g, 'capturar') < 3 ? (penAnimals(g).length < 4 ? 5 : 3) : 0);
+  const nPens = pensOf(g).length, nPenA = penAnimals(g).length; // otro cercado cuando los que hay están casi llenos
+  add('cercar', pop >= 4 && (!nPens || (nPenA >= nPens * (PEN_CAP - 2) && nPens < penLimit(g))) && spare >= 8 && !busyWith(g, 'cercar') && houses >= 1 ? 4 : 0);
+  add('capturar', nPens && nPenA + busyWith(g, 'capturar') < nPens * PEN_CAP && busyWith(g, 'capturar') < 3 ? (nPenA < 4 ? 5 : 3) : 0);
   // Armas: solo saben hacer lanzas y arcos, y se ponen a ello cuando ven fieras cerca
   add('equipar', gearNeed(g) && busyWith(g, 'equipar') < 3 ? (atWarJ ? 2.5 : 1.5) * ((g.danger || 0) > 0 || L.includes('ejercito') || [...rels.values()].some(r => r.war && (r.war.att === g.id || r.war.def === g.id)) ? 5 : 1.5) : 0);
   const wantArmy = pop * (atWarJ ? .45 : g.danger > 0 || L.includes('ejercito') ? .3 : .15) * (g.food < pop * 3 ? .5 : 1); // una pequeña guardia siempre; en guerra, a filas
@@ -487,7 +494,7 @@ function setupTask(v, g, job){
         let ok = x0 > 1 && y0 > 1 && x0 + 9 < W - 1 && y0 + 7 < H - 1;
         for (let y = y0; ok && y <= y0 + 6; y++) for (let x = x0; ok && x <= x0 + 8; x++) { const i = y * W + x, o = world.objs[i]; if (WATER[world.biome[i]] || world.biome[i] === B.LAVA || pathMap.has(i) || bridgeSet.has(i) || farmMap.has(i) || (o && !['tree', 'berry'].includes(OBJ[o.key][1]))) ok = false; }
         for (let y = y0 - 1; ok && y <= y0 + 7; y++) for (let x = x0 - 1; ok && x <= x0 + 9; x++) if (underBuilding(g, x, y) || plazaSet.has(y * W + x) || holySet.has(y * W + x)) ok = false;
-        if (ok && !plotIn(x0 - 1, y0 - 1, x0 + 9, y0 + 7)) return { k:job, pen:{ x0, y0, x1:x0 + 8, y1:y0 + 6 }, x:(x0 + 4) * T + 2, y:(y0 + 3) * T + 3 };
+        if (ok && !plotIn(x0 - 1, y0 - 1, x0 + 9, y0 + 7) && !penOverlap(g, x0, y0, x0 + 8, y0 + 6)) return { k:job, pen:{ x0, y0, x1:x0 + 8, y1:y0 + 6 }, x:(x0 + 4) * T + 2, y:(y0 + 3) * T + 3 };
       }
       return null;
     }
@@ -638,9 +645,10 @@ function runTask(v, g, dt){
     if (Math.hypot(a.x - v.x, a.y - v.y) > 60 * T) { v.task = null; return; }
     if (vGo(v, a.x, a.y, dt, t.k === 'cazar')) {
       if (t.k === 'cazar') { killAnimal(a, 'cazado'); v.carry = { k:'comida', t:'carne', n:a.sp === 'vaca' || a.sp === 'caballo' ? 8 : a.sp === 'pollo' ? 2 : 5, hide:a.sp !== 'pollo' }; v.task = { k:'volver' }; }
-      else if (g.pen) {
+      else if (pensOf(g).length) {
         a.dom = g.id; a.lead = v; a.domSince = yearT; if (herdLeader.get(a.herd) === a) herdLeader.delete(a.herd); a.herd = 0;
-        t.phase = 'llevar'; t.x = (g.pen.x0 + 3) * T + 2; t.y = (g.pen.y0 + 2) * T + 3;
+        a.penK = emptiestPen(g); const pp = pensOf(g)[a.penK]; // al cercado con más sitio
+        t.phase = 'llevar'; t.x = (pp.x0 + 3) * T + 2; t.y = (pp.y0 + 2) * T + 3;
       } else v.task = null;
     }
     return;
@@ -1019,7 +1027,8 @@ function runTask(v, g, dt){
     }; break;
     case 'cercar': v.actT = 6; v.onDone = () => { const q = t.pen; let free = true;
       for (let y = q.y0 - 1; free && y <= q.y1 + 1; y++) for (let x = q.x0 - 1; free && x <= q.x1 + 1; x++) if (underBuilding(g, x, y) || plazaSet.has(y * W + x) || holySet.has(y * W + x) || (world.objs[y * W + x] && y >= q.y0 && y <= q.y1 && x >= q.x0 && x <= q.x1 && !['tree', 'berry'].includes(OBJ[world.objs[y * W + x].key][1]))) free = false;
-      if (free && !g.pen && g.wood >= 8) { clearSite(g, q.x0, q.y0, q.x1, q.y1); g.pen = t.pen; g.wood -= 8; connect(g, t.pen.x0 + 3, t.pen.y1); } }; break;
+      if (free && pensOf(g).length < penLimit(g) && !penOverlap(g, q.x0, q.y0, q.x1, q.y1) && g.wood >= 8) { clearSite(g, q.x0, q.y0, q.x1, q.y1); g.pens.push(t.pen); g.pen = g.pens[0]; g.wood -= 8; connect(g, t.pen.x0 + 3, t.pen.y1);
+        if (g.pens.length === 2 && !g.pen2Msg) { g.pen2Msg = true; notify(`${g.name} ya tiene tantos animales que hace un segundo cercado`, { x:(q.x0 + 4) * T, y:(q.y0 + 3) * T }); } } }; break;
     case 'capturar': { const a = t.a; if (a && !a.dead) { a.lead = null; a.x = t.x; a.y = t.y; } v.task = null; return; }
     case 'pasear': v.task = null; v.wait = 1 + Math.random() * 3; return;
   }
