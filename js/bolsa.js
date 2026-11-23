@@ -57,7 +57,7 @@ function marketTick(){
     if (d <= -.15) notify(`Bolsa: las acciones de ${n.name} se desploman un ${Math.round(-d * 100)} %${s.causes[0] && s.causes[0].d < 0 ? ` (${s.causes[0].txt})` : ''}`, at);
     else if (d >= .15) notify(`Bolsa: las acciones de ${n.name} suben un ${Math.round(d * 100)} %${s.causes[0] && s.causes[0].d > 0 ? ` (${s.causes[0].txt})` : ''}`, at);
     // Denuncia: una caída fuerte por culpa de otra nación (la ataca o sus inversores venden en masa)
-    if (d <= -.1) {
+    if (d <= -.08) {
       const spec = Object.entries(s.flowBy).filter(([id, f]) => +id !== n.id && f < -Math.max(20, s.price * 8)).sort((a, b) => a[1] - b[1])[0];
       const culprit = s.causes.find(c => c.by != null && c.by !== n.id && c.d < 0), by = culprit ? culprit.by : spec ? +spec[0] : null;
       if (by != null && !sanctionsOn().some(x => x.from === n.id && x.to === by)) denounce(n, villageById(by), culprit ? culprit.txt : 'especular contra sus acciones');
