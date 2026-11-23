@@ -245,6 +245,9 @@ if os.path.exists(os.path.join(SRC, '14B.png')):  # iconos para la ficha (no van
                          ('permiso', (120, 560, 420, 985), 26), ('contrato', (540, 565, 970, 960), 32), ('sello', (1030, 600, 1500, 930), 38)]:
         shrink(box_parts('14B.png', box), w, 32).save(os.path.join(dst, name + '.png'), optimize=True)
 
+if os.path.exists(os.path.join(SRC, 'plataforma, diriglbes.png')):  # plataforma elevada de los dirigibles (sustituye a la pista de los globos)
+    add('aero:plataforma', shrink(box_parts('plataforma, diriglbes.png', (200, 150, 1340, 900)), 47, 40))
+
 # ---- Atlas: en filas, con 1 píxel de separación ----
 keys = list(S); W = 512; x = y = rowh = 0; pos = {}
 for k in sorted(keys, key=lambda k: -S[k]['img'].height):

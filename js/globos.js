@@ -386,11 +386,12 @@ function flagBalloon(g, col){
 }
 // La plataforma en el suelo: piedra con la marca de aterrizaje (o, sin arte, tablones en círculo)
 function drawAeros(){
-  const [x0, y0, x1, y1] = visibleRect(), pad = artFrame('aero:pista');
+  const [x0, y0, x1, y1] = visibleRect(), pad = artFrame('aero:pista'), plat = artFrame('aero:plataforma');
   for (const g of villages) {
     const A = g.aero; if (!A || !A.sock) continue; const px = A.x0 * T, py = A.y0 * T, pw = A.w * T, ph = A.h * T;
     if (px > x1 || px + pw < x0 || py > y1 || py + ph < y0) continue;
     const [cx, cy] = aeroCenter(g);
+    if (plat && knowsSci(g, 'dirigible')) { const f = ART_MAP['aero:plataforma']; vctx.drawImage(plat, Math.round(cx - f[4]), Math.round(cy - plat.height * .42)); continue; } // con dirigibles: la plataforma elevada, con el círculo bajo el que amarran
     if (pad) { vctx.drawImage(pad, Math.round(cx - pad.ax), Math.round(cy - pad.height / 2)); continue; }
     const rx = pw / 2 - 3, ry = ph / 2 - 3;
     vctx.save(); vctx.beginPath(); vctx.ellipse(cx, cy, rx + 1, ry + 1, 0, 0, Math.PI * 2); vctx.fillStyle = '#5e4026'; vctx.fill();
