@@ -1,0 +1,28 @@
+{
+  "name": "forja-de-mundos",
+  "productName": "Forja de Mundos",
+  "version": "1.0.0",
+  "description": "Forja de Mundos: el juego y su launcher, con actualizaciones desde la nube",
+  "main": "main.js",
+  "author": "AstraStorm",
+  "license": "UNLICENSED",
+  "scripts": {
+    "juego": "node copiar-juego.js",
+    "start": "node copiar-juego.js && electron .",
+    "dist": "node copiar-juego.js && electron-builder --win portable nsis"
+  },
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8"
+  },
+  "build": {
+    "appId": "io.github.astrastorm.forjademundos",
+    "productName": "Forja de Mundos",
+    "directories": { "output": "dist" },
+    "files": ["main.js", "preload.js", "launcher/**/*", "package.json"],
+    "extraResources": [{ "from": "juego-base", "to": "juego-base" }],
+    "win": { "icon": "launcher/icono.png" },
+    "portable": { "artifactName": "ForjaDeMundos-portable.exe" },
+    "nsis": { "artifactName": "ForjaDeMundos-instalador.exe", "oneClick": false, "allowToChangeInstallationDirectory": true, "shortcutName": "Forja de Mundos" }
+  }
+}

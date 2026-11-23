@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:">
+<title>Forja de Mundos · Launcher</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600&family=Nunito+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="launcher.css">
+</head>
+<body>
+<header class="bar">
+  <div class="brand"><img src="icono.png" alt=""><span>FORJA</span></div>
+  <nav class="tabs"><button class="on" data-v="juego">Juego</button><button data-v="novedades">Novedades</button><button data-v="ajustes">Ajustes</button></nav>
+  <div class="winbtns"><button data-w="min" aria-label="Minimizar">—</button><button data-w="close" aria-label="Cerrar">✕</button></div>
+</header>
+<aside class="rail">
+  <button class="game on" title="Forja de Mundos"><img src="icono.png" alt=""></button>
+</aside>
+<main>
+  <section class="hero">
+    <div class="shade"></div>
+    <div class="hero-in">
+      <p class="kicker">Simulador de mundos</p>
+      <h1>Forja de Mundos</h1>
+      <p class="tag">Pueblos que nacen, crecen, comercian, rezan, votan y se declaran la guerra. Tú solo pones el mundo.</p>
+    </div>
+  </section>
+  <section class="view" id="v-juego">
+    <div class="news">
+      <h2>Novedades</h2>
+      <ul id="news"><li class="muted">Buscando novedades…</li></ul>
+    </div>
+    <div class="side">
+      <div class="card">
+        <div class="kv"><span>Versión instalada</span><b id="vLocal">—</b></div>
+        <div class="kv"><span>Última versión</span><b id="vRemote">—</b></div>
+        <div class="kv"><span>Estado</span><b id="state">Comprobando…</b></div>
+      </div>
+    </div>
+  </section>
+  <section class="view" id="v-novedades" hidden>
+    <h2>Historial de actualizaciones</h2>
+    <ul id="newsAll" class="hist"></ul>
+  </section>
+  <section class="view" id="v-ajustes" hidden>
+    <h2>Ajustes</h2>
+    <div class="opts">
+      <button id="bCheck">Buscar actualizaciones</button>
+      <button id="bRepair">Reparar el juego (volver a descargarlo todo)</button>
+      <button id="bFolder">Abrir la carpeta del juego</button>
+      <button id="bWeb">Jugar en el navegador</button>
+    </div>
+    <p class="muted" id="appv"></p>
+  </section>
+  <footer class="dock">
+    <div class="prog"><div class="ptxt"><span id="pLabel">Comprobando actualizaciones…</span><span id="pNum"></span></div><div class="pbar"><i id="pFill"></i></div></div>
+    <button class="play" id="play" disabled>Jugar</button>
+  </footer>
+</main>
+<script src="launcher.js"></script>
+</body>
+</html>
