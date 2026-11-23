@@ -34,11 +34,12 @@ function migrationTick(g, people){
   if (!why || Math.random() > .35) return;
   let best = null, bs = 0;
   for (const o of villages) {
-    if (o === g || !popOf(o) || hasLaw(o, 'fronteras_cerradas')) continue;
-    const r = rels.get(relKey(g, o)); if (r && r.war) continue;
+    const r = rels.get(relKey(g, o)), free = hasTreaty(r, 'circulacion');
+    if (o === g || !popOf(o) || (hasLaw(o, 'fronteras_cerradas') && !free)) continue;
+    if (r && r.war) continue;
     const op = popOf(o), room = houseCap(o) + 4 - op, d = Math.hypot(o.fx - g.fx, o.fy - g.fy);
     if (room < 2 || o.food < op * .8 || d > 140) continue;
-    const sc = room + (o.food / op) * 2 + (hasLaw(o, 'fronteras_abiertas') ? 4 : 0) + (sameNation(o, g) ? 3 : 0) + ((r && r.v) || 0) / 20 - d / 30;
+    const sc = room + (o.food / op) * 2 + (hasLaw(o, 'fronteras_abiertas') ? 4 : 0) + (sameNation(o, g) ? 3 : 0) + (free ? 5 : 0) + ((r && r.v) || 0) / 20 - d / 30;
     if (sc > bs) { bs = sc; best = o; }
   }
   if (!best) return;

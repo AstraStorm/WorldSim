@@ -13,6 +13,9 @@ También se puede abrir `index.html` directamente en el navegador (con la carpet
 - Religiones que nacen de las desgracias, rituales, ofrendas y sacrificios; grandes templos según la fe: catedral (un solo dios), gran panteón (muchos dioses) o zigurat (dioses del cielo, el sol o el fuego).
 - Papel y mapas: cada aldea descubre el papel y sus cartógrafos exploran a pie y en barca. En la ficha de la aldea, pestaña Mapa, se ve el mundo tal como lo conocen: nítido lo cercano, torcido o inventado lo lejano. Al comerciar se copian los mapas.
 - Banderas propias, territorio, diplomacia, comercio por tierra y mar, guerras, conquistas e independencias.
+- Convivencia: cada persona tiene su orientación (heterosexual, homosexual o bisexual) y forma pareja; los hijos nacen de parejas de hombre y mujer, y las del mismo sexo pueden adoptar donde hay matrimonio igualitario. Leyes de derechos humanos o segregación racial, de matrimonio igualitario o persecución, y de libertad de culto o persecución religiosa: cambian el ánimo, los sueldos, quién emigra o es desterrado, las protestas y las relaciones con los vecinos.
+- Migrantes con su propia fe: unos la viven en paz y se integran; otros predican, y si llegan a ser mayoría imponen su religión.
+- Tratados: pactos de no agresión (romperlos es traición), acuerdos comerciales, libre circulación, tratados de paz y tributos.
 - Partidos, elecciones, monarquías, dictaduras, comunismo y fascismo; manifestaciones y golpes de estado.
 - Monedas, bancos, inflación, bancarrotas y alianzas con moneda común.
 - Enfermedades y epidemias, curanderos, hospitales y cuarentenas; migraciones y refugiados.
@@ -42,6 +45,9 @@ Sin dependencias ni compilación: cada archivo es un script normal y se cargan e
 | `js/vida.js` | Enfermedades, migraciones, historia y sonido |
 | `js/sociedad.js` | Ocio, Juegos, mar, fichas de pueblo y persona, crónica, leyes y diplomacia |
 | `js/cartografia.js` | Papel, expediciones de los cartógrafos y el mapa (impreciso) de cada aldea |
+| `js/convivencia.js` | Parejas y orientación, racismo y derechos, homofobia o igualdad |
+| `js/credos.js` | Migrantes con otra fe: predicadores, conversiones, persecución o libertad de culto |
+| `js/tratados.js` | Pactos, acuerdos comerciales, libre circulación, tratados de paz y tributos |
 | `js/vegetacion.js` | Crecimiento y muerte de la vegetación |
 | `js/aldeanos.js` | Movimiento y dibujo de los aldeanos |
 | `js/interfaz.js` | Herramientas del jugador, entrada, panel, pantalla de carga y oleaje |
