@@ -48,7 +48,7 @@ También se puede abrir `index.html` directamente en el navegador (con la carpet
 - Edificios de las instituciones: tribunal (sin él no hay juicios), cárcel, imprenta (sin ella no hay periódicos), casa del sindicato (negocia mejor), parlamento (en los regímenes parlamentarios) y academia de la lengua (con ley de reforma o de pureza de la lengua). Piden madera y piedra, y la cárcel e imprenta también hierro y el parlamento oro; si les falta algo, más gente se pone a talar, a la cantera o a la mina. Los del gobierno llevan la bandera de su nación en lo alto.
 - Prensa: periódicos afines a cada partido con su titular del día (contado a su manera), que van moviendo las ideas de sus lectores y destapan escándalos. Con censura solo queda el oficial.
 - Guerra con formaciones, caballería, abanderados, catapultas, flotas y murallas dobles.
-- Botones arriba a la derecha: Crónica, Historia (gráficas, línea del tiempo y Juegos), Partidas y Sonido.
+- Interfaz: arriba a la izquierda la fecha y la velocidad; arriba a la derecha Crónica, Historia (gráficas, línea del tiempo y Juegos), Partidas y Sonido; el zoom, abajo a la derecha; abajo, «Crear vida» y «Desatar» en pestañas. El panel de la derecha va por pestañas: Mundo (resumen de naciones, guerras, Consejo, peligros y aldeas), Pincel, Ajustes (generar el mundo, capas y clima) y Datos (rarezas, fauna, recursos y biomas).
 - Sonido: música que cambia de día, de noche y en guerra; ambiente según lo que se ve (olas, ríos, viento, lluvia, grillos y ranas de noche, pájaros y gaviotas de día, tornados, huracanes, fuego, lava y meteoritos) y, al acercarse, la gente hablando en su idioma inventado (riendo en las fiestas y gritando en las protestas), los animales (vacas, ovejas, gallinas y gallo al amanecer, cerdos, caballos, perros, gatos, lobos que aúllan de noche y osos) y la gente talando, construyendo, picando, en la herrería, luchando o rezando (canto llano, coro, tambores, mantra o susurros según su fe). Volumen general, de música, de ambiente y de efectos.
 - Partidas: cinco ranuras más el guardado automático, y descargar o abrir la partida en un archivo `.forja` (para no perderla o llevarla a otro ordenador).
 - Clic en una aldea para ver su ficha; clic en una persona para seguirla.
@@ -107,6 +107,7 @@ Sin dependencias ni compilación: cada archivo es un script normal y se cargan e
 | `js/vegetacion.js` | Crecimiento y muerte de la vegetación |
 | `js/aldeanos.js` | Movimiento y dibujo de los aldeanos |
 | `js/sonido.js` | Sonido sintetizado: música generativa, ambiente según lo que se ve (olas, ríos, viento, lluvia, grillos, pájaros, tormentas, fuego), voces, animales, trabajos y rezos de cerca, y los volúmenes |
+| `js/ui.js` | Pestañas del panel y de la barra de abajo, y el resumen del mundo |
 | `js/interfaz.js` | Herramientas del jugador, entrada, panel, pantalla de carga y oleaje |
 
 Todos comparten el mismo ámbito global, así que el orden importa: lo que un archivo ejecuta al cargarse solo puede usar lo que esté en archivos anteriores (las funciones se pueden llamar desde cualquier sitio una vez cargado todo).

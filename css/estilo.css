@@ -206,3 +206,48 @@ canvas.ic{width:28px;height:28px;flex:none;image-rendering:pixelated;background:
   .spawn>*{flex:none}.spawn button{min-height:34px}
   .thermo{display:none}
 }
+
+/* ===== Interfaz más clara (ui.js) ===== */
+/* Arriba a la izquierda: fecha y velocidad juntas; la información de la casilla, debajo */
+.topleft{position:absolute;top:10px;left:10px;z-index:3;display:flex;flex-wrap:wrap;align-items:center;gap:6px;max-width:calc(100% - 470px)}
+.topleft .season,.topleft .speed{position:static}
+.hud{top:52px;bottom:auto;left:10px;max-width:min(420px,calc(100% - 20px));font-size:12.5px}
+/* Menús arriba a la derecha, con su icono */
+.zoom button[data-ic]::before{content:attr(data-ic);margin-right:5px}
+.zoom button{font-size:13px;padding:5px 9px;background:rgba(17,21,26,.9)}
+/* Zoom: columna abajo a la derecha, como en los mapas */
+.zoomctl{position:absolute;right:10px;bottom:64px;z-index:3;display:flex;flex-direction:column;gap:4px}
+.zoomctl button{width:36px;height:36px;padding:0;font-size:19px;line-height:1;background:rgba(17,21,26,.92)}
+/* Barra de abajo: pestañas y una sola fila */
+.spawn{flex-wrap:nowrap;justify-content:flex-start;left:10px;right:56px;max-width:none;width:max-content;margin-left:auto}
+.spawn .sp-tabs{display:flex;gap:2px;margin-right:6px;padding-right:8px;border-right:1px solid var(--line)}
+.spawn .sp-tabs button{font-size:12.5px;padding:5px 9px;background:none;border:1px solid transparent;color:var(--muted)}
+.spawn .sp-tabs button.on{background:var(--accent);border-color:var(--accent);color:#1a1408}
+.spawn .sp-row{display:flex;align-items:center;gap:4px;flex-wrap:nowrap}.spawn .sp-row[hidden]{display:none}
+.spawn .pop{margin-left:auto;padding-left:8px}
+/* Panel de la derecha con pestañas */
+.ptabs{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin:-6px 0 -6px;position:sticky;top:-16px;z-index:2;background:var(--panel);padding:6px 0}
+.ptabs button{font-size:12px;padding:7px 2px;white-space:nowrap;background:rgba(255,255,255,.04);color:var(--muted);border:1px solid var(--line)}
+.ptabs button.on{background:var(--accent);border-color:var(--accent);color:#1a1408}
+.panel [data-pt].pt-off{display:none !important}
+/* Resumen del mundo */
+.wv-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.wv-stats div{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+.wv-stats b{display:block;font-family:var(--f-display);font-size:20px;line-height:1.1}.wv-stats span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.wv-nat{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:6px 8px;font-family:var(--f-body);font-size:13px;background:rgba(255,255,255,.03)}
+.wv-nat img{width:22px;height:15px;image-rendering:pixelated;border:1px solid rgba(0,0,0,.4);flex:none}
+.wv-nat .nm{font-weight:700}.wv-nat .rg{color:var(--muted);font-size:11.5px;display:block}.wv-nat .pp{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--muted)}
+.wv-list{display:flex;flex-direction:column;gap:4px}
+.wv-line{font-size:12.5px;line-height:1.5}.wv-line .muted{font-size:12px}
+.wv-war{color:#f08a7a}
+/* Fichas más legibles */
+.vcard,.pcard{font-size:14.5px}
+.vcard h4,.pcard h4{font-size:11.5px;margin-top:14px}
+:root{--muted:#aab5bd}
+.needs>span:nth-child(3n){font-size:12.5px}
+@media (max-width:760px){
+  .topleft{top:6px;left:6px;max-width:calc(100% - 12px)}
+  .zoomctl{bottom:58px;right:6px}
+  .spawn{left:6px;right:6px;width:auto;overflow-x:auto}
+  .zoom{top:auto;bottom:auto;position:absolute;top:44px}
+}

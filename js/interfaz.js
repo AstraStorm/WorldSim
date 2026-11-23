@@ -154,7 +154,7 @@ function setTool(k){
   document.querySelectorAll('#tools button, #spawnMenu button').forEach(x => x.setAttribute('aria-pressed', x.dataset.k === k));
   view.classList.toggle('paint', k !== 'move');
 }
-$('spawnMenu').onclick = ev => { const b = ev.target.closest('button'); if (b) setTool(params.tool === b.dataset.k ? 'move' : b.dataset.k); };
+$('spawnMenu').onclick = ev => { const b = ev.target.closest('button'); if (b && b.dataset.k) setTool(params.tool === b.dataset.k ? 'move' : b.dataset.k); };
 window.addEventListener('keydown', e => { if (e.key === 'Escape') setTool('move'); });
 
 function syncOutputs(){

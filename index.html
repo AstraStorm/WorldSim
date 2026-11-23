@@ -6,20 +6,22 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600&family=Nunito+Sans:wght@400;600;700&display=swap">
-<link rel="stylesheet" href="css/estilo.css?v=202611231554">
+<link rel="stylesheet" href="css/estilo.css?v=202611231601">
 
 <div class="app">
   <section class="stage" id="stage">
     <canvas id="view" aria-label="Mapa del mundo generado"></canvas>
-    <div class="zoom">
-      <button id="zin" aria-label="Acercar">+</button>
-      <button id="zout" aria-label="Alejar">−</button>
-      <button id="zfit">Encuadrar</button>
-      <button id="chronBtn" title="Todo lo que ha pasado">Crónica</button>
-      <button id="histBtn" title="Gráficas, línea del tiempo y Juegos">Historia</button>
-      <button id="saveBtn" title="Guardar, cargar, descargar o abrir partidas">Partidas</button>
-      <button id="sndBtn" title="Activar o quitar el sonido">Sonido</button>
+    <div class="zoom" role="toolbar" aria-label="Menús">
+      <button id="chronBtn" data-ic="📜" title="Todo lo que ha pasado">Crónica</button>
+      <button id="histBtn" data-ic="📈" title="Gráficas, línea del tiempo y Juegos">Historia</button>
+      <button id="saveBtn" data-ic="💾" title="Guardar, cargar, descargar o abrir partidas">Partidas</button>
+      <button id="sndBtn" data-ic="🔊" title="Música, ambiente y efectos">Sonido</button>
       <button id="panelTog" title="Ocultar el panel de la derecha" aria-pressed="false">Panel ⇥</button>
+    </div>
+    <div class="zoomctl" role="group" aria-label="Zoom">
+      <button id="zin" aria-label="Acercar" title="Acercar">+</button>
+      <button id="zout" aria-label="Alejar" title="Alejar">−</button>
+      <button id="zfit" aria-label="Encuadrar el mundo" title="Ver todo el mundo">⤢</button>
     </div>
     <div class="thermo" id="heightLegend" hidden><b>Altura</b><div class="bar" style="background:linear-gradient(90deg,#0c1e4a 0%,#2a5aa0 27.2%,#7ab0d8 42.9%,#3c8a3a 43.5%,#9cbc4a 50%,#d8c060 57.6%,#a0703a 68.5%,#8a8580 82.6%,#ffffff 100%)"></div><div class="ticks"><span style="left:0">−4000</span><span style="left:43.5%">0</span><span style="left:100%">5200 m</span></div></div>
     <div class="thermo" id="windLegend" hidden><b>Viento</b><div class="bar" style="background:linear-gradient(90deg,#78b4e8 0%,#5ac87a 30%,#f0d43a 55%,#f08a2a 75%,#d0281e 100%)"></div><div class="ticks"><span style="left:0">0</span><span style="left:33%">40</span><span style="left:66%">80</span><span style="left:100%">120 km/h</span></div></div>
@@ -33,8 +35,10 @@
         <p class="load-step" id="loadStep">Levantando montañas…</p>
       </div>
     </div>
+    <div class="topleft">
     <button class="season" id="season" title="Pasar a la siguiente estación"><span class="sdot" id="seasonDot"></span><span id="seasonTxt"></span><span class="sbar"><span id="seasonBar"></span></span><span class="snext">»</span></button>
     <div class="speed" id="speed" role="group" aria-label="Velocidad del juego"><button data-s="0" title="Pausa">❚❚</button><button data-s="1" class="on" title="Velocidad normal">1×</button><button data-s="2">2×</button><button data-s="3">3×</button><button data-s="4">4×</button><button data-s="5">5×</button></div>
+    </div>
     <div class="vcard" id="vcard" hidden></div>
     <div class="pcard" id="pcard" hidden></div>
     <div class="notice" id="notice" role="status" hidden><span id="noticeTxt"></span><button id="noticeGo">Ver</button></div>
@@ -56,24 +60,27 @@
     <div class="chron" id="chron" hidden><div class="ch-h"><b>Crónica del mundo</b><button class="x" aria-label="Cerrar crónica">×</button></div>
       <div class="cl-f"><button data-f="all">Todo</button><button data-f="war">Guerra</button><button data-f="pol">Política</button><button data-f="dip">Diplomacia</button><button data-f="eco">Economía</button><button data-f="rel">Religión</button><button data-f="dis">Catástrofes</button><button data-f="death">Muertes</button></div>
       <ul class="cl-list"></ul></div>
-    <div class="spawn" id="spawnMenu" role="toolbar" aria-label="Crear vida">
-      <span class="ttl">Crear vida</span>
-      <button data-k="person"><canvas class="pi" data-n="1" width="9" height="10"></canvas>Aldeano</button>
-      <button data-k="family"><canvas class="pi" data-n="3" width="25" height="10"></canvas>Familia</button>
-      <select id="animalSel" aria-label="Animal que soltar">
+    <div class="spawn" id="spawnMenu" role="toolbar" aria-label="Crear vida y desatar catástrofes">
+      <div class="sp-tabs"><button data-sp="vida" class="on" type="button">🌱 Crear vida</button><button data-sp="desastre" type="button">⚡ Desatar</button></div>
+      <div class="sp-row" data-sp="vida">
+        <button data-k="person"><canvas class="pi" data-n="1" width="9" height="10"></canvas>Aldeano</button>
+        <button data-k="family"><canvas class="pi" data-n="3" width="25" height="10"></canvas>Familia</button>
+        <select id="animalSel" aria-label="Animal que soltar">
         <option value="vaca">Vacas</option><option value="caballo">Caballos</option><option value="oveja">Ovejas</option><option value="pollo">Pollos</option><option value="cerdo">Cerdos</option>
         <option value="gato">Gato</option><option value="perro">Perros</option><option value="lobo">Lobos</option><option value="oso">Oso</option>
       </select>
-      <button data-k="animal">Soltar</button>
-      <button data-k="remove">Retirar</button>
+        <button data-k="animal">Soltar</button>
+        <button data-k="remove" title="Quitar gente o animales">Retirar</button>
+      </div>
+      <div class="sp-row" data-sp="desastre" hidden>
+        <button data-k="tornado">🌪 Tornado</button>
+        <button data-k="tromba">💧 Tromba</button>
+        <button data-k="huracan">🌀 Huracán</button>
+        <button data-k="remolino">🌊 Torbellino</button>
+        <button data-k="terremoto">🏚 Terremoto</button>
+        <button data-k="meteorito">☄ Meteorito</button>
+      </div>
       <span class="pop" id="pop"></span>
-      <span class="ttl">Desatar</span>
-      <button data-k="tornado">Tornado</button>
-      <button data-k="tromba">Tromba</button>
-      <button data-k="huracan">Huracán</button>
-      <button data-k="remolino">Torbellino</button>
-      <button data-k="terremoto">Terremoto</button>
-      <button data-k="meteorito">Meteorito</button>
     </div>
     <div class="follow" id="followTag" hidden><span id="followTxt"></span><button id="followNext">Siguiente</button><button id="followStop">Soltar cámara</button></div>
   </section>
@@ -83,8 +90,12 @@
       <h1>Forja de Mundos</h1>
       <p class="sub">Terreno, ríos, recursos y pincel de dios</p>
     </header>
+    <nav class="ptabs" role="tablist" aria-label="Secciones del panel">
+      <button data-pt="mundo" class="on" role="tab">🌍 Mundo</button><button data-pt="herr" role="tab">🖌 Pincel</button><button data-pt="ajustes" role="tab">⚙ Ajustes</button><button data-pt="datos" role="tab">📊 Datos</button>
+    </nav>
+    <div class="group" data-pt="mundo" id="worldView"></div>
 
-    <div class="group">
+    <div class="group" data-pt="ajustes">
       <button class="primary" id="newWorld">Nuevo mundo</button>
       <div class="field">
         <label for="seed" class="lbl">Semilla <output>para repetir un mundo</output></label>
@@ -92,7 +103,7 @@
       </div>
     </div>
 
-    <div class="group">
+    <div class="group" data-pt="ajustes">
       <h2>Mapa</h2>
       <div class="field"><span class="lbl">Tamaño <output id="sizeOut"></output></span><div class="seg c3" id="sizeSeg"></div></div>
       <div class="field"><span class="lbl">Tipo de mundo</span><div class="seg c3" id="typeSeg"></div></div>
@@ -103,14 +114,14 @@
       <p class="note">Cambiar estos ajustes vuelve a generar el mundo y borra lo pintado.</p>
     </div>
 
-    <div class="group">
+    <div class="group" data-pt="herr">
       <h2>Pincel de dios</h2>
       <div class="tools" id="tools"></div>
       <div class="field"><label class="lbl" for="brush">Tamaño del pincel <output id="brushOut"></output></label><input type="range" id="brush" min="0" max="10" step="1"></div>
       <p class="note">Con un pincel activo, arrastra con clic derecho o dos dedos para mover el mapa.</p>
     </div>
 
-    <div class="group checks">
+    <div class="group checks" data-pt="ajustes">
       <h2>Capas</h2>
       <label><input type="checkbox" id="relief"> Sombreado de relieve</label>
       <label><input type="checkbox" id="objects"> Árboles y recursos</label>
@@ -131,29 +142,34 @@
       <p class="note">Con qué frecuencia aparecen solos tornados, huracanes, terremotos, erupciones, tormentas de arena, meteoritos e incendios por rayo. Desde el menú puedes provocarlos siempre.</p>
       <p class="note">Las borrascas giran en sentido antihorario y traen lluvia y tormentas; los anticiclones giran al revés y despejan el cielo. La zona coloreada es su área de influencia.</p>
       <label><input type="checkbox" id="people"> Aldeanos iniciales</label>
+    </div>
+    <div class="group" data-pt="herr">
+      <h2>Cámara</h2>
       <button id="goPeople">Seguir a un aldeano</button>
       <p class="note">También puedes hacer clic sobre un aldeano en el mapa (herramienta Mover) para fijar la cámara en él.</p>
     </div>
 
-    <div>
+    <div data-pt="datos">
       <h2>Rarezas</h2>
       <div class="tiers" id="tiers"></div>
       <div class="finds" id="finds"></div>
     </div>
 
-    <div>
+    <div data-pt="mundo">
       <h2>Aldeas</h2>
       <ul id="aldeas" class="aldeas"></ul>
+    </div>
+    <div data-pt="datos">
       <h2>Fauna</h2>
       <ul class="res" id="fauna"></ul>
     </div>
 
-    <div>
+    <div data-pt="datos">
       <h2>Recursos</h2>
       <ul class="res" id="res"></ul>
     </div>
 
-    <div>
+    <div data-pt="datos">
       <h2>Biomas</h2>
       <div class="bar" id="bar"></div>
       <ul class="legend" id="legend"></ul>
@@ -162,52 +178,53 @@
 </div>
 
 <!-- El juego, en el orden en que se carga -->
-<script src="js/nucleo.js?v=202611231554"></script>
-<script src="js/mundo.js?v=202611231554"></script>
-<script src="js/vista.js?v=202611231554"></script>
-<script src="js/clima.js?v=202611231554"></script>
-<script src="js/fauna.js?v=202611231554"></script>
-<script src="js/desastres.js?v=202611231554"></script>
-<script src="js/mapas.js?v=202611231554"></script>
-<script src="js/humanos.js?v=202611231554"></script>
-<script src="js/partidas.js?v=202611231554"></script>
-<script src="js/vida.js?v=202611231554"></script>
-<script src="js/sociedad.js?v=202611231554"></script>
-<script src="js/impuestos.js?v=202611231554"></script>
-<script src="js/presupuestos.js?v=202611231554"></script>
-<script src="js/bolsa.js?v=202611231554"></script>
-<script src="js/vivienda.js?v=202611231554"></script>
-<script src="js/cartografia.js?v=202611231554"></script>
-<script src="js/convivencia.js?v=202611231554"></script>
-<script src="js/credos.js?v=202611231554"></script>
-<script src="js/tratados.js?v=202611231554"></script>
-<script src="js/globos.js?v=202611231554"></script>
-<script src="js/idiomas.js?v=202611231554"></script>
-<script src="js/regimenes.js?v=202611231554"></script>
-<script src="js/instituciones.js?v=202611231554"></script>
-<script src="js/monedas.js?v=202611231554"></script>
-<script src="js/minas.js?v=202611231554"></script>
-<script src="js/justicia.js?v=202611231554"></script>
-<script src="js/sindicatos.js?v=202611231554"></script>
-<script src="js/prensa.js?v=202611231554"></script>
-<script src="js/ciencia.js?v=202611231554"></script>
-<script src="js/consejo.js?v=202611231554"></script>
-<script src="js/espionaje.js?v=202611231554"></script>
-<script src="js/comercio.js?v=202611231554"></script>
-<script src="js/piratas.js?v=202611231554"></script>
-<script src="js/colonias.js?v=202611231554"></script>
-<script src="js/cultura.js?v=202611231554"></script>
-<script src="js/anexiones.js?v=202611231554"></script>
-<script src="js/lluvia.js?v=202611231554"></script>
-<script src="js/estaciones.js?v=202611231554"></script>
-<script src="js/bandidos.js?v=202611231554"></script>
-<script src="js/riqueza.js?v=202611231554"></script>
-<script src="js/noticias.js?v=202611231554"></script>
-<script src="js/defensa.js?v=202611231554"></script>
-<script src="js/trabajo.js?v=202611231554"></script>
-<script src="js/arte_mapa.js?v=202611231554"></script>
-<script src="js/arte.js?v=202611231554"></script>
-<script src="js/vegetacion.js?v=202611231554"></script>
-<script src="js/aldeanos.js?v=202611231554"></script>
-<script src="js/sonido.js?v=202611231554"></script>
-<script src="js/interfaz.js?v=202611231554"></script>
+<script src="js/nucleo.js?v=202611231601"></script>
+<script src="js/mundo.js?v=202611231601"></script>
+<script src="js/vista.js?v=202611231601"></script>
+<script src="js/clima.js?v=202611231601"></script>
+<script src="js/fauna.js?v=202611231601"></script>
+<script src="js/desastres.js?v=202611231601"></script>
+<script src="js/mapas.js?v=202611231601"></script>
+<script src="js/humanos.js?v=202611231601"></script>
+<script src="js/partidas.js?v=202611231601"></script>
+<script src="js/vida.js?v=202611231601"></script>
+<script src="js/sociedad.js?v=202611231601"></script>
+<script src="js/impuestos.js?v=202611231601"></script>
+<script src="js/presupuestos.js?v=202611231601"></script>
+<script src="js/bolsa.js?v=202611231601"></script>
+<script src="js/vivienda.js?v=202611231601"></script>
+<script src="js/cartografia.js?v=202611231601"></script>
+<script src="js/convivencia.js?v=202611231601"></script>
+<script src="js/credos.js?v=202611231601"></script>
+<script src="js/tratados.js?v=202611231601"></script>
+<script src="js/globos.js?v=202611231601"></script>
+<script src="js/idiomas.js?v=202611231601"></script>
+<script src="js/regimenes.js?v=202611231601"></script>
+<script src="js/instituciones.js?v=202611231601"></script>
+<script src="js/monedas.js?v=202611231601"></script>
+<script src="js/minas.js?v=202611231601"></script>
+<script src="js/justicia.js?v=202611231601"></script>
+<script src="js/sindicatos.js?v=202611231601"></script>
+<script src="js/prensa.js?v=202611231601"></script>
+<script src="js/ciencia.js?v=202611231601"></script>
+<script src="js/consejo.js?v=202611231601"></script>
+<script src="js/espionaje.js?v=202611231601"></script>
+<script src="js/comercio.js?v=202611231601"></script>
+<script src="js/piratas.js?v=202611231601"></script>
+<script src="js/colonias.js?v=202611231601"></script>
+<script src="js/cultura.js?v=202611231601"></script>
+<script src="js/anexiones.js?v=202611231601"></script>
+<script src="js/lluvia.js?v=202611231601"></script>
+<script src="js/estaciones.js?v=202611231601"></script>
+<script src="js/bandidos.js?v=202611231601"></script>
+<script src="js/riqueza.js?v=202611231601"></script>
+<script src="js/noticias.js?v=202611231601"></script>
+<script src="js/defensa.js?v=202611231601"></script>
+<script src="js/trabajo.js?v=202611231601"></script>
+<script src="js/arte_mapa.js?v=202611231601"></script>
+<script src="js/arte.js?v=202611231601"></script>
+<script src="js/vegetacion.js?v=202611231601"></script>
+<script src="js/aldeanos.js?v=202611231601"></script>
+<script src="js/sonido.js?v=202611231601"></script>
+<script src="js/interfaz.js?v=202611231601"></script>
+<script src="js/ui.js?v=202611231601"></script>
