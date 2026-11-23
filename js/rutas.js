@@ -18,7 +18,11 @@ function routeTick(a, b, r){
     r.route = null; r.trips = 0; return;
   }
   if (yearT - (r.routeT ?? -1e9) < DAY_LEN / 2) return; r.routeT = yearT;
-  const biz = Math.sqrt(popOf(a) * popOf(b)) * .12;
+  railCheck(a, b, r); // ¿ferrocarril? (industria.js)
+  let biz = Math.sqrt(popOf(a) * popOf(b)) * .12 * (r.rail ? 2 : 1);
+  if (r.route.sea && (world.pirates || []).length && Math.random() < .06) { // los piratas asaltan un barco mercante
+    biz *= .3; notify(`¡Piratas! Asaltan ${knowsSci(a, 'vapor') ? 'un vapor' : 'un galeón'} mercante entre ${a.name} y ${b.name} y se llevan buena parte de la carga`, { x:(a.fx + b.fx) / 2 * T, y:(a.fy + b.fy) / 2 * T });
+  }
   for (const g of [a, b]) { const ec = ecOf(g); if (ec) ec.treas += Math.round(biz * ec.P); g.trades = (g.trades || 0) + 1; }
   r.v = Math.min(100, r.v + .5);
   // Comida: quien tiene de sobra vende a quien le falta
@@ -41,9 +45,10 @@ function drawTradeRoutes(now){
     if (Math.max(ax, bx) < vx0 || Math.min(ax, bx) > vx1 || Math.max(ay, by) < vy0 || Math.min(ay, by) > vy1) continue;
     vctx.beginPath(); vctx.moveTo(ax, ay); vctx.lineTo(bx, by); vctx.stroke();
     const L = Math.hypot(bx - ax, by - ay) || 1, s = Math.max(1, 1.6 / zoom * 2);
-    for (let k = 0; k < 3; k++) { // tres carros: dos de ida y uno de vuelta
-      const back = k === 2, q = ((now / (L * 60) + k / 3) % 1), t = back ? 1 - q : q, x = ax + (bx - ax) * t, y = ay + (by - ay) * t;
-      vctx.fillStyle = r.route.sea ? '#e8e0d0' : '#8a5a30'; vctx.fillRect(x - 2 * s, y - s, 4 * s, 2 * s);
+    for (let k = 0; k < (r.route.sea ? 2 : 3); k++) { // tres carros (dos de ida y uno de vuelta); por mar, dos barcos
+      const back = k === 2 || (r.route.sea && k === 1), q = ((now / (L * 60) + k / 3) % 1), t = back ? 1 - q : q, x = ax + (bx - ax) * t, y = ay + (by - ay) * t;
+      if (r.route.sea) { if (WATER[world.biome[Math.floor(y / T) * W + Math.floor(x / T)]]) drawShip(x, y, (bx - ax) * (back ? -1 : 1), knowsSci(a, 'vapor') || knowsSci(b, 'vapor'), villageColor(nationOf(back ? b : a)), now); continue; } // galeón o vapor (industria.js)
+      vctx.fillStyle = '#8a5a30'; vctx.fillRect(x - 2 * s, y - s, 4 * s, 2 * s);
       vctx.fillStyle = '#f0c840'; vctx.fillRect(x - s, y - 2 * s, 2 * s, s); // la carga
     }
   }

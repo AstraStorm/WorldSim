@@ -461,7 +461,8 @@ function drawBalloons(now){
       // Cuerdas: de las esquinas de la cesta a la boca del globo
       vctx.strokeStyle = 'rgba(200,168,110,.95)'; vctx.lineWidth = .45;
       for (const [ax, mx] of [[-bw / 2 + .5, -2], [bw / 2 - .5, 2], [-bw / 4, -1], [bw / 4, 1]]) { vctx.beginPath(); vctx.moveTo(ax, -bh + 1); vctx.lineTo(mx, mouthY); vctx.stroke(); }
-      if (env) { // al hincharse crece hacia arriba y se ensancha
+      if (knowsSci(g, 'dirigible') && inf > .5) drawAirship(col, mouthY, inf, now); // dirigible de vapor (globos.js)
+      else if (env) { // al hincharse crece hacia arriba y se ensancha
         const ew = env.width * (.35 + .65 * inf), eh = env.height * inf;
         vctx.drawImage(env, -ew / 2, mouthY - eh + 1, ew, eh);
       } else {
@@ -486,4 +487,14 @@ function drawBalloons(now){
     vctx.restore();
     }
   }
+}
+// Dirigible (con el descubrimiento del dirigible): cigarro alargado con costillas, timones, góndola y hélice
+function drawAirship(col, mouthY, inf, now){
+  const L = 26 * inf, Hh = 9 * inf, cy = mouthY - Hh / 2 - 1;
+  vctx.fillStyle = '#22201e'; vctx.beginPath(); vctx.ellipse(0, cy, L / 2 + 1, Hh / 2 + 1, 0, 0, Math.PI * 2); vctx.fill();
+  vctx.fillStyle = `rgb(${col.join(',')})`; vctx.beginPath(); vctx.ellipse(0, cy, L / 2, Hh / 2, 0, 0, Math.PI * 2); vctx.fill();
+  vctx.fillStyle = 'rgba(255,255,255,.3)'; vctx.beginPath(); vctx.ellipse(-1, cy - Hh * .2, L * .38, Hh * .18, 0, 0, Math.PI * 2); vctx.fill();
+  vctx.fillStyle = 'rgba(0,0,0,.25)'; for (let k = -2; k <= 2; k++) vctx.fillRect(k * L / 6, cy - Hh / 2 + 1, .7, Hh - 2); // costillas
+  vctx.fillStyle = '#22201e'; vctx.beginPath(); vctx.moveTo(-L / 2 + 2, cy); vctx.lineTo(-L / 2 - 3, cy - Hh / 2 - 2); vctx.lineTo(-L / 2 - 1, cy); vctx.lineTo(-L / 2 - 3, cy + Hh / 2 + 2); vctx.fill(); // timones
+  const sp = Math.sin(now / 40); vctx.fillStyle = '#c8c0b0'; vctx.fillRect(-L / 2 - 4, cy - 2 * Math.abs(sp), 1, 4 * Math.abs(sp) + .5); // hélice
 }

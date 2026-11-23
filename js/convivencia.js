@@ -23,7 +23,7 @@ function socialTick(g, dt, people){
   for (let n = 0; n < 2 && singles.length > 1; n++) {
     const a = singles.splice(Math.floor(Math.random() * singles.length), 1)[0];
     const k = singles.findIndex(b => attracted(a, b) && attracted(b, a) && Math.abs(ageOf(a) - ageOf(b)) < 5); if (k < 0) continue;
-    const b = singles.splice(k, 1)[0]; (a.partners ||= []).push(b); (b.partners ||= []).push(a);
+    const b = singles.splice(k, 1)[0]; (a.partners ||= []).push(b); (b.partners ||= []).push(a); wedding(a, b, g); // la boda (civilizacion.js)
     if (a.sex === b.sex) {
       a.secret = b.secret = persec; // con la ley en contra, a escondidas
       if (!persec && !g.sameSexMsg) { g.sameSexMsg = true; notify(equal ? `En ${g.name} se casan ${a.name} y ${b.name}: la primera boda entre dos ${a.sex === 'h' ? 'hombres' : 'mujeres'} del pueblo` : `En ${g.name}, ${a.name} y ${b.name} forman pareja`, at); floats.push({ x:a.x, y:a.y - 14, txt:'♥', col:'#f0a0c0', life:0 }); }
