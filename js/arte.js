@@ -1,0 +1,84 @@
+// Forja de Mundos · Arte dibujado a mano (atlas): sustituye los sprites que tienen dibujo nuevo
+// ================= Arte =================
+// El atlas (arte/atlas.png) y su mapa (js/arte_mapa.js) salen de las hojas de sprites. Si un objeto tiene dibujo
+// aquí, se usa; si no (o mientras carga), el juego dibuja el suyo de siempre.
+// Los árboles cambian con la estación: en otoño se tiñen de naranja, rojo u oro; en primavera algunos florecen en
+// rosa; en invierno los de hoja caduca se quedan desnudos y los de hoja perenne se cubren de nieve.
+const ART = { img:null, ready:false, cache:new Map() };
+(() => {
+  if (typeof ART_MAP === 'undefined') return;
+  const im = new Image();
+  im.onload = () => { ART.img = im; ART.ready = true; ART.cache.clear(); if (typeof world !== 'undefined' && world && typeof composeRegion === 'function') composeRegion(0, 0, W - 1, H - 1); };
+  im.src = 'arte/atlas.png?v=202611230225';
+})();
+const ART_DECID = new Set(['oak:forest', 'birch:birch', 'willow:swamp', 'willow:moss', 'acacia:dry', 'acacia:sunset', 'oak:cherry', 'pine:autumn']);
+const ART_EVER = new Set(['pine:pine', 'pine:snow', 'pine:blue', 'ancient:elder', 'ancient:mangrove', 'ancient:life', 'ancient:baobab']);
+function artPiece(k){
+  const m = ART_MAP[k]; if (!m || !ART.ready) return null;
+  const c = document.createElement('canvas'); c.width = m[2]; c.height = m[3];
+  c.getContext('2d').drawImage(ART.img, m[0], m[1], m[2], m[3], 0, 0, m[2], m[3]); c.ax = m[4];
+  return c;
+}
+// Hojas: verdes (más verde que rojo y que azul)
+const isLeaf = (r, g, b) => g > r + 6 && g >= b;
+const ART_AUTUMN = [[[120, 46, 20], [184, 74, 28], [226, 120, 40], [246, 168, 70]], [[110, 24, 22], [168, 40, 32], [208, 70, 44], [236, 120, 80]], [[128, 84, 20], [196, 140, 30], [232, 188, 60], [248, 222, 120]]];
+function seasonal(c, key, season, variant){
+  const x = c.getContext('2d'), d = x.getImageData(0, 0, c.width, c.height), p = d.data, w = c.width;
+  const pal = ART_AUTUMN[variant % 3], blossom = variant % 3 === 0; // en primavera, uno de cada tres florece
+  for (let i = 0; i < p.length; i += 4) {
+    if (p[i + 3] < 100) continue;
+    const r = p[i], g = p[i + 1], b = p[i + 2];
+    if (season === 3) { // nieve sobre lo que mira al cielo
+      const k = i / 4, above = k - w; if (k >= w && p[above * 4 + 3] < 100 && (isLeaf(r, g, b) || ART_EVER.has(key))) { p[i] = 236; p[i + 1] = 242; p[i + 2] = 248; }
+      continue;
+    }
+    if (!isLeaf(r, g, b)) continue;
+    const L = (r * .3 + g * .59 + b * .11) / 255;
+    if (season === 2) { const q = pal[Math.min(3, Math.floor(L * 4.2))]; p[i] = q[0]; p[i + 1] = q[1]; p[i + 2] = q[2]; }
+    else if (season === 0) {
+      const k = i / 4, px = k % w, py = (k / w) | 0;
+      if (blossom && ((px * 7 + py * 13) % 5 === 0 || (px + py * 3) % 7 === 0)) { const pink = L > .45 ? [246, 200, 220] : [228, 150, 186]; p[i] = pink[0]; p[i + 1] = pink[1]; p[i + 2] = pink[2]; }
+      else { p[i] = Math.min(255, r + 14); p[i + 1] = Math.min(255, g + 18); p[i + 2] = Math.min(255, b + 4); } // verde tierno
+    }
+  }
+  x.putImageData(d, 0, 0); return c;
+}
+function artSprite(o){
+  if (!ART.ready || o.st === 'b') return null; // (los retoños, como siempre)
+  if (o.st === 'm' && !ART_MAP[o.key + ':bare']) return null; // (un árbol muerto sin dibujo desnudo: el de siempre)
+  const key = o.key; if (!ART_MAP[key]) return null;
+  const season = typeof treeSeason === 'function' ? treeSeason(o) : 1, tree = ART_DECID.has(key) || ART_EVER.has(key);
+  let k2 = key, mode = 1;
+  if (tree) {
+    if (o.st === 'm' || (season === 3 && ART_DECID.has(key) && ART_MAP[key + ':bare'])) { k2 = key + ':bare'; mode = 1; } // muerto, o en invierno
+    else if (ART_EVER.has(key)) mode = season === 3 ? 3 : 1; // los de hoja perenne: solo la nieve
+    else if (key !== 'oak:cherry' && key !== 'pine:autumn' || season === 3) mode = season; // el cerezo y el alerce ya tienen su color
+  }
+  const sz = ([.82, 1, 1.18][o.sz ?? 1] ?? 1) * (o.st === 'j' ? .65 : o.st === 'v' ? 1.08 : 1), variant = (o.v || 0) % 6, ck = `${k2}|${mode}|${tree ? variant % 3 : 0}|${sz}`;
+  let c = ART.cache.get(ck); if (c) return c;
+  c = artPiece(k2); if (!c) return null;
+  if (tree && mode !== 1 && k2 === key) c = seasonal(c, key, mode, variant);
+  if (sz !== 1) { const s2 = document.createElement('canvas'); s2.width = Math.max(1, Math.round(c.width * sz)); s2.height = Math.max(1, Math.round(c.height * sz)); const x2 = s2.getContext('2d'); x2.imageSmoothingEnabled = false; x2.drawImage(c, 0, 0, s2.width, s2.height); s2.ax = Math.round(c.ax * sz); c = s2; }
+  ART.cache.set(ck, c); return c;
+}
+// Un fotograma suelto (barca, catapulta, tienda…), ya recortado
+const artFrame = k => { if (!ART.ready || !ART_MAP[k]) return null; let c = ART.cache.get('f|' + k); if (!c) { c = artPiece(k); ART.cache.set('f|' + k, c); } return c; };
+// Llamas animadas sobre los edificios que en el dibujo tenían fuego (altar, zigurat, herrería)
+function drawArtFlames(t){
+  if (!ART.ready) return;
+  const [x0, y0, x1, y1] = visibleRect();
+  for (const g of villages) for (const i of [g.altar, g.forge, g.cathedral]) {
+    if (i == null) continue; const o = world.objs[i]; if (!o || !ART_MAP[o.key] || !ART_MAP[o.key][5] || o.burnt) continue;
+    const m = ART_MAP[o.key], fl = m[5], left = (i % W) * T + 2 + (o.ox || 0) - m[4], top = ((i / W) | 0) * T + 3 + (o.oy || 0) - m[3] + 1;
+    if (left > x1 || left + m[2] < x0 || top > y1 || top + m[3] < y0) continue;
+    const fx = left + fl[0], fy = top + fl[1], fw = fl[2], fh = fl[3], forge = o.key.startsWith('forge');
+    if (forge) { // la boca del horno, que brilla y parpadea
+      for (let yy = 0; yy < fh; yy++) for (let xx = 0; xx < fw; xx++) { const f = Math.sin(t / 90 + xx * 1.7 + yy * 2.3 + i) * .5 + .5; vctx.fillStyle = f > .66 ? '#ffd860' : f > .3 ? '#ff8a2a' : '#c8401a'; vctx.fillRect(fx + xx, fy + yy, 1, 1); }
+      continue;
+    }
+    for (let xx = 0; xx < fw; xx++) { // llama: columnas que suben y bajan
+      const hcol = Math.max(1, Math.round(fh * (.45 + .55 * (1 - Math.abs(xx - fw / 2) / (fw / 2 + .5))) * (.7 + .3 * Math.sin(t / 110 + xx * 1.9 + i))));
+      for (let yy = 0; yy < hcol; yy++) { vctx.fillStyle = yy < hcol * .35 ? '#ffe680' : yy < hcol * .75 ? '#ff9a30' : '#e0501a'; vctx.fillRect(fx + xx, fy + fh - 1 - yy, 1, 1); }
+    }
+  }
+}

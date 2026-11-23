@@ -52,8 +52,11 @@ Sin dependencias ni compilación: cada archivo es un script normal y se cargan e
 | `js/credos.js` | Migrantes con otra fe: predicadores, conversiones, persecución o libertad de culto |
 | `js/tratados.js` | Pactos, acuerdos comerciales, libre circulación, tratados de paz y tributos |
 | `js/trabajo.js` | Reparto de oficios, escuelas, días libres y festivos |
+| `js/arte_mapa.js`, `js/arte.js`, `arte/atlas.png` | Arte dibujado (edificios, árboles, rocas, barca, catapulta…) con colores por estación; si un objeto no tiene dibujo, se usa el de siempre |
 | `js/vegetacion.js` | Crecimiento y muerte de la vegetación |
 | `js/aldeanos.js` | Movimiento y dibujo de los aldeanos |
 | `js/interfaz.js` | Herramientas del jugador, entrada, panel, pantalla de carga y oleaje |
 
 Todos comparten el mismo ámbito global, así que el orden importa: lo que un archivo ejecuta al cargarse solo puede usar lo que esté en archivos anteriores (las funciones se pueden llamar desde cualquier sitio una vez cargado todo).
+
+Antes de subir cambios: `python herramientas/version.py` (cambia el número de versión de los enlaces para que el navegador no use archivos viejos).

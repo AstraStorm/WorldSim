@@ -453,7 +453,7 @@ function planSeasonChange(){
   seasonEvents.sort((a, b) => b[0] - a[0]); // al final de la lista, los que tocan antes
 }
 const treeRace = o => o.ad === undefined ? '' : o.ad < -6 ? 'f' : o.ad > 6 ? 'c' : '';
-const objSprite = o => { const s0 = sprite(o.key, o.v, treeSeason(o), o.st || 'a', o.sz ?? 1, treeRace(o)); return o.burnt ? burntOf(s0) : o.dmg > .3 ? ruinedOf(s0) : s0; };
+const objSprite = o => { const s0 = (typeof artSprite === 'function' && artSprite(o)) || sprite(o.key, o.v, treeSeason(o), o.st || 'a', o.sz ?? 1, treeRace(o)); /* dibujo nuevo, si lo hay */ return o.burnt ? burntOf(s0) : o.dmg > .3 ? ruinedOf(s0) : s0; };
 // Edificio chamuscado: ennegrecido pero se adivina lo que era. Medio derruido: con agujeros en el tejado y grietas
 const burntCache = new WeakMap(), ruinCache = new WeakMap();
 function burntOf(s0){

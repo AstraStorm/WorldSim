@@ -761,6 +761,7 @@ function runTask(v, g, dt){
       if (clearable(x - hw, y - hh, x + hw, y + (hall ? 0 : 1))) clearSite(g, x - hw, y - hh, x + hw, y + (hall ? 0 : 1));
       if ((!tileFree(x, y) && !(hall && !world.objs[t.i])) || buildingClash(x, y, t.k, t.i)) return;
       world.objs[t.i] = { key:hall ? 'hall:ayuntamiento' : 'store:almacen', v:0, ox:0, oy:0, vid:g.id };
+      composeRegion(x - 10, y - 14, x + 10, y + 12); // se pinta entero ya (si no, aparecía a trozos, cortado, cuando se repintaba algo al lado)
       if (hall) { g.hall = t.i; if (g.stone >= 6) { g.wood -= 10; g.stone -= 6; } else g.wood -= 18; const nf = !g.flag; g.flag ||= makeFlag(g); g.flagUrl = flagDataUrl(g.flag); notify(`${g.name} ya tiene ayuntamiento${nf ? ' y ha creado su bandera' : ''}`, { x:x * T, y:y * T }); }
       else { (g.stores ||= []).push(t.i); g.wood -= 8; if (g.stores.length === 1) notify(`En ${g.name} han construido un almacén`, { x:x * T, y:y * T }); connect(g, x, y); }
       composeRegion(x - 8, y - 12, x + 8, y + 12); addEffect(x * T + 2, y * T + 3, 'poof');
@@ -1092,6 +1093,13 @@ function drawSieges(now){
   for (const S of sieges) {
     if (S.x < x0 - 20 || S.x > x1 + 20 || S.y < y0 - 20 || S.y > y1 + 20) continue;
     const x = Math.round(S.x), y = Math.round(S.y), d = S.dir;
+    const fi = S.fire > 0 ? 4 + Math.min(3, Math.floor((.4 - S.fire) / .4 * 4)) : S.cool < 1 ? 3 : S.cool < 2 ? 2 : S.cool < 3 ? 1 : 0, fr = artFrame(`catapult:${fi}`);
+    if (fr) { // el dibujo: carga la piedra, tensa y dispara (mira a la izquierda; si dispara a la derecha, se voltea)
+      vctx.fillStyle = 'rgba(0,0,0,.25)'; vctx.fillRect(x - 8, y + 1, 17, 2);
+      vctx.save(); vctx.translate(x, y + 2); if (d > 0) vctx.scale(-1, 1); vctx.drawImage(fr, -(fr.width >> 1), -fr.height); vctx.restore();
+      if (S.hp < 1) { vctx.fillStyle = '#3a3028'; vctx.fillRect(x - 6, y - fr.height - 2, 12, 2); vctx.fillStyle = '#d8483a'; vctx.fillRect(x - 6, y - fr.height - 2, Math.round(12 * S.hp), 2); }
+      continue;
+    }
     vctx.fillStyle = 'rgba(0,0,0,.25)'; vctx.fillRect(x - 6, y + 1, 13, 2);
     vctx.fillStyle = '#6a4426'; vctx.fillRect(x - 6, y - 3, 13, 2); vctx.fillRect(x - 5, y - 6, 1, 4); vctx.fillRect(x + 5, y - 6, 1, 4); vctx.fillRect(x - 5, y - 7, 11, 1); // bastidor
     vctx.fillStyle = '#2a1a10'; for (const wx of [x - 5, x + 4]) { vctx.fillRect(wx, y - 1, 3, 3); } // ruedas

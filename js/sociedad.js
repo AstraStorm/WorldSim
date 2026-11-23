@@ -542,6 +542,13 @@ function drawBoat(x, y, d, now, rowing, s){
   vctx.fillStyle = 'rgba(225,242,255,.45)'; vctx.fillRect(x - 14, by, 29, 1);                                       // espuma en la línea de flotación
   const sx = x - d * 2;
   if (s) { const hh = s.height - 3; vctx.drawImage(s, 0, 0, s.width, hh, sx - (s.width >> 1), by - 4 - hh, s.width, hh); } // sentado: asoma de cintura para arriba
+  const fr = artFrame(`boat:${rowing ? Math.floor(now / 110) % 8 : 0}`);
+  if (fr) { // el dibujo, con sus remos, medio hundido: lo de debajo de la línea de flotación se ve a través del agua
+    const sink = Math.round(fr.height * .42), wl = by + 1;
+    vctx.save(); vctx.translate(x, wl + sink); if (d < 0) vctx.scale(-1, 1);
+    vctx.drawImage(fr, 0, 0, fr.width, fr.height - sink, -(fr.width >> 1), -fr.height, fr.width, fr.height - sink);
+    vctx.globalAlpha = .3; vctx.drawImage(fr, 0, fr.height - sink, fr.width, sink, -(fr.width >> 1), -sink, fr.width, sink); vctx.restore();
+    vctx.fillStyle = 'rgba(225,242,255,.6)'; vctx.fillRect(x - (fr.width >> 1) + 1, wl, fr.width - 2, 1); return; }
   vctx.fillStyle = '#3a2414'; vctx.fillRect(x - 11, by - 6, 23, 1);                                                 // borda
   vctx.fillStyle = '#b8844e'; vctx.fillRect(x - 12, by - 5, 25, 1);
   vctx.fillStyle = '#8a5a30'; vctx.fillRect(x - 12, by - 4, 25, 1);
@@ -602,18 +609,18 @@ function drawWellsMills(g, t){
   }
   if (g.mill != null && world.objs[g.mill] && world.objs[g.mill].key === 'mill:molino') {
     const o = world.objs[g.mill], s = objSprite(o), mx = (g.mill % W) * T + 2 + o.ox, base = ((g.mill / W) | 0) * T + 3 + o.oy;
-    const hx = mx - s.ax + 12, hy = base - s.height + 11, [wx, wy] = windAt(hx, hy);
+    const asp = artFrame('mill:aspas'), hx = asp ? mx - s.ax + (s.width >> 1) : mx - s.ax + 12, hy = asp ? base - s.height + Math.round(s.height * .2) : base - s.height + 11, [wx, wy] = windAt(hx, hy);
     const dtf = Math.min(.1, (t - (g.millT ?? t)) / 1000); g.millT = t;
     g.millA = (g.millA || 0) + dtf * (.6 + Math.min(3, Math.hypot(wx, wy) * .25)); // aspas: giran más con más viento
-    for (let b = 0; b < 4; b++) {
+    if (asp) { vctx.save(); vctx.translate(hx, hy); vctx.rotate(g.millA); vctx.drawImage(asp, -(asp.width >> 1), -(asp.height >> 1)); vctx.restore(); vctx.fillStyle = '#2a1a10'; vctx.fillRect(hx - 1, hy - 1, 2, 2); } // las aspas, por delante de la torre
+    else for (let b = 0; b < 4; b++) {
       const a = g.millA + b * Math.PI / 2, c = Math.cos(a), sn = Math.sin(a);
       for (let k = 1; k <= 20; k++) {
         vctx.fillStyle = '#4a3018'; vctx.fillRect(Math.round(hx + c * k), Math.round(hy + sn * k), 1, 1);
         if (k >= 6) { vctx.fillStyle = k === 20 ? '#c8bc9c' : '#ece0c4'; for (let w = 1; w <= 4; w++) vctx.fillRect(Math.round(hx + c * k - sn * w), Math.round(hy + sn * k + c * w), 1, 1); }
       }
     }
-    vctx.fillStyle = '#2a1a10'; vctx.fillRect(hx - 1, hy - 1, 2, 2);
-    redrawFront(hx - 22, hx + 22, hy - 22, base);
+    if (!asp) { vctx.fillStyle = '#2a1a10'; vctx.fillRect(hx - 1, hy - 1, 2, 2); redrawFront(hx - 22, hx + 22, hy - 22, base); }
   }
 }
 // ---- Territorio de cada aldea (como los reinos): crece con su gente y sus casas, e incluye sus campos ----
@@ -1742,7 +1749,9 @@ function drawCamps(t){
     const g = villageById(c.vid), [cr, cg, cb] = g ? villageColor(g) : [200, 200, 200];
     for (let k = 0; k < c.tents; k++) { // tiendas alrededor de la hoguera
       const a = c.seed + k / c.tents * Math.PI * 2, tx = Math.round(c.x + Math.cos(a) * 15), ty = Math.round(c.y + Math.sin(a) * 9 - 2);
-      if (c.hide) {
+      const art = artFrame(c.hide ? 'camp:tienda' : 'camp:estera');
+      if (art) vctx.drawImage(art, tx - (art.width >> 1), ty - art.height + 1);
+      else if (c.hide) {
         vctx.fillStyle = 'rgba(0,0,0,.25)'; vctx.fillRect(tx - 5, ty + 1, 11, 2);
         vctx.fillStyle = 'rgba(0,0,0,.28)'; vctx.fillRect(tx - 7, ty + 1, 15, 2);
         for (let h = 0; h < 10; h++) { const w = Math.round(h * .75); vctx.fillStyle = '#2a1a10'; vctx.fillRect(tx - w - 1, ty - 9 + h, 1, 1); vctx.fillRect(tx + w + 1, ty - 9 + h, 1, 1); vctx.fillStyle = h % 3 === 2 ? '#94683e' : '#b08656'; vctx.fillRect(tx - w, ty - 9 + h, w * 2 + 1, 1); vctx.fillStyle = '#7a5434'; vctx.fillRect(tx + Math.max(0, w - 1), ty - 9 + h, 1, 1); }
@@ -1753,7 +1762,7 @@ function drawCamps(t){
     // Hoguera con resplandor
     const fl = Math.sin(t / 90 + c.seed) * .5 + .5;
     vctx.fillStyle = `rgba(255,160,60,${.14 + fl * .08})`; vctx.beginPath(); vctx.ellipse(c.x, c.y, 16, 10, 0, 0, Math.PI * 2); vctx.fill();
-    vctx.fillStyle = '#3a2414'; vctx.fillRect(c.x - 3, c.y, 7, 2);
+    const cf = artFrame('fire:camp'); if (cf) vctx.drawImage(cf, c.x - (cf.width >> 1), c.y - cf.height + 3); else { vctx.fillStyle = '#3a2414'; vctx.fillRect(c.x - 3, c.y, 7, 2); } // piedras y troncos (dibujados); las llamas, encima
     vctx.fillStyle = '#f08030'; vctx.fillRect(c.x - 1, c.y - 3 - Math.round(fl), 3, 3 + Math.round(fl)); vctx.fillStyle = '#ffd860'; vctx.fillRect(c.x, c.y - 2, 1, 2);
     if (Math.random() < .05) smoke.push({ x:c.x, y:c.y - 4, vx:0, vy:-5, r:1, life:0, max:2 });
   }
