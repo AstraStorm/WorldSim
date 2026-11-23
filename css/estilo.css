@@ -331,3 +331,8 @@ canvas.ic{width:28px;height:28px;flex:none;image-rendering:pixelated;background:
 .pw-h{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:13px;margin-bottom:5px}.pw-h img,.pw-sq{width:22px;height:15px;border:1px solid rgba(0,0,0,.4);flex:none;display:inline-block}.pw-pos{min-width:24px}
 .pw-tier{font-size:11px;padding:1px 7px;border-radius:9px;background:#3a4250;color:#dde}.pw-tier.t0{background:#e0b850;color:#1a1408}.pw-tier.t1{background:#b8783a;color:#fff}.pw-tier.t2{background:#4a6a8a;color:#fff}
 .pw-g{display:grid;grid-template-columns:92px 1fr auto;gap:3px 8px;align-items:center;font-size:12px}.pw-bar{height:7px;background:rgba(0,0,0,.3);border-radius:4px;overflow:hidden;display:block}.pw-bar i{display:block;height:100%}
+/* Ficha del pueblo: las pestañas no se encogen ni se salen por la derecha; si no caben, pasan a una segunda fila */
+.vcard .vh,.vcard .tabs{flex:none}
+.vcard .tabs{flex-wrap:wrap;overflow:visible;row-gap:0}
+.vcard .tabs button{flex:1 1 22%;padding:7px 4px 6px}
+.vcard .cbody{min-height:0;overflow-x:hidden}

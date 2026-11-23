@@ -618,7 +618,7 @@ function impact(m){
   const depth = .025 + m.size * .06, rim = .012 + m.size * .02;
   // Cráter: cuenco hundido y borde levantado; la tierra de alrededor queda removida (tierra y roca)
   let x0 = W, y0 = H, x1 = -1, y1 = -1;
-  const Rr = Math.ceil(R * 1.5);
+  const Rr = Math.ceil(R * 1.5), meteorHits = [];
   for (let dy = -Rr; dy <= Rr; dy++) for (let dx = -Rr; dx <= Rr; dx++) {
     const x = cx + dx, y = cy + dy; if (x < 0 || y < 0 || x >= W || y >= H) continue;
     const d = Math.hypot(dx, dy) + (h2(x, y, 95) - .5) * .8, i = y * W + x;
@@ -627,7 +627,7 @@ function impact(m){
     else e[i] += rim * (1 - Math.abs(d - R * 1.2) / (R * .3));
     e[i] = clamp(e[i], 0, 1.3);
     river[i] = 0;
-    if (d < R * 1.25) { if (objs[i]) { fallObj(i, true); objs[i] = null; } world.scour[i] = 255; }
+    if (d < R * 1.25) { if (isBuilding(objs[i])) meteorHits.push(i); else if (objs[i]) { fallObj(i, true); objs[i] = null; } world.scour[i] = 255; } // los edificios, más abajo (con la gente)
     x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);
   }
   // En tierra, el fondo del cráter queda de roca fundida al rojo, que se enfría poco a poco hasta ser roca
@@ -672,7 +672,9 @@ function impact(m){
     if (d < R * 1.1 || (d < blastR && Math.random() < 1 - (d - R) / (blastR - R))) killAnimal(a, 'meteorito');
     else if (d < blastR * 1.6) { a.threat = { x:m.x, y:m.y, dead:false }; a.scanT = 3; } // huyen del lugar
   }
-  for (const v of villagers) if (Math.hypot(v.x - m.x, v.y - m.y) / T < R * 1.1) { v.path = null; v.wait = 1; }
+  // Edificios y gente: en el cráter no queda nada; en la onda expansiva, cuanto más cerca, más daño (un solo aviso)
+  meteorVictims(m, cx, cy, R, blastR, meteorHits);
+  for (const v of villagers) if (!v.dead && Math.hypot(v.x - m.x, v.y - m.y) / T < R * 1.1) { v.path = null; v.wait = 1; }
   if (wet && m.size > .45) { const ts = makeTsunami(m.x, m.y, 5.6 + m.size * 2.2); if (ts) tsunamis.push(ts); }
   shake = Math.max(shake, 3 + m.size * 9);
   if (!reduceMotion) flash = Math.max(flash, .15 + m.size * .25);
@@ -696,6 +698,32 @@ function impact(m){
   for (let k = 0; k < 10 + m.size * 30; k++) smoke.push({ x:m.x + (Math.random() - .5) * R * T, y:m.y + (Math.random() - .5) * R * T * .6, vx:(Math.random() - .5) * 8, vy:-4 - Math.random() * 8, r:2 + Math.random() * 3, life:0, max:3 + Math.random() * 4 });
   statsSoon(true);
   notify(wet ? (m.size > .45 ? '¡Ha caído un meteorito en el mar! Alerta de tsunami' : 'Ha caído un meteorito en el mar') : m.size > .7 ? '¡Ha caído un gran meteorito!' : 'Ha caído un meteorito', { x:m.x, y:m.y });
+}
+function meteorVictims(m, cx, cy, R, blastR, hits){
+  const keep = notify; let down = 0, hurt = 0, dead = 0; const towns = new Set();
+  notify = () => {}; // los derrumbes uno a uno no: al final, un solo aviso
+  try {
+    for (const i of hits) { const o = world.objs[i]; if (o && o.vid != null) towns.add(o.vid); if (damageBuilding(i, 9)) down++; if (world.objs[i]) world.objs[i] = null; }
+    const B2 = Math.ceil(blastR);
+    for (let dy = -B2; dy <= B2; dy++) for (let dx = -B2; dx <= B2; dx++) {
+      const x = cx + dx, y = cy + dy; if (x < 0 || y < 0 || x >= W || y >= H) continue;
+      const d = Math.hypot(dx, dy), i = y * W + x, o = world.objs[i]; if (d > blastR || !isBuilding(o)) continue;
+      const f = d < R * 1.25 ? 1 : 1 - (d - R) / (blastR - R); if (o.vid != null) towns.add(o.vid);
+      if (damageBuilding(i, d < R * 1.6 ? 9 : f * 1.5 + Math.random() * .3)) { if (!world.objs[i]) down++; else hurt++; }
+    }
+    for (const v of villagers) {
+      if (v.dead || v.away || v.boat) continue;
+      const d = Math.hypot(v.x - m.x, v.y - m.y) / T; if (d > blastR) continue;
+      const f = d < R * 1.2 ? 1 : 1 - (d - R) / (blastR - R);
+      if (d < R * 1.2 || Math.random() < f * .75) { killVillager(v, 'meteorito'); dead++; towns.add(v.vid); }
+      else { v.hp = Math.max(.1, (v.hp ?? 1) - f * .8); v.path = null; v.wait = .5; }
+    }
+  } finally { notify = keep; }
+  for (const id of towns) { const g = villageById(id); if (g && popOf(g) !== undefined) misfortune(g, 'meteorito'); }
+  if (dead || down || hurt) {
+    const names = [...towns].map(villageById).filter(g => g).map(g => g.name);
+    notify(`¡El meteorito arrasa${names.length ? ' ' + names.slice(0, 2).join(' y ') : ' la zona'}! ${[dead && `${dead} muerto${dead > 1 ? 's' : ''}`, down && `${down} edificio${down > 1 ? 's' : ''} derrumbado${down > 1 ? 's' : ''}`, hurt && `${hurt} dañado${hurt > 1 ? 's' : ''}`].filter(Boolean).join(', ')}`, { x:m.x, y:m.y });
+  }
 }
 // La roca en llamas bajando con su estela y la sombra en el suelo; después, la onda expansiva
 function drawMeteors(t){
