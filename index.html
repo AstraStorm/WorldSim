@@ -6,7 +6,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600&family=Nunito+Sans:wght@400;600;700&display=swap">
-<link rel="stylesheet" href="css/estilo.css?v=202611231921">
+<link rel="stylesheet" href="css/estilo.css?v=202611232216">
 
 <div class="app">
   <section class="stage" id="stage">
@@ -46,7 +46,7 @@
     <div class="notice" id="notice" role="status" hidden><span id="noticeTxt"></span><button id="noticeGo">Ver</button></div>
     <div class="toasts" id="toasts" aria-live="polite"></div>
     <div class="chron" id="histPanel" hidden><div class="ch-h"><b>Historia del mundo</b><button class="x" aria-label="Cerrar historia">×</button></div>
-      <div class="cl-f"><button data-h="pop" class="on">Población</button><button data-h="army">Ejércitos</button><button data-h="wealth">Riqueza</button><button data-h="tl">Línea del tiempo</button><button data-h="juegos">Juegos</button></div>
+      <div class="cl-f"><button data-h="pop" class="on">Población</button><button data-h="army">Ejércitos</button><button data-h="wealth">Riqueza</button><button data-h="tl">Línea del tiempo</button><button data-h="juegos">Juegos</button><button data-h="potencias">Potencias</button></div>
       <div class="hp-body"></div></div>
     <div class="chron" id="savePanel" hidden><div class="ch-h"><b>Partidas</b><button class="x" aria-label="Cerrar partidas">×</button></div>
       <div class="hp-body"><div class="sv-file"><button id="dlSave">Descargar partida actual</button><button id="upSave">Abrir partida desde archivo…</button><input type="file" id="upFile" accept=".forja,.json,.gz" hidden></div>
@@ -180,67 +180,70 @@
 </div>
 
 <!-- El juego, en el orden en que se carga -->
-<script src="js/nucleo.js?v=202611231921"></script>
-<script src="js/mundo.js?v=202611231921"></script>
-<script src="js/vista.js?v=202611231921"></script>
-<script src="js/clima.js?v=202611231921"></script>
-<script src="js/fauna.js?v=202611231921"></script>
-<script src="js/desastres.js?v=202611231921"></script>
-<script src="js/mapas.js?v=202611231921"></script>
-<script src="js/humanos.js?v=202611231921"></script>
-<script src="js/partidas.js?v=202611231921"></script>
-<script src="js/vida.js?v=202611231921"></script>
-<script src="js/sociedad.js?v=202611231921"></script>
-<script src="js/impuestos.js?v=202611231921"></script>
-<script src="js/presupuestos.js?v=202611231921"></script>
-<script src="js/bolsa.js?v=202611231921"></script>
-<script src="js/vivienda.js?v=202611231921"></script>
-<script src="js/cartografia.js?v=202611231921"></script>
-<script src="js/convivencia.js?v=202611231921"></script>
-<script src="js/credos.js?v=202611231921"></script>
-<script src="js/tratados.js?v=202611231921"></script>
-<script src="js/globos.js?v=202611231921"></script>
-<script src="js/idiomas.js?v=202611231921"></script>
-<script src="js/regimenes.js?v=202611231921"></script>
-<script src="js/instituciones.js?v=202611231921"></script>
-<script src="js/monedas.js?v=202611231921"></script>
-<script src="js/minas.js?v=202611231921"></script>
-<script src="js/justicia.js?v=202611231921"></script>
-<script src="js/sindicatos.js?v=202611231921"></script>
-<script src="js/prensa.js?v=202611231921"></script>
-<script src="js/ciencia.js?v=202611231921"></script>
-<script src="js/consejo.js?v=202611231921"></script>
-<script src="js/espionaje.js?v=202611231921"></script>
-<script src="js/comercio.js?v=202611231921"></script>
-<script src="js/piratas.js?v=202611231921"></script>
-<script src="js/colonias.js?v=202611231921"></script>
-<script src="js/cultura.js?v=202611231921"></script>
-<script src="js/anexiones.js?v=202611231921"></script>
-<script src="js/lluvia.js?v=202611231921"></script>
-<script src="js/estaciones.js?v=202611231921"></script>
-<script src="js/bandidos.js?v=202611231921"></script>
-<script src="js/riqueza.js?v=202611231921"></script>
-<script src="js/noticias.js?v=202611231921"></script>
-<script src="js/defensa.js?v=202611231921"></script>
-<script src="js/trabajo.js?v=202611231921"></script>
-<script src="js/arte_mapa.js?v=202611231921"></script>
-<script src="js/arte.js?v=202611231921"></script>
-<script src="js/vegetacion.js?v=202611231921"></script>
-<script src="js/aldeanos.js?v=202611231921"></script>
-<script src="js/sonido.js?v=202611231921"></script>
-<script src="js/interfaz.js?v=202611231921"></script>
-<script src="js/civilizacion.js?v=202611231921"></script>
-<script src="js/industria.js?v=202611231921"></script>
-<script src="js/ambiente.js?v=202611231921"></script>
-<script src="js/fama.js?v=202611231921"></script>
-<script src="js/guerra.js?v=202611231921"></script>
-<script src="js/rutas.js?v=202611231921"></script>
-<script src="js/rescate.js?v=202611231921"></script>
-<script src="js/deportes.js?v=202611231921"></script>
-<script src="js/leyes.js?v=202611231921"></script>
-<script src="js/volcanes.js?v=202611231921"></script>
-<script src="js/edificios.js?v=202611231921"></script>
-<script src="js/calendario.js?v=202611231921"></script>
-<script src="js/titulares.js?v=202611231921"></script>
-<script src="js/libro.js?v=202611231921"></script>
-<script src="js/ui.js?v=202611231921"></script>
+<script src="js/nucleo.js?v=202611232216"></script>
+<script src="js/mundo.js?v=202611232216"></script>
+<script src="js/vista.js?v=202611232216"></script>
+<script src="js/clima.js?v=202611232216"></script>
+<script src="js/fauna.js?v=202611232216"></script>
+<script src="js/desastres.js?v=202611232216"></script>
+<script src="js/mapas.js?v=202611232216"></script>
+<script src="js/humanos.js?v=202611232216"></script>
+<script src="js/partidas.js?v=202611232216"></script>
+<script src="js/vida.js?v=202611232216"></script>
+<script src="js/sociedad.js?v=202611232216"></script>
+<script src="js/impuestos.js?v=202611232216"></script>
+<script src="js/presupuestos.js?v=202611232216"></script>
+<script src="js/bolsa.js?v=202611232216"></script>
+<script src="js/vivienda.js?v=202611232216"></script>
+<script src="js/cartografia.js?v=202611232216"></script>
+<script src="js/convivencia.js?v=202611232216"></script>
+<script src="js/credos.js?v=202611232216"></script>
+<script src="js/tratados.js?v=202611232216"></script>
+<script src="js/globos.js?v=202611232216"></script>
+<script src="js/idiomas.js?v=202611232216"></script>
+<script src="js/regimenes.js?v=202611232216"></script>
+<script src="js/instituciones.js?v=202611232216"></script>
+<script src="js/monedas.js?v=202611232216"></script>
+<script src="js/minas.js?v=202611232216"></script>
+<script src="js/justicia.js?v=202611232216"></script>
+<script src="js/sindicatos.js?v=202611232216"></script>
+<script src="js/prensa.js?v=202611232216"></script>
+<script src="js/ciencia.js?v=202611232216"></script>
+<script src="js/consejo.js?v=202611232216"></script>
+<script src="js/espionaje.js?v=202611232216"></script>
+<script src="js/comercio.js?v=202611232216"></script>
+<script src="js/piratas.js?v=202611232216"></script>
+<script src="js/colonias.js?v=202611232216"></script>
+<script src="js/cultura.js?v=202611232216"></script>
+<script src="js/anexiones.js?v=202611232216"></script>
+<script src="js/lluvia.js?v=202611232216"></script>
+<script src="js/estaciones.js?v=202611232216"></script>
+<script src="js/bandidos.js?v=202611232216"></script>
+<script src="js/riqueza.js?v=202611232216"></script>
+<script src="js/noticias.js?v=202611232216"></script>
+<script src="js/defensa.js?v=202611232216"></script>
+<script src="js/trabajo.js?v=202611232216"></script>
+<script src="js/arte_mapa.js?v=202611232216"></script>
+<script src="js/arte.js?v=202611232216"></script>
+<script src="js/vegetacion.js?v=202611232216"></script>
+<script src="js/aldeanos.js?v=202611232216"></script>
+<script src="js/sonido.js?v=202611232216"></script>
+<script src="js/interfaz.js?v=202611232216"></script>
+<script src="js/civilizacion.js?v=202611232216"></script>
+<script src="js/industria.js?v=202611232216"></script>
+<script src="js/ambiente.js?v=202611232216"></script>
+<script src="js/fama.js?v=202611232216"></script>
+<script src="js/guerra.js?v=202611232216"></script>
+<script src="js/rutas.js?v=202611232216"></script>
+<script src="js/rescate.js?v=202611232216"></script>
+<script src="js/deportes.js?v=202611232216"></script>
+<script src="js/leyes.js?v=202611232216"></script>
+<script src="js/volcanes.js?v=202611232216"></script>
+<script src="js/edificios.js?v=202611232216"></script>
+<script src="js/calendario.js?v=202611232216"></script>
+<script src="js/titulares.js?v=202611232216"></script>
+<script src="js/libro.js?v=202611232216"></script>
+<script src="js/papeles.js?v=202611232216"></script>
+<script src="js/okupas.js?v=202611232216"></script>
+<script src="js/potencias.js?v=202611232216"></script>
+<script src="js/ui.js?v=202611232216"></script>

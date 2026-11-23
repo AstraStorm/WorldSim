@@ -326,3 +326,8 @@ canvas.ic{width:28px;height:28px;flex:none;image-rendering:pixelated;background:
 .bk-war .bk-i{color:#a8301e}.bk-dip .bk-i{color:#3a7a4a}.bk-eco .bk-i{color:#a8801e}.bk-ind .bk-i{color:#4a5868}.bk-pol .bk-i{color:#5a3a8a}
 .bk-empty{font-style:italic;color:#8a6a3a;text-align:center;margin-top:30px}
 @media (max-width:760px){.book{padding:6px}.bk-h,.bk-tools,.bk-kinds,.bk-body{padding-left:12px;padding-right:12px}}
+/* Potencias mundiales (potencias.js) */
+.pw-note{margin:2px 0 8px;font-size:12px}.pw-row{padding:8px 10px;margin-bottom:6px;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.03)}.pw-row.top{border-color:#e0b850;background:rgba(224,184,80,.08)}
+.pw-h{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:13px;margin-bottom:5px}.pw-h img,.pw-sq{width:22px;height:15px;border:1px solid rgba(0,0,0,.4);flex:none;display:inline-block}.pw-pos{min-width:24px}
+.pw-tier{font-size:11px;padding:1px 7px;border-radius:9px;background:#3a4250;color:#dde}.pw-tier.t0{background:#e0b850;color:#1a1408}.pw-tier.t1{background:#b8783a;color:#fff}.pw-tier.t2{background:#4a6a8a;color:#fff}
+.pw-g{display:grid;grid-template-columns:92px 1fr auto;gap:3px 8px;align-items:center;font-size:12px}.pw-bar{height:7px;background:rgba(0,0,0,.3);border-radius:4px;overflow:hidden;display:block}.pw-bar i{display:block;height:100%}

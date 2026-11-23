@@ -40,7 +40,7 @@ function bldDetails(i, g){
     const rs = residentsOf(i), d = g && deedOf(g, i), owner = d && d.o > 0 ? peopleByPid(g).get(d.o) : null;
     h += kv('Viven', rs.length ? rs.map(u => esc(u.name)).join(', ') : 'nadie') + kv('Caben', houseRoom(i));
     if (d) h += kv('Dueño', d.o === FOR_SALE ? 'en venta' : d.o === PUBLIC ? 'vivienda pública' : owner ? esc(owner.name) : '—');
-    if (g && housingOn(g)) h += kv('Alquiler', `${rentOf(g, i)} ${esc(g.coin)} al día`);
+    if (g && housingOn(g)) h += kv('Alquiler', `${rentOf(g, i)} ${esc(g.coin)} al día`) + houseExtraKv(g, i, kv); // okupas y contratos (okupas.js)
   }
   if (g && (p === 'store' || p === 'granary')) h += kv('Guarda', `comida ${Math.round(g.food)} · madera ${Math.round(g.wood)} · piedra ${Math.round(g.stone)}`);
   if (g && p === 'jail') h += kv('Presos', prisonersOf(g).length);

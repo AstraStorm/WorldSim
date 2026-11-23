@@ -1307,7 +1307,7 @@ function renderPersonCard(force){
       <div class="kv"><span>Dieta</span><b>${dietName(v)}</b></div>
       ${g && ageOf(v) >= ADULT_H ? (g.coin ? `<div class="kv"><span>Sueldo</span><b>${v.wage != null || v.dayPay ? `${wageDay(v)} ${coinPl(g)} al día <span class="muted">(vivir cuesta ${costOfLiving(g)})</span>${wageDay(v) < costOfLiving(g) ? ' · <span style="color:#f08a7a">no le llega</span>' : ''}` : '<span class="muted">aún no ha cobrado</span>'}</b></div><div class="kv"><span>Dinero</span><b>${v.money || 0} ${coinPl(g)} · ha ganado ${v.earned || 0} · impuestos ${Math.round(taxRateOf(g) * 100)} %</b></div>` : `<div class="kv"><span>Sueldo</span><b class="muted">en especie: su pueblo aún no tiene moneda</b></div>`) : ''}
       ${stockLine(v, g)}
-      <div class="kv"><span>Equipo</span><b>${[v.weapon && (v.weapon === 'lanza' && v.ironW ? 'lanza de hierro' : v.weapon), v.shield && 'escudo', v.armor && GEAR_TXT[v.armor], v.rod && 'caña', v.mount && 'caballo', v.cart && 'carro', v.swims === false && 'no sabe nadar'].filter(Boolean).join(', ') || 'nada'}</b></div></div>
+      ${papersKv(v, g)}<div class="kv"><span>Equipo</span><b>${[v.weapon && (v.weapon === 'lanza' && v.ironW ? 'lanza de hierro' : v.weapon), v.shield && 'escudo', v.armor && GEAR_TXT[v.armor], v.rod && 'caña', v.mount && 'caballo', v.cart && 'carro', v.swims === false && 'no sabe nadar'].filter(Boolean).join(', ') || 'nada'}</b></div></div>
     <h4>Ánimo</h4><div class="mood"><span class="mw" style="color:${moodCol(mood.score)}">${mood.word}</span>${bar(mood.score / 100, moodCol(mood.score), 120)} <span class="muted">${mood.score}/100</span></div>
     ${mood.good.length ? `<div class="why good">+ ${mood.good.join(' · ')}</div>` : ''}${mood.bad.length ? `<div class="why bad">− ${mood.bad.join(' · ')}</div>` : ''}
     <h4>Necesidades</h4><div class="needs">
@@ -3092,6 +3092,8 @@ function updateVillages(dt){
     fameTick(g, dt, people); // castillos y bardos (fama.js)
     industryTick(g, dt, people); // fábricas y reloj (industria.js)
     civTick(g, dt, people); // rango, imperio, embajadas y gremios (civilizacion.js)
+    papersTick(g, dt, people); // DNI, pasaportes, campos y esclavitud (papeles.js)
+    okupaTick(g, dt, people); // contratos de alquiler y okupas (okupas.js)
     civilWarTick(g, people, dt); // ¿estalla una guerra civil? (guerra.js)
     sportsTick(g, dt, people); // clubes, entrenos y partidos (deportes.js)
     if ((g.migT = (g.migT ?? DAY_LEN / 3) - dt) <= 0) { g.migT = DAY_LEN / 3; migrationTick(g, people); }

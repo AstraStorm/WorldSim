@@ -171,9 +171,10 @@ function housingTick(g, people){
     }
     for (const u of residentsOf(h)) {
       if (!adultV(u) || u.away) continue;
+      if (u.okupa === h) { u.rentPay = 0; u.rentMiss = 0; continue; } // okupas: no pagan (okupas.js)
       if (o && familyOf(u, o)) { u.rentPay = 0; continue; }
       if (!o) { const r = socialRent(g); u.rentPay = r; if (r && (u.money || 0) >= r) { u.money -= r; ec.treas += r; } continue; } // pública (o en venta con inquilinos): se paga al pueblo, sin desahucios
-      const r = rentOf(g, h); u.rentPay = r;
+      const ct = d.ct && d.ct.find(c => c.p === pidOf(u)), r = ct ? ct.r : rentOf(g, h); u.rentPay = r; // con contrato, lo pactado (okupas.js)
       if ((u.money || 0) >= r) { u.money -= r; o.money = (o.money || 0) + r; o.rentIn = (o.rentIn || 0) + r; u.rentMiss = 0; o.ideo = clamp((o.ideo || 0) + .004, -1, 1); }
       else if (++u.rentMiss >= (hasLaw(g, 'tope_alquiler') ? 3 : 2)) { // no paga: a la calle
         u.home = null; u.rentMiss = 0; u.evictT = yearT; evicted++; u.ideo = clamp((u.ideo || 0) - .08, -1, 1);

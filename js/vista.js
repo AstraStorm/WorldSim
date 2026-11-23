@@ -50,7 +50,7 @@ function draw(t){
   drawZones();
   drawPaths();
   drawBridges();
-  drawFarms(); drawCemeteries(); drawTracks(); drawSports(); drawSeasonLife(performance.now()); drawFairs(performance.now()); drawIndustry(performance.now()); drawRuins(performance.now()); drawCivEvents(performance.now()); drawEmbassies(performance.now()); drawGoldRush(performance.now()); drawAeros();
+  drawFarms(); drawCemeteries(); drawTracks(); drawSports(); drawSeasonLife(performance.now()); drawFairs(performance.now()); drawIndustry(performance.now()); drawRuins(performance.now()); drawPrisonCamps(performance.now()); drawCivEvents(performance.now()); drawEmbassies(performance.now()); drawGoldRush(performance.now()); drawAeros();
   drawPens();
   drawVolcFences(); // vallas alrededor de los volcanes (volcanes.js)
   drawWalls();

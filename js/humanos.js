@@ -1113,7 +1113,7 @@ function plotSlot(g, key){
 }
 // ¿Pisa la parcela de una arboleda o de un bayal (de cualquier pueblo)?
 const holyNear = (x0, y0, x1, y1) => villages.some(o => o.holy && !(x1 < o.holy.x0 - 1 || x0 > o.holy.x1 + 1 || y1 < o.holy.y0 - 1 || y0 > o.holy.y1 + 1) || o.marketRect && !(x1 < o.marketRect.x0 - 1 || x0 > o.marketRect.x1 + 1 || y1 < o.marketRect.y0 - 1 || y0 > o.marketRect.y1 + 1));
-const plotIn = (x0, y0, x1, y1) => villages.some(o => [o.grove, o.berryPlot, o.cemetery, o.track, o.aero, o.pitch, o.pool, o.sportPlan].some(q => q && !(x1 < q.x0 || x0 > q.x0 + q.w - 1 || y1 < q.y0 || y0 > q.y0 + q.h - 1)));
+const plotIn = (x0, y0, x1, y1) => villages.some(o => [o.grove, o.berryPlot, o.cemetery, o.track, o.aero, o.pitch, o.pool, o.sportPlan, ...Object.values(o.camps || {})].some(q => q && !(x1 < q.x0 || x0 > q.x0 + q.w - 1 || y1 < q.y0 || y0 > q.y0 + q.h - 1)));
 // ---- Asedio: catapultas que acompañan al ejército y derriban murallas y edificios ----
 let sieges = [], stones = [];
 const hasBarracks = g => g && g.barracks != null && !!world.objs[g.barracks];
