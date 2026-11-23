@@ -219,10 +219,10 @@ function riotTargets(g){
 function riotTick(g, p, live){
   if ((p.fires || 0) >= 3 || !live.length || yearT < (p.riotT ?? -1e9) + 5 || raining(g.fy * W + g.fx)) return;
   const tg = riotTargets(g); if (!tg.length) return;
-  const [i, what] = tg[Math.floor(Math.random() * Math.min(tg.length, g.grief === 'vivienda' ? 3 : tg.length))], u = live[Math.floor(Math.random() * live.length)];
+  const [i, what] = Math.random() < .7 ? tg[0] : tg[Math.floor(Math.random() * tg.length)], u = live[Math.floor(Math.random() * live.length)];
   p.riotT = yearT; p.fires = (p.fires || 0) + 1;
   fires.set(i, { t:0, life:10 + Math.random() * 3, tree:true, bld:true });
   floats.push({ x:u.x, y:u.y - 16, txt:'¡A quemarlo!', col:'#ffb060', life:0 });
   g.riots = (g.riots || 0) + 1;
-  notify(`¡Disturbios en ${g.name}! Los manifestantes, furiosos, prenden fuego a ${what}`, { x:(i % W) * T + 2, y:((i / W) | 0) * T + 3 });
+  notify(`¡Disturbios en ${g.name}! Los manifestantes, furiosos, prenden fuego a ${what}`.replace(' a el ', ' al '), { x:(i % W) * T + 2, y:((i / W) | 0) * T + 3 });
 }
