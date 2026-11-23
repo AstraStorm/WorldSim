@@ -1552,6 +1552,10 @@ function diploTick(){
   }
 }
 // Un pueblo que se queda por su cuenta: su propia bandera, su gobierno y alguien al mando (y se rehacen las fronteras)
+// Al comerciar con quien ya usa moneda, se aprende a usarla (cada uno acuña la suya)
+function spreadCoin(a, b){
+  for (const [x, y] of [[a, b], [b, a]]) if (x.coin && !y.coin && Math.random() < .5) { y.coin = coinName(); notify(`Comerciando con ${x.name}, los de ${y.name} aprenden a usar moneda y acuñan la suya: el ${y.coin}`, { x:y.fx * T, y:y.fy * T }); }
+}
 function becomeIndependent(g){
   g.nation = g.id; g.unrest = 0;
   if (!g.flag) { g.flag = makeFlag(g); g.flagUrl = flagDataUrl(g.flag); }
@@ -1681,7 +1685,7 @@ function updateTravelers(dt){
       const r = to && relOf(from, to);
       if (to && r) {
         if (t.kind === 'caravana') {
-          const got = doTrade(from, to); r.v = clamp(r.v + 4, -100, 100); shareCharts(from, to);
+          const got = doTrade(from, to); r.v = clamp(r.v + 4, -100, 100); shareCharts(from, to); spreadCoin(from, to);
           const sickHome = villagers.find(u => !u.dead && u.vid === from.id && u.sick); if (sickHome && !hasLaw(to, 'cuarentena') && Math.random() < .3) { const tgt = villagers.find(u => !u.dead && u.vid === to.id && !u.sick); if (tgt) infect(tgt, sickHome.sick, to); } // la caravana trae la enfermedad
           notify(`Una caravana de ${from.name} llega a ${to.name} ${t.sea ? 'por mar' : 'por tierra'}${got.length ? `: ${got.join(', ')}` : ''}`, { x:t.x, y:t.y });
         } else if (r.war) {
@@ -2802,7 +2806,7 @@ function updateVillages(dt){
     }
     chartTick(g, dt, people); socialTick(g, dt, people);
     // Un pueblo grande con gobierno acuña su moneda aunque apenas comercie (y desde entonces se pagan sueldos)
-    if (!g.coin && g.hall != null && people.length >= 25 && Math.random() < dt * .004) { g.coin = coinName(); notify(`En ${g.name} el gobierno acuña su propia moneda, el ${g.coin}: desde ahora el trabajo se paga con sueldo`, { x:g.fx * T, y:g.fy * T }); }
+    if (!g.coin && ((g.hall != null && people.length >= 12) || people.length >= 22 || g.market != null) && Math.random() < dt * .012) { g.coin = coinName(); notify(`En ${g.name} el gobierno acuña su propia moneda, el ${g.coin}: desde ahora el trabajo se paga con sueldo`, { x:g.fx * T, y:g.fy * T }); }
     // Un cementerio encima de una plaza sagrada (partidas de antes): se traslada (se vuelve a hacer en otro sitio)
     const cm = g.cemetery; if (cm && villages.some(o => o.holy && !(cm.x0 + cm.w - 1 < o.holy.x0 || cm.x0 > o.holy.x1 || cm.y0 + cm.h - 1 < o.holy.y0 || cm.y0 > o.holy.y1))) { g.cemetery = null; notify(`En ${g.name} trasladan el cementerio fuera de la plaza sagrada`, { x:(cm.x0 + cm.w / 2) * T, y:(cm.y0 + cm.h / 2) * T }); }
     for (const w of wellsOf(g)) w.q = Math.min(1, w.q + (raining(w.i) ? .04 : .006) * dt); // con la lluvia se llena; sin ella, poco a poco, del agua de debajo
