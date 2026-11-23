@@ -409,7 +409,7 @@ function setupTask(v, g, job){
   const [fx, fy] = fireXY(g);
   switch (job) {
     case 'tejer': case 'manga': case 'globo': case 'cesta': case 'volar': return balloonTarget(v, g, job);
-    case 'tribunal': case 'carcel': case 'imprenta': case 'sindicato': case 'parlamento': case 'academia': case 'universidad': case 'consejo': case 'espias': case 'granero': case 'ahumadero': case 'lenera': case 'postas': return institutionTarget(v, g, job);
+    case 'tribunal': case 'carcel': case 'imprenta': case 'sindicato': case 'parlamento': case 'academia': case 'universidad': case 'consejo': case 'espias': case 'casino': case 'granero': case 'ahumadero': case 'lenera': case 'postas': return institutionTarget(v, g, job);
     case 'investigar': return scienceTarget(v, g, job);
     case 'mina': case 'extraer': return mineTarget(v, g, job);
     case 'refugio': return shelterTarget(v, g, v.chill > .3);
@@ -723,7 +723,7 @@ function runTask(v, g, dt){
   switch (t.k) {
     case 'tejer': case 'manga': case 'globo': case 'cesta': case 'volar': balloonArrive(v, g, t); break;
     case 'embarcar': balloonArrive(v, g, t); return;
-    case 'tribunal': case 'carcel': case 'imprenta': case 'sindicato': case 'parlamento': case 'academia': case 'universidad': case 'consejo': case 'espias': case 'granero': case 'ahumadero': case 'lenera': case 'postas': institutionArrive(v, g, t); break;
+    case 'tribunal': case 'carcel': case 'imprenta': case 'sindicato': case 'parlamento': case 'academia': case 'universidad': case 'consejo': case 'espias': case 'casino': case 'granero': case 'ahumadero': case 'lenera': case 'postas': institutionArrive(v, g, t); break;
     case 'investigar': scienceArrive(v, g, t); break;
     case 'mina': case 'extraer': mineArrive(v, g, t); break;
     case 'refugio': shelterArrive(v, g, t); break;

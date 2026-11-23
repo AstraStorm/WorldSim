@@ -13,7 +13,7 @@
 // · Fiebre del oro: oro en un sitio apartado; la gente acude en masa, nace un pueblo minero y, cuando se agota, se vacía
 const civRank = g => { const p = popOf(g); return p >= 150 ? 3 : p >= 80 ? 2 : p >= 40 ? 1 : 0; };
 const RANK_TXT = ['aldea', 'villa', 'ciudad', 'gran ciudad'];
-const rankTag = g => { const n = nationOf(g); return (n === g && n.empire ? '👑 ' : '') + (civRank(g) === 3 ? 'Gran ' : civRank(g) === 2 ? '★ ' : ''); };
+const rankTag = g => { const n = nationOf(g); return (n === g && n.empire ? '👑 ' : n === g && typeof provincesOf === 'function' && provincesOf(g).length ? '♛ ' : '') + (civRank(g) === 3 ? 'Metrópolis de ' : civRank(g) === 2 ? '★ ' : ''); }; // corona: capital con más ciudades (ciudades.js)
 // ---- Ruinas ----
 function ruinsInit(){
   if (world.ruins) return; const R = world.ruins = [], r = mulberry32((langSeed() * 7919) | 0), n = 4 + Math.round(N / 120000);

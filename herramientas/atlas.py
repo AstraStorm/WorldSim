@@ -248,6 +248,9 @@ if os.path.exists(os.path.join(SRC, '14B.png')):  # iconos para la ficha (no van
 if os.path.exists(os.path.join(SRC, 'plataforma, diriglbes.png')):  # plataforma elevada de los dirigibles (sustituye a la pista de los globos)
     add('aero:plataforma', shrink(box_parts('plataforma, diriglbes.png', (200, 150, 1340, 900)), 47, 40))
 
+if os.path.exists(os.path.join(SRC, 'casino.png')):
+    add('casino:casino', shrink(box_parts('casino.png', (380, 190, 1150, 830)), 40, 48))
+
 # ---- Atlas: en filas, con 1 píxel de separación ----
 keys = list(S); W = 512; x = y = rowh = 0; pos = {}
 for k in sorted(keys, key=lambda k: -S[k]['img'].height):

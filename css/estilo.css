@@ -338,3 +338,7 @@ canvas.ic{width:28px;height:28px;flex:none;image-rendering:pixelated;background:
 .vcard .cbody{min-height:0;overflow-x:hidden}
 /* Iconos de los papeles en la ficha (hoja 14B) */
 .doc-ic{height:16px;width:auto;image-rendering:pixelated;vertical-align:-3px;margin:0 4px 0 6px}
+/* Casino (casino.js) y clases sociales (clases.js) */
+.cas-t{width:100%;border-collapse:collapse;margin:6px 0;font-size:12px}.cas-t th,.cas-t td{padding:3px 4px;text-align:right;border-bottom:1px solid var(--line)}.cas-t th:first-child,.cas-t td:first-child{text-align:left}.cas-t th{color:var(--muted);font-weight:600}.cas-t .tot td{font-weight:700;border-bottom:0}
+.cls-pyr{display:grid;gap:3px}.cls-row{display:grid;grid-template-columns:150px 1fr 30px;gap:8px;align-items:center;font-size:12.5px}.cls-row b{text-align:right}.cls-bar{height:8px;background:rgba(0,0,0,.3);border-radius:4px;overflow:hidden}.cls-bar i{display:block;height:100%}
+.cls-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:0}

@@ -44,6 +44,7 @@ function bldDetails(i, g){
   }
   if (g && (p === 'store' || p === 'granary')) h += kv('Guarda', `comida ${Math.round(g.food)} · madera ${Math.round(g.wood)} · piedra ${Math.round(g.stone)}`);
   if (g && p === 'jail') h += kv('Presos', prisonersOf(g).length);
+  if (g && p === 'casino') h += casinoKv(g, kv); // ganancias por juego (casino.js)
   if (g && p === 'market' && g.coin) h += kv('Moneda', esc(g.coin));
   if (g && (p === 'temple' || p === 'cathedral' || p === 'altar') && g.faith) h += kv('Fe', esc(g.faith.name || g.faith.god));
   if (o.hero) h += kv('En honor de', esc(o.hero));
