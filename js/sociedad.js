@@ -609,10 +609,10 @@ function drawWellsMills(g, t){
   }
   if (g.mill != null && world.objs[g.mill] && world.objs[g.mill].key === 'mill:molino') {
     const o = world.objs[g.mill], s = objSprite(o), mx = (g.mill % W) * T + 2 + o.ox, base = ((g.mill / W) | 0) * T + 3 + o.oy;
-    const asp = artFrame('mill:aspas'), hx = asp ? mx - s.ax + (s.width >> 1) : mx - s.ax + 12, hy = asp ? base - s.height + Math.round(s.height * .2) : base - s.height + 11, [wx, wy] = windAt(hx, hy);
+    const asp = artFrame('mill:aspas'), hx = asp ? mx - s.ax + (s.width >> 1) : mx - s.ax + 12, hy = asp ? base - s.height + Math.round(s.height * .3) : base - s.height + 11, [wx, wy] = windAt(hx, hy);
     const dtf = Math.min(.1, (t - (g.millT ?? t)) / 1000); g.millT = t;
     g.millA = (g.millA || 0) + dtf * (.6 + Math.min(3, Math.hypot(wx, wy) * .25)); // aspas: giran más con más viento
-    if (asp) { vctx.save(); vctx.translate(hx, hy); vctx.rotate(g.millA); vctx.drawImage(asp, -(asp.width >> 1), -(asp.height >> 1)); vctx.restore(); vctx.fillStyle = '#2a1a10'; vctx.fillRect(hx - 1, hy - 1, 2, 2); } // las aspas, por delante de la torre
+    if (asp) millSails.push([asp, hx, hy, g.millA]); // las aspas se pintan al final, por delante de la torre y de la gente (ver drawMillSails)
     else for (let b = 0; b < 4; b++) {
       const a = g.millA + b * Math.PI / 2, c = Math.cos(a), sn = Math.sin(a);
       for (let k = 1; k <= 20; k++) {

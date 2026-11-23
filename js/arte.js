@@ -9,7 +9,7 @@ const ART = { img:null, ready:false, cache:new Map() };
   if (typeof ART_MAP === 'undefined') return;
   const im = new Image();
   im.onload = () => { ART.img = im; ART.ready = true; ART.cache.clear(); if (typeof world !== 'undefined' && world && typeof composeRegion === 'function') composeRegion(0, 0, W - 1, H - 1); };
-  im.src = 'arte/atlas.png?v=202611230225';
+  im.src = 'arte/atlas.png?v=202611230227';
 })();
 const ART_DECID = new Set(['oak:forest', 'birch:birch', 'willow:swamp', 'willow:moss', 'acacia:dry', 'acacia:sunset', 'oak:cherry', 'pine:autumn']);
 const ART_EVER = new Set(['pine:pine', 'pine:snow', 'pine:blue', 'ancient:elder', 'ancient:mangrove', 'ancient:life', 'ancient:baobab']);
@@ -63,6 +63,12 @@ function artSprite(o){
 }
 // Un fotograma suelto (barca, catapulta, tienda…), ya recortado
 const artFrame = k => { if (!ART.ready || !ART_MAP[k]) return null; let c = ART.cache.get('f|' + k); if (!c) { c = artPiece(k); ART.cache.set('f|' + k, c); } return c; };
+// Aspas de los molinos: al final de todo, para que nada (ni la gente que pasa por detrás) las tape
+let millSails = [];
+function drawMillSails(){
+  for (const [asp, hx, hy, a] of millSails) { vctx.save(); vctx.translate(hx + .5, hy + .5); vctx.rotate(a); vctx.drawImage(asp, -asp.width / 2, -asp.height / 2); vctx.restore(); vctx.fillStyle = '#2a1a10'; vctx.fillRect(hx, hy, 1, 1); }
+  millSails.length = 0;
+}
 // Llamas animadas sobre los edificios que en el dibujo tenían fuego (altar, zigurat, herrería)
 function drawArtFlames(t){
   if (!ART.ready) return;

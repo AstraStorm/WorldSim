@@ -63,6 +63,7 @@ function draw(t){
   drawCorpses(); // antes que los vivos: un animal vivo nunca queda tapado por uno que cae
   drawAnimals(-1);  // se ordenan los animales; se pintan intercalados con los aldeanos, el de más atrás primero
   drawVillagers();
+  drawMillSails();
   drawAnimals();
   drawSmoke();
   drawVapor(Math.min(.1, (t - (drawVapor.last || t)) / 1000)); drawVapor.last = t;
