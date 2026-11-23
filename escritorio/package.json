@@ -9,7 +9,7 @@
   "scripts": {
     "juego": "node copiar-juego.js",
     "start": "node copiar-juego.js && electron .",
-    "dist": "node copiar-juego.js && electron-builder --win portable nsis"
+    "dist": "node copiar-juego.js && electron-builder --win"
   },
   "devDependencies": {
     "electron": "33.2.1",
@@ -18,11 +18,48 @@
   "build": {
     "appId": "io.github.astrastorm.forjademundos",
     "productName": "Forja de Mundos",
-    "directories": { "output": "dist" },
-    "files": ["main.js", "preload.js", "launcher/**/*", "package.json"],
-    "extraResources": [{ "from": "juego-base", "to": "juego-base" }],
-    "win": { "icon": "launcher/icono.png" },
-    "portable": { "artifactName": "ForjaDeMundos-portable.exe" },
-    "nsis": { "artifactName": "ForjaDeMundos-instalador.exe", "oneClick": false, "allowToChangeInstallationDirectory": true, "shortcutName": "Forja de Mundos" }
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "launcher/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "juego-base",
+        "to": "juego-base"
+      }
+    ],
+    "win": {
+      "icon": "launcher/icono.ico",
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "portable": {
+      "artifactName": "ForjaDeMundos-portable.exe"
+    },
+    "nsis": {
+      "artifactName": "ForjaDeMundos-instalador.exe",
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "Forja de Mundos",
+      "runAfterFinish": true,
+      "installerIcon": "launcher/icono.ico",
+      "uninstallerIcon": "launcher/icono.ico",
+      "installerHeaderIcon": "launcher/icono.ico",
+      "uninstallDisplayName": "Forja de Mundos",
+      "language": "3082",
+      "installerLanguages": [
+        "es_ES"
+      ]
+    }
   }
 }

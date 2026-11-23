@@ -3,58 +3,98 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:">
-<title>Forja de Mundos · Launcher</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600&family=Nunito+Sans:wght@400;600;700;800&display=swap">
+<title>Forja de Mundos</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=Nunito+Sans:wght@400;600;700;800;900&display=swap">
 <link rel="stylesheet" href="launcher.css">
 </head>
 <body>
+<div class="bg"><div class="pan"></div><div class="tint"></div><div class="vig"></div><canvas id="motes"></canvas></div>
+
 <header class="bar">
-  <div class="brand"><img src="icono.png" alt=""><span>FORJA</span></div>
-  <nav class="tabs"><button class="on" data-v="juego">Juego</button><button data-v="novedades">Novedades</button><button data-v="ajustes">Ajustes</button></nav>
-  <div class="winbtns"><button data-w="min" aria-label="Minimizar">—</button><button data-w="close" aria-label="Cerrar">✕</button></div>
+  <div class="brand"><img src="logo.png" alt=""><span>Forja de Mundos</span></div>
+  <nav class="tabs" role="tablist">
+    <button class="on" data-v="inicio" role="tab">Inicio</button>
+    <button data-v="novedades" role="tab">Novedades</button>
+    <button data-v="ajustes" role="tab">Ajustes</button>
+  </nav>
+  <div class="winbtns"><button data-w="min" aria-label="Minimizar"><svg viewBox="0 0 10 10"><path d="M1 5h8"/></svg></button><button data-w="close" aria-label="Cerrar"><svg viewBox="0 0 10 10"><path d="M1.5 1.5l7 7M8.5 1.5l-7 7"/></svg></button></div>
 </header>
+
 <aside class="rail">
-  <button class="game on" title="Forja de Mundos"><img src="icono.png" alt=""></button>
+  <button class="game on" title="Forja de Mundos"><img src="logo.png" alt=""></button>
+  <div class="rail-sep"></div>
+  <button class="rail-ic" id="rFolder" title="Carpeta del juego"><svg viewBox="0 0 24 24"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2h8.5A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></svg></button>
+  <button class="rail-ic" id="rWeb" title="Jugar en el navegador"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.6 2.5 14.4 0 17M12 3.5c-2.5 2.6-2.5 14.4 0 17"/></svg></button>
+  <button class="rail-ic bottom" data-go="ajustes" title="Ajustes"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg></button>
 </aside>
+
 <main>
-  <section class="hero">
-    <div class="shade"></div>
-    <div class="hero-in">
-      <p class="kicker">Simulador de mundos</p>
-      <h1>Forja de Mundos</h1>
-      <p class="tag">Pueblos que nacen, crecen, comercian, rezan, votan y se declaran la guerra. Tú solo pones el mundo.</p>
+  <!-- Inicio -->
+  <section class="view" id="v-inicio">
+    <div class="hero">
+      <img class="crest" src="logo.png" alt="">
+      <div class="hero-txt">
+        <p class="kicker">Simulador de civilizaciones</p>
+        <h1>Forja de<br>Mundos</h1>
+        <p class="tag">Pueblos que nacen, crecen, comercian, rezan, votan y se declaran la guerra. Tú solo pones el mundo.</p>
+        <div class="chips"><span>Pixel art</span><span>Un jugador</span><span>Se actualiza solo</span></div>
+      </div>
     </div>
-  </section>
-  <section class="view" id="v-juego">
-    <div class="news">
-      <h2>Novedades</h2>
-      <ul id="news"><li class="muted">Buscando novedades…</li></ul>
-    </div>
-    <div class="side">
-      <div class="card">
-        <div class="kv"><span>Versión instalada</span><b id="vLocal">—</b></div>
-        <div class="kv"><span>Última versión</span><b id="vRemote">—</b></div>
-        <div class="kv"><span>Estado</span><b id="state">Comprobando…</b></div>
+    <div class="cols">
+      <div class="feed">
+        <div class="h2row"><h2>Lo último</h2><button class="lnk" data-go="novedades">Ver todo →</button></div>
+        <article class="feature" id="feature"><div class="f-img"></div><div class="f-body"><span class="pill">Cargando</span><h3>Buscando novedades…</h3><p></p></div></article>
+        <ul class="minis" id="minis"></ul>
+      </div>
+      <div class="side">
+        <div class="card status">
+          <div class="st-head"><span class="dot" id="dot"></span><b id="state">Comprobando…</b></div>
+          <div class="kv"><span>Instalada</span><b id="vLocal">—</b></div>
+          <div class="kv"><span>En la nube</span><b id="vRemote">—</b></div>
+          <div class="kv"><span>Archivos</span><b id="vFiles">—</b></div>
+          <button class="ghost" id="bCheck2">Buscar actualizaciones</button>
+        </div>
+        <div class="card tips">
+          <h4>Consejo</h4><p id="tip"></p>
+        </div>
       </div>
     </div>
   </section>
+
+  <!-- Novedades -->
   <section class="view" id="v-novedades" hidden>
-    <h2>Historial de actualizaciones</h2>
-    <ul id="newsAll" class="hist"></ul>
-  </section>
-  <section class="view" id="v-ajustes" hidden>
-    <h2>Ajustes</h2>
-    <div class="opts">
-      <button id="bCheck">Buscar actualizaciones</button>
-      <button id="bRepair">Reparar el juego (volver a descargarlo todo)</button>
-      <button id="bFolder">Abrir la carpeta del juego</button>
-      <button id="bWeb">Jugar en el navegador</button>
+    <div class="page">
+      <h2 class="big">Historial de actualizaciones</h2>
+      <ol class="timeline" id="timeline"></ol>
     </div>
-    <p class="muted" id="appv"></p>
   </section>
+
+  <!-- Ajustes -->
+  <section class="view" id="v-ajustes" hidden>
+    <div class="page">
+      <h2 class="big">Ajustes</h2>
+      <div class="set">
+        <label class="sw"><input type="checkbox" id="oFull"><i></i><span><b>Pantalla completa</b><small>Abre el juego ocupando toda la pantalla (F11 para cambiar).</small></span></label>
+        <label class="sw"><input type="checkbox" id="oClose"><i></i><span><b>Cerrar el launcher al jugar</b><small>Si no, se esconde y vuelve al cerrar el juego.</small></span></label>
+        <label class="sw"><input type="checkbox" id="oAuto" checked><i></i><span><b>Actualizar automáticamente</b><small>Si hay una versión nueva al abrir, se descarga sola.</small></span></label>
+      </div>
+      <h3 class="sub">Mantenimiento</h3>
+      <div class="acts">
+        <button id="bCheck"><b>Buscar actualizaciones</b><small>Comprueba ahora si hay una versión nueva.</small></button>
+        <button id="bRepair"><b>Reparar el juego</b><small>Vuelve a descargar todos los archivos.</small></button>
+        <button id="bFolder"><b>Abrir la carpeta del juego</b><small>Donde se guardan los archivos instalados.</small></button>
+        <button id="bWeb"><b>Jugar en el navegador</b><small>astrastorm.github.io/WorldSim</small></button>
+      </div>
+      <p class="muted foot" id="appv"></p>
+    </div>
+  </section>
+
   <footer class="dock">
-    <div class="prog"><div class="ptxt"><span id="pLabel">Comprobando actualizaciones…</span><span id="pNum"></span></div><div class="pbar"><i id="pFill"></i></div></div>
-    <button class="play" id="play" disabled>Jugar</button>
+    <div class="prog">
+      <div class="ptxt"><span id="pLabel">Comprobando actualizaciones…</span><span id="pNum"></span></div>
+      <div class="pbar" id="pbar"><i id="pFill"></i></div>
+    </div>
+    <button class="play" id="play" disabled><span id="playTxt">Jugar</span></button>
   </footer>
 </main>
 <script src="launcher.js"></script>

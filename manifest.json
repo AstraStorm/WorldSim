@@ -1,11 +1,15 @@
 {
  "juego": "Forja de Mundos",
- "version": "202611232300",
- "fecha": "2026-11-23 23:00",
+ "version": "202611232315",
+ "fecha": "2026-11-23 23:15",
  "novedades": [
   {
    "fecha": "2026-11-23",
-   "texto": "Versión de escritorio: launcher con actualizaciones desde la nube"
+   "texto": "Launcher nuevo con el logo del juego e instalador para Windows"
+  },
+  {
+   "fecha": "2026-11-23",
+   "texto": "Versión de escritorio (escritorio/): launcher estilo Battle.net que comprueba y descarga las actualizaciones desde GitHub Pages; version.py genera manifest.json con la huella de cada archivo y las novedades"
   },
   {
    "fecha": "2026-11-23",
@@ -46,19 +50,15 @@
   {
    "fecha": "2026-11-23",
    "texto": "Vida en el mapa (estaciones, noche, bueyes y esquileo), héroes de guerra con capa, estatua y baladas, castillos para las naciones victoriosas y feria ambulante"
-  },
-  {
-   "fecha": "2026-11-23",
-   "texto": "Batallas en campo abierto (dos ejércitos con abanderados, estandarte, polvo, cruces y resultado), globo comercial (vende lo que sobra a pueblos amigos y cuenta para las rutas), la flecha ya no se queda en el suelo cuando alguien va en globo o de viaje"
   }
  ],
  "archivos": {
-  "index.html": "0abf90d2ca76b59fe211a38e63dc76345569c2f0",
+  "index.html": "a4dde9348380f64f54274fac4f5fb123a9ddab42",
   "css/estilo.css": "7ea8559c4688862cb8d36fe30d6ddc309e977cc9",
   "js/aldeanos.js": "ed9b28fbfd9f734ea46e6bbd82ee1ab9324e6fe6",
   "js/ambiente.js": "d6f0dc943458e840a4e7f9a0c52096dbdac5fd27",
   "js/anexiones.js": "d21e4d9da63b626702b6ee28ac02e46275ac7cd4",
-  "js/arte.js": "9a02f30df2252fd909c32ed6ed765522900e90ca",
+  "js/arte.js": "6c3a05d3e91dc5b8b19d054582fa8924d472d771",
   "js/arte_mapa.js": "a53aefdea2e04247051239194f19dda86f9e8670",
   "js/bandidos.js": "cbe0fc2f3ff852a8c2203fafc3b5e9b9e4bf6eab",
   "js/bolsa.js": "eb6b162f9f2563692fa26c45d6410383d8ffc7a7",

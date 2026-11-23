@@ -4,7 +4,7 @@ contextBridge.exposeInMainWorld('forja', {
   check:() => ipcRenderer.invoke('check'),
   update:full => ipcRenderer.invoke('update', !!full),
   onProgress:cb => ipcRenderer.on('progress', (e, p) => cb(p)),
-  play:() => ipcRenderer.invoke('play'),
+  play:opts => ipcRenderer.invoke('play', opts || {}),
   folder:() => ipcRenderer.invoke('folder'),
   web:() => ipcRenderer.invoke('web'),
   win:a => ipcRenderer.invoke('win', a),

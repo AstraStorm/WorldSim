@@ -10,6 +10,7 @@ const fs = require('fs'), path = require('path'), crypto = require('crypto'), { 
 const REMOTO = 'https://astrastorm.github.io/WorldSim/';
 const GAME = () => path.join(app.getPath('userData'), 'juego');
 const BASE = () => app.isPackaged ? path.join(process.resourcesPath, 'juego-base') : path.join(__dirname, 'juego-base');
+if (process.env.FORJA_DATA) app.setPath('userData', process.env.FORJA_DATA); // (para las pruebas: otra carpeta)
 protocol.registerSchemesAsPrivileged([{ scheme:'forja', privileges:{ standard:true, secure:true, supportFetchAPI:true, corsEnabled:true, stream:true } }]);
 let launcher = null, game = null;
 // ---- Archivos del juego ----
@@ -59,21 +60,21 @@ async function update(full, send){
 }
 // ---- Ventanas ----
 function openLauncher(){
-  launcher = new BrowserWindow({ width:1120, height:660, minWidth:900, minHeight:560, frame:false, backgroundColor:'#0d1117', show:false, title:'Forja de Mundos',
+  launcher = new BrowserWindow({ width:1200, height:740, minWidth:960, minHeight:600, frame:false, backgroundColor:'#0d1117', show:false, title:'Forja de Mundos',
     icon:path.join(__dirname, 'launcher', 'icono.png'), webPreferences:{ preload:path.join(__dirname, 'preload.js') } });
   launcher.loadFile(path.join(__dirname, 'launcher', 'index.html'));
   launcher.once('ready-to-show', () => launcher.show());
-  launcher.on('closed', () => { launcher = null; if (!game) app.quit(); });
+  launcher.on('closed', () => { if (launcher === null) return; launcher = null; if (!game) app.quit(); });
 }
-function openGame(){
+function openGame(opts = {}){
   if (game) { game.focus(); return; }
   game = new BrowserWindow({ width:1440, height:900, backgroundColor:'#11151a', title:'Forja de Mundos', autoHideMenuBar:true, icon:path.join(__dirname, 'launcher', 'icono.png') });
-  game.setMenu(null);
+  game.setMenu(null); if (opts.full) game.setFullScreen(true);
   game.loadURL('forja://juego/index.html');
   game.webContents.on('before-input-event', (e, i) => { if (i.type === 'keyDown' && i.key === 'F11') { game.setFullScreen(!game.isFullScreen()); e.preventDefault(); } if (i.type === 'keyDown' && i.key === 'F12' && !app.isPackaged) game.webContents.toggleDevTools(); });
   game.webContents.setWindowOpenHandler(({ url }) => { if (/^https?:/.test(url)) shell.openExternal(url); return { action:'deny' }; });
   game.on('closed', () => { game = null; if (launcher) launcher.show(); else app.quit(); });
-  if (launcher) launcher.hide();
+  if (launcher) { if (opts.close) { const l = launcher; launcher = null; l.close(); } else launcher.hide(); }
 }
 app.whenReady().then(() => {
   protocol.handle('forja', req => { // forja://juego/ruta → el archivo de la carpeta del juego (sin salirse de ella)
@@ -83,7 +84,7 @@ app.whenReady().then(() => {
   });
   ipcMain.handle('check', () => check());
   ipcMain.handle('update', (e, full) => update(full, p => e.sender.send('progress', p)).then(r => ({ ok:true, ...r }), err => ({ ok:false, error:String(err.message || err) })));
-  ipcMain.handle('play', () => openGame());
+  ipcMain.handle('play', (e, opts) => openGame(opts));
   ipcMain.handle('folder', () => shell.openPath(GAME()));
   ipcMain.handle('web', () => shell.openExternal(REMOTO));
   ipcMain.handle('win', (e, a) => { const w = BrowserWindow.fromWebContents(e.sender); if (a === 'min') w.minimize(); else if (a === 'close') w.close(); });
