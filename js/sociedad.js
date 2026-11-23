@@ -1330,7 +1330,7 @@ function renderVillageCard(force){
         <span>Comida</span>${bar(g.food / cap, '#7ab04a', 150)}<span>${Math.floor(g.food)}</span>
         <span>Madera</span>${bar(g.wood / cap, '#b8864e', 150)}<span>${g.wood}</span>
         <span>Piedra</span>${bar(g.stone / cap, '#a8a49c', 150)}<span>${g.stone}</span>
-        ${(g.know || {}).manga ? `<span>Tela</span>${bar((g.cloth || 0) / 20, '#d8ccb0', 150)}<span>${g.cloth || 0}${g.balloon ? ` · globo de ${g.balloon.cap} ${g.balloon.cap === 1 ? 'plaza' : 'plazas'}` : ''}</span>` : ''}
+        ${(g.know || {}).manga ? `<span>Tela</span>${bar((g.cloth || 0) / 20, '#d8ccb0', 150)}<span>${g.cloth || 0}${balloonsOf(g).length ? ` · ${balloonsOf(g).length === 1 ? 'globo' : `${balloonsOf(g).length} globos`} (${balloonsOf(g).map(b => b.cap).join(', ')} plazas)` : ''}</span>` : ''}
         <span>Agua</span>${bar((g.jars || 0) / (6 + storesOf(g).length * 8), '#5a9ad8', 150)}<span>${g.jars || 0} cántaros${g.cups ? ` · ${g.cups} tazas` : ''}</span>
         ${g.iron || g.gold || g.gems || g.hides ? `<span>Materiales</span><span class="muted">hierro ${g.iron || 0} · oro ${g.gold || 0} · gemas ${g.gems || 0} · pieles ${g.hides || 0}</span><span></span>` : ''}</div>
       ${langCard(g)}

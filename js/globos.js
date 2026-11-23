@@ -3,7 +3,8 @@
 // Cadena: con mapas (papel) quieren saber de dónde viene el viento → tejen tela (con la lana de sus ovejas o, sin
 // ovejas, con fibra de lino de sus campos) → levantan la manga de viento junto a un puerto de globos (una
 // plataforma donde aparcar, despegar y aterrizar) → mirando la manga aprenden a hacer el globo → lo cosen
-// (cabe 1 persona) y le agrandan la cesta hasta 4. Sale a por recursos, a visitar otros pueblos o a cartografiar
+// (cabe 1 persona) y le agrandan la cesta hasta 4. Si se lo pueden permitir (tela, madera y gente de sobra), cosen
+// más globos, hasta tres, cada uno con su sitio en la plataforma. Sale a por recursos, a visitar otros pueblos o a cartografiar
 // desde el aire (desde arriba se ve mucho más lejos) y vuelve a su puerto. En el aire el viento lo empuja y lo
 // inclina; aparcado se queda atado con una cuerda, meciéndose con el viento (o desinflado de noche y con mal tiempo).
 // De visita aparcan en el puerto de globos del anfitrión (en uno de sus dos huecos de los lados) si lo tiene.
@@ -12,7 +13,12 @@
 const BAL_CRUISE = 42, BAL_ROPE = 5; // altura de crucero y largo de las cuerdas entre la cesta y la boca del globo (px)
 const hasSock = g => !!(g.aero && g.aero.sock);
 const aeroCenter = g => [(g.aero.x0 + g.aero.w / 2) * T, (g.aero.y0 + g.aero.h / 2) * T + 2];
-const aeroSpot = (g, k) => { const [x, y] = aeroCenter(g); return [x + (k === 1 ? -14 : k === 2 ? 14 : 0), y]; }; // 0: el de casa; 1 y 2: visitas
+const aeroSpot = (g, k) => { const [x, y] = aeroCenter(g); return [x + [0, -16, 16, -21, 21][k], y + [-2, 3, 3, 9, 9][k]]; }; // 0, 1 y 2: los de casa (los de los lados, algo delante); 3 y 4: visitas
+// Los globos del pueblo (antes había uno solo, g.balloon: se pasa a la lista)
+function balloonsOf(g){ if (g.balloon) { const b = g.balloon; g.balloon = null; b.id ??= 1; b.slot ??= 0; (g.balloons ||= []).push(b); } return g.balloons ||= []; }
+const homeSpot = (g, b) => aeroSpot(g, b.slot || 0);
+const parkedReady = g => balloonsOf(g).filter(b => b.state === 'aparcado' && (b.ready || 0) <= yearT);
+const MAX_BALLOONS = 3;
 // ¿Están en guerra? (entre sus naciones o entre los dos pueblos)
 const atWar = (a, b) => { const r = rels.get(relKey(nationOf(a), nationOf(b))) || rels.get(relKey(a, b)); return !!(r && r.war); };
 const warRel = (a, b) => { const r = rels.get(relKey(nationOf(a), nationOf(b))); return r && r.war ? r : rels.get(relKey(a, b)); };
@@ -50,13 +56,14 @@ const woolOf = g => penAnimals(g).some(a => a.sp === 'oveja');
 // Trabajos del globo (se llaman desde chooseJob)
 function balloonJobs(v, g, add){
   const kn = g.know || {}; if (!kn.manga) return;
-  const b = g.balloon, cloth = g.cloth || 0, pop = popOf(g);
-  const want = !hasSock(g) ? 3 : kn.globo && !b ? 10 : b && b.cap < 4 ? 6 : 0;
+  const bs = balloonsOf(g), cloth = g.cloth || 0, pop = popOf(g), small = bs.find(b => b.cap < 4 && b.state === 'aparcado');
+  const more = bs.length && bs.length < MAX_BALLOONS && pop >= 15 * (bs.length + 1) && bs.every(b => b.cap >= 2) && g.wood >= 20; // otro globo, si se lo pueden permitir
+  const want = !hasSock(g) ? 3 : kn.globo && (!bs.length || more) ? 10 : small ? 6 : 0;
   add('tejer', want && cloth < want + 2 && busyWith(g, 'tejer') < 2 ? (woolOf(g) ? 3 : 2) : 0);
   add('manga', !hasSock(g) && cloth >= 3 && g.wood >= 4 && !busyWith(g, 'manga') ? 4 : 0);
-  add('globo', kn.globo && hasSock(g) && !b && cloth >= 10 && g.wood >= 6 && !busyWith(g, 'globo') ? 4 : 0);
-  add('cesta', b && b.cap < 4 && b.state === 'aparcado' && cloth >= 6 && g.wood >= 6 && pop >= 4 + b.cap * 4 && !busyWith(g, 'cesta') ? 2 : 0);
-  add('volar', b && b.state === 'aparcado' && (b.ready || 0) <= yearT && ageOf(v) >= ADULT_H && flyWeather(g) && !busyWith(g, 'volar') ? (v.oficio === 'cartógrafo' ? 6 : 2.5) : 0);
+  add('globo', kn.globo && hasSock(g) && (!bs.length || more) && cloth >= 10 && g.wood >= 6 && !busyWith(g, 'globo') ? (bs.length ? 2.5 : 4) : 0);
+  add('cesta', small && cloth >= 6 && g.wood >= 6 && pop >= 4 + small.cap * 4 && !busyWith(g, 'cesta') ? 2 : 0);
+  add('volar', ageOf(v) >= ADULT_H && flyWeather(g) && busyWith(g, 'volar') < parkedReady(g).length ? (v.oficio === 'cartógrafo' ? 6 : 2.5) : 0);
 }
 // Adónde ir para cada trabajo (se llama desde setupTask)
 function balloonTarget(v, g, job){
@@ -71,7 +78,7 @@ function balloonTarget(v, g, job){
 }
 // Al llegar: cuánto tarda y qué pasa al acabar (se llama desde runTask)
 function balloonArrive(v, g, t){
-  const b = g.balloon;
+  const bs = balloonsOf(g);
   switch (t.k) {
     case 'tejer': v.actT = 6; v.onDone = () => { const n = woolOf(g) ? 2 : 1; g.cloth = (g.cloth || 0) + n; floats.push({ x:v.x, y:v.y - 12, txt:`+${n} tela${woolOf(g) ? ' (lana)' : ' (lino)'}`, col:'#e8dcc0', life:0 }); }; return true;
     case 'manga': v.actT = 8; v.onDone = () => {
@@ -81,19 +88,21 @@ function balloonArrive(v, g, t){
       notify(`En ${g.name} levantan una manga de viento junto a un puerto de globos: ya saben de dónde sopla y con qué fuerza`, { x:v.x, y:v.y });
     }; return true;
     case 'globo': v.actT = 12; v.onDone = () => {
-      if (g.balloon || (g.cloth || 0) < 10 || g.wood < 6 || !g.aero) return;
-      g.cloth -= 10; g.wood -= 6; const [x, y] = aeroCenter(g);
-      g.balloon = { x, y, alt:0, vx:0, vy:0, tilt:0, tw:0, inf:0, flame:0, cap:1, state:'aparcado', crew:[], ready:yearT + 10, flights:0 };
-      notify(`¡En ${g.name} han cosido su primer globo aerostático! De momento cabe una persona`, { x, y });
+      if (bs.length >= MAX_BALLOONS || (g.cloth || 0) < 10 || g.wood < 6 || !g.aero) return;
+      const slot = [0, 1, 2].find(k => !bs.some(b => b.slot === k)); if (slot == null) return;
+      g.cloth -= 10; g.wood -= 6; const nb = { id:(g.balloonSeq = (g.balloonSeq || 1) + 1), slot, alt:0, vx:0, vy:0, tilt:0, tw:0, inf:0, flame:0, cap:1, state:'aparcado', crew:[], ready:yearT + 10, flights:0 };
+      [nb.x, nb.y] = homeSpot(g, nb); bs.push(nb);
+      notify(bs.length === 1 ? `¡En ${g.name} han cosido su primer globo aerostático! De momento cabe una persona` : `En ${g.name} cosen otro globo: ya tienen ${bs.length}`, { x:nb.x, y:nb.y });
     }; return true;
     case 'cesta': v.actT = 8; v.onDone = () => {
-      if (!b || b.cap >= 4 || (g.cloth || 0) < 6 || g.wood < 6) return;
+      const b = bs.filter(x => x.cap < 4 && x.state === 'aparcado').sort((a, c) => a.cap - c.cap)[0];
+      if (!b || (g.cloth || 0) < 6 || g.wood < 6) return;
       g.cloth -= 6; g.wood -= 6; b.cap++;
       notify(`En ${g.name} agrandan el globo y su cesta: ahora caben ${b.cap} personas`, { x:b.x, y:b.y });
     }; return true;
     case 'volar': v.actT = 1.5; v.onDone = () => startFlight(v, g); return true;
     case 'embarcar': // un pasajero que llega a la plataforma: se sube si aún hay sitio
-      if (b && b.state === 'embarque' && b.crew.length < b.cap) board(v, b); else v.task = null;
+      { const b = bs.find(x => x.id === t.bid && x.state === 'embarque' && x.crew.length < x.cap); if (b) board(v, b); else v.task = null; }
       return true;
   }
   return false;
@@ -114,8 +123,8 @@ function pickMission(g){
   if (friends.length) {
     const o = friends[Math.floor(Math.random() * friends.length)];
     // Si tienen puerto de globos, a uno de sus huecos libres; si no, junto al pueblo
-    const taken = new Set(villages.map(q => q.balloon && q.balloon.mission && q.balloon.mission.to === o.id && q.balloon.mission.slot).filter(Boolean));
-    const slot = hasSock(o) ? [1, 2].find(k => !taken.has(k)) : null;
+    const taken = new Set(villages.flatMap(q => balloonsOf(q).map(b => b.mission && b.mission.to === o.id && b.mission.slot)).filter(Boolean));
+    const slot = hasSock(o) ? [3, 4].find(k => !taken.has(k)) : null;
     if (slot) { const [sx, sy] = aeroSpot(o, slot); opts.push([2, { kind:'visita', to:o.id, tx:sx, ty:sy, slot }]); }
     else { const p = ringFind(o.fx, o.fy + 8, 14, ftile); if (p) opts.push([2, { kind:'visita', to:o.id, tx:p[0] * T + 2, ty:p[1] * T + 3 }]); }
   }
@@ -139,13 +148,13 @@ function pickMission(g){
   return opts[0][1];
 }
 function startFlight(v, g){
-  const b = g.balloon; if (!b || b.state !== 'aparcado' || !flyWeather(g)) return;
+  const b = parkedReady(g)[0]; if (!b || !flyWeather(g)) return;
   const m = pickMission(g); if (!m) { b.ready = yearT + 40; return; }
   b.mission = m; b.crew = []; board(v, b); b.state = 'embarque'; b.waitT = 7; b.pilot = v;
   // Avisan a quien esté libre cerca para que suba (hasta llenar la cesta)
-  const [px, py] = aeroCenter(g);
+  const [px, py] = homeSpot(g, b);
   const free = villagers.filter(u => !u.dead && !u.away && u.vid === g.id && u !== g.leader && !u.sleep && !u.boat && !u.mount && !(u.actT > 0) && ageOf(u) >= ADULT_H && (!u.task || ['pasear', 'ocio'].includes(u.task.k)) && Math.hypot(u.x - px, u.y - py) < 160);
-  for (const u of free.slice(0, b.cap - 1)) { releaseTask(u); u.task = { k:'embarcar', x:px + (Math.random() - .5) * 10, y:py + 6 }; u.lastD = Infinity; }
+  for (const u of free.slice(0, b.cap - 1)) { releaseTask(u); u.task = { k:'embarcar', bid:b.id, x:px + (Math.random() - .5) * 10, y:py + 6 }; u.lastD = Infinity; }
 }
 // Bajan todos a tierra en la plataforma (o donde estén, si el pueblo ya no existe)
 function disembark(g, b){
@@ -155,7 +164,7 @@ function disembark(g, b){
 function updateBalloons(dt){
   for (const g of villages) {
     const kn = g.know ||= {}, pop = popOf(g);
-    if (!pop) { if (g.balloon && g.balloon.crew.length) disembark(g, g.balloon); continue; }
+    if (!pop) { for (const b of balloonsOf(g)) if (b.crew.length) disembark(g, b); continue; }
     // Aprenden a medir el viento cuando ya hacen mapas; y a volar tras observar un tiempo la manga
     if (!kn.manga && hasPaper(g) && pop >= 10 && g.hall != null && Math.random() < dt * .003) {
       kn.manga = true; notify(`En ${g.name} quieren saber de dónde viene el viento: aprenden a hacer una manga de viento con tela y madera`, { x:g.fx * T, y:g.fy * T });
@@ -163,14 +172,14 @@ function updateBalloons(dt){
     if (kn.manga && !kn.globo && hasSock(g) && yearT - (g.aero.since || 0) > DAY_LEN * .6 && Math.random() < dt * .01) {
       kn.globo = true; notify(`Mirando la manga de viento y el humo que sube de las hogueras, en ${g.name} se les ocurre llenar de aire caliente una gran bolsa de tela: ¡aprenden a hacer globos!`, { x:g.fx * T, y:g.fy * T });
     }
-    if (g.balloon) stepBalloon(g, g.balloon, dt);
+    for (const b of balloonsOf(g).slice()) stepBalloon(g, b, dt);
   }
   updateRocks(dt);
 }
 function stepBalloon(g, b, dt){
   b.crew = b.crew.filter(u => !u.dead);
   if (!g.aero) return;
-  const [px, py] = aeroCenter(g), w = windAt(b.x, b.y - b.alt), m = b.mission, ws = Math.hypot(w[0], w[1]);
+  const [px, py] = homeSpot(g, b), w = windAt(b.x, b.y - b.alt), m = b.mission, ws = Math.hypot(w[0], w[1]);
   const pvx = b.vx, pvy = b.vy; let burn = false;
   if (b.state === 'aparcado' || b.state === 'embarque') {
     // Atado a la estaca: hinchado se mece con el viento hasta donde da la cuerda; de noche y con mal tiempo, desinflado
@@ -184,7 +193,7 @@ function stepBalloon(g, b, dt){
       if ((b.waitT <= 0 || b.crew.length >= b.cap) && b.inf > .97) {
         b.state = 'despegue'; b.phase = 'ida'; b.flights++; b.hp = b.hp ?? 1;
         if (m.kind === 'bombardeo') { const n = Math.min(Math.floor((g.stone || 0) / 2), 2 + b.cap * 2); g.stone -= n * 2; b.rocks = n; if (!n) { m.kind = 'explorar'; b.phase = 'vuelta'; } }
-        for (const u of villagers) if (u.task && u.task.k === 'embarcar' && u.vid === g.id) u.task = null; // los que no llegaron, se quedan
+        for (const u of villagers) if (u.task && u.task.k === 'embarcar' && u.task.bid === b.id && u.vid === g.id) u.task = null; // los que no llegaron, se quedan
         if (m.kind === 'bombardeo') notify(`¡El globo de ${g.name} despega cargado con ${b.rocks} rocas para bombardear ${villageById(m.to)?.name || 'al enemigo'}!`, { x:b.x, y:b.y });
         else if (b.flights <= 2 || b.flights % 6 === 0) notify(`El globo de ${g.name} despega con ${b.crew.length} ${b.crew.length === 1 ? 'persona' : 'personas'} ${m.kind === 'explorar' ? 'a cartografiar desde el aire' : m.kind === 'visita' ? `a visitar ${villageById(m.to)?.name || 'otro pueblo'}` : `a por ${m.res === 'tree' ? 'madera' : 'piedra'}`}`, { x:b.x, y:b.y });
       }
@@ -224,7 +233,7 @@ function stepBalloon(g, b, dt){
       b.vx += ((b.aim[0] - b.x) / d * sp + w[0] * .4 - b.vx) * Math.min(1, dt * 1.2); b.vy += ((b.aim[1] - b.y) / d * sp + w[1] * .4 - b.vy) * Math.min(1, dt * 1.2);
       b.x += b.vx * dt; b.y += b.vy * dt; b.alt += (30 - b.alt) * Math.min(1, dt);
       if ((b.bombT -= dt) <= 0 && d < 6) {
-        balloonRocks.push({ x:b.x, y:b.y, alt:b.alt - 2, vz:0, vx:b.vx * .4, vy:b.vy * .4, from:g.id, to:o.id }); b.rocks--; b.bombT = 1.2; b.aim = null;
+        balloonRocks.push({ x:b.x, y:b.y, alt:b.alt - 2, vz:0, vx:b.vx * .4, vy:b.vy * .4, from:g.id, to:o.id, bid:b.id }); b.rocks--; b.bombT = 1.2; b.aim = null;
         if (!b.bombMsg || yearT - b.bombMsg > 60) { b.bombMsg = yearT; notify(`¡El globo de ${g.name} suelta rocas sobre ${o.name}!`, { x:b.x, y:b.y }); }
       }
     }
@@ -278,8 +287,8 @@ function crashBalloon(g, b){
   for (const u of b.crew) if (!u.dead) { u.away = false; u.task = null; u.x = b.x; u.y = b.y; killVillager(u, 'guerra'); if (r && r.war) r.war.dead = (r.war.dead || 0) + 1; }
   addEffect(b.x, b.y, 'poof'); snd('boom', b.x, b.y, .35);
   for (let k = 0; k < 10; k++) chips.push({ x:b.x, y:b.y - 3, vx:(Math.random() - .5) * 34, vy:-8 - Math.random() * 14, life:0, max:.7 + Math.random() * .5, col:k % 3 ? '#8a5a2a' : `rgb(${villageColor(g).join(',')})` });
-  g.balloon = null; g.balloonsLost = (g.balloonsLost || 0) + 1; misfortune(g, 'guerra');
-  notify(`El globo de ${g.name} se estrella${n ? `: ${n === 1 ? 'muere quien iba dentro' : `mueren las ${n} personas que iban dentro`}` : ''}. Tendrán que coser otro`, { x:b.x, y:b.y });
+  g.balloons = balloonsOf(g).filter(x => x !== b); g.balloonsLost = (g.balloonsLost || 0) + 1; misfortune(g, 'guerra');
+  notify(`El globo de ${g.name} se estrella${n ? `: ${n === 1 ? 'muere quien iba dentro' : `mueren las ${n} personas que iban dentro`}` : ''}${g.balloons.length ? '' : '. Tendrán que coser otro'}`, { x:b.x, y:b.y });
 }
 // Las rocas que suelta: caen con gravedad y, al llegar al suelo, destrozan edificios y aplastan a quien pillan
 function updateRocks(dt){
@@ -291,7 +300,7 @@ function updateRocks(dt){
     for (const u of villagers) {
       if (u.dead || u.away || Math.hypot(u.x - r.x, u.y - r.y) > 8) continue;
       u.hp = (u.hp ?? 1) - .75;
-      if (u.hp <= 0) { killVillager(u, 'guerra'); const bl = g && g.balloon; if (bl) bl.kills = (bl.kills || 0) + 1; const wr = g && o && warRel(g, o); if (wr && wr.war) wr.war.dead = (wr.war.dead || 0) + 1; }
+      if (u.hp <= 0) { killVillager(u, 'guerra'); const bl = g && balloonsOf(g).find(x => x.id === r.bid); if (bl) bl.kills = (bl.kills || 0) + 1; const wr = g && o && warRel(g, o); if (wr && wr.war) wr.war.dead = (wr.war.dead || 0) + 1; }
       else hurtFx(u, r.x, r.y, walkable);
     }
     addEffect(r.x, r.y, 'poof'); if (o) misfortune(o, 'guerra');
@@ -413,7 +422,8 @@ function drawBalloons(now){
   }
   for (const g of villages) {
     if (g.aero && g.aero.sock) { const [sx, sy] = sockXY(g); if (sx > x0 - 20 && sx < x1 + 20 && sy > y0 - 30 && sy < y1 + 20) drawWindsock(g, now); }
-    const b = g.balloon; if (!b || b.x < x0 - 30 || b.x > x1 + 30 || b.y - b.alt < y0 - 40 || b.y - b.alt > y1 + 30) continue;
+    for (const b of balloonsOf(g)) {
+    if (b.x < x0 - 30 || b.x > x1 + 30 || b.y - b.alt < y0 - 40 || b.y - b.alt > y1 + 30) continue;
     const bx = b.x, by = b.y - b.alt, col = villageColor(g), [cr, cg, cb] = col;
     const env = flagBalloon(g, col), bask = artFrame('balloon:cesta'), bh = bask ? bask.height : 4, bw = bask ? bask.width : 7;
     // Sombra en el suelo, más pequeña y suave cuanto más alto
@@ -421,7 +431,7 @@ function drawBalloons(now){
     vctx.beginPath(); vctx.ellipse(b.x + b.alt * .25, b.y + 1, 4 + 7 * b.inf * (.5 + .5 * sh), 1.5 + sh, 0, 0, Math.PI * 2); vctx.fill();
     // Cuerda a la estaca mientras está aparcado (cuelga en curva)
     if ((b.state === 'aparcado' || b.state === 'embarque') && g.aero) {
-      const [px, py] = aeroCenter(g); vctx.strokeStyle = 'rgba(120,90,50,.95)'; vctx.lineWidth = .5;
+      const [px, py] = homeSpot(g, b); vctx.strokeStyle = 'rgba(120,90,50,.95)'; vctx.lineWidth = .5;
       vctx.beginPath(); vctx.moveTo(px, py); vctx.quadraticCurveTo((px + bx) / 2, Math.max(py, by + 2) + 2, bx, by - 1); vctx.stroke();
     }
     // Todo gira con la inclinación alrededor del fondo de la cesta
@@ -456,5 +466,6 @@ function drawBalloons(now){
       vctx.drawImage(bask, 0, front, bask.width, bask.height - front, -bask.ax, -bh + front, bask.width, bask.height - front);
     } else { vctx.fillStyle = '#7a4e26'; vctx.fillRect(-3.5, -3, 7, 4); vctx.fillStyle = '#a8743c'; vctx.fillRect(-3.5, -3, 7, 1); }
     vctx.restore();
+    }
   }
 }
