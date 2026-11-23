@@ -171,7 +171,7 @@ function makeVillager(tx, ty, r, age, sex){
   const nv = lifeFields({ name:NAMES[nameIdx++ % NAMES.length], x:tx * T + 2, y:ty * T + 3, path:null, wait:.5 + r() * 1.5, walk:0, moving:false, dir:1, appear:1, sex,
     pants:pick(PANTS, r), hat:pick(HATS, r), skin:skinFor(clamp(ty, 0, H - 1) * W + clamp(tx, 0, W - 1), r), shirt:pick(SHIRT, r), hair:pick(HAIR, r) },
     tx, ty, age ?? 3 + r() * 6, r);
-  nv.name = nameFor(nv.sex); return nv;
+  nv.name = nameFor(nv.sex); nv.fresh = true; return nv; // (en cuanto tenga pueblo, un nombre de su lengua: idiomas.js)
 }
 
 // ---- Crear vida: aparición con haz de luz, onda y chispas ----
@@ -422,7 +422,8 @@ function drawVillagers(){
         const os = objSprite(o), by = ty * T + 3 + o.oy;
         if (by <= y || o.key === 'quarry:cantera') continue;
         const left = tx * T + 2 + o.ox - os.ax, otop = by - os.height + 1;
-        if (left > x + 4 || left + os.width <= x - 4 || otop > y || by < top) continue;
+        const hw = v.boat ? 15 : 4; // en barca ocupa mucho más que una persona
+        if (left > x + hw || left + os.width <= x - hw || otop > y || by < top) continue;
         vctx.globalAlpha = selected ? .5 : 1;
         vctx.drawImage(os, left, otop);
         vctx.globalAlpha = 1;

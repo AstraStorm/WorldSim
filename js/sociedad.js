@@ -127,7 +127,7 @@ let pathMap = new Set(), bridgeSet = new Set(), bridges = [];
 // Desgaste de tanto pisar: hierba gastada y, si se sigue pasando, un camino; si se deja de usar, vuelve la hierba
 let wear = null, wornSet = new Set(), desireSet = new Set();
 const storesOf = g => (g.stores ||= []).filter(i => world.objs[i] && world.objs[i].key === 'store:almacen');
-const buildingsOf = g => [...g.houses, ...(g.wells || []).map(w => w.i), ...(g.mill != null ? [g.mill] : []), ...(g.quarry != null ? [g.quarry] : []), ...(g.hall != null ? [g.hall] : []), ...(g.stores || []), ...(g.towers || []), ...[g.altar, g.temple, g.monument, g.market, g.bank, g.wonder, g.forge, g.hospital, g.barracks, g.lonja, g.theater, g.coliseum, g.tavern, g.cathedral, g.school].filter(b => b != null)];
+const buildingsOf = g => [...g.houses, ...(g.wells || []).map(w => w.i), ...(g.mill != null ? [g.mill] : []), ...(g.quarry != null ? [g.quarry] : []), ...(g.hall != null ? [g.hall] : []), ...(g.stores || []), ...(g.towers || []), ...[g.altar, g.temple, g.monument, g.market, g.bank, g.wonder, g.forge, g.hospital, g.barracks, g.lonja, g.theater, g.coliseum, g.tavern, g.cathedral, g.school, g.court, g.prison, g.press, g.unionHall, g.parliament, g.academy, g.mine].filter(b => b != null)];
 // Capacidad del almacén: lo que cabe junto a la hoguera, más lo de cada almacén
 const capOf = g => Math.max(20, 80 * storesOf(g).length); // sin almacén, solo lo poco que cabe junto a la hoguera
 let plazaSet = new Set(), holySet = new Map();
@@ -207,9 +207,9 @@ function bestSite(v, g, kind){
   return best || planSite(g, kind);
 }
 // Tamaño de cada edificio (medio ancho y alto en casillas, por encima de su base): para que no se monten
-const BUILD_DIMS = { altar:[1, 2], temple:[4, 7], obelisk:[1, 4], market:[4, 4], house:[4, 6], hall:[5, 7], mill:[3, 8], well:[2, 4], store:[4, 5], tower:[2, 7], quarry:[4, 4], fire:[1, 1], bank:[4, 5], wonder:[6, 10], forge:[3, 5], hospital:[4, 5], barracks:[5, 6], tradehall:[5, 6], theater:[6, 6], coliseum:[6, 6], tavern:[5, 5], cathedral:[6, 13], school:[5, 9] };
-const KIND_DIMS = { altar:[1, 2], templo:[4, 7], mercado:[4, 4], casa:[4, 6], ayuntamiento:[5, 7], molino:[3, 8], pozo:[2, 4], almacen:[4, 5], torre:[2, 7], cantera:[4, 4], banco:[4, 5], maravilla:[6, 10], herreria:[3, 5], hospital:[4, 5], cuartel:[5, 6], lonja:[5, 6], teatro:[6, 6], coliseo:[6, 6], taberna:[5, 5], catedral:[6, 13], escuela:[5, 9] };
-const TASK_KIND = { templo:'templo', mercado:'mercado', construir:'casa', ayuntamiento:'ayuntamiento', molino:'molino', pozo:'pozo', almacen:'almacen', torre:'torre', cantera:'cantera', banco:'banco', maravilla:'maravilla', herreria:'herreria', hospital:'hospital', cuartel:'cuartel', lonja:'lonja', teatro:'teatro', coliseo:'coliseo', taberna:'taberna', catedral:'catedral', escuela:'escuela' };
+const BUILD_DIMS = { altar:[1, 2], temple:[4, 7], obelisk:[1, 4], market:[4, 4], house:[4, 6], hall:[5, 7], mill:[3, 8], well:[2, 4], store:[4, 5], tower:[2, 7], quarry:[4, 4], fire:[1, 1], bank:[4, 5], wonder:[6, 10], forge:[3, 5], hospital:[4, 5], barracks:[5, 6], tradehall:[5, 6], theater:[6, 6], coliseum:[6, 6], tavern:[5, 5], cathedral:[6, 13], school:[5, 9], court:[4, 7], jail:[4, 6], press:[4, 6], union:[4, 6], parliament:[6, 8], academy:[4, 8], mine:[4, 5] };
+const KIND_DIMS = { altar:[1, 2], templo:[4, 7], mercado:[4, 4], casa:[4, 6], ayuntamiento:[5, 7], molino:[3, 8], pozo:[2, 4], almacen:[4, 5], torre:[2, 7], cantera:[4, 4], banco:[4, 5], maravilla:[6, 10], herreria:[3, 5], hospital:[4, 5], cuartel:[5, 6], lonja:[5, 6], teatro:[6, 6], coliseo:[6, 6], taberna:[5, 5], catedral:[6, 13], escuela:[5, 9], tribunal:[4, 7], carcel:[4, 6], imprenta:[4, 6], sindicato:[4, 6], parlamento:[6, 8], academia:[4, 8], mina:[4, 5] };
+const TASK_KIND = { templo:'templo', mercado:'mercado', construir:'casa', ayuntamiento:'ayuntamiento', molino:'molino', pozo:'pozo', almacen:'almacen', torre:'torre', cantera:'cantera', banco:'banco', maravilla:'maravilla', herreria:'herreria', hospital:'hospital', cuartel:'cuartel', lonja:'lonja', teatro:'teatro', coliseo:'coliseo', taberna:'taberna', catedral:'catedral', escuela:'escuela', tribunal:'tribunal', carcel:'carcel', imprenta:'imprenta', sindicato:'sindicato', parlamento:'parlamento', academia:'academia', mina:'mina' };
 // ¿Choca con un edificio ya hecho o con uno que alguien está a punto de levantar? (skip: el propio solar)
 function buildingClash(x, y, kind, skip){
   const [hw, hh] = KIND_DIMS[kind] || [4, 5];
@@ -813,8 +813,8 @@ function homeOf(v, g){
   return v.home;
 }
 // ---- Oficios: cada adulto tiene el suyo y lo prefiere (aunque si hace falta, hace de todo) ----
-const OFICIOS = { curandero:['curar'], soldado:['instruir', 'arma', 'equipar'], ingeniero:['asedio', 'muralla', 'cuartel', 'puente', 'herreria', 'lonja'], mercader:['vender', 'comerciar', 'mercado', 'lonja', 'banco', 'tazas', 'taberna'], 'cartógrafo':['explorar'], maestro:['enseñar', 'escuela'], 'leñador':['talar', 'plantar', 'arboleda'], 'cantero':['picar', 'cantear', 'cantera', 'minar'], 'agricultor':['campo', 'arar', 'sembrar', 'cosechar', 'molino', 'bayal'],
-  'pescador':['pescar', 'barca', 'muelle', 'caña'], 'cazador':['cazar', 'arma', 'equipar'], 'constructor':['construir', 'ampliar', 'pozo', 'almacen', 'ayuntamiento', 'puente', 'cercar', 'torre', 'muralla', 'carro', 'herreria', 'hospital', 'catedral'],
+const OFICIOS = { curandero:['curar'], soldado:['instruir', 'arma', 'equipar'], ingeniero:['asedio', 'muralla', 'cuartel', 'puente', 'herreria', 'lonja'], mercader:['vender', 'comerciar', 'mercado', 'lonja', 'banco', 'tazas', 'taberna'], 'cartógrafo':['explorar', 'volar'], maestro:['enseñar', 'escuela'], 'leñador':['talar', 'plantar', 'arboleda'], 'cantero':['picar', 'cantear', 'cantera', 'minar', 'mina', 'extraer'], 'agricultor':['campo', 'arar', 'sembrar', 'cosechar', 'molino', 'bayal'],
+  'pescador':['pescar', 'barca', 'muelle', 'caña'], 'cazador':['cazar', 'arma', 'equipar'], 'constructor':['tribunal', 'carcel', 'parlamento', 'construir', 'ampliar', 'pozo', 'almacen', 'ayuntamiento', 'puente', 'cercar', 'torre', 'muralla', 'carro', 'herreria', 'hospital', 'catedral'],
   'recolector':['bayas'], 'bombero':['apagar', 'quema'], 'comerciante':['comerciar', 'mercado', 'banco'], 'pastor':['capturar', 'cercar'], 'sacerdote':['orar', 'altar', 'templo', 'monumento', 'ofrenda', 'sacrificio', 'catedral'] };
 const OFICIO_MIX = { maestro:.04, 'cartógrafo':.03, curandero:.04, soldado:.08, ingeniero:.04, mercader:.05, agricultor:.22, 'leñador':.16, constructor:.16, recolector:.1, pescador:.1, cazador:.1, cantero:.08, pastor:.08, sacerdote:.04, comerciante:.05, bombero:.03 };
 function pickOficio(g){
@@ -1328,8 +1328,10 @@ function renderVillageCard(force){
         <span>Comida</span>${bar(g.food / cap, '#7ab04a', 150)}<span>${Math.floor(g.food)}</span>
         <span>Madera</span>${bar(g.wood / cap, '#b8864e', 150)}<span>${g.wood}</span>
         <span>Piedra</span>${bar(g.stone / cap, '#a8a49c', 150)}<span>${g.stone}</span>
+        ${(g.know || {}).manga ? `<span>Tela</span>${bar((g.cloth || 0) / 20, '#d8ccb0', 150)}<span>${g.cloth || 0}${g.balloon ? ` · globo de ${g.balloon.cap} ${g.balloon.cap === 1 ? 'plaza' : 'plazas'}` : ''}</span>` : ''}
         <span>Agua</span>${bar((g.jars || 0) / (6 + storesOf(g).length * 8), '#5a9ad8', 150)}<span>${g.jars || 0} cántaros${g.cups ? ` · ${g.cups} tazas` : ''}</span>
         ${g.iron || g.gold || g.gems || g.hides ? `<span>Materiales</span><span class="muted">hierro ${g.iron || 0} · oro ${g.gold || 0} · gemas ${g.gems || 0} · pieles ${g.hides || 0}</span><span></span>` : ''}</div>
+      ${langCard(g)}
       <h4>Estado</h4><div class="needs"><span>Descontento</span>${bar(anger / 100, anger > 60 ? '#d8483a' : anger > 35 ? '#e8a838' : '#7ab04a', 150)}<span>${anger} %</span></div>
       ${g.protest ? '<div class="alert">Manifestación en curso</div>' : ''}${g.coup ? '<div class="alert">Golpe de estado en curso</div>' : ''}${wars.length ? `<div class="alert">En guerra con ${wars.map(o => `<button class="lnk" data-vid="${o.id}">${esc(o.name)}</button> (${REASON_TXT[rels.get(relKey(g, o)).war.reason] || 'el territorio'})`).join(', ')}</div>` : ''}
       ${g.faith ? `<h4>Religión</h4><div>${esc(g.faith.name)} · ${g.faith.mono ? 'monoteístas: un solo dios' : (g.faith.pantheon || []).length ? `politeístas: ${allGods(g.faith).length} dioses` : 'politeístas (de momento, un dios)'}</div><div class="gods">${allGods(g.faith).map((d, k) => `<span class="god${k === 0 ? ' main' : ''}"><b>${esc(d.god)}</b>${esc(godTxt(d).slice(d.god.length + 1))}${k === 0 ? ' <em>principal</em>' : ''}</span>`).join('')}</div>` : ''}
@@ -1347,13 +1349,14 @@ function renderVillageCard(force){
       <h4>Muertes</h4><div>${Object.entries(g.deaths || {}).sort((a, b) => b[1] - a[1]).map(([c, k]) => `${k} por ${c}`).join(' · ') || 'Ninguna todavía'}</div>
       <h4>Gente destacada</h4><div class="famrow">${notable.map(v => famNode(v, v === g.leader ? leaderTitle(g) : oficioTxt(v) || stageOf(v))).join('')}</div>`;
   } else if (cardTab === 'economia') {
-    body = `<div>${econCard(g)}</div>`;
+    body = `<div>${econCard(g)}</div>${mineCard(g)}${unionCard(g)}${instCard(g)}`;
   } else if (cardTab === 'politica') {
     const vr = n.voteRes;
     body = `<div>${govCard(g)}</div>
       ${n.parties ? `<h4>Partidos</h4><div class="parties">${n.parties.map((q, k) => { const pct = vr && vr[k] != null ? vr[k] : null; return `<div class="party${n.ruling === k ? ' on' : ''}">${logoImg(q, 30)}<div class="pi"><b style="color:${q.col}">${esc(q.name)}${n.ruling === k ? ' <span class="gold">★ gobierna</span>' : ''}</b><span class="muted">${sideTxt(q)} · propone: ${q.laws.map(l => LAW_TXT[l]).join(', ')}</span>${pct != null ? `<span class="pv">${bar(pct / 100, q.col, 150)} ${pct} %</span>` : ''}</div></div>`; }).join('')}</div>` : '<h4>Partidos</h4><div>Aún no tienen partidos</div>'}
       <h4>Leyes</h4><div class="laws">${lawsOf(g).map(l => `<div><b>${LAW_TXT[l]}</b><span class="muted">${LAW_DESC[l] || ''}</span></div>`).join('') || '<div class="muted">Sin leyes propias todavía</div>'}</div>
       ${(nationOf(g).lawHist || []).length ? `<h4>Historia de las leyes</h4><ul class="log">${nationOf(g).lawHist.slice().reverse().map(e => `<li class="pol"><span class="d">día ${e.d}</span>${esc(e.txt.replace(`En ${nationOf(g).name} `, ''))}</li>`).join('')}</ul>` : ''}
+      ${justiceCard(g)}${pressCard(g)}
       <h4>Horario</h4><div>${shiftTxt(g)}${inShift(g) ? ' · <b>ahora trabajan</b>' : isNight() ? ' · ahora duermen' : ' · <b>ahora es su tiempo libre</b>'}</div>
       <h4>Nación</h4><div>${status}${provinces.length ? `: ${provinces.map(o => `<button class="lnk" data-vid="${o.id}">${esc(o.name)}</button>`).join(', ')}` : ''}${n !== g ? ` · descontento con la capital ${Math.round(g.unrest || 0)} %` : ''}</div>
       ${calendarCard(g)}${allyCard(g)}${warCard(g)}${treatyCard(g)}
@@ -1370,7 +1373,7 @@ function renderVillageCard(force){
     <div class="cbody">${body}</div>`, force);
 }
 // ---- Daños en los edificios: tormentas, terremotos, tsunamis y fuego ----
-const BLD = new Set(['house', 'hall', 'store', 'market', 'mill', 'tower', 'well', 'temple', 'obelisk', 'altar', 'bank', 'wonder', 'forge', 'hospital', 'barracks', 'tradehall', 'theater', 'coliseum', 'tavern', 'cathedral', 'school']);
+const BLD = new Set(['mine', 'court', 'jail', 'press', 'union', 'parliament', 'academy', 'house', 'hall', 'store', 'market', 'mill', 'tower', 'well', 'temple', 'obelisk', 'altar', 'bank', 'wonder', 'forge', 'hospital', 'barracks', 'tradehall', 'theater', 'coliseum', 'tavern', 'cathedral', 'school']);
 const isBuilding = o => !!o && BLD.has(o.key.split(':')[0]);
 const wooden = o => /^(house:hut|store|market|mill|tower)/.test(o.key); // de madera: arden; los de piedra, apenas
 const bldName = o => OBJ[o.key][0].toLowerCase();
@@ -1599,7 +1602,7 @@ function diploTick(){
 // Un pueblo que se queda por su cuenta: su propia bandera, su gobierno y alguien al mando (y se rehacen las fronteras)
 // Al comerciar con quien ya usa moneda, se aprende a usarla (cada uno acuña la suya)
 function spreadCoin(a, b){
-  for (const [x, y] of [[a, b], [b, a]]) if (x.coin && !y.coin && Math.random() < .5) { y.coin = coinName(); notify(`Comerciando con ${x.name}, los de ${y.name} aprenden a usar moneda y acuñan la suya: el ${y.coin}`, { x:y.fx * T, y:y.fy * T }); }
+  for (const [x, y] of [[a, b], [b, a]]) if (x.coin && !y.coin && Math.random() < .5) { newCoin(y); notify(`Comerciando con ${x.name}, los de ${y.name} aprenden a usar moneda y acuñan la suya: el ${y.coin}`, { x:y.fx * T, y:y.fy * T }); }
 }
 function becomeIndependent(g){
   g.nation = g.id; g.unrest = 0;
@@ -1704,7 +1707,7 @@ function arriveFleet(t, from, to){
   notify(`Los barcos de ${from.name} saquean la costa de ${to.name}: se llevan ${Math.round(take)} de comida${wood.length ? ' y prenden fuego a lo que pillan' : ''}`, { x:t.land[0], y:t.land[1] });
 }
 function sendTraveler(kind, from, to){
-  const v = villagers.filter(u => !u.dead && !u.away && u.vid === from.id && (yearT - u.born) / YEAR >= ADULT_H && u !== from.leader && !u.sleep && !u.boat && !u.mount && !(u.actT > 0)).sort((a, b) => (b.oficio === 'mercader' ? 1 : 0) - (a.oficio === 'mercader' ? 1 : 0))[0]; // mejor un mercader
+  const v = villagers.filter(u => !u.dead && !u.away && u.vid === from.id && (yearT - u.born) / YEAR >= ADULT_H && u !== from.leader && !u.sleep && !u.boat && !u.mount && !(u.actT > 0)).sort((a, b) => travelerScore(b, kind, to) - travelerScore(a, kind, to))[0]; // mejor un mercader; de diplomático, quien hable su lengua o la común
   if (!v) return;
   const home = from.port && to.port ? [(from.port.launch % W) * T + 2, ((from.port.launch / W) | 0) * T + 3] : fireSpot(v, from);
   const dest = from.port && to.port ? [(to.port.launch % W) * T + 2, ((to.port.launch / W) | 0) * T + 3] : to.market != null ? [(to.market % W) * T + 2, ((to.market / W) | 0) * T + 3 + T] : [to.fx * T + 2, to.fy * T + 9];
@@ -1729,14 +1732,15 @@ function updateTravelers(dt){
     if (t.phase === 'ida') {
       const r = to && relOf(from, to);
       if (to && r) {
+        const und = langUnderstand(v, to); // si no se entienden, la visita sirve de poco
         if (t.kind === 'caravana') {
-          const got = doTrade(from, to); r.v = clamp(r.v + 4, -100, 100); shareCharts(from, to); spreadCoin(from, to);
+          const got = doTrade(from, to); r.v = clamp(r.v + 4 * und, -100, 100); shareCharts(from, to); spreadCoin(from, to);
           const sickHome = villagers.find(u => !u.dead && u.vid === from.id && u.sick); if (sickHome && !hasLaw(to, 'cuarentena') && Math.random() < .3) { const tgt = villagers.find(u => !u.dead && u.vid === to.id && !u.sick); if (tgt) infect(tgt, sickHome.sick, to); } // la caravana trae la enfermedad
           notify(`Una caravana de ${from.name} llega a ${to.name} ${t.sea ? 'por mar' : 'por tierra'}${got.length ? `: ${got.join(', ')}` : ''}`, { x:t.x, y:t.y });
         } else if (r.war) {
-          if (Math.random() < .3 + Math.min(.4, (yearT - r.war.start) / (DAY_LEN * 6))) makePeace(from, to, r, `gracias a un diplomático de ${from.name}`);
-          else notify(`${to.name} rechaza al diplomático de ${from.name}: sigue la guerra`, { x:t.x, y:t.y });
-        } else { r.v = clamp(r.v + 7, -100, 100); if (r.v > 20) shareCharts(from, to); notify(`Un diplomático de ${from.name} visita ${to.name}: mejoran sus relaciones`, { x:t.x, y:t.y }); }
+          if (Math.random() < (.3 + Math.min(.4, (yearT - r.war.start) / (DAY_LEN * 6))) * und) makePeace(from, to, r, `gracias a un diplomático de ${from.name}`);
+          else notify(`${to.name} rechaza al diplomático de ${from.name}${und < .5 ? ` (ni le entienden: no habla su lengua ni ${langName(LANG_COMMON)})` : ''}: sigue la guerra`, { x:t.x, y:t.y });
+        } else { r.v = clamp(r.v + 7 * und, -100, 100); if (r.v > 20) shareCharts(from, to); notify(und < .5 ? `Un diplomático de ${from.name} visita ${to.name}, pero apenas se entienden: ni habla ${langName(villageLang(to))} ni allí saben ${langName(LANG_COMMON)}` : `Un diplomático de ${from.name} visita ${to.name}${und < 1 ? ` (hablan en ${langName(LANG_COMMON)})` : ''}: mejoran sus relaciones`, { x:t.x, y:t.y }); }
       }
       t.phase = 'vuelta'; t.tx = t.hx; t.ty = t.hy; continue;
     }
@@ -1750,8 +1754,8 @@ function drawTravelers(now){
     if (t.x < x0 - 20 || t.x > x1 + 20 || t.y < y0 - 20 || t.y > y1 + 20) continue;
     const g = villageById(t.from), s = personSprite(t.v, Math.floor((t.walk || 0) * 8) % 2, t.dir < 0), x = Math.round(t.x), y = Math.round(t.y);
     const wet = inWater(t.x, t.y); // en un cauce seco, sobre el hielo o en tierra no se dibuja la barca: van andando
-    if (t.crew && wet) { const crew = t.crew.filter(u => !u.dead); crew.forEach((u, k) => { if (k % 2) return; const ox = -t.dir * Math.floor(k / 2) * 14, oy = (Math.floor(k / 2) % 2 ? 6 : -4); drawBoat(x + ox, y + oy, t.dir, now, true, personSprite(u, 0, t.dir < 0)); }); if (crew.length) { vctx.fillStyle = '#c8302a'; vctx.fillRect(x + t.dir * 2, y - 22, 3, 2); vctx.fillStyle = '#5a3a20'; vctx.fillRect(x + t.dir, y - 22, 1, 8); } continue; }
-    if (wet) { drawBoat(x, y, t.dir, now, true, s); continue; }
+    if (t.crew && wet) { const crew = t.crew.filter(u => !u.dead); crew.forEach((u, k) => { if (k % 2) return; const ox = -t.dir * Math.floor(k / 2) * 14, oy = (Math.floor(k / 2) % 2 ? 6 : -4); drawBoat(x + ox, y + oy, t.dir, now, true, personSprite(u, 0, t.dir < 0)); }); redrawFront(x - 15 - crew.length * 7, x + 15 + crew.length * 7, y - 20, y + 6); if (crew.length) { vctx.fillStyle = '#c8302a'; vctx.fillRect(x + t.dir * 2, y - 22, 3, 2); vctx.fillStyle = '#5a3a20'; vctx.fillRect(x + t.dir, y - 22, 1, 8); } continue; }
+    if (wet) { drawBoat(x, y, t.dir, now, true, s); redrawFront(x - 15, x + 15, y - s.height - 6, y); continue; } // lo que hay delante (en la orilla) tapa la barca
     if (t.kind === 'caravana') drawCart(x - t.dir * 8, y, t.dir, now, '#c8a050');
     vctx.drawImage(s, x - (s.width >> 1), y - s.height + 1);
     redrawFront(x - 14, x + 14, y - s.height - 14, y);
@@ -1960,15 +1964,15 @@ const PARTY_A = ['Partido', 'Unión', 'Frente', 'Movimiento', 'Liga', 'Alianza',
 const PARTY_B = { izq:['Socialista', 'Socialista del Trabajo', 'del Pueblo', 'de la Hoguera Común', 'de los Pastores', 'del Pan para Todos', 'Popular', 'de los Jornaleros', 'del Reparto'],
   centro:['del Arado', 'del Río', 'de la Concordia', 'de las Cosechas', 'del Camino', 'Verde', 'de la Fe'],
   der:['del Comercio', 'de la Espada', 'Libre', 'de los Linajes', 'del Orden', 'de la Corona de Piedra', 'de los Mercaderes'] };
-const LAW_TXT = { reparto:'reparto de comida', obras:'obras públicas', paz:'paz con los vecinos', comercio:'comercio libre', ejercito:'ejército', expansion:'expansión', fe:'fe oficial', estatal:'economía estatal', censura:'censura',
+const LAW_TXT = { derecho_huelga:'derecho a huelga', prohibir_huelgas:'prohibición de huelgas', lengua_unica:'una sola lengua', plurilinguismo:'todas las lenguas', reforma_lengua:'reforma de la lengua', pureza_lengua:'pureza de la lengua', reparto:'reparto de comida', obras:'obras públicas', paz:'paz con los vecinos', comercio:'comercio libre', ejercito:'ejército', expansion:'expansión', fe:'fe oficial', estatal:'economía estatal', censura:'censura',
   jornada_corta:'jornada corta', jornada_larga:'jornada larga', sanidad:'sanidad pública', educacion:'escuelas', impuestos_altos:'impuestos altos', impuestos_bajos:'impuestos bajos',
   bosques:'protección de los bosques', orden:'mano dura', natalidad:'más hijos', laicidad:'laicidad', salario_minimo:'salario mínimo', fronteras_abiertas:'fronteras abiertas', fronteras_cerradas:'fronteras cerradas', cuarentena:'cuarentena', vivienda_publica:'vivienda pública', mercado_vivienda:'libre mercado de la vivienda', tope_alquiler:'tope a los alquileres', libertad_religiosa:'libertad de culto', persecucion_religiosa:'persecución religiosa', derechos_humanos:'derechos humanos', segregacion:'segregación racial', matrimonio_igualitario:'matrimonio igualitario', persecucion:'persecución de homosexuales' };
-const LAW_DESC = { vivienda_publica:'el gobierno construye muchas casas y las da a quien no tiene, sin alquiler', mercado_vivienda:'el gobierno no construye casas: solo se hacen las que alguien compra, y los precios suben', tope_alquiler:'los alquileres no pueden pasar de un tope y cuesta más desahuciar', libertad_religiosa:'cada uno reza a quien quiera: los forasteros de otra fe viven en paz (y sus predicadores convierten más)', persecucion_religiosa:'solo se tolera la fe del pueblo: a los de otra fe se les expulsa', derechos_humanos:'todos tienen los mismos derechos, sea cual sea su origen o su piel: mejor trato con los vecinos', segregacion:'quien tiene otra piel cobra menos y vive peor: muchos se van y los vecinos lo ven mal', matrimonio_igualitario:'las parejas del mismo sexo se casan y pueden adoptar', persecucion:'las parejas del mismo sexo se esconden; si las descubren, las destierran', reparto:'se reparte comida antes a quien tiene hambre', obras:'se construye más', paz:'menos guerras y más diplomacia', comercio:'más comercio y caravanas', ejercito:'más soldados y más impuestos',
+const LAW_DESC = { derecho_huelga:'los sindicatos pueden hacer huelga y el gobierno tiene que negociar antes', prohibir_huelgas:'las huelgas son ilegales: se rompen y los cabecillas van a juicio', lengua_unica:'en la escuela solo se enseña la lengua oficial: las demás se van perdiendo (y sus hablantes protestan)', plurilinguismo:'en la escuela se enseñan todas las lenguas del país (a los de una sola lengua no les gusta)', reforma_lengua:'una academia moderniza la lengua: cambia antes (los mayores se quejan de que ya no es la de siempre)', pureza_lengua:'la lengua no se toca: casi no cambia y cuesta más aprender palabras de fuera', vivienda_publica:'el gobierno construye muchas casas y las da a quien no tiene, sin alquiler', mercado_vivienda:'el gobierno no construye casas: solo se hacen las que alguien compra, y los precios suben', tope_alquiler:'los alquileres no pueden pasar de un tope y cuesta más desahuciar', libertad_religiosa:'cada uno reza a quien quiera: los forasteros de otra fe viven en paz (y sus predicadores convierten más)', persecucion_religiosa:'solo se tolera la fe del pueblo: a los de otra fe se les expulsa', derechos_humanos:'todos tienen los mismos derechos, sea cual sea su origen o su piel: mejor trato con los vecinos', segregacion:'quien tiene otra piel cobra menos y vive peor: muchos se van y los vecinos lo ven mal', matrimonio_igualitario:'las parejas del mismo sexo se casan y pueden adoptar', persecucion:'las parejas del mismo sexo se esconden; si las descubren, las destierran', reparto:'se reparte comida antes a quien tiene hambre', obras:'se construye más', paz:'menos guerras y más diplomacia', comercio:'más comercio y caravanas', ejercito:'más soldados y más impuestos',
   expansion:'conquistan a quien puedan', fe:'una religión oficial', estatal:'el estado lo controla todo', censura:'menos protestas, más rabia contenida', jornada_corta:'trabajan menos horas y viven más contentos',
   jornada_larga:'trabajan de sol a sol: producen más, pero se quejan', sanidad:'los heridos se curan antes', educacion:'los niños aprenden más (a nadar, un oficio)', impuestos_altos:'más dinero público, menos en el bolsillo',
   impuestos_bajos:'menos gasto público, más dinero para la gente', bosques:'talan menos y replantan más', orden:'las protestas se reprimen y cuesta más que salgan', natalidad:'nacen más niños', laicidad:'los dioses dan menos miedo', salario_minimo:'cobran más por su trabajo (y los precios suben algo)', fronteras_abiertas:'entran caravanas y viajeros libremente: más comercio y mejores relaciones', fronteras_cerradas:'las puertas se atrancan para los de fuera: casi no entran caravanas por tierra', cuarentena:'aíslan a los enfermos: las epidemias se contagian mucho menos' };
-const LAW_LEAN = { vivienda_publica:-.6, tope_alquiler:-.45, mercado_vivienda:.55, libertad_religiosa:-.35, persecucion_religiosa:.75, derechos_humanos:-.45, matrimonio_igualitario:-.5, segregacion:.7, persecucion:.8, cuarentena:.1, fronteras_abiertas:-.35, fronteras_cerradas:.45, salario_minimo:-.55, reparto:-.7, jornada_corta:-.6, sanidad:-.5, impuestos_altos:-.5, educacion:-.4, paz:-.35, bosques:-.3, laicidad:-.3, obras:-.15, comercio:.45, fe:.4, natalidad:.3, jornada_larga:.5, impuestos_bajos:.55, ejercito:.6, orden:.6, expansion:.7 };
-const LAW_CLASH = [['vivienda_publica', 'mercado_vivienda'], ['tope_alquiler', 'mercado_vivienda'], ['libertad_religiosa', 'persecucion_religiosa'], ['laicidad', 'persecucion_religiosa'], ['derechos_humanos', 'segregacion'], ['matrimonio_igualitario', 'persecucion'], ['fronteras_abiertas', 'fronteras_cerradas'], ['salario_minimo', 'impuestos_bajos'], ['jornada_corta', 'jornada_larga'], ['impuestos_altos', 'impuestos_bajos'], ['fe', 'laicidad'], ['paz', 'expansion']];
+const LAW_LEAN = { derecho_huelga:-.45, prohibir_huelgas:.6, lengua_unica:.55, plurilinguismo:-.4, reforma_lengua:-.25, pureza_lengua:.45, vivienda_publica:-.6, tope_alquiler:-.45, mercado_vivienda:.55, libertad_religiosa:-.35, persecucion_religiosa:.75, derechos_humanos:-.45, matrimonio_igualitario:-.5, segregacion:.7, persecucion:.8, cuarentena:.1, fronteras_abiertas:-.35, fronteras_cerradas:.45, salario_minimo:-.55, reparto:-.7, jornada_corta:-.6, sanidad:-.5, impuestos_altos:-.5, educacion:-.4, paz:-.35, bosques:-.3, laicidad:-.3, obras:-.15, comercio:.45, fe:.4, natalidad:.3, jornada_larga:.5, impuestos_bajos:.55, ejercito:.6, orden:.6, expansion:.7 };
+const LAW_CLASH = [['derecho_huelga', 'prohibir_huelgas'], ['lengua_unica', 'plurilinguismo'], ['reforma_lengua', 'pureza_lengua'], ['vivienda_publica', 'mercado_vivienda'], ['tope_alquiler', 'mercado_vivienda'], ['libertad_religiosa', 'persecucion_religiosa'], ['laicidad', 'persecucion_religiosa'], ['derechos_humanos', 'segregacion'], ['matrimonio_igualitario', 'persecucion'], ['fronteras_abiertas', 'fronteras_cerradas'], ['salario_minimo', 'impuestos_bajos'], ['jornada_corta', 'jornada_larga'], ['impuestos_altos', 'impuestos_bajos'], ['fe', 'laicidad'], ['paz', 'expansion']];
 // Programa de un partido: 3 o 4 leyes cercanas a sus ideas, con algo de sorpresa (dos partidos del mismo lado no proponen lo mismo)
 function partyProgram(ideo, n = 3 + (Math.random() < .5 ? 1 : 0), keep = []){
   const laws = [...keep];
@@ -1982,6 +1986,15 @@ function partyProgram(ideo, n = 3 + (Math.random() < .5 ? 1 : 0), keep = []){
   }
   return laws;
 }
+// En los parlamentos hay más partidos: verdes, liberales y, donde se hablan varias lenguas, uno regionalista
+function moreParties(g){
+  const ps = g.parties ||= [], has = re => ps.some(p => re.test(p.name));
+  if (!has(/Verde/)) ps.push({ name:'Partido Verde', ideo:-.3, laws:partyProgram(-.3, 3, ['bosques']), col:'#5aa84a' });
+  if (!has(/Liberal/)) ps.push({ name:'Partido Liberal', ideo:.2, laws:partyProgram(.2, 3, ['comercio']), col:'#e8c040' });
+  const langs = new Set(villages.filter(o => popOf(o) && nationOf(o) === g).map(o => o.lang).filter(l => l != null));
+  if (langs.size > 1 && !has(/Regionalista/)) ps.push({ name:'Partido Regionalista', ideo:-.05, laws:partyProgram(-.05, 3, ['plurilinguismo']), col:'#8a5ac8' });
+  while (ps.length > 6) ps.splice(ps.findIndex((p, k) => k !== g.ruling), 1);
+}
 function makeParties(g){
   const parties = [], used = new Set();
   for (const side of Math.random() < .5 ? ['izq', 'centro', 'der'] : ['izq', 'der']) {
@@ -1993,12 +2006,13 @@ function makeParties(g){
   g.parties = parties;
   if (!g.regime) { // la primera forma de gobierno depende de cómo les va: quien manda, cuánto temen a sus dioses, si hay peligro...
     const L = g.leader && !g.leader.dead ? g.leader : null, devout = g.faith && ((g.devotion || 0) > 1 || (g.wrath || 0) > 2), danger = (g.danger || 0) > 0;
-    const w = { republica:3, monarquia:L ? 2.5 : 0, teocracia:devout ? 2 : .3, dictadura:L ? (danger ? 2 : .8) : 0, socialismo:1, tribu:1.2 };
+    const w = { republica:3, democracia:.6, monarquia:L ? 2.5 : 0, teocracia:devout ? 2 : .3, dictadura:L ? (danger ? 2 : .8) : 0, socialismo:1, tribu:1.2 };
     let k = Math.random() * Object.values(w).reduce((a2, b2) => a2 + b2, 0); for (const [reg, x] of Object.entries(w)) if ((k -= x) < 0) { g.regime = reg; break; }
     g.regime ||= 'republica'; g.regimeT = yearT;
+    if (PARLIAMENT.includes(g.regime)) moreParties(g);
     if (g.regime === 'teocracia' && g.faith) { const pr = villagers.filter(u => !u.dead && u.vid === g.id && (yearT - u.born) / YEAR >= ADULT_H).sort((x, y) => pietyOf(y) - pietyOf(x))[0]; if (pr) g.leader = pr; }
     const at = { x:g.fx * T, y:g.fy * T }, Ln = g.leader && !g.leader.dead ? g.leader.name : 'quien manda';
-    notify({ republica:`En ${g.name} deciden gobernarse votando: nace una república`, monarquia:`${Ln} se corona ${g.leader && g.leader.sex === 'm' ? 'reina' : 'rey'} de ${g.name}: nace una monarquía`,
+    notify({ democracia:`En ${g.name} deciden gobernarse con un parlamento de muchos partidos: nace una democracia parlamentaria`, republica:`En ${g.name} deciden gobernarse votando: nace una república`, monarquia:`${Ln} se corona ${g.leader && g.leader.sex === 'm' ? 'reina' : 'rey'} de ${g.name}: nace una monarquía`,
       teocracia:`En ${g.name} mandan los sacerdotes en nombre de ${g.faith ? g.faith.god : 'sus dioses'}: nace una teocracia`, dictadura:`${Ln} se hace con todo el poder en ${g.name}${danger ? ' ante el peligro' : ''}: nace una dictadura`,
       socialismo:`En ${g.name} deciden repartirlo todo y votar: nace una república socialista`, tribu:`${g.name} sigue gobernándose como siempre, con un consejo de ancianos` }[g.regime], at);
   }
@@ -2006,7 +2020,8 @@ function makeParties(g){
   notify(`En ${g.name} nacen los partidos: ${parties.map(p => p.name).join(', ')}`, { x:g.fx * T, y:g.fy * T });
 }
 const artP = p => /^(Unión|Liga|Alianza|Asamblea|Hermandad)/.test(p.name) ? 'la' : 'el'; // «gana la Liga…», «gana el Frente…»
-const lawsOf = g => { const n = nationOf(g); if (REGIME_LAWS[n.regime]) return REGIME_LAWS[n.regime]; const L = n.ruling != null && n.parties ? n.parties[n.ruling].laws : [];
+const lawsOf = g => { const n = nationOf(g); if (REGIME_LAWS[n.regime]) return REGIME_LAWS[n.regime]; let L = n.ruling != null && n.parties && n.parties[n.ruling] ? n.parties[n.ruling].laws : [];
+  const C = n.coalition != null && n.parties && n.parties[n.coalition]; if (C) L = [...L, ...C.laws.filter(l => !L.includes(l) && !LAW_CLASH.some(([a, b]) => (l === a && L.includes(b)) || (l === b && L.includes(a))))];
   return n.regime === 'socialismo' ? [...new Set(['reparto', 'estatal', 'vivienda_publica', ...L.filter(l => l !== 'mercado_vivienda')])] : L; };
 const hasLaw = (g, l) => lawsOf(g).includes(l);
 const sideTxt = p => p.ideo < -.3 ? 'izquierda' : p.ideo > .3 ? 'derecha' : 'centro';
@@ -2032,7 +2047,15 @@ function countVotes(cap){
     votes[best]++;
   }
   const tot = Math.max(1, voters.length), win = votes.indexOf(Math.max(...votes)), p = ps[win];
-  const changed = cap.ruling !== win; cap.ruling = win;
+  const changed = cap.ruling !== win; cap.ruling = win; cap.coalition = null;
+  // Parlamento: si el ganador no llega a la mitad, pacta con el partido de ideas más parecidas que le dé mayoría
+  let coalTxt = '';
+  if (PARLIAMENT.includes(regimeOf(cap)) && votes[win] / tot < .5) {
+    const partner = ps.map((q, k) => k).filter(k => k !== win && votes[win] + votes[k] > tot / 2).sort((a, b) => Math.abs(ps[a].ideo - p.ideo) - Math.abs(ps[b].ideo - p.ideo))[0];
+    if (partner != null) { cap.coalition = partner; coalTxt = ` y gobierna en coalición con ${artP(ps[partner])} ${ps[partner].name}`; }
+    else coalTxt = ' pero sin mayoría: gobierna en minoría';
+  }
+  cap.winStreak = changed ? 1 : (cap.winStreak || 0) + 1;
   // Los que pierden se replantean el programa (a veces a fondo): miran qué piensa la gente y se acercan un poco
   const avgIdeo = voters.reduce((a, u) => a + (u.ideo || 0), 0) / Math.max(1, voters.length);
   for (const [k, q] of ps.entries()) if (k !== win && Math.random() < .6 && q.laws.length) {
@@ -2044,11 +2067,13 @@ function countVotes(cap){
   const cands = villagers.filter(u => !u.dead && u.vid === cap.id && (yearT - u.born) / YEAR >= ADULT_H && (yearT - u.born) / YEAR < u.life * .85).sort((a, b) => Math.abs((a.ideo || 0) - p.ideo) - Math.abs((b.ideo || 0) - p.ideo));
   if (cands.length) cap.leader = cands[0];
   cap.lastVote = ps.map((q, k) => `${q.name} ${Math.round(votes[k] / tot * 100)} %`).join(' · '); cap.voteRes = votes.map(x => Math.round(x / tot * 100));
-  notify(`Elecciones en ${cap.name}: gana ${artP(p)} ${p.name} (${sideTxt(p)}, ${Math.round(votes[win] / tot * 100)} %)${cap.leader ? `; ${cap.leader.name} pasa a mandar` : ''}${changed ? `. Nuevas leyes: ${p.laws.map(l => LAW_TXT[l]).join(', ')}` : ''}`, { x:cap.fx * T, y:cap.fy * T });
+  notify(`Elecciones en ${cap.name}: gana ${artP(p)} ${p.name} (${sideTxt(p)}, ${Math.round(votes[win] / tot * 100)} %)${coalTxt}${cap.leader ? `; ${cap.leader.name} pasa a mandar` : ''}${changed ? `. Nuevas leyes: ${p.laws.map(l => LAW_TXT[l]).join(', ')}` : ''}`, { x:cap.fx * T, y:cap.fy * T });
   // Polarización: si un pueblo muy grande queda partido casi por la mitad, los perdedores pueden irse y fundar el suyo
   const second = [...votes].sort((a, b) => b - a)[1] || 0;
   if (popOf(cap) > 36 && second / tot > .38 && Math.random() < .35) secede(cap, ps[votes.indexOf(second)]);
   const share = votes[win] / tot;
+  // Si ganan siempre los mismos, los partidos se reparten los cargos: partitocracia
+  if (['democracia', 'republica'].includes(regimeOf(cap)) && cap.winStreak >= 4 && Math.random() < .4) { setRegime(cap, 'partitocracia', null); cap.ruling = win; notify(`En ${cap.name} ${artP(p)} ${p.name} lleva ${cap.winStreak} elecciones seguidas ganando: los partidos se reparten los cargos y nace una partitocracia (más enchufes y más corrupción)`, { x:cap.fx * T, y:cap.fy * T }); return; }
   if (regimeOf(cap) === 'republica' && p.ideo < -.4 && share >= .6 && Math.random() < .35) { setRegime(cap, 'socialismo', null); cap.ruling = win; cap.voteRes = votes.map(x => Math.round(x / tot * 100)); notify(`Con ${Math.round(share * 100)} % de los votos, ${artP(p)} ${p.name} proclama la República Socialista de ${cap.name}`, { x:cap.fx * T, y:cap.fy * T }); }
   else if (regimeOf(cap) === 'socialismo' && p.ideo > .3 && share >= .5) { setRegime(cap, 'republica', null); cap.ruling = win; cap.voteRes = votes.map(x => Math.round(x / tot * 100)); notify(`${cap.name} deja el socialismo: gana ${artP(p)} ${p.name} y vuelve la república de siempre`, { x:cap.fx * T, y:cap.fy * T }); }
 }
@@ -2069,19 +2094,22 @@ function secede(g, party){
   }
 }
 // ---- Regímenes: tribu, república, monarquía, dictadura, comunismo o fascismo; cada uno manda a su manera ----
-const REGIMES = { socialismo:'República socialista', teocracia:'Teocracia', tribu:'Consejo tribal', republica:'República', monarquia:'Monarquía', dictadura:'Dictadura militar', comunismo:'Estado comunista', fascismo:'Régimen fascista' };
-const REGIME_A = { socialismo:'una república socialista', teocracia:'una teocracia', tribu:'un consejo tribal', republica:'una república', monarquia:'una monarquía', dictadura:'una dictadura militar', comunismo:'un estado comunista', fascismo:'un régimen fascista' };
-const REGIME_IDEO = { teocracia:.45, comunismo:-.85, fascismo:.85, dictadura:.35, monarquia:.5 };
-const REGIME_LAWS = { teocracia:['fe', 'censura', 'reparto', 'natalidad'], comunismo:['reparto', 'obras', 'ejercito', 'estatal', 'sanidad', 'educacion', 'jornada_larga', 'vivienda_publica'], fascismo:['ejercito', 'expansion', 'fe', 'censura', 'orden', 'natalidad', 'jornada_larga', 'segregacion', 'persecucion'], dictadura:['ejercito', 'obras', 'censura', 'orden'], monarquia:['fe', 'comercio', 'impuestos_bajos', 'mercado_vivienda'] };
+const REGIMES = { oligarquia:'Oligarquía', tecnocracia:'Tecnocracia', anarquia:'Anarquía', democracia:'Democracia parlamentaria', partitocracia:'Partitocracia', monarquia_parlamentaria:'Monarquía parlamentaria', socialismo:'República socialista', teocracia:'Teocracia', tribu:'Consejo tribal', republica:'República', monarquia:'Monarquía', dictadura:'Dictadura militar', comunismo:'Estado comunista', fascismo:'Régimen fascista' };
+const REGIME_A = { oligarquia:'una oligarquía', tecnocracia:'una tecnocracia', anarquia:'una anarquía', democracia:'una democracia parlamentaria', partitocracia:'una partitocracia', monarquia_parlamentaria:'una monarquía parlamentaria', socialismo:'una república socialista', teocracia:'una teocracia', tribu:'un consejo tribal', republica:'una república', monarquia:'una monarquía', dictadura:'una dictadura militar', comunismo:'un estado comunista', fascismo:'un régimen fascista' };
+const REGIME_IDEO = { oligarquia:.55, tecnocracia:0, anarquia:-.6, teocracia:.45, comunismo:-.85, fascismo:.85, dictadura:.35, monarquia:.5 };
+const REGIME_LAWS = { oligarquia:['impuestos_bajos', 'comercio', 'mercado_vivienda', 'orden'], tecnocracia:['educacion', 'sanidad', 'obras', 'bosques', 'reforma_lengua'], anarquia:['reparto', 'paz', 'fronteras_abiertas'], teocracia:['fe', 'censura', 'reparto', 'natalidad'], comunismo:['reparto', 'obras', 'ejercito', 'estatal', 'sanidad', 'educacion', 'jornada_larga', 'vivienda_publica'], fascismo:['ejercito', 'expansion', 'fe', 'censura', 'orden', 'natalidad', 'jornada_larga', 'segregacion', 'persecucion'], dictadura:['ejercito', 'obras', 'censura', 'orden'], monarquia:['fe', 'comercio', 'impuestos_bajos', 'mercado_vivienda'] };
 const regimeOf = g => { const n = nationOf(g); return n.regime || (n.parties ? 'republica' : 'tribu'); };
 const tyranny = g => ['dictadura', 'comunismo', 'fascismo', 'teocracia'].includes(regimeOf(g));
-const votes = g => ['republica', 'socialismo'].includes(regimeOf(g)); // donde se vota
+const votes = g => ['republica', 'socialismo', 'democracia', 'partitocracia', 'monarquia_parlamentaria'].includes(regimeOf(g)); // donde se vota
+// Parlamentarios: muchos partidos y, si nadie llega a la mitad de los votos, gobiernos de coalición
+const PARLIAMENT = ['democracia', 'partitocracia', 'monarquia_parlamentaria'];
+const WONDER_OF = {}; // (cada régimen tiene ya su maravilla; aquí iría la de otro si a alguno le faltara)
 const regimeName = g => { const n = nationOf(g), r = regimeOf(g); return r === 'monarquia' && n.empire ? 'Imperio' : REGIMES[r]; };
 function leaderTitle(g){
   const f = g.leader && g.leader.sex === 'm';
   if (nationOf(g) !== g) return f ? 'gobernadora' : 'gobernador';
   if (regimeOf(g) === 'monarquia' && g.empire) return f ? 'emperatriz' : 'emperador';
-  return { socialismo:f ? 'presidenta' : 'presidente', teocracia:f ? 'suma sacerdotisa' : 'sumo sacerdote', tribu:f ? 'jefa' : 'jefe', republica:f ? 'presidenta' : 'presidente', monarquia:f ? 'reina' : 'rey', dictadura:f ? 'dictadora' : 'dictador', comunismo:f ? 'secretaria general' : 'secretario general', fascismo:f ? 'caudilla' : 'caudillo' }[regimeOf(g)];
+  return { oligarquia:f ? 'jefa de las familias' : 'jefe de las familias', tecnocracia:f ? 'jefa de gobierno' : 'jefe de gobierno', anarquia:'portavoz de la asamblea', democracia:f ? 'primera ministra' : 'primer ministro', partitocracia:f ? 'presidenta del consejo' : 'presidente del consejo', monarquia_parlamentaria:f ? 'primera ministra' : 'primer ministro', socialismo:f ? 'presidenta' : 'presidente', teocracia:f ? 'suma sacerdotisa' : 'sumo sacerdote', tribu:f ? 'jefa' : 'jefe', republica:f ? 'presidenta' : 'presidente', monarquia:f ? 'reina' : 'rey', dictadura:f ? 'dictadora' : 'dictador', comunismo:f ? 'secretaria general' : 'secretario general', fascismo:f ? 'caudilla' : 'caudillo' }[regimeOf(g)];
 }
 const leaderRef = g => g.leader && !g.leader.dead ? `${g.leader.sex === 'm' ? 'la' : 'el'} ${leaderTitle(g)} ${g.leader.name}` : 'el gobierno';
 const govIdeo = g => { const n = nationOf(g), r = n.ruling != null && n.parties ? n.parties[n.ruling].ideo : 0; return regimeOf(g) === 'socialismo' ? Math.min(r, -.3) : REGIME_IDEO[regimeOf(g)] ?? r; };
@@ -2090,12 +2118,16 @@ const capFirst = s => s[0].toUpperCase() + s.slice(1);
 function setRegime(g, reg, chief){
   const prevReg = g.regime; g.regime = reg; g.regimeT = yearT; g.voteRes = null; g.empire = false; if (chief) g.leader = chief;
   if (g.flag && prevReg && prevReg !== reg) { g.flag = makeFlag(g); g.flagUrl = flagDataUrl(g.flag); setTimeout(() => notify(`${g.name} estrena bandera con su nuevo régimen (${REGIMES[reg].toLowerCase()})`, { x:g.fx * T, y:g.fy * T }), 400); }
-  if (reg === 'republica' || reg === 'socialismo') { g.voteT = yearT; if (!g.parties || g.parties.length < 2) { g.parties = null; makeParties(g); } if (reg === 'republica') { g.ruling = null; g.voteT = -1e9; } }
+  if (reg === 'republica' || reg === 'socialismo' || PARLIAMENT.includes(reg)) { g.voteT = yearT; if (!g.parties || g.parties.length < 2) { g.parties = null; makeParties(g); } if (reg !== 'socialismo') { g.ruling = null; g.voteT = -1e9; } }
+  g.coalition = null;
+  if (PARLIAMENT.includes(reg)) moreParties(g);
+  if (reg === 'anarquia') { g.leader = null; g.parties = null; g.ruling = null; } // nadie manda: asambleas
+  if (reg === 'monarquia_parlamentaria' && g.leader && !g.leader.dead) g.monarch = g.leader; // el rey sigue, pero gobierna el parlamento
   if (reg === 'teocracia') g.ruling = null;
   if (ONE_PARTY[reg]) { const L = ONE_PARTY[reg]; g.parties = [{ name:L[Math.floor(Math.random() * L.length)], ideo:REGIME_IDEO[reg], laws:REGIME_LAWS[reg], col:reg === 'comunismo' ? '#d8483a' : '#3a3a3a' }]; g.ruling = 0; }
   // La maravilla del régimen anterior: si era culto al líder o a la corona, la derriban
   const o = g.wonder != null && world.objs[g.wonder];
-  if (o && o.key !== 'wonder:' + reg && /monarquia|dictadura|comunismo|fascismo|teocracia/.test(o.key)) {
+  if (o && o.key !== 'wonder:' + reg && /monarquia|dictadura|comunismo|fascismo|teocracia|oligarquia/.test(o.key)) {
     const i = g.wonder, nm = OBJ[o.key][0]; world.objs[i] = null; g.wonder = null; addEffect((i % W) * T + 2, ((i / W) | 0) * T + 3, 'poof');
     composeRegion((i % W) - 10, ((i / W) | 0) - 16, (i % W) + 10, ((i / W) | 0) + 12);
     notify(`En ${g.name} derriban ${/^(Palacio|Arco|Monumento)/.test(nm) ? 'el' : 'la'} ${nm} del antiguo régimen`, { x:(i % W) * T, y:((i / W) | 0) * T });
@@ -2104,6 +2136,7 @@ function setRegime(g, reg, chief){
 }
 // Sucesión cuando muere quien manda (fuera de la república, donde se vota)
 function succession(g, people){
+  if (regimeSuccession(g, people)) return; // oligarquía, tecnocracia y anarquía (regimenes.js)
   const old = g.leader, reg = regimeOf(g), adult = u => { const a = (yearT - u.born) / YEAR; return a >= ADULT_H && a < u.life * .9; };
   if (reg === 'monarquia') {
     const heir = people.filter(u => adult(u) && (u.parents || []).includes(old)).sort((a, b) => a.born - b.born)[0];
@@ -2124,9 +2157,10 @@ function succession(g, people){
   }
 }
 // ---- Descontento, manifestaciones y golpes de estado ----
-const SLOGANS = { presupuestos:['¡Presupuestos ya!', '¡Queremos saber en qué se gasta!', '¡Las cuentas claras!'], 'corrupción':['¡Ladrones!', '¡Devolved lo robado!', '¡Fuera los corruptos!'], vivienda:['¡Casas para todos!', '¡Alquileres justos!', '¡Ni gente sin casa ni casas sin gente!', '¡Stop desahucios!'], jornada:['¡Queremos descansar!', '¡Menos horas!', '¡Días libres!'], impuestos:['¡Menos impuestos!', '¡No más tributos!'], hambre:['¡Pan!', '¡Tenemos hambre!', '¡Comida para todos!'], 'inflación':['¡Precios justos!', '¡Nuestro dinero no vale nada!', '¡Salarios dignos!'],
+const SLOGANS = { profesores:['¡Más maestros!', '¡Nuestros hijos merecen aprender!', '¡Escuela digna!'], medicos:['¡Más médicos!', '¡La salud no espera!', '¡Nos morimos sin curanderos!'], bomberos:['¡Más bomberos!', '¡Que no ardan nuestras casas!', '¡Protección contra el fuego!'], idioma:['¡Nuestra lengua en la escuela!', '¡Respeto a nuestro idioma!', '¡Hablamos como queremos!'], presupuestos:['¡Presupuestos ya!', '¡Queremos saber en qué se gasta!', '¡Las cuentas claras!'], 'corrupción':['¡Ladrones!', '¡Devolved lo robado!', '¡Fuera los corruptos!'], vivienda:['¡Casas para todos!', '¡Alquileres justos!', '¡Ni gente sin casa ni casas sin gente!', '¡Stop desahucios!'], jornada:['¡Queremos descansar!', '¡Menos horas!', '¡Días libres!'], impuestos:['¡Menos impuestos!', '¡No más tributos!'], hambre:['¡Pan!', '¡Tenemos hambre!', '¡Comida para todos!'], 'inflación':['¡Precios justos!', '¡Nuestro dinero no vale nada!', '¡Salarios dignos!'],
   'tiranía':['¡Libertad!', '¡Abajo el tirano!', '¡Fuera!'], ideas:['¡Fuera el gobierno!', '¡Otro gobierno!', '¡No nos representan!'], guerra:['¡Paz!', '¡No a la guerra!'], bancarrota:['¡Devolved nuestros ahorros!', '¡Ladrones!'], salarios:['¡Sueldos dignos!', '¡No llegamos a fin de mes!', '¡Más salario!'], culto:['¡Libertad de culto!', '¡Dejadnos rezar!'], racismo:['¡No al racismo!', '¡Todos somos iguales!', '¡Derechos para todos!'], derechos:['¡Amar no es delito!', '¡Igualdad!', '¡Libres de amar!'] };
-const GRIEF_TXT = { presupuestos:'la falta de presupuestos', 'corrupción':'la corrupción', vivienda:'la falta de vivienda', jornada:'las jornadas interminables', impuestos:'los impuestos', hambre:'el hambre', 'inflación':'la subida de precios', 'tiranía':'la tiranía', ideas:'el gobierno', guerra:'la guerra', bancarrota:'la bancarrota', salarios:'los sueldos bajos', culto:'la persecución religiosa', racismo:'la segregación racial', derechos:'la persecución por amar' };
+const GRIEF_TXT = { idioma:'la política de idiomas', profesores:'la falta de maestros', medicos:'la falta de médicos', bomberos:'la falta de bomberos', presupuestos:'la falta de presupuestos', 'corrupción':'la corrupción', vivienda:'la falta de vivienda', jornada:'las jornadas interminables', impuestos:'los impuestos', hambre:'el hambre', 'inflación':'la subida de precios', 'tiranía':'la tiranía', ideas:'el gobierno', guerra:'la guerra', bancarrota:'la bancarrota', salarios:'los sueldos bajos', culto:'la persecución religiosa', racismo:'la segregación racial', derechos:'la persecución por amar' };
+const atWarJ0 = g => [...rels.values()].some(r => r.war && [r.war.att, r.war.def].includes(nationOf(g).id));
 const BUSY_POL = ['asalto', 'apagar', 'viaje', 'votar', 'golpe', 'protesta', 'reprimir', 'detenido', 'ritual'];
 function politicsTick(g, dt, people){
   if (g.coin && (g.econT = (g.econT ?? 20) - dt) <= 0) { g.econT = 20; econTick(g, people); }
@@ -2134,18 +2168,27 @@ function politicsTick(g, dt, people){
   if (adults.length < 4) return;
   const avg = adults.reduce((a, u) => a + (u.ideo || 0), 0) / adults.length, ec = g.coin ? ecOf(g) : null;
   const f = { hambre:g.food < popOf(g) * .5 ? .7 : 0, 'inflación':ec && ec.infl > .05 ? Math.min(1.5, ec.infl * 6) : 0,
-    'tiranía':tyranny(g) ? .22 + (g.repressed || 0) * .02 : regimeOf(g) === 'monarquia' ? .06 : 0,
+    'tiranía':tyranny(g) ? .22 + (g.repressed || 0) * .02 : regimeOf(g) === 'monarquia' ? .06 : regimeOf(g) === 'monarquia_parlamentaria' ? .02 : regimeOf(g) === 'oligarquia' ? .12 : 0,
     ideas:cap.parties ? Math.max(0, Math.abs(avg - govIdeo(g)) - .5) * 1.1 : 0,
     guerra:[...rels.values()].some(r => r.war && r.war.def === g.id && r.war.dead > 2) ? .5 : 0,
     bancarrota:ec && yearT - (ec.bankruptT ?? -1e9) < DAY_LEN * 2 ? 1 : 0, jornada:(hasLaw(g, 'jornada_larga') ? .25 : 0) + (restDaysOf(g) === 0 ? .25 : 0) + (restDaysOf(g) === 1 && avg < -.35 ? .1 : 0), impuestos:(hasLaw(g, 'impuestos_altos') ? .12 : 0) + taxGrief(g), salarios:0, vivienda:housingGrief(g), presupuestos:budgetGrief(g), 'corrupción':corruptGrief(g) };
   { const ad = adults.length || 1, mins = adults.filter(u => isMinority(u, g)).length, gays = adults.filter(lgtb).length, left = adults.filter(u => (u.ideo || 0) < -.2).length / ad;
     if (hasLaw(g, 'segregacion') && (mins / ad > .12 || left > .4)) f.racismo = .25 + mins / ad;
     if (hasLaw(g, 'persecucion') && (gays >= 2 || left > .4)) f.derechos = .2 + gays / ad * 2;
+    f.idioma = languageGrief(g, adults); // idiomas.js
+    Object.assign(f, staffGrief(g, adults, people)); // faltan maestros, médicos o bomberos (trabajo.js)
     const others = adults.filter(u => otherFaith(u, g)).length; if (hasLaw(g, 'persecucion_religiosa') && (others >= 2 || left > .45)) f.culto = .2 + others / ad * 1.5; }
   if (g.coin) { const ws = wageStats(g); if (ws.n >= 3 && (ws.avg < ws.cost || ws.low / ws.n > .4)) f.salarios = Math.min(.8, Math.max((1 - ws.avg / ws.cost) * 1.3, (ws.low / ws.n - .3) * 1.2)); } // no les llega el sueldo
   let up = -(.32 + (hasLaw(g, 'reparto') ? .12 : 0) + (cap.wonder != null && world.objs[cap.wonder] ? .1 : 0) + (hasLaw(g, 'censura') ? .1 : 0)), worst = null;
   for (const [k, d] of Object.entries(f)) { up += d; if (d > 0 && (!worst || d > f[worst])) worst = k; }
+  if (regimeOf(g) === 'partitocracia') f['corrupción'] = Math.max(f['corrupción'] || 0, .18); // enchufes y cargos repartidos
   g.anger = clamp((g.anger || 0) + up * dt, 0, 100); if (worst) g.grief = worst;
+  // Una república con escuelas, escritura y años de paz se vuelve democracia parlamentaria (más partidos y coaliciones)
+  regimeTick(g, dt, people, adults); // oligarquía, tecnocracia, anarquía y la corona parlamentaria (regimenes.js)
+  justiceTick(g, dt, people, adults); unionTick(g, dt, people, adults); pressTick(g, dt, people, adults); // justicia.js, sindicatos.js, prensa.js
+  if (cap === g && regimeOf(g) === 'republica' && hasSchool(g) && (g.know || {}).escritura && popOf(g) >= 18 && yearT - (g.regimeT || 0) > YEAR && !atWarJ0(g) && Math.random() < dt * .0006) {
+    setRegime(g, 'democracia', null); notify(`La república de ${g.name} se convierte en una democracia parlamentaria: más partidos, y si nadie gana por mayoría, gobiernos de coalición`, { x:g.fx * T, y:g.fy * T });
+  }
   if (g.camp) campTick(g);
   if (g.protestN) for (const k in g.protestN) if (!(f[k] > 0)) delete g.protestN[k]; // ya no hay motivo: se olvida
   if (g.protest) { runProtest(g); return; }
@@ -2174,16 +2217,17 @@ function proposeLaw(g, adults){
   if (!cand.length || !adults.length) return;
   const w = cand.map(l => Math.exp(-((LAW_LEAN[l] - p.ideo) ** 2) / .2) + .02); let k = Math.random() * w.reduce((a, b) => a + b, 0), law = cand[0];
   for (let j = 0; j < cand.length; j++) if ((k -= w[j]) < 0) { law = cand[j]; break; }
-  const yes = adults.filter(u => Math.abs((u.ideo || 0) - LAW_LEAN[law]) < .5).length, pct = Math.round(yes / adults.length * 100), at = { x:g.fx * T, y:g.fy * T };
+  const yes = adults.filter(u => langVote(u, g, law) ?? Math.abs((u.ideo || 0) - LAW_LEAN[law]) < .5).length, pct = Math.round(yes / adults.length * 100), at = { x:g.fx * T, y:g.fy * T };
   if (pct >= 55) {
     const out = p.laws.length >= 4 ? p.laws[Math.floor(Math.random() * p.laws.length)] : null; if (out) p.laws = p.laws.filter(l => l !== out); p.laws.push(law);
     const txt = `En ${g.name} se aprueba la ley de «${LAW_TXT[law]}» con el ${pct} % de los votos${out ? `; se deroga la de «${LAW_TXT[out]}»` : ''}`; lawLog(g, txt); notify(txt, at);
   } else { const txt = `En ${g.name} el pueblo rechaza la ley de «${LAW_TXT[law]}» que proponía ${artP(p)} ${p.name} (solo un ${pct} % a favor)`; lawLog(g, txt); notify(txt, at); g.anger = Math.min(100, (g.anger || 0) + 3); }
 }
 function startProtest(g, adults){
-  const gi = govIdeo(g), econ = ['hambre', 'inflación', 'bancarrota', 'guerra', 'jornada', 'impuestos', 'vivienda', 'presupuestos', 'corrupción'].includes(g.grief); g.protestT = yearT;
+  const gi = govIdeo(g), econ = ['hambre', 'inflación', 'bancarrota', 'guerra', 'jornada', 'impuestos', 'vivienda', 'presupuestos', 'corrupción', 'profesores', 'medicos', 'bomberos'].includes(g.grief); g.protestT = yearT;
   let who = adults.filter(u => u !== g.leader && !u.away && !u.boat && !u.sleep && !(u.task && BUSY_POL.includes(u.task.k)) && (econ ? Math.random() < .6 : Math.abs((u.ideo || 0) - gi) > .3));
   if (g.grief === 'vivienda') who.sort((a, b) => (a.home == null ? 0 : 1) - (b.home == null ? 0 : 1)); // los que no tienen casa, delante
+  if (g.grief === 'idioma') who = adults.filter(u => u !== g.leader && !u.away && !u.boat && !u.sleep && !(u.task && BUSY_POL.includes(u.task.k)) && langProtester(u, g));
   if (who.length < 3) return;
   who = who.slice(0, 14);
   const pn = g.protestN ||= {}; pn[g.grief] = (pn[g.grief] || 0) + 1;
@@ -2241,18 +2285,24 @@ function respondProtest(g, who){
     else if (g.grief === 'inflación' && g.coin) { what = 'congelan los precios'; ecOf(g).infl *= .3; }
     else if ((g.grief === 'racismo' || g.grief === 'derechos' || g.grief === 'culto') && cap.parties && cap.ruling != null) { const law = g.grief === 'racismo' ? 'segregacion' : g.grief === 'culto' ? 'persecucion_religiosa' : 'persecucion', P = cap.parties[cap.ruling]; P.laws = P.laws.filter(l => l !== law); what = `derogan la ley de «${LAW_TXT[law]}»`; lawLog(g, `En ${g.name}, tras las protestas, se deroga la ley de «${LAW_TXT[law]}»`); }
     else if (g.grief === 'jornada' && restDaysOf(g) < 2 && !(g.restBonus > 0)) { g.restBonus = 1; what = `les dan un día libre más a la semana (ahora, ${restDaysOf(g)})`; }
+    else if (cap === g && oligarchyConcede(g)) what = 'los ricos pierden el poder y se convocan elecciones: vuelve la democracia parlamentaria';
+    else if (g.grief === 'corrupción' && regimeOf(g) === 'partitocracia' && cap === g) { setRegime(g, 'democracia', null); what = 'acaban con el reparto de cargos entre partidos: vuelve la democracia parlamentaria'; }
     else if (g.grief === 'corrupción' && g.scandal) { const L = budgetLeader(g); if (L) { const back = Math.min(L.money || 0, g.scandal.amt); L.money -= back; ecOf(g).treas += back; if (g.leader === L) g.leader = null; if (cap.leader === L) cap.leader = null; if (votes(g)) cap.voteT = -1e9; } what = `${g.scandal.who} devuelve lo que se llevó y deja el cargo`; g.scandal = null; }
     else if (g.grief === 'presupuestos' && g.budget) { g.budget.how = 'votados'; g.budget.d = Math.floor(yearT / DAY_LEN) + 1; g.noBudgetDays = 0; what = 'aprueban unos presupuestos de urgencia'; }
     else if (g.grief === 'vivienda' && cap.parties && cap.ruling != null && !hasLaw(g, 'vivienda_publica')) { const P = cap.parties[cap.ruling], law = hasLaw(g, 'tope_alquiler') || Math.random() < .5 ? 'vivienda_publica' : 'tope_alquiler'; P.laws = [...P.laws.filter(l => l !== 'mercado_vivienda'), law]; what = `aprueban la ley de «${LAW_TXT[law]}»`; lawLog(g, `En ${g.name}, tras las protestas, se aprueba la ley de «${LAW_TXT[law]}»`); }
     else if (g.grief === 'vivienda') { g.hDem = Math.max(.7, (g.hDem || 1) * .8); what = 'prometen más casas y bajan los precios de la vivienda'; }
     else if (g.grief === 'salarios' && g.coin) { g.wageUp = Math.min(2.5, (g.wageUp || 1) * 1.3); what = 'suben los sueldos un 30 %'; }
+    else if (g.grief === 'idioma') what = langConcede(g);
+    else if (['profesores', 'medicos', 'bomberos'].includes(g.grief)) what = staffConcede(g, g.grief) || 'prometen buscar a alguien';
     else if (votes(g) && cap.parties && !cap.election) { what = 'convocan elecciones anticipadas'; cap.voteT = -1e9; }
+    else if (reg === 'monarquia' && ['tiranía', 'ideas'].includes(g.grief) && cap === g && Math.random() < .4) { setRegime(g, 'monarquia_parlamentaria', null); what = `${leaderRef(g)} acepta un parlamento elegido por el pueblo: nace una monarquía parlamentaria`; }
     else if (reg === 'monarquia') { what = `${leaderRef(cap)} reparte grano y promete reformas`; g.food = Math.max(0, g.food - who.length * .3); }
     else what = 'escuchan sus quejas y prometen cambios';
     notify(`En ${g.name} el gobierno cede ante los manifestantes: ${what}`, at);
     return;
   }
   g.repressed = (g.repressed || 0) + 1; g.anger = Math.max(0, g.anger - 25);
+  politicalTrials(g, who); // en las dictaduras, algunos acaban ante el juez (justicia.js)
   if (reg === 'comunismo') { // la policía del partido detiene y confisca
     const n = Math.ceil(who.length / 2), hi = g.hall != null && world.objs[g.hall] ? g.hall : g.fy * W + g.fx, hx = (hi % W) * T + 2, hy = ((hi / W) | 0) * T + 3 + T * 2;
     who.slice(0, n).forEach((u, k) => { u.money = 0; u.task = { k:'detenido', x:hx + ((k % 5) - 2) * 4, y:hy + Math.floor(k / 5) * 4, until:yearT + 45 }; u.lastD = Infinity; u.ideo = clamp((u.ideo || 0) * .5 - .2, -1, 1); });
@@ -2295,6 +2345,8 @@ function resolveCoup(g){
   const gi = govIdeo(g), loyal = villagers.filter(u => !u.dead && u.vid === g.id && !plot.includes(u) && (yearT - u.born) / YEAR >= ADULT_H && Math.abs((u.ideo || 0) - gi) < .3);
   const str = a => a.reduce((s, u) => s + (u.weapon ? 2 : .6), 0), at = { x:g.fx * T, y:g.fy * T };
   if (plot.length < 2 || str(plot) * (.7 + Math.random() * .7) < str(loyal.filter(u => u.weapon)) + loyal.length * .15 + 1) {
+    const tried = coupTrial(g, plot); // justicia.js
+    if (tried) { g.anger = Math.max(0, g.anger - 20); notify(`${c.military ? 'El golpe de estado' : 'La revolución'} en ${g.name} fracasa: ${tried} ${c.military ? 'golpistas' : 'revolucionarios'} irán a juicio`, at); return; }
     const n = Math.ceil(plot.length / 2); plot.slice(0, n).forEach(u => killVillager(u, 'ejecución'));
     g.anger = Math.max(0, g.anger - 20); g.repressed = (g.repressed || 0) + 2;
     notify(`${c.military ? 'El golpe de estado' : 'La revolución'} en ${g.name} fracasa: ${n} ${c.military ? 'golpistas' : 'revolucionarios'} son ejecutados`, at); return;
@@ -2334,6 +2386,7 @@ const ecOf = g => g.coin ? (g.ec ||= { P:1, infl:0, treas:10, debt:0, dep:0, his
 const priceOf = g => g.coin ? Math.max(1, Math.round(ecOf(g).P)) : 1;
 const hasBank = g => g.bank != null && !!world.objs[g.bank];
 function econTick(g, people){
+  coinTick(g); // ¿pasan a una moneda mejor? (monedas.js)
   const ec = ecOf(g), pop = Math.max(1, people.length), reg = regimeOf(g), bank = hasBank(g);
   const taxR = taxRateOf(g);
   marketTick(); // la bolsa mundial, una vez al día (bolsa.js)
@@ -2358,7 +2411,7 @@ function econTick(g, people){
   const goods = g.food + (g.wood + g.stone) * .5 + ((g.trades || 0) - (ec.lastTrades || 0)) * 2; ec.lastTrades = g.trades || 0;
   const M = people.reduce((a, v) => a + (v.money || 0), 0) + ec.treas + ec.dep + 30 * ec.P;
   const pressure = (hasLaw(g, 'salario_minimo') ? .012 : 0) + printed / M * .8 + (g.food < pop * .5 ? .05 : 0) - (goods > pop * 3 ? .025 : 0) + (Math.random() - .5) * .05 - (reg === 'comunismo' ? .01 : 0) - Math.log(ec.P) * .04;
-  ec.infl = ec.infl * .5 + pressure; ec.P = Math.max(.2, ec.P * (1 + ec.infl));
+  ec.infl = ec.infl * .5 + pressure * coinInfl(g); ec.P = Math.max(.2, ec.P * (1 + ec.infl)); // el oro aguanta, los billetes se disparan (monedas.js)
   ec.hist.push(1 / ec.P); if (ec.hist.length > 40) ec.hist.shift();
   const at = { x:g.fx * T, y:g.fy * T };
   // Bancarrota: deuda impagable o precios desbocados
@@ -2377,7 +2430,7 @@ function bankrupt(g, ec, people, bank){
   notify(bank ? `¡Bancarrota en ${g.name}! El banco quiebra, la gente pierde ${lost} ${coinPl(g)} de ahorros y el ${g.coin} se hunde` : `¡Bancarrota en ${g.name}! El gobierno no puede pagar y el ${g.coin} se hunde`, { x:g.fx * T, y:g.fy * T });
   const al = allianceOf(g);
   if (ec.P > 12 && !(al && al.coin === g.coin)) { // los precios ya no tienen sentido: moneda nueva
-    const old = g.coin, k = ec.P; g.coin = coinName(); for (const v of people) v.money = Math.round((v.money || 0) / k); ec.P = 1; ec.hist = [1]; ec.infl = 0;
+    const old = g.coin, k = ec.P; newCoin(g); for (const v of people) v.money = Math.round((v.money || 0) / k); ec.P = 1; ec.hist = [1]; ec.infl = 0;
     notify(`En ${g.name} retiran el ${old} y crean una moneda nueva: el ${g.coin}`, { x:g.fx * T, y:g.fy * T });
   }
 }
@@ -2446,12 +2499,12 @@ function allianceTick(){
     const ms = al.members.map(villageById), coined = ms.filter(m => m.coin);
     // Moneda común: cuando al menos dos tienen la suya, la cambian por una de todos
     if (!al.coin && coined.length >= 2 && yearT - al.born > DAY_LEN * .4) {
-      al.coin = coinName(); const olds = coined.map(m => `al ${m.coin} de ${m.name}`), P = coined.reduce((s, m) => s + ecOf(m).P, 0) / coined.length;
-      for (const m of coined) { const k = P / ecOf(m).P; for (const v of villagers) if (!v.dead && v.vid === m.id) v.money = Math.round((v.money || 0) * k); m.coin = al.coin; ecOf(m).P = P; }
+      al.coin = coinNameFor(coined[0]); const olds = coined.map(m => `al ${m.coin} de ${m.name}`), best = coined.map(coinType).sort((a, b) => COIN_TYPES[b].rank - COIN_TYPES[a].rank)[0], P = coined.reduce((s, m) => s + ecOf(m).P, 0) / coined.length;
+      for (const m of coined) { const k = P / ecOf(m).P; for (const v of villagers) if (!v.dead && v.vid === m.id) v.money = Math.round((v.money || 0) * k); m.coin = al.coin; m.coinType = best; ecOf(m).P = P; }
       notify(`${capFirst(artA(al))} ${al.name} (${al.abbr}) adopta una moneda común, el ${al.coin}, que sustituye ${olds.join(' y ')}`, { x:ms[0].fx * T, y:ms[0].fy * T });
     }
     if (al.coin) {
-      for (const m of coined) if (m.coin !== al.coin) { m.coin = al.coin; notify(`${m.name} adopta el ${al.coin}, la moneda de ${al.abbr}`, { x:m.fx * T, y:m.fy * T }); }
+      for (const m of coined) if (m.coin !== al.coin) { m.coin = al.coin; m.coinType = coinType(ms.find(o => o.coin === al.coin && o !== m) || m); notify(`${m.name} adopta el ${al.coin}, la moneda de ${al.abbr}`, { x:m.fx * T, y:m.fy * T }); }
       const ecs = coined.map(ecOf), P = ecs.reduce((s, e) => s + e.P, 0) / ecs.length, inf = ecs.reduce((s, e) => s + e.infl, 0) / ecs.length;
       for (const e of ecs) { e.P = P; e.infl = inf; } // una misma moneda: los precios y la inflación se contagian
       // Flujo bancario: el miembro más rico invierte en el más endeudado
@@ -2479,7 +2532,7 @@ function drawMoneyFlows(now){
   moneyFlows = moneyFlows.filter(f => now - f.t0 < 6000);
 }
 // ---- Maravillas: cada régimen levanta la suya ----
-const WONDER_TXT = { socialismo:'la Casa del Pueblo, donde se reparten el trabajo y el pan', teocracia:'el Gran Templo, morada de su dios en la tierra', republica:'el Foro de la República, donde el pueblo debate sus leyes', monarquia:'el Palacio Real, para mayor gloria de la corona', dictadura:'una estatua gigante del líder, para que nadie olvide quién manda',
+const WONDER_TXT = { democracia:'el Ágora de la Democracia, donde todos los partidos debaten', partitocracia:'el Palacio de los Partidos, donde se reparten los cargos', monarquia_parlamentaria:'el Palacio de las Cortes, corona y parlamento bajo un mismo techo', oligarquia:'la Mansión de las Familias, con su cámara del tesoro', tecnocracia:'el Gran Observatorio, biblioteca de los sabios', anarquia:'el Círculo de la Asamblea, donde todo se decide entre todos', socialismo:'la Casa del Pueblo, donde se reparten el trabajo y el pan', teocracia:'el Gran Templo, morada de su dios en la tierra', republica:'el Foro de la República, donde el pueblo debate sus leyes', monarquia:'el Palacio Real, para mayor gloria de la corona', dictadura:'una estatua gigante del líder, para que nadie olvide quién manda',
   comunismo:'el Monumento al Trabajo, en honor a los trabajadores', fascismo:'el Arco del Triunfo, para celebrar la grandeza de la nación' };
 // ---- En la ficha del pueblo ----
 function govCard(g){
@@ -2495,7 +2548,7 @@ function econCard(g){
   const pts = h.map((v, k) => [(k / Math.max(1, h.length - 1) * 160).toFixed(1), (28 - (v - mn) / Math.max(1e-6, mx - mn) * 25).toFixed(1)]);
   const line = pts.map(q => q.join(',')).join(' '), area = `0,30 ${line} 160,30`;
   const fx = villages.filter(o => o !== g && o.coin && o.coin !== g.coin && popOf(o) && rels.get(relKey(g, o)) && rels.get(relKey(g, o)).known).slice(0, 4);
-  return `<div class="tiles">${tile('Moneda', esc(g.coin), al && al.coin === g.coin ? `común de ${esc(al.abbr)}` : 'propia')}
+  return `<div class="tiles">${tile('Moneda', esc(g.coin), `${coinTypeTxt(g)} · ${al && al.coin === g.coin ? `común de ${esc(al.abbr)}` : 'propia'}`)}
       ${tile('Precios', `<span style="color:${up ? '#f08a7a' : down ? '#a8d088' : 'inherit'}">${ec.infl >= 0 ? '+' : ''}${Math.round(ec.infl * 100)} %</span>`, up ? 'suben: inflación' : down ? 'bajan' : 'estables')}
       ${tile('Tesoro', Math.round(ec.treas), `deuda: ${Math.round(ec.debt)}`)}${tile('Banco', hasBank(g) ? Math.round(ec.dep) : '—', hasBank(g) ? 'en ahorros de la gente' : 'aún no tienen')}</div>
     <h4>Valor del ${esc(g.coin)}</h4><svg class="spark" viewBox="0 0 160 30" preserveAspectRatio="none"><polygon points="${area}" fill="rgba(240,200,64,.15)"/><polyline fill="none" stroke="#f0c840" stroke-width="1.2" vector-effect="non-scaling-stroke" points="${line}"/></svg>
@@ -2965,7 +3018,7 @@ function updateVillages(dt){
     diseaseTick(g, dt, people);
     if (!isNight() && g.plaza && people.length >= 8 && Math.random() < dt * .03) startBallGame(g, people); // los niños juegan cuando quieren; los mayores, en su tiempo libre
     if ((g.migT = (g.migT ?? DAY_LEN / 3) - dt) <= 0) { g.migT = DAY_LEN / 3; migrationTick(g, people); }
-    if (g.leader && g.leader.dead && nationOf(g) === g && !['tribu', 'republica'].includes(regimeOf(g))) succession(g, people);
+    if (g.leader && g.leader.dead && nationOf(g) === g && !['tribu', 'republica'].includes(regimeOf(g)) && !votes(g)) succession(g, people);
     // Líder: si no tienen (o ha muerto), eligen al adulto de más edad que no sea un anciano (hasta que haya elecciones)
     if (!g.leader || g.leader.dead || g.leader.vid !== g.id) {
       const cands = people.filter(u => { const a = (yearT - u.born) / YEAR; return a >= ADULT_H && a < u.life * .85; }).sort((a, b) => a.born - b.born);
@@ -3016,7 +3069,7 @@ function updateVillages(dt){
       kid.skin = SKIN[si2]; kid.ad = clamp((mom.ad + dad.ad) / 2 + (Math.random() - .5) * 3, -20, 20); kid.vid = g.id;
       kid.swims = (mom.swims || dad.swims) ? Math.random() < .6 : Math.random() < .1; // se aprende de los padres
       if (hasLaw(g, 'educacion') && Math.random() < .8) kid.swims = true; // y en la escuela
-      kid.parents = [mom, dad]; kid.name = nameFor(kid.sex); const pc = creedOf(mom) || creedOf(dad); if (pc) { kid.creed = { ...pc }; kid.zeal = Math.random() * .7; } /* la fe de casa */
+      kid.parents = [mom, dad]; kid.name = personName(villageById(mom.vid), kid.sex) || nameFor(kid.sex); kid.fresh = false; const pc = creedOf(mom) || creedOf(dad); if (pc) { kid.creed = { ...pc }; kid.zeal = Math.random() * .7; } /* la fe de casa */
       (mom.kids ||= []).push(kid); (dad.kids ||= []).push(kid); if (!(mom.partners ||= []).includes(dad)) mom.partners.push(dad); if (!(dad.partners ||= []).includes(mom)) dad.partners.push(mom);
       kid.ideo = clamp(((mom.ideo || 0) + (dad.ideo || 0)) / 2 + (Math.random() - .5) * .4, -1, 1);
       kid.diet = clamp(((mom.diet ?? .5) + (dad.diet ?? .5)) / 2 + (Math.random() - .5) * .1, 0, 1); kid.ate = kid.diet;
@@ -3245,7 +3298,7 @@ function updateVillagePanel(){
 }
 function villagerInfo(v){
   const age = (yearT - v.born) / YEAR, g = villageById(v.vid);
-  const job = { talar:'talando', picar:'picando piedra', bayas:'recogiendo bayas', pescar:'pescando', cazar:'cazando', sembrar:'sembrando', caña:'fabricando una caña', arma:'fabricando un arma', pozo:'construyendo un pozo', cantera:'abriendo una cantera', cantear:'sacando piedra de la cantera', molino:'construyendo un molino', plantar:'plantando un árbol', votar:'votando en la plaza', taberna:'construyendo la taberna', tazas:'tallando tazas de madera', ir_taberna:'tomando algo en la taberna', explorar:'preparando una expedición', catedral:'levantando el gran templo', escuela:'construyendo la escuela', 'enseñar':'dando clase en la escuela', clase:'en clase, en la escuela', fiesta:'de fiesta en la plaza', teatro:'construyendo el teatro', coliseo:'construyendo el coliseo', ver_teatro:'viendo una obra en el teatro', ver_coliseo:'viendo los juegos del coliseo', curar:'atendiendo a un enfermo', jugar:'jugando a la pelota', atleta:'compitiendo en los Juegos', espectador:'viendo los Juegos', emigrante:'emigrando', cuartel:'construyendo el cuartel', instruir:'instruyéndose en el cuartel', asedio:'construyendo una catapulta', lonja:'construyendo la lonja', vender:'vendiendo en el mercado', ampliar:'ampliando una casa', cementerio:'preparando el cementerio', hospital:'construyendo el hospital', curarse:'curándose en el hospital', ocio:'charlando en su tiempo libre', equipar:'forjando equipo para los soldados', minar:'sacando mineral de una veta', herreria:'construyendo la herrería', arboleda:'preparando una arboleda', bayal:'preparando un bayal', protesta:'manifestándose', golpe:'dando un golpe de estado', reprimir:'reprimiendo una protesta', detenido:'detenido', banco:'construyendo el banco', maravilla:'levantando una maravilla', asalto:'yendo a la guerra', guardia:'defendiendo su puesto', viaje:'de viaje', ritual:'yendo al ritual', ofrenda:'llevando una ofrenda', sacrificio:'llevando un animal al altar', quema:'haciendo una quema controlada', reparar:'reparando un edificio', derribar:'tirando abajo un edificio quemado', apagar:'apagando el fuego', antorcha:'poniendo una antorcha', alumbrar:'encendiendo las antorchas', comerciar:'comerciando en el mercado', encender:'encendiendo la hoguera', orar:'rezando', altar:'levantando un altar', templo:'construyendo el templo', monumento:'tallando una estatua', mercado:'montando el mercado', dormir:'yendo a dormir', torre:'construyendo una torre', muralla:'levantando la muralla', ayuntamiento:'construyendo el ayuntamiento', almacen:'construyendo un almacén', puente:'construyendo un puente', muelle:'construyendo un muelle', barca:'pescando en barca', carro:'construyendo un carro', montar:'yendo a por un caballo', campo:'marcando un campo', arar:'arando', cosechar:'cosechando', construir:'construyendo una casa', cercar:'haciendo un cercado', capturar:'trayendo un animal', pasear:'paseando', beber:'yendo a beber', comer:'comiendo', volver:'volviendo a la aldea', trabajando:'trabajando' };
+  const job = { mina:'abriendo una mina', extraer:'trabajando en la mina', tribunal:'construyendo el tribunal', carcel:'construyendo la cárcel', imprenta:'montando la imprenta', sindicato:'levantando la casa del sindicato', parlamento:'construyendo el parlamento', academia:'construyendo la academia de la lengua', tejer:'tejiendo tela', manga:'levantando la manga de viento', globo:'cosiendo un globo', cesta:'agrandando la cesta del globo', volar:'preparando el globo para volar', embarcar:'subiendo al globo', talar:'talando', picar:'picando piedra', bayas:'recogiendo bayas', pescar:'pescando', cazar:'cazando', sembrar:'sembrando', caña:'fabricando una caña', arma:'fabricando un arma', pozo:'construyendo un pozo', cantera:'abriendo una cantera', cantear:'sacando piedra de la cantera', molino:'construyendo un molino', plantar:'plantando un árbol', votar:'votando en la plaza', taberna:'construyendo la taberna', tazas:'tallando tazas de madera', ir_taberna:'tomando algo en la taberna', explorar:'preparando una expedición', catedral:'levantando el gran templo', escuela:'construyendo la escuela', 'enseñar':'dando clase en la escuela', clase:'en clase, en la escuela', fiesta:'de fiesta en la plaza', teatro:'construyendo el teatro', coliseo:'construyendo el coliseo', ver_teatro:'viendo una obra en el teatro', ver_coliseo:'viendo los juegos del coliseo', curar:'atendiendo a un enfermo', jugar:'jugando a la pelota', atleta:'compitiendo en los Juegos', espectador:'viendo los Juegos', emigrante:'emigrando', cuartel:'construyendo el cuartel', instruir:'instruyéndose en el cuartel', asedio:'construyendo una catapulta', lonja:'construyendo la lonja', vender:'vendiendo en el mercado', ampliar:'ampliando una casa', cementerio:'preparando el cementerio', hospital:'construyendo el hospital', curarse:'curándose en el hospital', ocio:'charlando en su tiempo libre', equipar:'forjando equipo para los soldados', minar:'sacando mineral de una veta', herreria:'construyendo la herrería', arboleda:'preparando una arboleda', bayal:'preparando un bayal', protesta:'manifestándose', golpe:'dando un golpe de estado', reprimir:'reprimiendo una protesta', detenido:'detenido', banco:'construyendo el banco', maravilla:'levantando una maravilla', asalto:'yendo a la guerra', guardia:'defendiendo su puesto', viaje:'de viaje', ritual:'yendo al ritual', ofrenda:'llevando una ofrenda', sacrificio:'llevando un animal al altar', quema:'haciendo una quema controlada', reparar:'reparando un edificio', derribar:'tirando abajo un edificio quemado', apagar:'apagando el fuego', antorcha:'poniendo una antorcha', alumbrar:'encendiendo las antorchas', comerciar:'comerciando en el mercado', encender:'encendiendo la hoguera', orar:'rezando', altar:'levantando un altar', templo:'construyendo el templo', monumento:'tallando una estatua', mercado:'montando el mercado', dormir:'yendo a dormir', torre:'construyendo una torre', muralla:'levantando la muralla', ayuntamiento:'construyendo el ayuntamiento', almacen:'construyendo un almacén', puente:'construyendo un puente', muelle:'construyendo un muelle', barca:'pescando en barca', carro:'construyendo un carro', montar:'yendo a por un caballo', campo:'marcando un campo', arar:'arando', cosechar:'cosechando', construir:'construyendo una casa', cercar:'haciendo un cercado', capturar:'trayendo un animal', pasear:'paseando', beber:'yendo a beber', comer:'comiendo', volver:'volviendo a la aldea', trabajando:'trabajando' };
   const beast = v.foe && !v.foe.dead ? (v.foe.sp === 'oso' ? 'un oso' : 'un lobo') : null;
   const doing = v.sleep ? 'durmiendo' : beast ? (v.weapon && age >= ADULT_H ? `luchando contra ${beast}` : `huyendo de ${beast}`) : v.task ? (v.task.k === 'trabajando' ? job[v.task.job] || 'trabajando' : job[v.task.k] || v.task.k) : 'descansando';
   return `<b>${v.name}</b> · ${v.sex === 'h' ? 'hombre' : 'mujer'}${age < ADULT_H ? ' (niño)' : v.oficio ? `, ${v.oficio}${v.sex === 'm' && /or$/.test(v.oficio) ? 'a' : ''}` : ''} · ${age.toFixed(1).replace('.', ',')} años · ${doing}${g ? ` · de ${g.name}` : ''} · ${dietName(v)}${v.mal ? ' (mal alimentado)' : ''}${v.rod ? ' · con caña' : ''}${v.weapon ? ` · con ${v.weapon}${v.shield ? ' y escudo' : ''}${v.armor ? `, ${GEAR_TXT[v.armor]}` : ''}` : ''}${v.swims === false ? ' · no sabe nadar' : ''}${v.mount ? ` · a caballo${v.cart ? ' con carro' : ''}` : ''}${v.boat ? ' · en barca' : ''}${g && g.coin && v.money ? ` · ${v.money} ${coinPl(g)}` : ''}${v.hp < .95 ? ` · herido (${Math.round(v.hp * 100)} %)` : ''} · comida ${Math.round(v.food * 100)} % · agua ${Math.round(v.water * 100)} %`;

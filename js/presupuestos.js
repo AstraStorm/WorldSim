@@ -60,10 +60,11 @@ function budgetDay(g, ec, people, L){
       notify(`En ${g.name} no salen los presupuestos (${b.support} % a favor): ${b.how === 'prorrogados' ? 'se prorrogan los de antes, con la mitad para obras' : 'el gobierno solo puede pagar la administración'}`, at); }
   } else if (!votes(g)) { b.how = 'decreto'; b.vote = false; g.noBudgetDays = 0; }
   // Escándalo: el desvío se puede descubrir (más fácil donde se vota y hay escuelas; difícil con censura)
-  if (L && (g.stolen || 0) > 5 * P && Math.random() < (votes(g) ? .2 : .06) * (hasLaw(g, 'censura') ? .4 : 1) * (hasSchool(g) ? 1.3 : 1)) {
+  if (L && (g.stolen || 0) > 5 * P && Math.random() < (votes(g) ? .2 : .06) * (hasLaw(g, 'censura') ? .4 : 1) * (hasSchool(g) ? 1.3 : 1) * pressFactor(g)) {
     const amt = Math.round(g.stolen); g.stolen = 0;
     g.scandal = { who:L.name, amt, t:yearT, d:day + 1 }; g.anger = Math.min(100, (g.anger || 0) + 25); g.scandals = (g.scandals || 0) + 1;
     notify(`¡Escándalo en ${g.name}! Se descubre que ${L.name} se ha quedado ${amt} ${coinPl(g)} del dinero público`, at);
+    if (openTrial(g, L, 'corrupción', .85)) setTimeout(() => notify(`${L.name} tendrá que responder ante el juez por corrupción`, at), 300); // justicia.js
     if (votes(g) && Math.random() < .5) { // dimite y hay elecciones
       if (g.leader === L) g.leader = null; const cap = nationOf(g); if (cap.leader === L) cap.leader = null; cap.voteT = -1e9;
       setTimeout(() => notify(`${L.name} dimite por el escándalo; ${g.name} convoca elecciones`, at), 500);
@@ -93,7 +94,7 @@ function lynchLeader(g, who, grief = g.grief){
   g.anger = Math.max(0, (g.anger || 0) - 45); g.scandal = null; g.threat = null; g.stolen = 0;
   for (const u of who) u.ideo = clamp((u.ideo || 0) * .8, -1, 1);
   notify(holy ? `¡En ${g.name} la multitud arrastra a ${L.name} hasta el altar y ${la} sacrifica a ${g.faith.god} ${why}!` : `¡En ${g.name} la multitud, furiosa, lincha a ${L.name} ${why}!`, at);
-  if (was) { setRegime(g, 'republica', null); setTimeout(() => notify(`Tras la caída de ${L.name}, ${g.name} se proclama república y habrá elecciones`, { x:g.fx * T, y:g.fy * T }), 600); }
+  if (was) { const anar = Math.random() < .3; setRegime(g, anar ? 'anarquia' : 'republica', null); if (anar) g.leader = null; setTimeout(() => notify(anar ? `Tras la caída de ${L.name}, nadie ocupa su sitio en ${g.name}: todo se decide en asambleas (anarquía)` : `Tras la caída de ${L.name}, ${g.name} se proclama república y habrá elecciones`, { x:g.fx * T, y:g.fy * T }), 600); }
   else cap.voteT = -1e9;
   return true;
 }

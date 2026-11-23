@@ -73,7 +73,7 @@ function sNoise(dst, dur, vol, freq, q, type = 'bandpass', at = 0, brown = false
 }
 // Sonidos sueltos. Los de la gente solo se oyen de cerca; los grandes (truenos, explosiones) desde lejos.
 // Sin posición suenan en el centro (avisos como el cuerno de los Juegos)
-const SND_PEOPLE = new Set(['build', 'coin', 'cough', 'cheer', 'clash', 'arrow', 'chop', 'hammer', 'pick', 'anvil', 'dig', 'splash', 'drum', 'bowl', 'chime', 'bell']);
+const SND_PEOPLE = new Set(['burner', 'build', 'coin', 'cough', 'cheer', 'clash', 'arrow', 'chop', 'hammer', 'pick', 'anvil', 'dig', 'splash', 'drum', 'bowl', 'chime', 'bell']);
 const SND_REACH = { thunder:4, boom:6, rumble:5, bell:1.6, cheer:1.3, clash:1.3, horn:3 };
 const SND_GAP = { clash:.07, arrow:.08, build:.25, coin:.3, cheer:2, bell:1.5, horn:3, thunder:.8, cough:1.2, boom:.3, rumble:2 };
 function snd(kind, x, y, k = 1){
@@ -103,6 +103,7 @@ function snd(kind, x, y, k = 1){
     case 'hammer': sTone(o, 'square', 1800 + r() * 300, 1500, .04, .03); sNoise(o, .06, .22, 900 + r() * 300, 2.5); sTone(o, 'triangle', 240, 170, .07, .08); break; // martillo y clavo
     case 'pick': sTone(o, 'triangle', 2600 + r() * 600, 2300, .12, .05); sNoise(o, .08, .25, 2200, 3); sNoise(o, .2, .08, 600, 1, 'lowpass', .03); break; // pico contra la piedra
     case 'anvil': sTone(o, 'sine', 1250, 1240, .9, .07); sTone(o, 'sine', 3100, 3080, .5, .03); sNoise(o, .04, .25, 4000, 1, 'highpass'); break; // yunque
+    case 'burner': sNoise(o, .7, .3, 380, .8, 'bandpass', 0, false, .05); sNoise(o, .6, .15, 1600, .7, 'bandpass', .02, false, .05); break; // quemador del globo
     case 'dig': sNoise(o, .25, .14, 500, .7, 'lowpass', 0, true, .05); break;                                                    // azada en la tierra
     case 'splash': sNoise(o, .35, .18, 1200, .6, 'bandpass', 0, false, .01); sTone(o, 'sine', 600, 1400, .08, .03, .05); break;
     case 'drum': sNoise(o, .3, .4 * k, 120, 1, 'lowpass', 0, true); sTone(o, 'sine', 110, 55, .35, .3 * k); break;
@@ -220,8 +221,8 @@ function choirTick(style, ch, now){
 // ---- Lo que hacen los aldeanos cerca: cada uno con su ritmo ----
 const ACT_SND = {}, ACT_EVERY = { chop:.75, hammer:.45, pick:.6, anvil:.9, dig:1.5, splash:3.5, coin:3, drum:.9 };
 for (const k of ['talar']) ACT_SND[k] = 'chop';
-for (const k of ['construir', 'ampliar', 'reparar', 'muralla', 'puente', 'muelle', 'torre', 'templo', 'catedral', 'maravilla', 'monumento', 'santuario', 'altar', 'almacen', 'molino', 'pozo', 'mercado', 'escuela', 'hospital', 'banco', 'lonja', 'cuartel', 'coliseo', 'teatro', 'taberna', 'ayuntamiento', 'cementerio', 'barca', 'carro', 'cercar', 'antorcha']) ACT_SND[k] = 'hammer';
-for (const k of ['picar', 'minar', 'cantear']) ACT_SND[k] = 'pick';
+for (const k of ['mina', 'tribunal', 'carcel', 'imprenta', 'sindicato', 'parlamento', 'academia', 'construir', 'ampliar', 'reparar', 'muralla', 'puente', 'muelle', 'torre', 'templo', 'catedral', 'maravilla', 'monumento', 'santuario', 'altar', 'almacen', 'molino', 'pozo', 'mercado', 'escuela', 'hospital', 'banco', 'lonja', 'cuartel', 'coliseo', 'teatro', 'taberna', 'ayuntamiento', 'cementerio', 'barca', 'carro', 'cercar', 'antorcha']) ACT_SND[k] = 'hammer';
+for (const k of ['picar', 'minar', 'cantear', 'extraer']) ACT_SND[k] = 'pick';
 for (const k of ['herreria', 'arma']) ACT_SND[k] = 'anvil';
 for (const k of ['arar', 'sembrar', 'cosechar', 'plantar', 'arboleda']) ACT_SND[k] = 'dig';
 for (const k of ['pescar', 'caña']) ACT_SND[k] = 'splash';
@@ -247,17 +248,20 @@ function sVox(dst, at, dur, vol, pitch, vow, o = {}){
   for (const n of stops) { n.start(t0); n.stop(t0 + dur + .05); }
   SND.busy++; osc.onended = () => SND.busy--;
 }
-// Balbuceo: sílabas inventadas con su entonación (al final sube si pregunta y baja si afirma); f0 es su voz
-function babble(o, f0, n, kind){
+// Balbuceo: sílabas con los sonidos de su lengua (P: sus vocales, consonantes, ritmo y entonación); al final
+// sube si pregunta y baja si afirma; f0 es su voz
+const PHON_DEF = { vow:'aeiou', cf:[2500, 4000], cp:.6, syl:.09, pitch:1, tone:.15, coda:false };
+function babble(o, f0, n, kind, P = PHON_DEF){
   const r = Math.random, ask = r() < .3, shout = kind === 'grito', laugh = kind === 'risa';
   let t = 0;
   for (let k = 0; k < n; k++) {
-    const last = k === n - 1, dur = laugh ? .1 : shout ? .16 + r() * .12 : .06 + r() * .09;
-    const p = f0 * (laugh ? 1.25 - k * .06 : shout ? 1.3 + r() * .2 : .88 + r() * .3) * (last ? (ask ? 1.25 : .85) : 1);
-    const vw = laugh ? 'a' : 'aeiou'[Math.floor(r() * 5)];
-    if (laugh) sNoise(o, .04, .03, 1500, 1, 'bandpass', t);                                  // la jota de «ja»
-    else if (r() < .6) sNoise(o, .03, shout ? .05 : .025, 2500 + r() * 3000, 1.5, 'bandpass', t); // consonante
-    sVox(o, t + .015, dur, shout ? .1 : .07, [[0, p], [dur, p * (last ? (ask ? 1.15 : .88) : .97 + r() * .08)]], [[0, vw]], { q:6, atk:.012, rel:.03 });
+    const last = k === n - 1, dur = laugh ? .1 : shout ? .16 + r() * .12 : P.syl * (.75 + r() * .7);
+    const p = f0 * (laugh ? 1.25 - k * .06 : shout ? 1.3 + r() * .2 : P.pitch * (1 + (r() - .5) * 2 * P.tone)) * (last ? (ask ? 1.25 : .85) : 1);
+    const vw = laugh ? 'a' : P.vow[Math.floor(r() * P.vow.length)];
+    if (laugh) sNoise(o, .04, .05, 1500, 1, 'bandpass', t);                                                       // la jota de «ja»
+    else if (r() < P.cp) sNoise(o, .03, shout ? .08 : .045, P.cf[Math.floor(r() * P.cf.length)] * (.9 + r() * .2), 1.5, 'bandpass', t); // consonante
+    sVox(o, t + .015, dur, shout ? .14 : .11, [[0, p], [dur, p * (last ? (ask ? 1.15 : .88) : .97 + r() * .08)]], [[0, vw]], { q:6, atk:.012, rel:.03 });
+    if (P.coda && !laugh && r() < .3) sVox(o, t + .015 + dur, .05, .05, [[0, p * .9]], [[0, 'u']], { q:3, body:350, bodyV:.8 }); // final nasal (n, m)
     t += dur + .015 + (laugh ? .04 : r() < .2 ? .12 : .02);
   }
 }
@@ -273,7 +277,12 @@ function sndVoices(now){
     const h = heard(v.x, v.y); if (h.g * e.near < .05) continue;
     const kid = ageOf(v) < ADULT_H, f0 = (kid ? 290 : v.sex === 'm' ? 200 : 120) * (.9 + ((v.id || 0) % 7) * .03); // cada uno con su voz
     const kind = k === 'protesta' ? 'grito' : (k === 'fiesta' || k === 'ir_taberna' || k === 'ver_teatro') && Math.random() < .35 ? 'risa' : 'charla';
-    babble(sndOut(SND.sfx, h.g * e.near, h.pan), f0, kind === 'risa' ? 4 + Math.floor(Math.random() * 3) : 2 + Math.floor(Math.random() * 6), kind);
+    // En qué lengua: con alguien cerca, la que compartan (la común, si es la única); si no se entienden, cada uno la suya
+    let lang = nativeOf(v), mate = null, md = 18;
+    for (const u of villagers) if (u !== v && !u.dead && !u.away && !u.sleep) { const d = Math.abs(u.x - v.x) + Math.abs(u.y - v.y); if (d < md) { md = d; mate = u; } }
+    if (mate) { const sh = sharedLang(v, mate); if (sh != null) lang = sh; else if (Math.random() < .4) floats.push({ x:v.x, y:v.y - 14, txt:'¿?', col:'#f0e0a0', life:0 }); }
+    const L = langList()[lang];
+    babble(sndOut(SND.sfx, h.g * e.near * 1.6, h.pan), f0, kind === 'risa' ? 4 + Math.floor(Math.random() * 3) : 2 + Math.floor(Math.random() * 6), kind, L ? L.phon : PHON_DEF);
   }
 }
 // ---- Animales: cada especie con su voz y su ritmo; los lobos aúllan de noche ----
@@ -310,7 +319,7 @@ function sndAnimals(now){
     if (nx == null || now < nx) continue;
     const h = heard(a.x, a.y, a.sp === 'lobo' ? 2.2 : a.sp === 'vaca' || a.sp === 'perro' ? 1.4 : 1), g = h.g * (a.sp === 'lobo' ? Math.max(e.near, .5) : e.near);
     if (g < .04 || now - (SND.last['a:' + a.sp] || -9) < .35) continue; SND.last['a:' + a.sp] = now;
-    animalCall(a.sp, sndOut(SND.amb, g, h.pan), a);
+    animalCall(a.sp, sndOut(SND.amb, g * 1.8, h.pan), a);
   }
 }
 function sndPeople(now){

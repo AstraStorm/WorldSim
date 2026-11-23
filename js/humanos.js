@@ -63,7 +63,7 @@ function makeVillage(tx, ty){
     fi = y * W + x; break;
   }
   if (fi < 0) return null;
-  const g = { faith:null, id:++vidSeq, name:villageName(), fx:fi % W, fy:(fi / W) | 0, food:14, meat:4, wood:10, stone:0, houses:[], wells:[], mill:null, know:{}, cut:0, planted:0, pen:null, learn:{}, born:yearT };
+  const g = { faith:null, id:++vidSeq, name:villageName(), freshName:true, fx:fi % W, fy:(fi / W) | 0, food:14, meat:4, wood:10, stone:0, houses:[], wells:[], mill:null, know:{}, cut:0, planted:0, pen:null, learn:{}, born:yearT };
   world.objs[fi] = { key:'fire:camp', v:0, ox:0, oy:0, vid:g.id };
   makePlaza(g);
   const st = planSite(g, 'almacen');
@@ -264,7 +264,7 @@ function chooseJob(v, g){
   const pop = popOf(g), houses = housesOf(g).length, farms = [...farmMap.values()].filter(f => f.vid === g.id);
   const si = seasonInfo().i, J = [];
   const mine = OFICIOS[v.oficio] || [];
-  const add = (k, w) => { if (w > 0 && !((g.jobFail || {})[k] > yearT) && worksOk(g, k)) J.push([k, w * (mine.includes(k) ? 3 : 1)]); }; // lo de su oficio, mucho más a menudo
+  const add = (k, w) => { if (w > 0 && !((g.jobFail || {})[k] > yearT) && worksOk(g, k) && !onStrike(v, g, k)) J.push([k, w * (mine.includes(k) ? 3 : 1)]); }; // lo de su oficio, mucho más a menudo
   // Construir: uno por cada 6 de madera disponibles; el cercado lo hace una sola persona
   // Mientras falten casas, la madera es para ellas: lo demás solo se hace con la que sobre
   // Cuando las casas ya tienen dueño, cuántas se hacen depende de la política de vivienda del gobierno
@@ -296,7 +296,7 @@ function chooseJob(v, g){
   add('vender', g.market != null && world.objs[g.market] && busyWith(g, 'vender') < 3 ? (v.oficio === 'mercader' ? 3 : .3) : 0);
   add('taberna', !hasTavern(g) && houses >= 3 && pop >= 10 && g.wood >= 12 && g.stone >= 4 && !busyWith(g, 'taberna') ? 3.5 : 0);
   // El gran templo: con templo ya hecho, mucha fe y mucha piedra (más si es teocracia)
-  add('escuela', hasLaw(g, 'educacion') && !hasSchool(g) && g.hall != null && pop >= 10 && g.wood >= 12 && g.stone >= 6 && !busyWith(g, 'escuela') ? 5 : 0);
+  add('escuela', hasLaw(g, 'educacion') && !hasSchool(g) && (g.know || {}).escritura && g.hall != null && pop >= 10 && g.wood >= 12 && g.stone >= 6 && !busyWith(g, 'escuela') ? 5 : 0);
   add('enseñar', hasSchool(g) && v.oficio === 'maestro' && !isFreeDay(g) && villagers.some(u => !u.dead && u.vid === g.id && u.task && u.task.k === 'clase') ? 6 : 0);
   add('catedral', g.faith && g.temple != null && world.objs[g.temple] && !hasCathedral(g) && pop >= 20 && g.stone >= 30 && g.wood >= 15 && (g.devotion || 0) >= 3 && !busyWith(g, 'catedral') ? (2 + Math.min(4, (g.devotion || 0) * .2)) * (regimeOf(g) === 'teocracia' ? 2 : 1) : 0);
   add('explorar', hasPaper(g) && pop >= 8 && !(g.noExplore > yearT) && !travelers.some(t => t.kind === 'expedicion' && t.from === g.id) && !busyWith(g, 'explorar') ? (v.oficio === 'cartógrafo' ? 4 : 1) * ((g.expeditions || 0) < 3 ? 2 : 1) : 0);
@@ -330,6 +330,9 @@ function chooseJob(v, g){
   add('cantear', quarry && busyWith(g, 'cantear') < 4 ? (wantStone || g.stone < 30 ? 3.5 : .5) : 0);
   add('puente', know.puente && houses >= 2 && spare >= 8 && bridges.filter(b => b.vid === g.id && !b.pier).length < 1 + Math.floor(pop / 6) && !busyWith(g, 'puente') ? (g.crossings && [...g.crossings.values()].some(n => n >= 4) ? 7 : 3.5) : 0);
   add('muelle', know.barca && houses >= 3 && !g.port && spare >= 8 && !busyWith(g, 'muelle') ? 3.5 : 0);
+  balloonJobs(v, g, add); // tela, manga de viento, globo, cesta y vuelos (globos.js)
+  institutionJobs(v, g, add); // tribunal, cárcel, imprenta, sindicato, parlamento y academia (instituciones.js)
+  mineJobs(v, g, add); // abrir la mina y trabajar en ella (minas.js)
   add('carro', know.montar && houses >= 3 && (g.carts || 0) < 1 + Math.floor(pop / 10) && spare >= 10 && !busyWith(g, 'carro') ? 2.5 : 0);
   add('ayuntamiento', g.hall == null && pop >= 8 && houses >= 2 && ((g.wood >= 10 && g.stone >= 6) || g.wood >= 18) && !busyWith(g, 'ayuntamiento') ? 12 : 0);
   add('almacen', Math.max(g.food, g.wood, g.stone) > capOf(g) * .8 && g.wood >= 8 && !busyWith(g, 'almacen') ? 8 : 0);
@@ -383,6 +386,9 @@ function chooseJob(v, g){
 function setupTask(v, g, job){
   const [fx, fy] = fireXY(g);
   switch (job) {
+    case 'tejer': case 'manga': case 'globo': case 'cesta': case 'volar': return balloonTarget(v, g, job);
+    case 'tribunal': case 'carcel': case 'imprenta': case 'sindicato': case 'parlamento': case 'academia': return institutionTarget(v, g, job);
+    case 'mina': case 'extraer': return mineTarget(v, g, job);
     case 'talar': {
       const i = objNear(g, (g.treesNear ?? 99) < 12 ? 60 : 30, o => OBJ[o.key][1] === 'tree' && o.st !== 'b' && o.st !== 'j', v); const p = i != null && standBy(i); // sin árboles cerca, van más lejos
       return p ? { k:job, i, x:p[0], y:p[1] } : null;
@@ -680,6 +686,10 @@ function runTask(v, g, dt){
   if (!vGo(v, t.x, t.y, dt)) return;
   // Ha llegado
   switch (t.k) {
+    case 'tejer': case 'manga': case 'globo': case 'cesta': case 'volar': balloonArrive(v, g, t); break;
+    case 'embarcar': balloonArrive(v, g, t); return;
+    case 'tribunal': case 'carcel': case 'imprenta': case 'sindicato': case 'parlamento': case 'academia': institutionArrive(v, g, t); break;
+    case 'mina': case 'extraer': mineArrive(v, g, t); break;
     case 'dormir': dismount(v); v.sleep = true; v.home = t.h ?? null; v.task = null; return;
     case 'beber': v.actT = 2; v.onDone = () => { v.water = 1; v.hot = Math.max(0, (v.hot || 0) - .6);
       if (t.cup) { g.cups = Math.max(0, (g.cups || 0) - 1); const pr = Math.min(v.money || 0, 1); if (pr > 0) { v.money -= pr; ecOf(g).treas += pr * .5; } floats.push({ x:v.x, y:v.y - 12, txt:'taza de agua', col:'#9cc8f0', life:0 }); }
@@ -790,8 +800,8 @@ function runTask(v, g, dt){
       notify(`En ${g.name} abren un banco: ya se puede ahorrar y pedir préstamos en ${coinPl(g)}`, { x:x * T, y:y * T });
     }; break;
     case 'maravilla': v.actT = 20; v.onDone = () => {
-      const x = t.i % W, y = (t.i / W) | 0, reg = regimeOf(g);
-      if ((g.wonder != null && world.objs[g.wonder]) || g.wood < 15 || g.stone < 30 || !WONDER_ROWS[reg]) return;
+      const x = t.i % W, y = (t.i / W) | 0, reg = WONDER_OF[regimeOf(g)] || regimeOf(g);
+      if ((g.wonder != null && world.objs[g.wonder]) || g.wood < 15 || g.stone < 30 || !(WONDER_ROWS[reg] || ART_MAP['wonder:' + reg])) return;
       if (clearable(x - 6, y - 10, x + 6, y + 1)) clearSite(g, x - 6, y - 10, x + 6, y + 1);
       if (!tileFree(x, y) || buildingClash(x, y, 'maravilla', t.i)) return;
       world.objs[t.i] = { key:'wonder:' + reg, v:0, ox:0, oy:0, vid:g.id }; g.wonder = t.i; g.wood -= 15; g.stone -= 30;
@@ -818,7 +828,7 @@ function runTask(v, g, dt){
         if (WATER[world.biome[i]] || bridgeSet.has(i) || farmMap.has(i) || plazaSet.has(i)) continue;
         if (pathMap.has(i)) { gateSet.add(i); gateOwner.set(i, g.id); continue; }
         if (o && !['tree', 'berry'].includes(OBJ[o.key][1])) continue;
-        if (underBuilding(g, i % W, (i / W) | 0) || plotIn(i % W, (i / W) | 0, i % W, (i / W) | 0)) continue; // ni a través de un edificio ni de una parcela
+        if (underBuilding(g, i % W, (i / W) | 0) || plotIn(i % W, (i / W) | 0, i % W, (i / W) | 0) || villages.some(o => inPen(o, i % W, (i / W) | 0, 1))) continue; // ni a través de un edificio, una parcela o un cercado
         if (o) { if (OBJ[o.key][1] === 'tree') fallObj(i); world.objs[i] = null; composeRegion((i % W) - 7, ((i / W) | 0) - 11, (i % W) + 7, ((i / W) | 0) + 12); }
         if (villagers.some(u => !u.dead && Math.floor(u.x / T) === i % W && Math.floor(u.y / T) === ((i / W) | 0))) { k--; break; } // alguien encima: luego
         wallSet.add(i); built++;
@@ -852,7 +862,7 @@ function runTask(v, g, dt){
       g.trades = (g.trades || 0) + 1;
       if (g.coin) { const n = (1 + Math.floor(Math.random() * 3)) * priceOf(g); v.money = (v.money || 0) + n; floats.push({ x:v.x, y:v.y - 12, txt:`+${n} ${coinPl(g)}`, col:'#f0d060', life:0 }); }
       else { const a = BARTER[Math.floor(Math.random() * BARTER.length)], b = BARTER.filter(o => o !== a)[Math.floor(Math.random() * (BARTER.length - 1))]; floats.push({ x:v.x, y:v.y - 12, txt:`${a} ⇄ ${b}`, col:'#e8dcc0', life:0 }); }
-      if (!g.coin && g.trades >= 4) { g.coin = coinName(); notify(`En ${g.name} dejan el trueque e inventan su propia moneda: el ${g.coin}`, { x:g.fx * T, y:g.fy * T }); }
+      if (!g.coin && g.trades >= 4) { newCoin(g); notify(`En ${g.name} dejan el trueque e inventan su propia moneda: el ${g.coin}, de ${coinTypeTxt(g)}`, { x:g.fx * T, y:g.fy * T }); }
     }; break;
     case 'antorcha': v.actT = 3; v.onDone = () => { if (g.wood >= 1 && tileFree(t.ti % W, (t.ti / W) | 0) && !torchesOf(g).some(tc => tc.i === t.ti)) { g.wood -= 1; torchesOf(g).push({ i:t.ti, lit:isNight() || dayT() > .42 }); } }; break;
     case 'alumbrar': v.actT = 1; v.onDone = () => {
@@ -897,7 +907,7 @@ function runTask(v, g, dt){
       world.objs[t.i] = { key:'quarry:cantera', v:0, ox:0, oy:0, vid:g.id, flat:!!t.flat }; g.quarry = t.i; g.wood -= 6;
       composeRegion(x - 7, y - 11, x + 7, y + 12); addEffect(x * T + 2, y * T + 3, 'poof'); connect(g, x, y);
     }; break;
-    case 'cantear': v.actT = 4; v.onDone = () => { const o = world.objs[t.i]; if (o && o.key === 'quarry:cantera') { v.carry = { k:'piedra', n:o.flat ? 4 : 6 }; g.mined = (g.mined || 0) + 1; } }; break;
+    case 'cantear': v.actT = 4; v.onDone = () => { const o = world.objs[t.i]; if (o && o.key === 'quarry:cantera') { v.carry = { k:'piedra', n:o.flat ? 4 : 6 }; g.mined = (g.mined || 0) + 1; quarryBonus(v, g); } }; break; // (a veces sale algo de mineral: minas.js)
     case 'pozo': case 'molino': v.actT = t.k === 'pozo' ? 8 : 10; v.onDone = () => {
       const x = t.i % W, y = (t.i / W) | 0, well = t.k === 'pozo';
       if (well ? clearable(x - 2, y - 4, x + 2, y + 1) : clearable(x - 4, y - 8, x + 4, y + 1)) well ? clearSite(g, x - 2, y - 4, x + 2, y + 1) : clearSite(g, x - 4, y - 8, x + 4, y + 1);
@@ -950,6 +960,7 @@ function runTask(v, g, dt){
       if (Math.random() < .3) floats.push({ x:v.x, y:v.y - 12, txt:['a, b, c…', '2 + 2 = 4', 'el río va al mar', '¡atención!'][Math.floor(Math.random() * 4)], col:'#c8e0f0', life:0 });
     }; break;
     case 'clase': v.actT = 10 + Math.random() * 5; v.dir = 1; v.onDone = () => { // en clase: algo se aprende aunque no esté el maestro
+      schoolLangs(v, g); // y lenguas (idiomas.js)
       v.edu = Math.min(1, (v.edu || 0) + .015); if (hasLaw(g, 'educacion') && !v.swims && Math.random() < .2) v.swims = true;
       if (!v.rod && Math.random() < .03) v.rodSkill = true;
     }; break;
@@ -1032,7 +1043,7 @@ function runTask(v, g, dt){
       if (key && !world.objs[t.i] && placeObject(t.i, key, Math.random, yearT, .5)) { g.planted = (g.planted || 0) + 1; const x = t.i % W, y = (t.i / W) | 0; composeRegion(x - 7, y - 11, x + 7, y + 12); }
     }; break;
     case 'cercar': v.actT = 6; v.onDone = () => { const q = t.pen; let free = true;
-      for (let y = q.y0 - 1; free && y <= q.y1 + 1; y++) for (let x = q.x0 - 1; free && x <= q.x1 + 1; x++) if (underBuilding(g, x, y) || plazaSet.has(y * W + x) || holySet.has(y * W + x) || (world.objs[y * W + x] && y >= q.y0 && y <= q.y1 && x >= q.x0 && x <= q.x1 && !['tree', 'berry'].includes(OBJ[world.objs[y * W + x].key][1]))) free = false;
+      for (let y = q.y0 - 1; free && y <= q.y1 + 1; y++) for (let x = q.x0 - 1; free && x <= q.x1 + 1; x++) if (underBuilding(g, x, y) || plazaSet.has(y * W + x) || holySet.has(y * W + x) || wallSet.has(y * W + x) || (world.objs[y * W + x] && y >= q.y0 && y <= q.y1 && x >= q.x0 && x <= q.x1 && !['tree', 'berry'].includes(OBJ[world.objs[y * W + x].key][1]))) free = false;
       if (free && pensOf(g).length < penLimit(g) && !penOverlap(g, q.x0, q.y0, q.x1, q.y1) && g.wood >= 8) { clearSite(g, q.x0, q.y0, q.x1, q.y1); g.pens.push(t.pen); g.pen = g.pens[0]; g.wood -= 8; connect(g, t.pen.x0 + 3, t.pen.y1);
         if (g.pens.length === 2 && !g.pen2Msg) { g.pen2Msg = true; notify(`${g.name} ya tiene tantos animales que hace un segundo cercado`, { x:(q.x0 + 4) * T, y:(q.y0 + 3) * T }); } } }; break;
     case 'capturar': { const a = t.a; if (a && !a.dead) { a.lead = null; a.x = t.x; a.y = t.y; } v.task = null; return; }
@@ -1053,7 +1064,7 @@ function plotSlot(g, key){
 }
 // ¿Pisa la parcela de una arboleda o de un bayal (de cualquier pueblo)?
 const holyNear = (x0, y0, x1, y1) => villages.some(o => o.holy && !(x1 < o.holy.x0 - 1 || x0 > o.holy.x1 + 1 || y1 < o.holy.y0 - 1 || y0 > o.holy.y1 + 1) || o.marketRect && !(x1 < o.marketRect.x0 - 1 || x0 > o.marketRect.x1 + 1 || y1 < o.marketRect.y0 - 1 || y0 > o.marketRect.y1 + 1));
-const plotIn = (x0, y0, x1, y1) => villages.some(o => [o.grove, o.berryPlot, o.cemetery, o.track].some(q => q && !(x1 < q.x0 || x0 > q.x0 + q.w - 1 || y1 < q.y0 || y0 > q.y0 + q.h - 1)));
+const plotIn = (x0, y0, x1, y1) => villages.some(o => [o.grove, o.berryPlot, o.cemetery, o.track, o.aero].some(q => q && !(x1 < q.x0 || x0 > q.x0 + q.w - 1 || y1 < q.y0 || y0 > q.y0 + q.h - 1)));
 // ---- Asedio: catapultas que acompañan al ejército y derriban murallas y edificios ----
 let sieges = [], stones = [];
 const hasBarracks = g => g && g.barracks != null && !!world.objs[g.barracks];

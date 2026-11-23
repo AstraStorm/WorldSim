@@ -36,7 +36,7 @@ function chartTick(g, dt, people){
   const kn = g.know || {};
   if (!kn.papel) {
     // El papel llega con el ayuntamiento y algo de madera de sobra (antes si comercian con quien ya lo tiene)
-    if (g.hall != null && people.length >= 10 && g.wood >= 15 && Math.random() < dt * .004) learnPaper(g);
+    if (kn.escritura && g.hall != null && people.length >= 10 && g.wood >= 15 && Math.random() < dt * .004) learnPaper(g);
     return;
   }
   if ((g.chartT = (g.chartT || 0) - dt) > 0) return;
@@ -94,6 +94,7 @@ function endExpedition(t, g){
 }
 // Al comerciar o en las visitas: se copian los mapas (la copia, algo peor que el original)
 function shareCharts(a, b){
+  spreadWriting(a, b); // la escritura también se aprende al tratar con otros
   if (!hasPaper(a) && hasPaper(b) && Math.random() < .35) learnPaper(a, `Los de ${a.name} aprenden de ${b.name} a hacer papel y mapas`);
   if (!hasPaper(b) && hasPaper(a) && Math.random() < .35) learnPaper(b, `Los de ${b.name} aprenden de ${a.name} a hacer papel y mapas`);
   if (!hasPaper(a) || !hasPaper(b)) return;

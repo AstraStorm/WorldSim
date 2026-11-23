@@ -50,12 +50,13 @@ function draw(t){
   drawZones();
   drawPaths();
   drawBridges();
-  drawFarms(); drawCemeteries(); drawTracks();
+  drawFarms(); drawCemeteries(); drawTracks(); drawAeros();
   drawPens();
   drawWalls();
   drawCracks();
   vctx.drawImage(worldCv, 0, 0);
   drawArtFlames(t);
+  drawInstFlags(t); // la bandera en los edificios del gobierno (instituciones.js)
   drawCamps(t);
   drawFires(t, true);
   drawVillageFx(t);
@@ -66,6 +67,7 @@ function draw(t){
   drawMillSails();
   drawAnimals();
   drawSmoke();
+  drawBalloons(t); // por encima de árboles y animales: el globo va por el aire
   drawVapor(Math.min(.1, (t - (drawVapor.last || t)) / 1000)); drawVapor.last = t;
   drawSandstorms(t);
   // Volcanes: resplandor del cráter, humo según lo activos que estén y bombas de lava en erupción

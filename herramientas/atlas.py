@@ -1,6 +1,6 @@
 # Recorta las hojas de ChatGPT, quita el magenta, reduce cada dibujo al tamaño del juego y lo junta todo en un atlas
 # Salida: WorldSim/arte/atlas.png y WorldSim/js/arte_mapa.js (posición de cada sprite, ancla y llamas)
-import json, numpy as np
+import json, os, numpy as np
 from PIL import Image
 from scipy import ndimage
 SRC = r'C:\Users\axelc\OneDrive\Escritorio\Forja de Mundos - Prompts de arte\devueltos'
@@ -158,6 +158,37 @@ add('gate:madera', shrink(cut(HP, [(220, 690)]), 14, 14)); add('gate:madera_abie
 add('tumba:lapida', shrink(cut(H7B, [(177, 784)]), 6, 12)); add('tumba:flores', shrink(cut(H7B, [(477, 784)]), 8, 12)); add('tumba:estela', shrink(cut(H7B, [(777, 772)]), 6, 12))
 add('tex:valla_h', tex(H7B, (984, 752, 1094, 802), 10, 5)); add('tex:valla_v', tex(H7B, (1142, 718, 1176, 834), 3, 10))
 add('antorcha:encendida', shrink(cut(H7B, [(774, 1066)]), 4, 10)); add('antorcha:apagada', shrink(cut(H7B, [(1077, 1066)]), 4, 10))
+
+# ---- Globos: globo, cesta, plataforma, palo de la manga, la manga según la fuerza del viento (de recta a colgando) y rachas de viento ----
+HG = 'globos_pista_controladorViento.png'
+add('balloon:globo', shrink(cut(HG, [(265, 245)]), 28, 20)); add('balloon:cesta', shrink(cut(HG, [(660, 330)]), 13, 16))
+add('aero:pista', shrink(cut(HG, [(205, 660)]), 45, 20)); add('aero:palo', shrink(cut(HG, [(505, 640)]), 12, 12), ax=2)
+K = 12 / 172  # la misma escala que el palo, para que la manga encaje en su brazo
+for k, (x, y) in enumerate([(705, 643), (900, 625), (1080, 655), (1252, 677), (1425, 678)]):
+    p = find(HG, x, y); add(f'sock:{k}', shrink(cut(HG, [(x, y)]), max(4, round((p['x1'] - p['x0']) * K)), 12), ax=0)
+def box_cut(name, box):  # todas las piezas que caen dentro de la caja (las rachas de viento vienen a trozos)
+    _, _, parts = sheet(name); x0, y0, x1, y1 = box
+    ps = [((p['x0'] + p['x1']) // 2, (p['y0'] + p['y1']) // 2) for p in parts if x0 <= (p['x0'] + p['x1']) / 2 < x1 and y0 <= (p['y0'] + p['y1']) / 2 < y1]
+    return cut(name, ps, box)
+for k, bx in enumerate([(90, 865, 225, 940), (325, 855, 535, 935), (620, 835, 835, 955), (915, 830, 1130, 960), (1225, 830, 1450, 970)]):
+    add(f'wind:{k}', shrink(box_cut(HG, bx), max(6, round((bx[2] - bx[0]) * .07)), 6))
+
+# ---- Instituciones: tribunal, cárcel, imprenta, casa del sindicato, parlamento y academia de la lengua ----
+HI = 'instituciones.png'
+for key, pt, w in [('court:tribunal', (260, 290), 40), ('jail:carcel', (770, 300), 34), ('press:imprenta', (1260, 300), 38),
+                   ('union:sindicato', (260, 820), 38), ('parliament:parlamento', (770, 830), 54), ('academy:academia', (1270, 820), 40)]:
+    add(key, shrink(cut(HI, [pt]), w))
+
+# ---- Maravillas de los regímenes nuevos (hoja 9B) ----
+H9B = '9B.png'
+for key, pt, w in [('wonder:democracia', (260, 330), 54), ('wonder:partitocracia', (770, 300), 54), ('wonder:monarquia_parlamentaria', (1280, 300), 62),
+                   ('wonder:oligarquia', (260, 800), 54), ('wonder:tecnocracia', (770, 800), 48), ('wonder:anarquia', (1280, 820), 46)]:
+    add(key, shrink(cut(H9B, [pt]), w))
+# ---- Mina (hoja «mina.png», o cualquiera de «devueltos» con «mina» en el nombre): todas sus piezas juntas ----
+import glob
+for f in glob.glob(os.path.join(SRC, '*mina*.png')):
+    name = os.path.basename(f); _, _, parts = sheet(name)
+    add('mine:mina', shrink(cut(name, [((p['x0'] + p['x1']) // 2, (p['y0'] + p['y1']) // 2) for p in parts if p['area'] > 300]), 52, 64)); break
 
 # ---- Atlas: en filas, con 1 píxel de separación ----
 keys = list(S); W = 512; x = y = rowh = 0; pos = {}

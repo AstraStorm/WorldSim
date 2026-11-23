@@ -25,6 +25,23 @@ function oficioOk(g, o){
   return !((o === 'cartógrafo' && !hasPaper(g)) || (o === 'soldado' && !hasBarracks(g)) || (o === 'ingeniero' && !hasBarracks(g) && !hasForge(g)) || (o === 'mercader' && g.market == null)
     || (o === 'bombero' && !(g.know || {}).bomberos) || (o === 'maestro' && !hasSchool(g)) || (o === 'curandero' && !hasHosp(g) && popOf(g) < 15));
 }
+// Falta de maestros, médicos (curanderos) o bomberos: si hay para qué y son pocos, la gente se queja
+function staffGrief(g, adults, people){
+  const cnt = o => adults.filter(v => v.oficio === o).length, out = {};
+  if (hasSchool(g)) { const kids = people.filter(v => ageOf(v) < ADULT_H).length, t = cnt('maestro'), per = kids / Math.max(.5, t); if (kids >= 4 && per > 8) out.profesores = Math.min(.6, .12 + per * .015); }
+  const sick = people.filter(v => v.sick).length, c = cnt('curandero'); if (sick >= 2 && sick > c * 3) out.medicos = Math.min(.7, .15 + (sick - c * 3) * .06);
+  if (fireNear(g) != null) g.fireSeenT = yearT;
+  if ((g.know || {}).bomberos && yearT - (g.fireSeenT ?? -1e9) < DAY_LEN * 2) { const b = cnt('bombero'); if (b < Math.max(1, Math.floor(adults.length / 15))) out.bomberos = b ? .2 : .4; }
+  return out;
+}
+// Ceder a la protesta: dos más con ese oficio (los que más estudiaron), y durante un tiempo no se les cambia
+function staffConcede(g, grief){
+  const o = { profesores:'maestro', medicos:'curandero', bomberos:'bombero' }[grief]; if (!o) return null;
+  const who = villagers.filter(v => !v.dead && v.vid === g.id && ageOf(v) >= ADULT_H && v !== g.leader && !v.away && !['soldado', 'maestro', 'curandero', 'bombero'].includes(v.oficio)).sort((a, b) => (b.edu || 0) - (a.edu || 0)).slice(0, 2);
+  for (const v of who) v.oficio = o;
+  (g.staffKeep ||= {})[o] = yearT + DAY_LEN * 6;
+  return who.length ? `${who.length === 1 ? 'ponen a una persona más' : 'ponen a dos personas más'} de ${o === 'maestro' ? 'maestro' : o === 'curandero' ? 'médico' : 'bombero'}` : null;
+}
 function workTick(g, dt, people){
   if ((g.workT = (g.workT || 0) - dt) > 0) return;
   g.workT = DAY_LEN / 3;
@@ -35,7 +52,7 @@ function workTick(g, dt, people){
   const missing = ['maestro', 'bombero', 'curandero', 'cartógrafo', 'mercader'].find(o => ok.includes(o) && cnt(o) === 0); if (missing) need = missing; // uno al menos, si hay para qué
   for (const o of new Set(adults.map(v => v.oficio))) { const d = cnt(o) - (ok.includes(o) ? OFICIO_MIX[o] * n : 0); if (d > ov) { ov = d; over = o; } }
   if (need && (!over || over === need)) { const common = [...new Set(adults.map(v => v.oficio))].filter(o => o !== need && o !== 'soldado').sort((a, b) => cnt(b) - cnt(a))[0]; if (common && cnt(common) >= 2) over = common; } // el que más abunda cede a alguien
-  if (!need || !over || need === over) return;
+  if (!need || !over || need === over || ((g.staffKeep || {})[over] || 0) > yearT) return; // los que se prometieron tras una protesta, se quedan
   const cands = adults.filter(v => v.oficio === over && !(v.task && ['asalto', 'guardia'].includes(v.task.k)));
   const who = cands.sort((a, b) => ((['cartógrafo', 'maestro', 'curandero', 'ingeniero'].includes(need) ? (b.edu || 0) - (a.edu || 0) : 0)))[0]; if (!who) return; // los que fueron a la escuela, a los oficios de saber
   const first = cnt(need) === 0; who.oficio = need;
