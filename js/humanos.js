@@ -262,6 +262,7 @@ const farmable = (g, x, y, i) => (tileFree(x, y) || (fieldObjOk(i) && !WATER[wor
 const busyWith = (g, job) => villagers.filter(o => !o.dead && o.vid === g.id && o.task && (o.task.k === job || o.task.job === job)).length;
 function chooseJob(v, g){
   if (retired(v, g)) return Math.random() < .6 ? 'ocio' : 'pasear'; // jubilados (cultura.js)
+  if (v.chill > .3 && !warmthAt(v, g)) return 'refugio'; // tiene frío: a calentarse
   if (wantsShelter(v, g)) return 'refugio'; // llueve: a cubierto (lluvia.js)
   const pop = popOf(g), houses = housesOf(g).length, farms = [...farmMap.values()].filter(f => f.vid === g.id);
   const si = seasonInfo().i, J = [];
@@ -395,7 +396,7 @@ function setupTask(v, g, job){
     case 'tribunal': case 'carcel': case 'imprenta': case 'sindicato': case 'parlamento': case 'academia': case 'universidad': case 'consejo': case 'espias': case 'granero': case 'ahumadero': case 'lenera': case 'postas': return institutionTarget(v, g, job);
     case 'investigar': return scienceTarget(v, g, job);
     case 'mina': case 'extraer': return mineTarget(v, g, job);
-    case 'refugio': return shelterTarget(v, g);
+    case 'refugio': return shelterTarget(v, g, v.chill > .3);
     case 'conservar': return seasonTarget(v, g, job);
     case 'chabola': return shackTarget(v, g);
     case 'paraguas': return umbrellaTarget(v, g);

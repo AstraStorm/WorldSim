@@ -9,13 +9,14 @@
 const rainOn = v => raining(clamp(Math.floor(v.y / T), 0, H - 1) * W + clamp(Math.floor(v.x / T), 0, W - 1));
 // (desde chooseJob) ¿se resguarda?
 const wantsShelter = (v, g) => { if (!rainOn(v)) return false; g.rainSeenT = yearT; return !v.umbrella && Math.random() < .75; };
-function shelterTarget(v, g){
+function shelterTarget(v, g, cold){ // cold: busca calor, no vale un árbol
   const cands = [];
   if (v.home != null && world.objs[v.home]) cands.push(v.home);
   for (const b of [g.tavern, g.hall, g.market, g.temple, ...(g.stores || [])]) if (b != null && world.objs[b]) cands.push(b);
   let best = null, bd = 60 * T;
   for (const i of cands) { const d = Math.hypot((i % W) * T - v.x, ((i / W) | 0) * T - v.y); if (d < bd) { bd = d; best = i; } }
-  if (best == null) best = objNear(g, 14, o => OBJ[o.key][1] === 'tree' && o.st !== 'b', v);
+  if (best == null && cold) best = objNear(g, 20, o => o.key.startsWith('house'), v);
+  if (best == null && !cold) best = objNear(g, 14, o => OBJ[o.key][1] === 'tree' && o.st !== 'b', v);
   const sb = best != null && standBy(best); if (!sb) return null;
   return { k:'refugio', x:sb[0] + (Math.random() - .5) * 4, y:sb[1] };
 }

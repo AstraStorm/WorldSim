@@ -2705,7 +2705,7 @@ function warmthAt(v, g){
   if (g && g.noFirewood) return 0; // sin leña, ni la hoguera ni las casas calientan (estaciones.js)
   if (g && !g.fireOut && Math.hypot(v.x / T - g.fx, v.y / T - g.fy) < 6) return WARMTH;
   const tx = Math.floor(v.x / T), ty = Math.floor(v.y / T);
-  for (let dy = -2; dy <= 1; dy++) for (let dx = -2; dx <= 2; dx++) { const o = world.objs[(ty + dy) * W + tx + dx]; if (o && o.key && o.key.startsWith('house')) return WARMTH; }
+  for (let dy = -2; dy <= 1; dy++) for (let dx = -2; dx <= 2; dx++) { const o = world.objs[(ty + dy) * W + tx + dx]; if (o && o.key && (o.key.startsWith('house') || (o.vid != null && isBuilding(o)))) return WARMTH; } // casas y edificios del pueblo (taberna, ayuntamiento...)
   return 0;
 }
 function killVillager(v, cause){
@@ -2761,6 +2761,8 @@ function updateVillagers(dt){
     v.chill = temp < cold ? v.chill + dt * (cold - temp) / 120 : Math.max(0, v.chill - dt * .1);
     v.hot = temp > hot ? v.hot + dt * (temp - hot) / 90 : Math.max(0, v.hot - dt * .1);
     if (v.chill >= 1) { killVillager(v, 'frío'); continue; }
+    // Quien se está helando deja lo que hace y corre a una casa o edificio caliente (lluvia.js)
+    if (g && v.chill > .4 && !shelter && !v.boat && !(v.task && ['refugio', 'asalto'].includes(v.task.k))) { const p = shelterTarget(v, g, true); if (p) { releaseTask(v); v.task = p; v.lastD = Infinity; } }
     if (v.hot >= 1) { killVillager(v, 'calor'); continue; }
     if (g && v.hot > .4 && v.task && !['beber', 'asalto', 'trabajando'].includes(v.task.k) && !v.boat) { const p = drinkSpot(v, g); if (p) { releaseTask(v); v.task = { k:'beber', ...p }; v.lastD = Infinity; } } // acalorados: a beber y refrescarse
     // Sin aldea: se une a la más cercana o funda una nueva donde está

@@ -43,13 +43,14 @@ function payPensions(g, people){
 }
 const pensionGrief = (g, adults) => { if (hasLaw(g, 'pensiones') || ['socialismo', 'comunismo'].includes(regimeOf(g))) return 0; const old = adults.filter(u => ageOf(u) > (u.life || 20) * .72).length, left = adults.filter(u => (u.ideo || 0) < -.2).length / Math.max(1, adults.length); return old >= 3 && left > .35 ? .1 + old * .02 : 0; };
 function cultureTick(g, dt, people, adults){
+  if (Array.isArray(g.works)) { g.writings = g.works; g.works = 0; } // (partidas de antes: las obras iban en g.works, que es el dinero de obras públicas)
   if ((g.culT = (g.culT || 0) - dt) > 0) return; g.culT = 5; const el = 5, at = { x:g.fx * T, y:g.fy * T };
   // Una obra nueva
   if ((g.know || {}).escritura && adults.length >= 8 && Math.random() < el * .0025) {
     const author = adults.slice().sort((a, b) => (b.edu || 0) - (a.edu || 0))[Math.floor(Math.random() * Math.min(3, adults.length))];
     const e = (g.log || []).slice(-15).reverse().find(x => /guerra|meteorito|epidemia|independiz|volcán|terremoto|colonia|globo|paz|espía|referéndum/.test(x.txt));
     const kind = WORK_KIND[Math.floor(Math.random() * WORK_KIND.length)], title = workTitle(g, e);
-    (g.works ||= []).push({ title, kind, author:author.name, lang:g.lang, d:Math.floor(yearT / DAY_LEN) + 1 }); if (g.works.length > 12) g.works.shift();
+    (g.writings ||= []).push({ title, kind, author:author.name, lang:g.lang, d:Math.floor(yearT / DAY_LEN) + 1 }); if (g.writings.length > 12) g.writings.shift();
     notify(`En ${g.name}, ${author.name} escribe «${title}», ${kind === 'obra de teatro' ? 'una' : kind === 'novela' || kind === 'crónica' ? 'una' : 'un'} ${kind}${g.lang != null ? ` en ${langName(g.lang)}` : ''}`, at);
     author.culture = yearT; if (hasTheater(g) && kind === 'obra de teatro') g.anger = Math.max(0, (g.anger || 0) - 5);
   }
@@ -69,7 +70,7 @@ function cultureTick(g, dt, people, adults){
   }
 }
 function cultureCard(g){
-  const W0 = g.works || [], Lg = g.legends || [], Hs = g.heroes || [];
+  const W0 = g.writings || [], Lg = g.legends || [], Hs = g.heroes || [];
   if (!W0.length && !Lg.length && !Hs.length) return '';
   return `<h4>Cultura</h4>${W0.length ? `<div>${W0.slice(-4).reverse().map(w => `«${esc(w.title)}» <span class="muted">(${esc(w.kind)} de ${esc(w.author)}, día ${w.d})</span>`).join('<br>')}</div>` : ''}
     ${Lg.length ? `<div class="muted" style="margin-top:4px">Leyendas: ${Lg.map(l => esc(l.name)).join(', ')}</div>` : ''}${Hs.length ? `<div class="muted">Héroes: ${Hs.slice(-4).map(h => `${esc(h.name)} (${esc(h.why)})`).join(', ')}</div>` : ''}`;
