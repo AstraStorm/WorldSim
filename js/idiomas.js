@@ -200,7 +200,7 @@ function updateLanguages(dt){
     if (!kn.escritura && g.hall != null && people.length >= 8 && Math.random() < el * .004) learnWriting(g);
     villageLang(g);
     // Pueblo recién fundado: su nombre, en su lengua (y se corrige en la crónica si ya había salido con el provisional)
-    if (g.freshName) { g.freshName = false; const nn = placeName(g); if (nn) { const old = g.name; g.name = nn; for (const e of chronicle) if (e.text.includes(old)) e.text = e.text.split(old).join(nn); for (const e of g.log || []) e.txt = e.txt.split(old).join(nn); } }
+    if (g.freshName) { g.freshName = false; const nn = placeName(g); if (nn) { const old = g.name; g.name = nn; for (const e of chronicle) if (e.text.includes(old)) e.text = e.text.split(old).join(nn); for (const e of g.log || []) e.txt = e.txt.split(old).join(nn); for (const q of g.parties || []) { q.name = q.name.split(old).join(nn); q.abbr = siglas(q.name); } } }
     // La lengua del pueblo es la materna de la mayoría; quien vive allí la va aprendiendo
     const mix = new Map(); let common = 0;
     for (const v of people) {

@@ -199,9 +199,11 @@ if H10:
 # ---- Vida cotidiana (hoja 11, si ya está): granero, ahumadero, leñera, casa de postas, mansión y chabola ----
 H11 = next((n for n in ['11.png', 'hoja_11.png'] if os.path.exists(os.path.join(SRC, n))), None)
 if H11:
-    for key, pt, w in [('granary:granero', (256, 300), 34), ('smoke:ahumadero', (768, 300), 30), ('woodshed:lenera', (1280, 320), 32),
-                       ('post:postas', (256, 790), 38), ('house:mansion', (768, 790), 40), ('house:chabola', (1280, 820), 18)]:
-        add(key, shrink(cut(H11, [pt]), w))
+    for key, cell, w in [('granary:granero', (0, 0), 34), ('smoke:ahumadero', (1, 0), 32), ('woodshed:lenera', (2, 0), 32),
+                         ('post:postas', (0, 1), 40), ('house:mansion', (1, 1), 40), ('house:chabola', (2, 1), 22)]:
+        _, _, parts = sheet(H11); x0, y0 = cell[0] * 512, cell[1] * 512
+        pts = [((p['x0'] + p['x1']) // 2, (p['y0'] + p['y1']) // 2) for p in parts if x0 <= (p['x0'] + p['x1']) / 2 < x0 + 512 and y0 <= (p['y0'] + p['y1']) / 2 < y0 + 512 and p['area'] > 150]
+        add(key, shrink(cut(H11, pts), w)) # todas las piezas de su casilla (sacos, humo, el caballo), recortadas justas
 
 # ---- Atlas: en filas, con 1 píxel de separación ----
 keys = list(S); W = 512; x = y = rowh = 0; pos = {}

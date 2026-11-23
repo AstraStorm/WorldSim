@@ -871,7 +871,7 @@ function drawQuakes(t){
 // ================= Estaciones del año =================
 // Cada estación dura un minuto (30 días de 2 s) y cambia el tiempo: más lluvia en primavera y otoño,
 // tormentas y huracanes al final del verano y en otoño, nieve y ventiscas en invierno
-const SEASON_LEN = 15 * 180; // 15 días de 3 minutos (la edad de la gente, los animales y los árboles va aparte, en YEAR)
+const SEASON_LEN = 4 * 180; // 4 días de 3 minutos: un año de 16 días (la edad de la gente, los animales y los árboles va aparte, en YEAR)
 // Día y noche: un día dura 3 minutos (a velocidad normal), aparte del ritmo de las estaciones; de noche
 // oscurece y la gente se va a dormir
 const DAY_LEN = 180;

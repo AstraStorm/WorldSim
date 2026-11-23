@@ -6,7 +6,7 @@
 // · Días libres a la semana (según la jornada) y festivos que recuerdan lo que les pasó; si no descansan, se quejan
 const WEEK = 7;
 const dayNum = () => Math.floor(yearT / DAY_LEN);
-const dayOfYear = () => Math.floor((yearT % (SEASON_LEN * 4)) / DAY_LEN); // 0..59
+const dayOfYear = () => Math.floor((yearT % (SEASON_LEN * 4)) / DAY_LEN); // 0..15
 const hasSchool = g => g && g.school != null && !!world.objs[g.school];
 const restDaysOf = g => clamp((hasLaw(g, 'jornada_corta') ? 2 : hasLaw(g, 'jornada_larga') ? 0 : 1) + (g.restBonus || 0), 0, 3);
 const isRestDay = g => { const n = restDaysOf(g); return n > 0 && dayNum() % WEEK >= WEEK - n; };

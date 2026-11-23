@@ -1355,7 +1355,7 @@ function renderVillageCard(force){
   } else if (cardTab === 'politica') {
     const vr = n.voteRes;
     body = `<div>${govCard(g)}</div>
-      ${n.parties ? `<h4>Partidos</h4><div class="parties">${n.parties.map((q, k) => { const pct = vr && vr[k] != null ? vr[k] : null; return `<div class="party${n.ruling === k ? ' on' : ''}">${logoImg(q, 30)}<div class="pi"><b style="color:${q.col}">${esc(q.name)}${n.ruling === k ? ' <span class="gold">★ gobierna</span>' : ''}</b><span class="muted">${sideTxt(q)} · propone: ${q.laws.map(l => LAW_TXT[l]).join(', ')}</span>${pct != null ? `<span class="pv">${bar(pct / 100, q.col, 150)} ${pct} %</span>` : ''}</div></div>`; }).join('')}</div>` : '<h4>Partidos</h4><div>Aún no tienen partidos</div>'}
+      ${n.parties ? `<h4>Partidos</h4><div class="parties">${n.parties.map((q, k) => { const pct = vr && vr[k] != null ? vr[k] : null; return `<div class="party${n.ruling === k ? ' on' : ''}">${logoImg(q, 30)}<div class="pi"><b style="color:${q.col}">${esc(q.name)}</b> <span class="muted">(${esc(q.abbr || siglas(q.name))})</span><b>${n.ruling === k ? ' <span class="gold">★ gobierna</span>' : ''}</b><span class="muted">${sideTxt(q)} · propone: ${q.laws.map(l => LAW_TXT[l]).join(', ')}</span>${pct != null ? `<span class="pv">${bar(pct / 100, q.col, 150)} ${pct} %</span>` : ''}</div></div>`; }).join('')}</div>` : '<h4>Partidos</h4><div>Aún no tienen partidos</div>'}
       <h4>Leyes</h4><div class="laws">${lawsOf(g).map(l => `<div><b>${LAW_TXT[l]}</b><span class="muted">${LAW_DESC[l] || ''}</span></div>`).join('') || '<div class="muted">Sin leyes propias todavía</div>'}</div>
       ${(nationOf(g).lawHist || []).length ? `<h4>Historia de las leyes</h4><ul class="log">${nationOf(g).lawHist.slice().reverse().map(e => `<li class="pol"><span class="d">día ${e.d}</span>${esc(e.txt.replace(`En ${nationOf(g).name} `, ''))}</li>`).join('')}</ul>` : ''}
       ${colonyCard(g)}${justiceCard(g)}${pressCard(g)}${scienceCard(g)}${councilCard(g)}${spyCard(g)}${cultureCard(g)}
@@ -1975,10 +1975,22 @@ function warCard(g){
 // ---- Política: partidos inventados en cada sitio, de izquierdas a derechas, con sus leyes; cada cierto tiempo se
 // reúnen en la plaza y votan; el partido que gana pone al líder y sus leyes cambian cómo vive el pueblo y cómo trata
 // a los demás ----
-const PARTY_A = ['Partido', 'Unión', 'Frente', 'Movimiento', 'Liga', 'Alianza', 'Consejo', 'Hermandad', 'Asamblea'];
-const PARTY_B = { izq:['Socialista', 'Socialista del Trabajo', 'del Pueblo', 'de la Hoguera Común', 'de los Pastores', 'del Pan para Todos', 'Popular', 'de los Jornaleros', 'del Reparto'],
-  centro:['del Arado', 'del Río', 'de la Concordia', 'de las Cosechas', 'del Camino', 'Verde', 'de la Fe'],
-  der:['del Comercio', 'de la Espada', 'Libre', 'de los Linajes', 'del Orden', 'de la Corona de Piedra', 'de los Mercaderes'] };
+// Nombres de partido como los de la vida real, con sus siglas ({N}: el pueblo; {L}: la lengua de una minoría)
+const PARTY_NAMES = {
+  izq:['Partido Socialista de {N}', 'Partido Comunista de {N}', 'Partido Socialista Obrero', 'Izquierda Unida', 'Frente Popular', 'Partido de los Trabajadores', 'Unión de la Izquierda', 'Alianza Socialista', 'Movimiento Obrero de {N}', 'Partido del Pueblo Trabajador', 'Izquierda Republicana', 'Partido Comunista Revolucionario', 'Hermandad del Pan para Todos', 'Partido de la Hoguera Común'],
+  centro:['Partido Demócrata', 'Unión de Centro Democrático', 'Ciudadanos de {N}', 'Coalición Cívica', 'Centro Democrático y Social', 'Movimiento Ciudadano', 'Partido Moderado', 'Unión Progresista', 'Agrupación Independiente de {N}', 'Partido de la Concordia', 'Partido del Arado y el Río'],
+  der:['Partido Conservador', 'Partido Popular de {N}', 'Unión Nacional', 'Frente Nacional', 'Alianza Patriótica', 'Acción Nacional', 'Liga Conservadora', 'Partido de la Tradición', 'Partido de la Fe y el Orden', 'Movimiento Patriótico de {N}', 'Partido Agrario', 'Unión de los Mercaderes', 'Partido de la Corona de Piedra'],
+  verde:['Partido Verde', 'Alianza Ecologista', 'Movimiento Verde de {N}', 'Verdes Unidos', 'Partido Ecologista de {N}', 'Coalición por los Bosques'],
+  liberal:['Partido Liberal', 'Unión Liberal', 'Liberales de {N}', 'Partido Liberal Demócrata', 'Alianza Liberal', 'Partido Liberal Progresista'],
+  region:['Partido Regionalista {L}', 'Bloque {L}', 'Unión del Pueblo {L}', 'Coalición {L}', 'Partido Nacionalista {L}', 'Convergencia {L}', 'Frente {L}'],
+};
+const SIGLA_SKIP = new Set(['de', 'del', 'la', 'las', 'los', 'el', 'y', 'por']);
+const siglas = name => name.split(/\s+/).filter(w => w && !SIGLA_SKIP.has(w.toLowerCase())).map(w => w[0].toUpperCase()).join('');
+function partyName(kind, g, used, L){
+  const pool = PARTY_NAMES[kind].map(t => t.replace('{N}', g.name).replace('{L}', L || g.name)).filter(x => !used.has(x));
+  const name = pool[Math.floor(Math.random() * pool.length)] || `Partido de ${g.name}`; used.add(name);
+  return { name, abbr:siglas(name) };
+}
 const LAW_TXT = { aranceles:'aranceles', autonomia:'autonomía de las provincias', pensiones:'pensiones', fortificacion:'fortificación', derecho_huelga:'derecho a huelga', prohibir_huelgas:'prohibición de huelgas', lengua_unica:'una sola lengua', plurilinguismo:'todas las lenguas', reforma_lengua:'reforma de la lengua', pureza_lengua:'pureza de la lengua', reparto:'reparto de comida', obras:'obras públicas', paz:'paz con los vecinos', comercio:'comercio libre', ejercito:'ejército', expansion:'expansión', fe:'fe oficial', estatal:'economía estatal', censura:'censura',
   jornada_corta:'jornada corta', jornada_larga:'jornada larga', sanidad:'sanidad pública', educacion:'escuelas', impuestos_altos:'impuestos altos', impuestos_bajos:'impuestos bajos',
   bosques:'protección de los bosques', orden:'mano dura', natalidad:'más hijos', laicidad:'laicidad', salario_minimo:'salario mínimo', fronteras_abiertas:'fronteras abiertas', fronteras_cerradas:'fronteras cerradas', cuarentena:'cuarentena', vivienda_publica:'vivienda pública', mercado_vivienda:'libre mercado de la vivienda', tope_alquiler:'tope a los alquileres', libertad_religiosa:'libertad de culto', persecucion_religiosa:'persecución religiosa', derechos_humanos:'derechos humanos', segregacion:'segregación racial', matrimonio_igualitario:'matrimonio igualitario', persecucion:'persecución de homosexuales' };
@@ -2003,20 +2015,20 @@ function partyProgram(ideo, n = 3 + (Math.random() < .5 ? 1 : 0), keep = []){
 }
 // En los parlamentos hay más partidos: verdes, liberales y, donde se hablan varias lenguas, uno regionalista
 function moreParties(g){
-  const ps = g.parties ||= [], has = re => ps.some(p => re.test(p.name));
-  if (!has(/Verde/)) ps.push({ name:'Partido Verde', ideo:-.3, laws:partyProgram(-.3, 3, ['bosques']), col:'#5aa84a' });
-  if (!has(/Liberal/)) ps.push({ name:'Partido Liberal', ideo:.2, laws:partyProgram(.2, 3, ['comercio']), col:'#e8c040' });
-  const langs = new Set(villages.filter(o => popOf(o) && nationOf(o) === g).map(o => o.lang).filter(l => l != null));
-  if (langs.size > 1 && !has(/Regionalista/)) ps.push({ name:'Partido Regionalista', ideo:-.05, laws:partyProgram(-.05, 3, ['plurilinguismo']), col:'#8a5ac8' });
+  const ps = g.parties ||= [], has = k => ps.some(p => p.kind === k || (k === 'verde' && /Verde|Ecolog/.test(p.name)) || (k === 'liberal' && /Liberal/.test(p.name)) || (k === 'region' && /Regional/.test(p.name))), used = new Set(villages.flatMap(o => (o.parties || []).map(p => p.name)));
+  if (!has('verde')) ps.push({ ...partyName('verde', g, used), kind:'verde', ideo:-.3, laws:partyProgram(-.3, 3, ['bosques']), col:'#5aa84a' });
+  if (!has('liberal')) ps.push({ ...partyName('liberal', g, used), kind:'liberal', ideo:.2, laws:partyProgram(.2, 3, ['comercio']), col:'#e8c040' });
+  const langs = [...new Set(villages.filter(o => popOf(o) && nationOf(o) === g).map(o => o.lang).filter(l => l != null && l !== g.lang))];
+  if (langs.length && !has('region')) { const L = langList()[langs[0]]; ps.push({ ...partyName('region', g, used, L ? capFirst(L.adj) : null), kind:'region', ideo:-.05, laws:partyProgram(-.05, 3, ['plurilinguismo']), col:'#8a5ac8' }); }
   while (ps.length > 6) ps.splice(ps.findIndex((p, k) => k !== g.ruling), 1);
 }
 function makeParties(g){
   const parties = [], used = new Set();
   for (const side of Math.random() < .5 ? ['izq', 'centro', 'der'] : ['izq', 'der']) {
-    let name; do name = `${PARTY_A[Math.floor(Math.random() * PARTY_A.length)]} ${PARTY_B[side][Math.floor(Math.random() * PARTY_B[side].length)]}`; while (used.has(name)); used.add(name);
+    const { name, abbr } = partyName(side, g, used); // nombres como los de verdad, con siglas
     const ideo = side === 'izq' ? -.4 - Math.random() * .45 : side === 'der' ? .4 + Math.random() * .45 : (Math.random() - .5) * .3;
     const laws = partyProgram(ideo, undefined, name.includes('Fe') ? ['fe'] : []);
-    parties.push({ name, ideo, laws, col:side === 'izq' ? '#d8483a' : side === 'der' ? '#3a6ab8' : '#e8b848' });
+    parties.push({ name, abbr, kind:side, ideo, laws, col:side === 'izq' ? '#d8483a' : side === 'der' ? '#3a6ab8' : '#e8b848' });
   }
   g.parties = parties;
   if (!g.regime) { // la primera forma de gobierno depende de cómo les va: quien manda, cuánto temen a sus dioses, si hay peligro...
@@ -2034,7 +2046,7 @@ function makeParties(g){
   if (!g.flag) { g.flag = makeFlag(g); g.flagUrl = flagDataUrl(g.flag); notify(`${g.name} se da a sí misma una bandera`, { x:g.fx * T, y:g.fy * T }); }
   notify(`En ${g.name} nacen los partidos: ${parties.map(p => p.name).join(', ')}`, { x:g.fx * T, y:g.fy * T });
 }
-const artP = p => /^(Unión|Liga|Alianza|Asamblea|Hermandad)/.test(p.name) ? 'la' : 'el'; // «gana la Liga…», «gana el Frente…»
+const artP = p => /^(Ciudadanos|Verdes|Liberales)/.test(p.name) ? 'los' : /^(Unión|Liga|Alianza|Asamblea|Hermandad|Izquierda|Coalición|Acción|Agrupación|Convergencia)/.test(p.name) ? 'la' : 'el'; // «gana la Liga…», «gana el Frente…»
 const lawsOf = g => { const n = nationOf(g); if (REGIME_LAWS[n.regime]) return REGIME_LAWS[n.regime]; let L = n.ruling != null && n.parties && n.parties[n.ruling] ? n.parties[n.ruling].laws : [];
   const C = n.coalition != null && n.parties && n.parties[n.coalition]; if (C) L = [...L, ...C.laws.filter(l => !L.includes(l) && !LAW_CLASH.some(([a, b]) => (l === a && L.includes(b)) || (l === b && L.includes(a))))];
   return n.regime === 'socialismo' ? [...new Set(['reparto', 'estatal', 'vivienda_publica', ...L.filter(l => l !== 'mercado_vivienda')])] : L; };
