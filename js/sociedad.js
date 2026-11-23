@@ -2189,7 +2189,7 @@ function startProtest(g, adults){
   const r0 = g.plaza, pts = [[r0.x0, r0.y0], [r0.x1, r0.y0], [r0.x1, r0.y1], [r0.x0, r0.y1]].map(([x, y]) => [x * T + 2, y * T + 3]);
   const slog = SLOGANS[g.grief], col = ['#f2efe6', '#f0d060', '#f08a7a'][Math.floor(Math.random() * 3)];
   who.forEach((u, k) => { releaseTask(u); if (u.actT > 0) { u.actT = 0; u.onDone = null; } u.task = { k:'protesta', pts, idx:k % 4, until:yearT + 30, slogan:slog[k % slog.length], col }; u.lastD = Infinity; u.hitBy = null; });
-  g.protest = { until:yearT + 30, who, said:false, riot:g.anger > 60 || pn[g.grief] >= 3, lynch:(g.grief === 'corrupción' && g.anger > 75) || (g.grief === 'presupuestos' && g.anger > 85 && (g.noBudgetDays || 0) >= 3) }; // furiosos con su líder: van a por él // muy enfadados, o hartos de protestar por lo mismo: disturbios
+  g.protest = { until:yearT + 30, who, said:false, grief:g.grief, riot:g.anger > 60 || pn[g.grief] >= 3, lynch:(g.grief === 'corrupción' && g.anger > 75) || (g.grief === 'presupuestos' && g.anger > 85 && (g.noBudgetDays || 0) >= 3) }; // furiosos con su líder: van a por él // muy enfadados, o hartos de protestar por lo mismo: disturbios
   if (g.grief === 'vivienda') startCamp(g, who);
   notify(`¡Manifestación en ${g.name}! ${who.length} personas salen con carteles contra ${GRIEF_TXT[g.grief]}: «${slog[0]}»`, { x:g.fx * T, y:g.fy * T });
 }
@@ -2197,7 +2197,7 @@ function runProtest(g){
   const p = g.protest, live = p.who.filter(u => !u.dead && u.task && u.task.k === 'protesta');
   if (live.length && Math.random() < .6) { const u = live[Math.floor(Math.random() * live.length)]; floats.push({ x:u.x, y:u.y - 16, txt:u.task.slogan, col:'#f8f0d8', life:0 }); }
   if (p.riot && !p.said) riotTick(g, p, live);
-  if (p.lynch && !p.said && yearT > p.until - 24 && live.length >= 3) { p.lynch = false; if (lynchLeader(g, live)) { p.said = true; g.grief = null; } }
+  if (p.lynch && !p.said && yearT > p.until - 24 && live.length >= 3) { p.lynch = false; if (lynchLeader(g, live, p.grief)) { p.said = true; g.grief = null; } }
   if (!p.said && yearT > p.until - 20) { p.said = true; const rep = g.repressed || 0; respondProtest(g, live); if (g.camp && (g.repressed || 0) > rep) endCamp(g, 'desalojo'); }
   if (yearT > p.until || !live.length) { for (const u of p.who) if (u.task && u.task.k === 'protesta') u.task = null; g.protest = null; }
 }

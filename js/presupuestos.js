@@ -84,9 +84,9 @@ const corruptGrief = g => g.scandal && yearT - g.scandal.t < DAY_LEN * 3 ? .7 : 
 // Con la ciudad amenazada, casi nadie se atreve a protestar (salvo que estén ya furiosos)
 const afraid = g => g.threat && yearT < g.threat.until && (g.anger || 0) < 85;
 // El pueblo, harto, acaba con su líder: lo lincha o, si es muy devoto, lo sacrifica a su dios
-function lynchLeader(g, who){
+function lynchLeader(g, who, grief = g.grief){
   const L = budgetLeader(g); if (!L || L.vid !== g.id) return false;
-  const why = g.grief === 'corrupción' ? 'por haberles robado' : 'por dejarlos sin presupuestos', la = sexW(L, 'lo', 'la');
+  const why = grief === 'corrupción' ? 'por haberles robado' : 'por dejarlos sin presupuestos', la = sexW(L, 'lo', 'la');
   const holy = g.faith && ((g.devotion || 0) > 3 || regimeOf(g) === 'teocracia'), at = { x:L.x, y:L.y }, was = tyranny(g);
   killVillager(L, holy ? 'sacrificado por el pueblo' : 'linchado por el pueblo');
   if (g.leader === L) g.leader = null; const cap = nationOf(g); if (cap.leader === L) cap.leader = null;
