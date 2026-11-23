@@ -315,12 +315,14 @@ function visibleRect(){
   return [clamp(Math.floor(-offX / zoom) - 2, 0, PW - 1), clamp(Math.floor(-offY / zoom) - 2, 0, PH - 1),
           clamp(Math.ceil((cw - offX) / zoom) + 2, 0, PW - 1), clamp(Math.ceil((ch - offY) / zoom) + 2, 0, PH - 1)];
 }
+let floodTick = 0;
 function updateWaves(t){
+  floodTick++;
   if (!coastK || reduceMotion || !cw) return;
   // Con mucho mapa a la vista se reparte el trabajo en franjas: cada fotograma se anima solo una franja
   // horizontal (y solo esa se copia al lienzo), así nunca se procesan millones de píxeles de golpe.
   // Con poco a la vista se anima todo cada fotograma (de cerca, sin saltos)
-  const vr = visibleRect(), area = (vr[2] - vr[0] + 1) * (vr[3] - vr[1] + 1), bands = Math.min(6, Math.ceil(area / 1.2e6));
+  const vr = visibleRect(), area = (vr[2] - vr[0] + 1) * (vr[3] - vr[1] + 1), bands = Math.min(10, Math.ceil(area / 5e5));
   if (bands === 1 && zoom < 2 && t - waveLast < 50) return;
   waveLast = t;
   waveBand = (waveBand + 1) % bands;
@@ -380,7 +382,7 @@ function updateWaves(t){
   }
   // Nieve y charcos en el suelo, píxel a píxel: la cantidad se interpola entre casillas vecinas,
   // así el borde queda difuminado y no se ve la cuadrícula
-  if (snowA && (snowDirty.size || floodSet.size || groundClear.length)) {
+  if (snowA && (snowDirty.size || (floodSet.size && floodTick % 3 === 0) || groundClear.length)) {
     const amt = (A, x, y) => (x < 0 || y < 0 || x >= W || y >= H) ? 0 : A[y * W + x];
     const lerp2 = (A, px, py) => {
       const fx = (px - 1.5) / T, fy = (py - 1.5) / T, ix = Math.floor(fx), iy = Math.floor(fy), u = fx - ix, v = fy - iy;
@@ -392,7 +394,7 @@ function updateWaves(t){
     const inBand = i => { const tx = i % W, ty = (i / W) | 0; return (ty + 2) * T >= y0 && (ty - 1) * T <= y1 && (tx + 2) * T >= x0 && (tx - 1) * T <= x1; };
     // De la nieve solo se repintan las casillas que han cambiado (la nieve quieta ya está pintada)
     for (const i of snowDirty) if (inBand(i)) { addRing(i); snowDirty.delete(i); }
-    for (const i of floodSet) if (inBand(i)) addRing(i);
+    if (floodTick % 3 === 0) for (const i of floodSet) if (inBand(i)) addRing(i); // (el brillo de los charcos, uno de cada tres fotogramas)
     const keep = [];
     for (const i of groundClear) { const gy = ((i / W) | 0) * T; if (gy + 2 * T >= y0 && gy - T <= y1) addRing(i); else keep.push(i); }
     groundClear = keep;
@@ -439,15 +441,16 @@ function updateWaves(t){
 }
 function drawGlints(t){
   if (!glintK || reduceMotion) return;
-  const [x0, y0, x1, y1] = visibleRect(), ts = t / 1000;
+  const [x0, y0, x1, y1] = visibleRect(), ts = t / 1000; vctx.fillStyle = '#ffffff';
   for (let n = 0; n < glintK.length; n++) {
     const k = glintK[n], px = k % PW, py = (k / PW) | 0;
     if (px < x0 || px > x1 || py < y0 || py > y1) continue;
     const s = Math.sin(ts * .8 + glintPh[n] * 40);
     if (s < .9) continue;
-    vctx.fillStyle = `rgba(255,255,255,${(s - .9) * 3.5})`; // brillo suave, sin destellos bruscos
+    vctx.globalAlpha = (s - .9) * 3.5; // brillo suave, sin destellos bruscos (con globalAlpha: no se crea un color nuevo por brillo)
     vctx.fillRect(px + Math.round(Math.sin(ts * .7 + n) * 1.5), py, 2, 1);
   }
+  vctx.globalAlpha = 1;
 }
 
 async function regenerate(refit, quiet){

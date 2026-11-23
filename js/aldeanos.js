@@ -332,6 +332,7 @@ function drawVillagers(){
     while (ci < camps.length && camps[ci].fy * T + 3 <= v.y) drawCampFlames(camps[ci++], now);
     while (qi < campQueue.length && campQueue[qi].y <= v.y) campQueue[qi++].f(); // tiendas de acampadas y campamentos que están más atrás
     drawAnimals(v.y); // los animales que están más atrás que este aldeano
+    if (v.x < vx0 - 40 || v.x > vx1 + 40 || v.y < vy0 - 20 || v.y > vy1 + 60) continue; // fuera de la vista: no se dibuja
     const s = personSprite(v, v.moving ? Math.floor(v.walk * 8) % 2 : 0, v.dir < 0);
     const x = Math.round(v.x), y = Math.round(v.y), selected = v === follow;
     const ringA = .65 + .35 * Math.sin(performance.now() / 250);

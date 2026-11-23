@@ -82,7 +82,7 @@ function updateClimate(dt){
   const yr = Math.floor(yearT / YEAR);
   if (yr !== globalYear) { globalYear = yr; globalTarget = clamp(globalTarget + (Math.random() - .5) * 3.2, -5, 5); }
   globalT += (globalTarget - globalT) * Math.min(1, dt / (YEAR * 1.2));
-  const chunk = Math.ceil(N / 60), el = dt * 60, vr = visibleRect();
+  const chunk = Math.ceil(N / 120), el = dt * 120, vr = visibleRect(); // (todo el mapa cada ~2 s: la nieve y el hielo cambian despacio)
   const seen = i => { const x = (i % W) * T, y = ((i / W) | 0) * T; return x >= vr[0] && x <= vr[2] && y >= vr[1] && y <= vr[3]; };
   for (let n = 0; n < chunk; n++) {
     iceSweep = (iceSweep + 1) % N;

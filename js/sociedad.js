@@ -316,7 +316,7 @@ function groundSignature(){
 function drawGround(){
   if (!groundCv || groundCv.width !== PW || groundCv.height !== PH) { groundCv = document.createElement('canvas'); groundCv.width = PW; groundCv.height = PH; groundSig = ''; }
   const now = performance.now(), sig = groundSignature();
-  if (sig !== groundSig || now - groundT > 4000) {
+  if (sig !== groundSig || now - groundT > 15000) { // (la nieve sobre los caminos cambia despacio)
     groundSig = sig; groundT = now;
     const gc = groundCv.getContext('2d'), keep = vctx; gc.clearRect(0, 0, PW, PH);
     vctx = gc; vrOverride = [0, 0, PW - 1, PH - 1];
@@ -2742,6 +2742,9 @@ function updateVillagers(dt){
   if (!world) return;
   updateArrows(dt);
   updateTravelers(dt);
+  // (rendimiento) quién está asaltando, una vez por paso: así cada aldeano no repasa a todos los demás
+  let anyWar = false; for (const r of rels.values()) if (r.war) { anyWar = true; break; }
+  const assaulters = anyWar ? villagers.filter(u => !u.dead && !u.away && u.task && u.task.k === 'asalto') : [];
   for (const v of villagers) {
     v.moving = false;
     if (v.dead) continue;
@@ -2766,12 +2769,12 @@ function updateVillagers(dt){
     const age = (yearT - v.born) / YEAR, child = age < ADULT_H;
     let g = villageById(v.vid);
     if (age > v.life * (hasHosp(g) ? 1.12 : 1)) { killVillager(v, 'vejez'); continue; }
-    const nut = Math.abs((v.ate ?? .5) - (v.diet ?? .5)); v.mal = nut > .3;
-    v.food = Math.max(0, v.food - dt * (v.mal ? 1.4 : nut < .15 ? .9 : 1) * (v.sleep ? .5 : 1) / (child ? 190 : 160)); v.water = Math.max(0, v.water - dt * (v.sleep ? .5 : 1) * (tempAt(Math.floor(v.y / T) * W + Math.floor(v.x / T)) > 28 ? 1.3 : 1) / (child ? 130 : 120));
+    const nut = Math.abs((v.ate ?? .5) - (v.diet ?? .5)); v.mal = nut > .3; const tHere = tempAt(ri); // (la temperatura de su casilla, una sola vez)
+    v.food = Math.max(0, v.food - dt * (v.mal ? 1.4 : nut < .15 ? .9 : 1) * (v.sleep ? .5 : 1) / (child ? 190 : 160)); v.water = Math.max(0, v.water - dt * (v.sleep ? .5 : 1) * (tHere > 28 ? 1.3 : 1) / (child ? 130 : 120));
     if (v.food <= 0) { v.starve += dt; if (v.starve > 25) { killVillager(v, 'hambre'); continue; } } else v.starve = 0;
     if (v.water <= 0) { v.thirst += dt; if (v.thirst > 20) { killVillager(v, 'sed'); continue; } } else v.thirst = 0;
     // El abrigo (hoguera, casa) solo calienta cuando hace frío, hasta unos 18 °C; con calor, la casa da algo de sombra
-    const out = tempAt(ri), shelter = warmthAt(v, g) > 0, shade = out > 24 && inForest(v), temp = shelter ? (out < 18 ? Math.min(18, out + WARMTH) : out - 8) : shade ? out - 5 : out; // la casa (gruesa) y la sombra refrescan // los árboles también dan sombra
+    const out = tHere, shelter = warmthAt(v, g) > 0, shade = out > 24 && inForest(v), temp = shelter ? (out < 18 ? Math.min(18, out + WARMTH) : out - 8) : shade ? out - 5 : out; // la casa (gruesa) y la sombra refrescan // los árboles también dan sombra
     const cold = H_COLD + v.ad + (child ? 4 : 0), hot = H_HEAT + v.ad;
     v.chill = temp < cold ? v.chill + dt * (cold - temp) / (120 * (1 + (v.fit || 0) * .4)) : Math.max(0, v.chill - dt * .1);
     v.hot = temp > hot ? v.hot + dt * (temp - hot) / (90 * (1 + (v.fit || 0) * .4)) : Math.max(0, v.hot - dt * .1);
@@ -2798,11 +2801,11 @@ function updateVillagers(dt){
     if (v.foe && v.sleep) { v.sleep = false; v.task = null; } // una fiera los despierta
     // Guerra: el soldado va al pueblo enemigo y lucha con quien le salga; si no hay nadie, saquea y se vuelve.
     // Los del pueblo atacado: los armados plantan cara, los demás corren a refugiarse
-    if (rels.size && !(v.scanW > 0)) {
+    if (anyWar && !(v.scanW > 0)) {
       v.scanW = .4; v.enemy = null;
       let bd = v.task && v.task.k === 'asalto' ? 45 : 35;
       const focus = knowsT(g, 'foco'); let bs = Infinity;
-      for (const u of villagers) { if (u.dead || u.away || u === v || !enemyOf(v, u)) continue; if (!(u.task && u.task.k === 'asalto') && !(v.task && v.task.k === 'asalto')) continue; const d = Math.hypot(u.x - v.x, u.y - v.y); if (d >= bd) continue; const sc = focus ? d - (1 - (u.hp ?? 1)) * 40 : d; if (sc < bs) { bs = sc; v.enemy = u; } }
+      for (const u of (v.task && v.task.k === 'asalto' ? villagers : assaulters)) { if (u.dead || u.away || u === v || !enemyOf(v, u)) continue; if (!(u.task && u.task.k === 'asalto') && !(v.task && v.task.k === 'asalto')) continue; const d = Math.hypot(u.x - v.x, u.y - v.y); if (d >= bd) continue; const sc = focus ? d - (1 - (u.hp ?? 1)) * 40 : d; if (sc < bs) { bs = sc; v.enemy = u; } }
     } else v.scanW -= dt;
     if (v.task && v.task.k === 'asalto' && (v.hp ?? 1) < .35 && knowsT(g, 'retirada')) { v.task = { k:'volver' }; v.enemy = null; v.retreatT = 10; floats.push({ x:v.x, y:v.y - 14, txt:'¡retirada!', col:'#f0c8a0', life:0 }); }
     if (v.retreatT > 0) { v.retreatT -= dt; v.enemy = null; }
