@@ -292,3 +292,6 @@ canvas.ic{width:28px;height:28px;flex:none;image-rendering:pixelated;background:
 .toasts{left:10px;transform:none;top:auto;bottom:64px;width:min(460px,calc(100% - 470px));min-width:0;flex-direction:column-reverse}
 .bcard{z-index:7}
 @media (max-width:760px){.toasts{left:6px;right:6px;width:auto;bottom:58px;top:auto}}
+/* Deportes (deportes.js) */
+.club{display:flex;align-items:center;gap:10px;margin:4px 0 6px}.club img{width:48px;height:57px;image-rendering:pixelated;flex:none}.club b{font-family:var(--f-display);font-size:17px}
+.sbar2{display:inline-block;width:60px;height:6px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden;vertical-align:middle;margin-left:6px}.sbar2 i{display:block;height:100%}

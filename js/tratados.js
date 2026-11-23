@@ -5,12 +5,24 @@
 //  · acuerdo comercial: el doble de caravanas, y se copian los mapas
 //  · libre circulación: la gente puede mudarse de uno a otro sin trabas
 //  · tratado de paz: al acabar una guerra, una tregua firmada; si un bando ha perdido mucho, paga un tributo
+//  · cooperación científica: se pasan sus descubrimientos mucho más a menudo
+//  · intercambio cultural: estudiantes y artistas van y vienen; la gente está más contenta y se tienen más aprecio
+//  · defensa mutua: si alguien ataca a uno, el otro lo condena y le manda comida, madera y voluntarios armados
+//  · ayuda contra el hambre: si uno pasa hambre y el otro tiene de sobra, le manda comida
+//  · frontera fijada: acaban las disputas por el territorio (no hay guerra por tierras mientras dure)
+//  · amistad deportiva: se juegan partidos amistosos de fútbol (deportes.js)
 const TREATY = {
   noagresion:{ n:'pacto de no agresión', days:[4, 7], icon:'🕊' },
   comercio:{ n:'acuerdo comercial', days:[4, 8], icon:'⚖' },
   circulacion:{ n:'libre circulación', days:[5, 9], icon:'⇄' },
   paz:{ n:'tratado de paz', days:[4, 6], icon:'📜' },
   tributo:{ n:'tributo', days:[3, 5], icon:'⛁' },
+  ciencia:{ n:'acuerdo de cooperación científica', days:[5, 9], icon:'⚗' },
+  cultura:{ n:'acuerdo de intercambio cultural', days:[5, 9], icon:'🎭' },
+  defensa:{ n:'pacto de defensa mutua', days:[6, 10], icon:'🛡' },
+  ayuda:{ n:'acuerdo de ayuda contra el hambre', days:[5, 8], icon:'🌾' },
+  fronteras:{ n:'acuerdo de fronteras', days:[8, 12], icon:'⛿' },
+  deporte:{ n:'acuerdo de amistad deportiva', days:[6, 10], icon:'⚽' },
 };
 const treatiesOf = r => (r && r.treaties || []).filter(t => t.until > yearT);
 const hasTreaty = (r, k) => treatiesOf(r).some(t => t.k === k);
@@ -28,10 +40,12 @@ function signTreaty(a, b, r, k, extra){
 function treatyTick(a, b, r){
   if (!r.known || r.war) return;
   const ts = treatiesOf(r);
-  for (const t of ts) if (t.k === 'noagresion' || t.k === 'circulacion') r.v = Math.min(100, r.v + .15); else if (t.k === 'comercio') r.v = Math.min(100, r.v + .25); else if (t.k === 'tributo') r.v = Math.max(-100, r.v - .15);
+  for (const t of ts) if (['noagresion', 'circulacion', 'fronteras', 'deporte'].includes(t.k)) r.v = Math.min(100, r.v + .15); else if (t.k === 'cultura') { r.v = Math.min(100, r.v + .3); for (const g of [a, b]) g.anger = Math.max(0, (g.anger || 0) - .2); } else if (t.k === 'ciencia') { r.v = Math.min(100, r.v + .15); if (typeof spreadScience === 'function' && Math.random() < .5) spreadScience(a, b); } else if (t.k === 'defensa') r.v = Math.min(100, r.v + .2); else if (t.k === 'comercio') r.v = Math.min(100, r.v + .25); else if (t.k === 'tributo') r.v = Math.max(-100, r.v - .15);
   // El tributo: cada poco, comida del que perdió al que ganó
   const tr = ts.find(t => t.k === 'tributo');
   if (tr) { const p = villageById(tr.payer), q = villageById(tr.to); if (p && q && p.food > 4) { const n = Math.min(4, p.food * .1); p.food -= n; q.food += n; } }
+  // La ayuda contra el hambre: comida del que tiene al que no
+  if (ts.some(t => t.k === 'ayuda')) for (const [p, q] of [[a, b], [b, a]]) if (q.food < popOf(q) * 1.5 && p.food > popOf(p) * 4) { const n = Math.min(12, p.food * .1); p.food -= n; q.food += n; if (yearT - (q.aidT ?? -1e9) > DAY_LEN) { q.aidT = yearT; notify(`${p.name} manda comida a ${q.name}, que pasa hambre (acuerdo de ayuda)`, { x:q.fx * T, y:q.fy * T }); } }
   // Acuerdos que caducan: si se llevan bien, se renuevan
   for (const t of (r.treaties || [])) if (t.until <= yearT && !t.over) { t.over = true; if (t.k !== 'tributo' && t.k !== 'paz' && r.v > 15 && Math.random() < .6) signTreaty(a, b, r, t.k); }
   if (r.treaties && r.treaties.length > 8) r.treaties = r.treaties.filter(t => t.until > yearT);
@@ -39,6 +53,24 @@ function treatyTick(a, b, r){
   if (!hasTreaty(r, 'noagresion') && r.v > -45 && r.v < 70 && !(allianceOf(a) && allianceOf(a) === allianceOf(b)) && Math.random() < .06) signTreaty(a, b, r, 'noagresion');
   else if (!hasTreaty(r, 'comercio') && r.v > 15 && (a.market != null || b.market != null || (a.port && b.port)) && Math.random() < .08) { signTreaty(a, b, r, 'comercio'); if (typeof shareCharts === 'function') shareCharts(a, b); }
   else if (!hasTreaty(r, 'circulacion') && r.v > 35 && !hasLaw(a, 'fronteras_cerradas') && !hasLaw(b, 'fronteras_cerradas') && Math.random() < .04) signTreaty(a, b, r, 'circulacion');
+  else if (!hasTreaty(r, 'ciencia') && r.v > 30 && (a.know || {}).escritura && (b.know || {}).escritura && Math.random() < .04) signTreaty(a, b, r, 'ciencia');
+  else if (!hasTreaty(r, 'cultura') && r.v > 25 && (a.lang !== b.lang || Math.random() < .5) && Math.random() < .04) signTreaty(a, b, r, 'cultura');
+  else if (!hasTreaty(r, 'defensa') && r.v > 55 && !(allianceOf(a) && allianceOf(a) === allianceOf(b)) && Math.random() < .03) signTreaty(a, b, r, 'defensa');
+  else if (!hasTreaty(r, 'ayuda') && r.v > 20 && Math.random() < .03) signTreaty(a, b, r, 'ayuda');
+  else if (!hasTreaty(r, 'fronteras') && r.v > -20 && r.reason === 'territorio' && Math.random() < .05) signTreaty(a, b, r, 'fronteras');
+  else if (!hasTreaty(r, 'deporte') && r.v > 10 && typeof sportsOf === 'function' && (sportsOf(a).futbol || sportsOf(b).futbol) && Math.random() < .05) signTreaty(a, b, r, 'deporte');
+}
+// Defensa mutua: alguien ataca a «def»; quien tenga pacto de defensa con él lo condena y le manda ayuda
+function mutualDefense(att, def){
+  for (const o of villages) {
+    if (o === att || o === def || !popOf(o) || nationOf(o) !== o) continue;
+    const r = rels.get(relKey(o, def)); if (!hasTreaty(r, 'defensa')) continue;
+    const q = rels.get(relKey(o, att)); if (q) q.v = Math.max(-100, q.v - 30);
+    const food = Math.min(20, o.food * .2), wood = Math.min(15, o.wood * .2); o.food -= food; o.wood -= wood; def.food += food; def.wood += wood;
+    const vols = villagers.filter(v => !v.dead && v.vid === o.id && v.weapon && !v.away).slice(0, 2);
+    for (const v of vols) { releaseTask(v); v.vid = def.id; v.x = def.fx * T + (Math.random() - .5) * 12; v.y = def.fy * T + 6; }
+    notify(`${o.name} cumple el pacto de defensa: condena el ataque de ${att.name} y manda a ${def.name} comida, madera${vols.length ? ` y ${vols.length} voluntario${vols.length > 1 ? 's' : ''} armado${vols.length > 1 ? 's' : ''}` : ''}`, { x:def.fx * T, y:def.fy * T });
+  }
 }
 // Al acabar una guerra: tratado de paz y, si un bando ha salido muy mal parado, tributo al otro
 function peaceTreaty(a, b, r){

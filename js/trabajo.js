@@ -8,7 +8,7 @@ const WEEK = 7;
 const dayNum = () => Math.floor(yearT / DAY_LEN);
 const dayOfYear = () => Math.floor((yearT % (SEASON_LEN * 4)) / DAY_LEN); // 0..15
 const hasSchool = g => g && g.school != null && !!world.objs[g.school];
-const restDaysOf = g => clamp((hasLaw(g, 'jornada_corta') ? 2 : hasLaw(g, 'jornada_larga') ? 0 : 1) + (g.restBonus || 0), 0, 3);
+const restDaysOf = g => clamp((hasLaw(g, 'jornada_corta') ? 2 : hasLaw(g, 'jornada_larga') ? 0 : 1) + (hasLaw(g, 'mas_festivos') ? 1 : 0) + (g.restBonus || 0), 0, 3);
 const isRestDay = g => { const n = restDaysOf(g); return n > 0 && dayNum() % WEEK >= WEEK - n; };
 const holidayToday = g => fiestasOf(g).find(f => f.doy === dayOfYear() && dayNum() > f.day); // (no el mismo día en que pasó)
 const isFreeDay = g => isRestDay(g) || !!holidayToday(g);

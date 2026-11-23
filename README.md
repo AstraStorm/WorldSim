@@ -107,6 +107,8 @@ Sin dependencias ni compilación: cada archivo es un script normal y se cargan e
 | `js/vegetacion.js` | Crecimiento y muerte de la vegetación |
 | `js/aldeanos.js` | Movimiento y dibujo de los aldeanos |
 | `js/sonido.js` | Sonido sintetizado: música generativa, ambiente según lo que se ve (olas, ríos, viento, lluvia, grillos, pájaros, tormentas, fuego), voces, animales, trabajos y rezos de cerca, y los volúmenes |
+| `js/deportes.js` | Campo de fútbol, piscina y pista de atletismo; clubes con escudo, entrenos, partidos entre naciones, categorías y Juegos cada año |
+| `js/leyes.js` | Diez leyes nuevas (ley seca, toque de queda, renta básica, lotería, servicio militar, deporte, más festivos, animales, libertad de prensa, impuesto a los ricos) |
 | `js/volcanes.js` | No se construye en las faldas de un volcán, los pueblos cercanos cercan el cráter y la lava quema edificios |
 | `js/edificios.js` | Clic en un edificio: su ficha (qué es, de quién, quién vive, qué guarda) y lista de edificios del pueblo |
 | `js/calendario.js` | Días de la semana en cada lengua y calendario laboral con festivos (pestaña Calendario de la ficha) |

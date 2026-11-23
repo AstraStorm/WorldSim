@@ -27,7 +27,7 @@ function newsArrive(t, from, to){
 const WANT_ANIMALS = { caballo:g => (g.know || {}).montar !== false, oveja:g => true, vaca:g => true, cerdo:g => true, pollo:g => true };
 function huntTick(g, dt, people, adults){
   if ((g.huntT = (g.huntT ?? DAY_LEN * .5) - dt) > 0) return; g.huntT = DAY_LEN * (.8 + Math.random() * .6);
-  if (!pensOf(g).length || adults.length < 6 || travelers.some(t => t.kind === 'batida' && t.from === g.id)) return;
+  if (hasLaw(g, 'animales') || !pensOf(g).length || adults.length < 6 || travelers.some(t => t.kind === 'batida' && t.from === g.id)) return;
   const have = new Set(penAnimals(g).map(a => a.sp)), want = Object.keys(WANT_ANIMALS).filter(sp => !have.has(sp) && WANT_ANIMALS[sp](g));
   if (!want.length || penAnimals(g).length >= pensOf(g).length * PEN_CAP - 2) return;
   let best = null, bd = 90 * T; for (const a of animals) if (!a.dead && !a.dom && want.includes(a.sp)) { const d = Math.hypot(a.x - g.fx * T, a.y - g.fy * T); if (d < bd && d > 20 * T) { bd = d; best = a; } }

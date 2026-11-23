@@ -50,7 +50,7 @@ function draw(t){
   drawZones();
   drawPaths();
   drawBridges();
-  drawFarms(); drawCemeteries(); drawTracks(); drawAeros();
+  drawFarms(); drawCemeteries(); drawTracks(); drawSports(); drawAeros();
   drawPens();
   drawVolcFences(); // vallas alrededor de los volcanes (volcanes.js)
   drawWalls();
@@ -59,6 +59,7 @@ function draw(t){
   drawArtFlames(t);
   drawInstFlags(t); // la bandera en los edificios del gobierno (instituciones.js)
   drawSelBuilding(t); // el edificio elegido, marcado (edificios.js)
+  drawMatchBoards(); // marcador con los escudos en los partidos (deportes.js)
   drawCamps(t);
   drawFires(t, true);
   drawVillageFx(t);

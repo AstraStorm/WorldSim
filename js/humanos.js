@@ -177,7 +177,8 @@ function vGo(v, x, y, dt, run){
   const dx = gx - v.x, dy = gy - v.y, dg = Math.max(.01, Math.hypot(dx, dy));
   const swim = inWater(v.x, v.y), child = (yearT - v.born) / YEAR < ADULT_H;
   const onPath = pathMap.has(Math.floor(v.y / T) * W + Math.floor(v.x / T)) || bridgeSet.has(Math.floor(v.y / T) * W + Math.floor(v.x / T));
-  const sp = Math.min(dg, (swim ? 4 : 10) * (onPath ? 1.3 : 1) * (run ? 1.35 : 1) * (child ? .8 : 1) * (v.mount ? (v.cart ? 1.6 : 2) : 1) * dt), base = Math.atan2(dy, dx);
+  const sp = Math.min(dg, (swim ? 4 * (1 + (v.swimFit || 0)) : 10 * (1 + (v.fit || 0) * .3)) * // (la piscina y la pista mejoran la velocidad: deportes.js)
+     (onPath ? 1.3 : 1) * (run ? 1.35 : 1) * (child ? .8 : 1) * (v.mount ? (v.cart ? 1.6 : 2) : 1) * dt), base = Math.atan2(dy, dx);
   let moved = false;
   // Rodea los obstáculos siempre por el mismo lado durante un rato (si no, da bandazos a izquierda y derecha),
   // y no se gira a cada paso
@@ -339,6 +340,7 @@ function chooseJob(v, g){
   mineJobs(v, g, add); // abrir la mina y trabajar en ella (minas.js)
   umbrellaJobs(v, g, add); // coser paraguas (lluvia.js)
   volcanoJobs(v, g, add); // cercar el volcán (volcanes.js)
+  sportsJobs(v, g, add); // campo de fútbol, piscina y pista (deportes.js)
   seasonJobs(v, g, add); shackJobs(v, g, add); // conservas, leña, árboles (estaciones.js) y chabolas (riqueza.js)
   scienceJobs(v, g, add); // investigar en la universidad (ciencia.js)
   add('carro', know.montar && houses >= 3 && (g.carts || 0) < 1 + Math.floor(pop / 10) && spare >= 10 && !busyWith(g, 'carro') ? 2.5 : 0);
@@ -385,7 +387,8 @@ function chooseJob(v, g){
   // Fuera de su horario, los adultos descansan: solo atienden lo urgente (fuego, defensa, la hoguera, las antorchas)
   if (!inShift(g) && !isNight() && ageOf(v) >= ADULT_H && !(g.danger > 0) && !(famine && g.food < pop * 1.5)) {
     for (let k2 = J.length - 1; k2 >= 0; k2--) if (!['apagar', 'encender', 'alumbrar', 'arma', 'equipar', 'beber', 'comer', 'cosechar'].includes(J[k2][0])) J.splice(k2, 1); // (la cosecha madura se recoge aunque sea tarde)
-    J.push(['ocio', 6], ['pasear', 1]); if (holidayToday(g)) J.push(['fiesta', 10]); if (hasTheater(g)) J.push(['ver_teatro', 3]); if (hasColiseum(g)) J.push(['ver_coliseo', 2.5]); if (hasTavern(g)) J.push(['ir_taberna', ageOf(v) < ADULT_H ? 1 : 4]);
+    if (hasLaw(g, 'toque_queda') && dayT() > .62) J.push(['ocio', 6]); // toque de queda: al caer la tarde, nada de salir (leyes.js)
+    else { J.push(['ocio', 6], ['pasear', 1]); sportsLeisure(v, g, J); if (holidayToday(g)) J.push(['fiesta', 10]); if (hasTheater(g)) J.push(['ver_teatro', 3]); if (hasColiseum(g)) J.push(['ver_coliseo', 2.5]); if (hasTavern(g) && !hasLaw(g, 'ley_seca')) J.push(['ir_taberna', ageOf(v) < ADULT_H ? 1 : 4]); }
   }
   let k = Math.random() * J.reduce((s, j) => s + j[1], 0);
   for (const [job, w] of J) if ((k -= w) < 0) return job;
@@ -403,6 +406,8 @@ function setupTask(v, g, job){
     case 'chabola': return shackTarget(v, g);
     case 'paraguas': return umbrellaTarget(v, g);
     case 'cercar_volcan': return volcFenceTarget(v, g);
+    case 'instalacion': return sportBuildTarget(v, g);
+    case 'nadar': case 'correr': return sportTarget(v, g, job);
     case 'talar': {
       const i = objNear(g, (g.treesNear ?? 99) < 12 ? 60 : 30, o => OBJ[o.key][1] === 'tree' && o.st !== 'b' && o.st !== 'j', v); const p = i != null && standBy(i); // sin árboles cerca, van más lejos
       return p ? { k:job, i, x:p[0], y:p[1] } : null;
@@ -710,6 +715,8 @@ function runTask(v, g, dt){
     case 'chabola': shackArrive(v, g, t); break;
     case 'paraguas': umbrellaArrive(v, g, t); break;
     case 'cercar_volcan': volcFenceArrive(v, g, t); break;
+    case 'instalacion': sportBuildArrive(v, g, t); break;
+    case 'nadar': case 'correr': sportArrive(v, g, t); break;
     case 'dormir': dismount(v); v.sleep = true; v.home = t.h ?? null; v.task = null; return;
     case 'beber': v.actT = 2; v.onDone = () => { v.water = 1; v.hot = Math.max(0, (v.hot || 0) - .6);
       if (t.cup) { g.cups = Math.max(0, (g.cups || 0) - 1); const pr = Math.min(v.money || 0, 1); if (pr > 0) { v.money -= pr; ecOf(g).treas += pr * .5; } floats.push({ x:v.x, y:v.y - 12, txt:'taza de agua', col:'#9cc8f0', life:0 }); }
@@ -1085,7 +1092,7 @@ function plotSlot(g, key){
 }
 // ¿Pisa la parcela de una arboleda o de un bayal (de cualquier pueblo)?
 const holyNear = (x0, y0, x1, y1) => villages.some(o => o.holy && !(x1 < o.holy.x0 - 1 || x0 > o.holy.x1 + 1 || y1 < o.holy.y0 - 1 || y0 > o.holy.y1 + 1) || o.marketRect && !(x1 < o.marketRect.x0 - 1 || x0 > o.marketRect.x1 + 1 || y1 < o.marketRect.y0 - 1 || y0 > o.marketRect.y1 + 1));
-const plotIn = (x0, y0, x1, y1) => villages.some(o => [o.grove, o.berryPlot, o.cemetery, o.track, o.aero].some(q => q && !(x1 < q.x0 || x0 > q.x0 + q.w - 1 || y1 < q.y0 || y0 > q.y0 + q.h - 1)));
+const plotIn = (x0, y0, x1, y1) => villages.some(o => [o.grove, o.berryPlot, o.cemetery, o.track, o.aero, o.pitch, o.pool, o.sportPlan].some(q => q && !(x1 < q.x0 || x0 > q.x0 + q.w - 1 || y1 < q.y0 || y0 > q.y0 + q.h - 1)));
 // ---- Asedio: catapultas que acompañan al ejército y derriban murallas y edificios ----
 let sieges = [], stones = [];
 const hasBarracks = g => g && g.barracks != null && !!world.objs[g.barracks];
