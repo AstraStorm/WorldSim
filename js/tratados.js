@@ -12,10 +12,10 @@
 //  · frontera fijada: acaban las disputas por el territorio (no hay guerra por tierras mientras dure)
 //  · amistad deportiva: se juegan partidos amistosos de fútbol (deportes.js)
 const TREATY = {
-  noagresion:{ n:'pacto de no agresión', days:[4, 7], icon:'🕊' },
+  noagresion:{ n:'pacto de no agresión', days:[7, 12], icon:'🕊' },
   comercio:{ n:'acuerdo comercial', days:[4, 8], icon:'⚖' },
   circulacion:{ n:'libre circulación', days:[5, 9], icon:'⇄' },
-  paz:{ n:'tratado de paz', days:[4, 6], icon:'📜' },
+  paz:{ n:'tratado de paz', days:[8, 12], icon:'📜' },
   tributo:{ n:'tributo', days:[3, 5], icon:'⛁' },
   ciencia:{ n:'acuerdo de cooperación científica', days:[5, 9], icon:'⚗' },
   cultura:{ n:'acuerdo de intercambio cultural', days:[5, 9], icon:'🎭' },

@@ -1361,7 +1361,7 @@ function renderVillageCard(force){
       <h4>Muertes</h4><div>${Object.entries(g.deaths || {}).sort((a, b) => b[1] - a[1]).map(([c, k]) => `${k} por ${c}`).join(' · ') || 'Ninguna todavía'}</div>
       <h4>Gente destacada</h4><div class="famrow">${notable.map(v => famNode(v, v === g.leader ? leaderTitle(g) : oficioTxt(v) || stageOf(v))).join('')}</div>`;
   } else if (cardTab === 'economia') {
-    body = `<div>${econCard(g)}</div>${wealthCard(g)}${seasonsCard(g)}${goodsCard(g)}${mineCard(g)}${unionCard(g)}${instCard(g)}`;
+    body = `<div>${econCard(g)}</div>${rescueCard(g)}${wealthCard(g)}${seasonsCard(g)}${goodsCard(g)}${mineCard(g)}${unionCard(g)}${instCard(g)}`;
   } else if (cardTab === 'politica') {
     const vr = n.voteRes;
     body = `<div>${govCard(g)}</div>
@@ -1547,7 +1547,7 @@ function holyGlow(x, y, n = 8){ for (let k = 0; k < n; k++) chips.push({ x:x + (
 let rels = new Map(), travelers = [], diploT = 5;
 const relKey = (a, b) => a.id < b.id ? a.id + '-' + b.id : b.id + '-' + a.id;
 const relOf = (a, b) => { const k = relKey(a, b); let r = rels.get(k); if (!r) rels.set(k, r = { v:0, known:false, reason:'' }); return r; };
-const REASON_TXT = { alianza:'defender a sus aliados', 'religión':'la religión', raza:'ser de otro pueblo', territorio:'el territorio', recursos:'los recursos', rencor:'viejas ofensas' };
+const REASON_TXT = { 'guerra civil':'la guerra civil', alianza:'defender a sus aliados', 'religión':'la religión', raza:'ser de otro pueblo', territorio:'el territorio', recursos:'los recursos', rencor:'viejas ofensas' };
 const relWord = r => r.war ? 'en guerra' : r.v >= 40 ? 'aliados' : r.v >= 15 ? 'amigos' : r.v > -15 ? 'neutrales' : r.v > -45 ? 'tensos' : 'enemigos';
 const skinAvg = g => { const ps = villagers.filter(v => !v.dead && v.vid === g.id); return ps.reduce((a, v) => a + Math.max(0, SKIN.indexOf(v.skin)), 0) / Math.max(1, ps.length); };
 function diploTick(){
@@ -1555,6 +1555,7 @@ function diploTick(){
   for (let i = 0; i < live.length; i++) for (let j = i + 1; j < live.length; j++) {
     const a = live[i], b = live[j], r = relOf(a, b), dist = Math.hypot(a.fx - b.fx, a.fy - b.fy);
     if (sameNation(a, b)) { r.known = true; r.v = 80; r.war = null; continue; }
+    if (r.route) routeTick(a, b, r); // la ruta comercial: negocio, o se corta (rutas.js)
     // Anexión pacífica: aliados, con la misma fe, y uno mucho más pequeño que el otro
     if (r.known && !r.war && r.v >= 60 && a.faith && b.faith && a.faith.god === b.faith.god && Math.random() < .08) {
       const big = popOf(a) >= popOf(b) ? a : b, small = big === a ? b : a;
@@ -1591,10 +1592,10 @@ function diploTick(){
     // Guerra: con mucha enemistad (y gente para luchar)
     const warAt = (hasLaw(a, 'ejercito') || hasLaw(b, 'ejercito') ? -45 : -58) - (hasLaw(a, 'paz') && hasLaw(b, 'paz') ? 25 : hasLaw(a, 'paz') || hasLaw(b, 'paz') ? 10 : 0);
     const warsOf = g => { let n = 0; for (const o of rels.values()) if (o.war && (o.war.att === g.id || o.war.def === g.id)) n++; return n; };
-    if (!r.war && r.v < warAt && !(hasTreaty(r, 'fronteras') && (r.reason || 'territorio') === 'territorio' && r.v > -85) && (!(hasTreaty(r, 'noagresion') || hasTreaty(r, 'paz')) || r.v < -85) && warsOf(a) + warsOf(b) === 0 && popOf(a) >= 10 && popOf(b) >= 10 && yearT > DAY_LEN * 5 && yearT - (r.peaceT ?? -1e9) > DAY_LEN * 4) { // tras una paz, una tregua larga
+    if (!r.war && r.v < warAt && !(hasTreaty(r, 'fronteras') && (r.reason || 'territorio') === 'territorio' && r.v > -85) && (!(hasTreaty(r, 'noagresion') || hasTreaty(r, 'paz')) || r.v < -85) && warsOf(a) + warsOf(b) === 0 && popOf(a) >= 10 && popOf(b) >= 10 && yearT > DAY_LEN * 5 && yearT - (r.peaceT ?? -1e9) > DAY_LEN * 8) { // tras una paz, una tregua larga
       const armed = g => villagers.filter(v => !v.dead && v.vid === g.id && v.weapon).length;
       const att = armed(a) + popOf(a) * .3 >= armed(b) + popOf(b) * .3 ? a : b, def = att === a ? b : a;
-      r.war = { att:att.id, def:def.id, reason:r.reason || 'territorio', start:yearT, raidT:yearT - 40, dead:0 }; breakTreaties(att, def, r); mutualDefense(att, def); // (tratados.js)
+      r.war = { att:att.id, def:def.id, reason:r.reason || 'territorio', start:yearT, raidT:yearT - 40, dead:0 }; breakTreaties(att, def, r); mutualDefense(att, def); warCamp(att, def, r); // (tratados.js, guerra.js)
       att.danger = def.danger = 120;
       const sol = g0 => villagers.filter(v => !v.dead && v.vid === g0.id && v.weapon).length;
       notify(`¡${att.name} declara la guerra a ${def.name}! Motivo: ${REASON_TXT[r.war.reason] || 'el territorio'}. ${att.name} tiene ${sol(att)} soldados y ${popOf(att)} habitantes; ${def.name}, ${sol(def)} soldados y ${popOf(def)} habitantes`, { x:def.fx * T, y:def.fy * T });
@@ -1606,8 +1607,8 @@ function diploTick(){
     if (r.war) {
       const att = villageById(r.war.att), def = villageById(r.war.def);
       if (!att || !def || !popOf(att) || !popOf(def)) { r.war = null; continue; }
-      if (r.war.dead >= 8 || (yearT - r.war.start > DAY_LEN * 3 && Math.random() < .05)) makePeace(a, b, r, r.war.dead >= 8 ? 'agotados por tantas muertes' : 'cansados de luchar');
-      else if (yearT - r.war.raidT > 120) { const back = Math.random() < .25, A = back ? def : att; if (!(knowsT(A, 'noche') && !isNight() && yearT - r.war.raidT < 170)) { r.war.raidT = yearT; const D = back ? att : def, far = Math.hypot(A.fx - D.fx, A.fy - D.fy); if (!(A.port && (far > 60 || Math.random() < .45) && launchNavalRaid(A, D, r))) launchRaid(A, D, r); } } // a veces contraataca el atacado
+      if (r.war.dead >= warCap(att, def) || (yearT - r.war.start > DAY_LEN * 6 && Math.random() < .02)) makePeace(a, b, r, r.war.dead >= warCap(att, def) ? 'agotados por tantas muertes' : 'cansados de luchar'); // (guerras más largas: guerra.js)
+      else if (yearT - r.war.raidT > 80) { const back = Math.random() < .25, A = back ? def : att; if (!(knowsT(A, 'noche') && !isNight() && yearT - r.war.raidT < 170)) { r.war.raidT = yearT; const D = back ? att : def, far = Math.hypot(A.fx - D.fx, A.fy - D.fy); if (!(A.port && (far > 60 || Math.random() < .45) && launchNavalRaid(A, D, r))) launchRaid(A, D, r); } } // a veces contraataca el atacado
       continue;
     }
     // Caravanas de comercio y diplomáticos
@@ -1639,6 +1640,7 @@ function conquer(cap, eg, r){
   for (const v of villagers) if (v.task && v.task.k === 'asalto' && (v.vid === cap.id || villageById(v.vid) && nationOf(villageById(v.vid)) === cap)) v.task = { k:'volver' };
 }
 function makePeace(a, b, r, why){
+  if (r.war && r.war.civil) civilEnd(a, b, r); // fin de una guerra civil (guerra.js)
   sendNews(a, `${a.name} y ${b.name} han firmado la paz`);
   r.lastWar = r.war; r.war = null; r.v = -12; r.peaceT = yearT; addFiesta(a, `Día de la Paz con ${b.name}`); addFiesta(b, `Día de la Paz con ${a.name}`);
   notify(`${a.name} y ${b.name} firman la paz${why ? `, ${why}` : ''}`, { x:(a.fx + b.fx) / 2 * T, y:(a.fy + b.fy) / 2 * T });
@@ -1716,7 +1718,7 @@ function arriveFleet(t, from, to){
   const archers = villagers.filter(u => !u.dead && u.vid === to.id && isRanged(u.weapon) && Math.hypot(u.x - t.x, u.y - t.y) < 120).length;
   if (archers >= crew.length) {
     const lost = crew.slice(0, Math.max(1, Math.floor(crew.length / 3))); for (const u of lost) { u.away = false; killVillager(u, 'guerra'); }
-    r.war.dead += lost.length; notify(`Los arqueros de ${to.name} rechazan desde la orilla a los barcos de ${from.name}: ${lost.length} muertos`, { x:t.x, y:t.y });
+    r.war.dead += lost.length; for (const _ of lost) warLoss(r, from); notify(`Los arqueros de ${to.name} rechazan desde la orilla a los barcos de ${from.name}: ${lost.length} muertos`, { x:t.x, y:t.y });
     milOf(to).won++; milOf(to).xp += 2; milLearn(to); return;
   }
   const take = Math.min(to.food, 4 + crew.length * 2); to.food -= take; from.food += take;
@@ -1760,11 +1762,11 @@ function updateTravelers(dt){
       if (to && r) {
         const und = langUnderstand(v, to); // si no se entienden, la visita sirve de poco
         if (t.kind === 'caravana') {
-          const got = doTrade(from, to), sold = sellCargo(t, from, to); r.v = clamp(r.v + 4 * und, -100, 100); shareCharts(from, to); spreadCoin(from, to);
+          const got = doTrade(from, to), sold = sellCargo(t, from, to); r.v = clamp(r.v + 4 * und, -100, 100); tradeTrip(from, to, r); shareCharts(from, to); spreadCoin(from, to);
           const sickHome = villagers.find(u => !u.dead && u.vid === from.id && u.sick); if (sickHome && !hasLaw(to, 'cuarentena') && Math.random() < .3) { const tgt = villagers.find(u => !u.dead && u.vid === to.id && !u.sick); if (tgt) infect(tgt, sickHome.sick, to); } // la caravana trae la enfermedad
           notify(`Una caravana de ${from.name} llega a ${to.name} ${t.sea ? 'por mar' : 'por tierra'}${sold}${got.length ? `: ${got.join(', ')}` : ''}`, { x:t.x, y:t.y });
         } else if (r.war) {
-          if (Math.random() < (.3 + Math.min(.4, (yearT - r.war.start) / (DAY_LEN * 6))) * und) makePeace(from, to, r, `gracias a un diplomático de ${from.name}`);
+          if (yearT - r.war.start > DAY_LEN * 2 && Math.random() < (.2 + Math.min(.4, (yearT - r.war.start) / (DAY_LEN * 8))) * und) makePeace(from, to, r, `gracias a un diplomático de ${from.name}`);
           else notify(`${to.name} rechaza al diplomático de ${from.name}${und < .5 ? ` (ni le entienden: no habla su lengua ni ${langName(LANG_COMMON)})` : ''}: sigue la guerra`, { x:t.x, y:t.y });
         } else { r.v = clamp(r.v + 7 * und, -100, 100); if (r.v > 20) shareCharts(from, to); notify(und < .5 ? `Un diplomático de ${from.name} visita ${to.name}, pero apenas se entienden: ni habla ${langName(villageLang(to))} ni allí saben ${langName(LANG_COMMON)}` : `Un diplomático de ${from.name} visita ${to.name}${und < 1 ? ` (hablan en ${langName(LANG_COMMON)})` : ''}: mejoran sus relaciones`, { x:t.x, y:t.y }); }
       }
@@ -1901,7 +1903,7 @@ function fightPerson(v, e, dt){
       e.hp = (e.hp ?? 1) - dmg; hurtFx(e, v.x, v.y, walkable);
       if (gv) milOf(gv).xp += .2;
       if (e.hp <= 0) {
-        const r = ge && gv && rels.get(relKey(ge, gv)); if (r && r.war) r.war.dead++;
+        const r = ge && gv && rels.get(relKey(ge, gv)); if (r && r.war) { r.war.dead++; warLoss(r, ge); }
         notify(`${e.name} de ${ge ? ge.name : '?'} ha muerto en la guerra contra ${gv ? gv.name : '?'}`, { x:e.x, y:e.y });
         if (gv) { const m = milOf(gv); m.kills++; m.xp += 1; }
         if (ge) { const m = milOf(ge); m.deaths++; m.xp += .6; }
@@ -2445,7 +2447,7 @@ function econTick(g, people){
   if (bank) for (const v of people) if ((v.money || 0) > 10 * ec.P) { const d = Math.floor(v.money * .3); v.money -= d; ec.dep += d; }
   const atWar = [...rels.values()].some(r => r.war && (r.war.att === g.id || r.war.def === g.id));
   const extra = (reg === 'teocracia' ? .15 : 0) + (hasLaw(g, 'sanidad') ? .2 : 0) + (hasLaw(g, 'educacion') ? .15 : 0) + (hasLaw(g, 'obras') ? .25 : 0) + (hasLaw(g, 'ejercito') ? .3 : 0) + (hasLaw(g, 'reparto') ? .15 : 0) + (hasLaw(g, 'vivienda_publica') ? .2 : 0) + (atWar ? .6 : 0) + (reg === 'monarquia' ? .15 : 0) + (reg === 'fascismo' ? .2 : 0);
-  const spend = budgetTick(g, ec, people, tax * (.9 + extra) + pop * ec.P * .05 * extra); // repartido en partidas (presupuestos.js)
+  const spend = budgetTick(g, ec, people, (tax * (.9 + extra) + pop * ec.P * .05 * extra) * austerity(g)); // (con recortes, menos: rescate.js) // repartido en partidas (presupuestos.js)
   ec.treas += tax - spend; ec.lastTax = tax; ec.lastSpend = spend;
   let printed = 0;
   if (ec.treas < 0) {
@@ -2463,6 +2465,7 @@ function econTick(g, people){
   ec.infl = ec.infl * .5 + pressure * coinInfl(g); ec.P = Math.max(.2, ec.P * (1 + ec.infl)); // el oro aguanta, los billetes se disparan (monedas.js)
   ec.hist.push(1 / ec.P); if (ec.hist.length > 40) ec.hist.shift();
   const at = { x:g.fx * T, y:g.fy * T };
+  econRescue(g, ec, people, bank); // antes de la bancarrota, el gobierno intenta arreglarlo (rescate.js)
   // Bancarrota: deuda impagable o precios desbocados
   ec.hyper = ec.infl > .3 ? (ec.hyper || 0) + 1 : 0;
   if ((bank && ec.debt > (ec.dep * 1.5 + 40 * ec.P) * 1.25) || ec.hyper >= 3) { ec.hyper = 0; bankrupt(g, ec, people, bank); return; }
@@ -2527,16 +2530,16 @@ function callAllies(att, def){
     notify(`${m.name} entra en la guerra contra ${att.name} para defender a ${def.name} (${al.abbr})`, { x:m.fx * T, y:m.fy * T });
   }
 }
-function moneyFlow(a, b){
+function moneyFlow(a, b, txt){
   const p = g => { const i = hasBank(g) ? g.bank : g.hall != null ? g.hall : g.fy * W + g.fx; return [(i % W) * T + 2, ((i / W) | 0) * T - 8]; };
-  const [x0, y0] = p(a), [x1, y1] = p(b); moneyFlows.push({ x0, y0, x1, y1, t0:performance.now() });
+  const [x0, y0] = p(a), [x1, y1] = p(b); moneyFlows.push({ x0, y0, x1, y1, t0:performance.now(), txt });
 }
 // Préstamo de un aliado con la misma moneda: el banco más rico de la alianza cubre lo que falta
 function allyLoan(g, need){
   const al = allianceOf(g); if (!al || !al.coin || g.coin !== al.coin) return false;
   const lender = al.members.map(villageById).filter(m => m && m !== nationOf(g) && m.coin === al.coin && hasBank(m) && ecOf(m).dep > need * 2).sort((x, y) => ecOf(y).dep - ecOf(x).dep)[0];
   if (!lender) return false;
-  ecOf(lender).dep -= need; ecOf(g).debt += need; moneyFlow(lender, g);
+  ecOf(lender).dep -= need; ecOf(g).debt += need; moneyFlow(lender, g, `préstamo de ${Math.round(need)} ${g.coin}`);
   if (yearT - (al.msgT ?? -1e9) > DAY_LEN * .4) { al.msgT = yearT; notify(`El banco de ${lender.name} presta ${Math.round(need)} ${coinPl(g)} a ${g.name} (${al.abbr})`, { x:g.fx * T, y:g.fy * T }); }
   return true;
 }
@@ -2560,7 +2563,7 @@ function allianceTick(){
       if (coined.length >= 2 && Math.random() < .25) {
         const rich = coined.slice().sort((x, y) => ecOf(y).treas - ecOf(x).treas)[0], poor = coined.slice().sort((x, y) => (ecOf(y).debt - ecOf(y).treas) - (ecOf(x).debt - ecOf(x).treas))[0];
         if (rich !== poor && ecOf(rich).treas > 20 * P) {
-          const amt = Math.round(ecOf(rich).treas * .3), pe = ecOf(poor), pay = Math.min(pe.debt, amt); ecOf(rich).treas -= amt; pe.debt -= pay; pe.treas += amt - pay; moneyFlow(rich, poor);
+          const amt = Math.round(ecOf(rich).treas * .3), pe = ecOf(poor), pay = Math.min(pe.debt, amt); ecOf(rich).treas -= amt; pe.debt -= pay; pe.treas += amt - pay; moneyFlow(rich, poor, `ayuda de ${amt} ${rich.coin}`);
           if (yearT - (al.msgT ?? -1e9) > DAY_LEN * .4) { al.msgT = yearT; notify(`Flujo bancario en ${al.abbr}: ${rich.name} transfiere ${amt} ${coinPl(rich)} a ${poor.name}`, { x:poor.fx * T, y:poor.fy * T }); }
         }
       }
@@ -2575,8 +2578,10 @@ function drawMoneyFlows(now){
     const k = (now - f.t0) / 6000; if (k > 1) continue;
     for (let j = 0; j < 6; j++) {
       const q = (k * 3 + j / 6) % 1, x = Math.round(f.x0 + (f.x1 - f.x0) * q), y = Math.round(f.y0 + (f.y1 - f.y0) * q - Math.sin(q * Math.PI) * 30);
-      const r = Math.max(1, Math.round(2.5 / zoom)); vctx.fillStyle = '#8a6a18'; vctx.fillRect(x - r, y - r, r * 2 + 1, r * 2 + 1); vctx.fillStyle = '#f0c840'; vctx.fillRect(x - r, y - r, r * 2, r * 2);
+      const r = Math.max(1, 2.5 / zoom * 1.4); vctx.fillStyle = '#8a6a18'; vctx.beginPath(); vctx.arc(x, y, r + .6, 0, Math.PI * 2); vctx.fill();
+      vctx.fillStyle = '#f0c840'; vctx.beginPath(); vctx.arc(x, y, r, 0, Math.PI * 2); vctx.fill(); vctx.fillStyle = '#fff4b0'; vctx.fillRect(x - r * .5, y - r * .5, r * .5, r * .5); // monedas redondas con brillo
     }
+    if (f.txt && k < .9) { const mx = (f.x0 + f.x1) / 2, my = (f.y0 + f.y1) / 2 - 34, s = 2 / zoom; vctx.font = `bold ${6 * s}px sans-serif`; vctx.textAlign = 'center'; vctx.fillStyle = 'rgba(17,21,26,.8)'; const w = vctx.measureText(f.txt).width + 4 * s; vctx.fillRect(mx - w / 2, my - 6 * s, w, 8 * s); vctx.fillStyle = '#f8e080'; vctx.fillText(f.txt, mx, my); vctx.textAlign = 'start'; } // qué es: préstamo, rescate, venta
   }
   moneyFlows = moneyFlows.filter(f => now - f.t0 < 6000);
 }
@@ -2944,7 +2949,7 @@ function decayRuins(g, dt){
 // ---- Cada segundo: cultivos, nacimientos y ganado ----
 function updateVillages(dt){
   for (const g of villages) if (!g.gone && g.born != null && yearT - g.born > 5 && popOf(g) === 0) {
-    g.gone = true; g.goneT = yearT; g.fireOut = true;
+    g.gone = true; g.goneT = yearT; g.fireOut = true; sportsOrphan(g); // (deportes.js)
     for (const tc of torchesOf(g)) tc.lit = false;
     for (const [i, f] of farmMap) if (f.vid === g.id) farmMap.delete(i); // los campos se pierden entre la hierba
     // Calles y plazas que solo eran suyas (lejos de cualquier otro pueblo con gente): la hierba se las irá comiendo
@@ -2957,7 +2962,7 @@ function updateVillages(dt){
     for (const r of rels.values()) if (r.war && (r.war.att === g.id || r.war.def === g.id)) r.war = null;
     for (const o of villages) if (o.nation === g.id && o !== g) o.nation = o.id;
   }
-  for (const g of villages) if (g.gone) decayRuins(g, dt);
+  for (const g of villages) if (g.gone) { decayRuins(g, dt); if (g.pitch || g.pool || g.track || g.club) sportsOrphan(g); } // (partidas de antes: deportes.js)
   if ((diploT -= dt) <= 0) { diploT = 10; diploTick(); allianceTick(); }
   if ((histT -= dt) <= 0) { histT = DAY_LEN / 2; recordHistory(); if ($('histPanel') && !$('histPanel').hidden) renderHistory(); }
   if ((autoSaveT += dt) > DAY_LEN * 2) { autoSaveT = 0; saveGame('auto', true); } // cada dos días, guardado automático
@@ -3075,6 +3080,7 @@ function updateVillages(dt){
     if (!isNight() && g.plaza && people.length >= 8 && Math.random() < dt * .03) startBallGame(g, people); // los niños juegan cuando quieren; los mayores, en su tiempo libre
     if ((g.wallT = (g.wallT ?? Math.random() * 20) - dt) <= 0) { g.wallT = 20; wallGrow(g); } // la muralla, a la medida del pueblo (defensa.js)
     lawsTick(g, dt, people); // efectos de las leyes nuevas (leyes.js)
+    civilWarTick(g, people, dt); // ¿estalla una guerra civil? (guerra.js)
     sportsTick(g, dt, people); // clubes, entrenos y partidos (deportes.js)
     if ((g.migT = (g.migT ?? DAY_LEN / 3) - dt) <= 0) { g.migT = DAY_LEN / 3; migrationTick(g, people); }
     smallTownTick(g, dt, people); // pueblos casi vacíos: anexión o mudanza (anexiones.js)
@@ -3121,8 +3127,10 @@ function updateVillages(dt){
     // Nacimientos: con comida y sitio en casa, una pareja adulta tiene un hijo
     clampStore(g);
     const cap = houseCap(g) + 4 + (g.hall != null && world.objs[g.hall] ? 8 : 0), adults = people.filter(v => { const a = (yearT - v.born) / YEAR; return a >= ADULT_H && a < 12; });
-    const mom = adults.find(v => v.sex === 'm' && partnerOf(v) && partnerOf(v).sex === 'h' && adults.includes(partnerOf(v))), dad = mom && partnerOf(mom); // de una pareja
-    if (mom && dad && pop < cap && g.food >= pop * 1.5 + 3 && Math.random() < dt * .03 * (hasLaw(g, 'natalidad') ? 1.6 : 1)) {
+    // Cuantas más parejas, más nacimientos (antes solo podía tener hijos la primera: los pueblos se estancaban en unos 30)
+    const moms = adults.filter(v => v.sex === 'm' && partnerOf(v) && partnerOf(v).sex === 'h' && adults.includes(partnerOf(v)));
+    const mom = moms[Math.floor(Math.random() * moms.length)], dad = mom && partnerOf(mom); // de una pareja
+    if (mom && dad && pop < cap && g.food >= pop * 1.5 + 3 && Math.random() < dt * Math.min(.1, .03 + moms.length * .006) * (hasLaw(g, 'natalidad') ? 1.6 : 1)) {
       const kid = lifeFields({ name:NAMES[nameIdx++ % NAMES.length], x:mom.x, y:mom.y, path:null, wait:1, walk:0, moving:false, dir:1, appear:1,
         pants:pick(PANTS, Math.random), hat:pick(HATS, Math.random), shirt:pick(SHIRT, Math.random), hair:Math.random() < .5 ? mom.hair : dad.hair },
         Math.floor(mom.x / T), Math.floor(mom.y / T), 0, Math.random);

@@ -48,7 +48,7 @@ function updateCouncil(dt){
       const res = vote([att, def], m => rv(m, att) <= rv(m, def) + 10);
       let txt = `El ${COUNCIL_NAME} vota un alto el fuego entre ${att.name} y ${def.name}: ${res.yes} a favor, ${res.no} en contra${res.deaf.length ? ` (${res.deaf.join(', ')} no se enteran: su delegado no habla ${langName(LANG_COMMON)})` : ''}`;
       if (res.ok) {
-        if (Math.random() < .45) { makePeace(att, def, war, `por mandato del ${COUNCIL_NAME}`); txt += '. Se firma la paz'; }
+        if (Math.random() < .25) { makePeace(att, def, war, `por mandato del ${COUNCIL_NAME}`); txt += '. Se firma la paz'; }
         else { C.sanctions[att.id] = { until:yearT + DAY_LEN * 4, why:`atacar a ${def.name}` }; for (const m of members) if (m !== att) { const r = relOf(m, att); r.v = clamp(r.v - 8, -100, 100); } txt += `. ${att.name} no para la guerra: queda sancionado`; }
       } else txt += '. No sale adelante';
       councilLog(txt); notify(txt, at); return;

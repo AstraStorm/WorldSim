@@ -75,6 +75,18 @@ function sportArrive(v, g, t){
   }
   return true;
 }
+// Un pueblo que desaparece: sus instalaciones las adopta el pueblo vecino que se queda con su tierra (si no tiene una
+// igual); si nadie, se las come la hierba. El club se disuelve
+function sportsOrphan(g){
+  const NAME = { pitch:'estadio de fútbol', pool:'piscina', track:'pista de atletismo' };
+  for (const k of ['pitch', 'pool', 'track']) {
+    const r = g[k]; if (!r) continue; g[k] = null; const cx = r.x0 + r.w / 2, cy = r.y0 + r.h / 2;
+    const heir = villages.filter(o => o !== g && popOf(o) && !o[k] && Math.hypot(o.fx - cx, o.fy - cy) < 40).sort((a, b) => Math.hypot(a.fx - cx, a.fy - cy) - Math.hypot(b.fx - cx, b.fy - cy))[0];
+    if (heir) { heir[k] = r; notify(`${heir.name} se queda con ${k === 'pool' ? 'la' : 'el'} ${NAME[k]} de ${g.name}`, { x:cx * T, y:cy * T }); }
+    else { composeRegion(r.x0 - 8, r.y0 - 14, r.x0 + r.w + 8, r.y0 + r.h + 4); notify(`${k === 'pool' ? 'La' : 'El'} ${NAME[k]} de ${g.name} queda abandonad${k === 'pool' ? 'a' : 'o'} y se derrumba`, { x:cx * T, y:cy * T }); }
+  }
+  if (g.club) { notify(`Se disuelve el club ${g.club.name}`, { x:g.fx * T, y:g.fy * T }); g.club = null; }
+}
 // ---- Clubes de fútbol ----
 const CLUB_PRE = ['Atlético', 'Deportivo', 'Unión', 'Sporting', 'Racing', 'Club', 'Real', 'Juventud', 'Estrella', 'Olímpico'];
 const CREST_ICONS = { estrella:['..#..', '.###.', '#####', '.#.#.', '#...#'], balon:['.###.', '#.#.#', '##.##', '#.#.#', '.###.'], corona:['#.#.#', '#####', '#####', '.....', '#####'],

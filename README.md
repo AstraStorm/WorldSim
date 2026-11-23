@@ -107,6 +107,10 @@ Sin dependencias ni compilación: cada archivo es un script normal y se cargan e
 | `js/vegetacion.js` | Crecimiento y muerte de la vegetación |
 | `js/aldeanos.js` | Movimiento y dibujo de los aldeanos |
 | `js/sonido.js` | Sonido sintetizado: música generativa, ambiente según lo que se ve (olas, ríos, viento, lluvia, grillos, pájaros, tormentas, fuego), voces, animales, trabajos y rezos de cerca, y los volúmenes |
+| `js/guerra.js` | Campamentos de guerra, bajas de cada bando, guerras más largas y guerras civiles |
+| `js/titulares.js` | Barra de titulares arriba: guerras con su marcador y las noticias más importantes |
+| `js/rutas.js` | Rutas comerciales: se ven en el mapa, dan negocio y mueven comida de quien sobra a quien falta |
+| `js/rescate.js` | Planes para evitar la bancarrota: tipos, venta de reservas, rescates de otros países, recortes, impuesto a los ricos, reestructuración |
 | `js/deportes.js` | Campo de fútbol, piscina y pista de atletismo; clubes con escudo, entrenos, partidos entre naciones, categorías y Juegos cada año |
 | `js/leyes.js` | Diez leyes nuevas (ley seca, toque de queda, renta básica, lotería, servicio militar, deporte, más festivos, animales, libertad de prensa, impuesto a los ricos) |
 | `js/volcanes.js` | No se construye en las faldas de un volcán, los pueblos cercanos cercan el cráter y la lava quema edificios |

@@ -113,7 +113,7 @@ function draw(t){
   drawHeightmap(t);
   drawThermal(t);
   drawWindmap(t);
-  drawWarLines(performance.now()); drawVillageNames();
+  drawTradeRoutes(performance.now()); drawWarLines(performance.now()); drawWarCamps(performance.now()); drawVillageNames(); // (campamentos y marcador: guerra.js)
   if (params.objects) {
     // Destellos sobre los objetos épicos y legendarios
     for (const s of world.rare) {
