@@ -52,7 +52,9 @@ function drawTracks(){
   const [x0, y0, x1, y1] = visibleRect();
   for (const g of villages) {
     const tr = g.track; if (!tr) continue; const px = tr.x0 * T, py = tr.y0 * T, pw = tr.w * T, ph = tr.h * T;
-    if (px > x1 || px + pw < x0 || py > y1 || py + ph < y0) continue;
+    if (px > x1 || px + pw < x0 || py - 20 > y1 || py + ph < y0) continue;
+    const art = artFrame('sport:atletismo'); // el estadio de atletismo del atlas (deportes.js); sin él, el óvalo de siempre
+    if (art) { const [, , aw, ah] = ART_MAP['sport:atletismo']; vctx.drawImage(art, Math.round(px + pw / 2 - aw / 2), py + ph - ah); continue; }
     const cx = px + pw / 2, cy = py + ph / 2;
     vctx.save(); vctx.beginPath(); vctx.ellipse(cx, cy, pw / 2, ph / 2, 0, 0, Math.PI * 2); vctx.fillStyle = '#b8583a'; vctx.fill();
     vctx.beginPath(); vctx.ellipse(cx, cy, pw / 2 - 10, ph / 2 - 10, 0, 0, Math.PI * 2); vctx.fillStyle = '#5a9a3a'; vctx.fill();
