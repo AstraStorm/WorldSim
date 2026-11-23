@@ -324,9 +324,10 @@ function drawVillagers(){
   if (!villagers.length && !villages.length) return;
   const objs = world.objs, now = performance.now(), [vx0, vy0, vx1, vy1] = visibleRect();
   const camps = villages.filter(g => !g.fireOut && world.objs[g.fy * W + g.fx] && g.fx * T > vx0 - 10 && g.fx * T < vx1 + 10 && g.fy * T > vy0 - 20 && g.fy * T < vy1 + 10).sort((a, b) => a.fy - b.fy);
-  let ci = 0;
+  let ci = 0, qi = 0;
   for (const v of [...villagers].sort((a, b) => a.y - b.y)) {
     while (ci < camps.length && camps[ci].fy * T + 3 <= v.y) drawCampFlames(camps[ci++], now);
+    while (qi < campQueue.length && campQueue[qi].y <= v.y) campQueue[qi++].f(); // tiendas de acampadas y campamentos que están más atrás
     drawAnimals(v.y); // los animales que están más atrás que este aldeano
     const s = personSprite(v, v.moving ? Math.floor(v.walk * 8) % 2 : 0, v.dir < 0);
     const x = Math.round(v.x), y = Math.round(v.y), selected = v === follow;
@@ -430,9 +431,11 @@ function drawVillagers(){
     if (selected) { vctx.fillStyle = `rgba(233,185,73,${ringA * .7})`; for (const [dx, dy] of RING) vctx.fillRect(x + dx, y + dy, 1, 1); }
   }
   while (ci < camps.length) drawCampFlames(camps[ci++], now);
+  while (qi < campQueue.length) campQueue[qi++].f();
   drawTravelers(now); drawSieges(now); drawBallGames(); drawMoneyFlows(now);
   drawArrows();
   drawWorkFx(now);
+  drawProtestBanners();
 }
 
 // Cambiar el tamaño del lienzo lo borra: solo se hace si cambió de verdad, se conserva el centro de la vista

@@ -1760,8 +1760,10 @@ function drawTravelers(now){
 }
 // ---- Guerra: asaltos de un pueblo a otro; los armados luchan, el resto huye; si llegan sin oposición, saquean ----
 // Campamentos de las tropas en marcha (solo de noche): hoguera, tiendas de pieles o esteras
-let warCamps = [];
+// Las tiendas y la hoguera no se pintan aquí: van a una cola ordenada por altura y drawVillagers las intercala con la gente
+let warCamps = [], campQueue = [];
 function drawCamps(t){
+  campQueue = [];
   if (!warCamps.length) return;
   warCamps = warCamps.filter(c => !c.done);
   const [x0, y0, x1, y1] = visibleRect();
@@ -1770,6 +1772,7 @@ function drawCamps(t){
     const g = villageById(c.vid), [cr, cg, cb] = g ? villageColor(g) : [200, 200, 200];
     for (let k = 0; k < c.tents; k++) { // tiendas alrededor de la hoguera
       const a = c.seed + k / c.tents * Math.PI * 2, tx = Math.round(c.x + Math.cos(a) * 15), ty = Math.round(c.y + Math.sin(a) * 9 - 2);
+      campQueue.push({ y:ty, f:() => {
       const art = artFrame(c.hide ? 'camp:tienda' : 'camp:estera');
       if (art) vctx.drawImage(art, tx - (art.width >> 1), ty - art.height + 1);
       else if (c.hide) {
@@ -1779,14 +1782,18 @@ function drawCamps(t){
         vctx.fillStyle = '#2a1a10'; vctx.fillRect(tx - 7, ty, 15, 1); vctx.fillRect(tx - 1, ty - 4, 3, 5); vctx.fillRect(tx, ty - 12, 1, 3); // entrada, base y palo
         vctx.fillStyle = `rgb(${cr},${cg},${cb})`; vctx.fillRect(tx + 1, ty - 12, 4, 2); // banderín del pueblo
       } else { vctx.fillStyle = '#8a7a5a'; vctx.fillRect(tx - 3, ty - 1, 7, 2); vctx.fillStyle = '#6a5a40'; vctx.fillRect(tx - 3, ty, 7, 1); } // esteras
+      } });
     }
     // Hoguera con resplandor
     const fl = Math.sin(t / 90 + c.seed) * .5 + .5;
-    vctx.fillStyle = `rgba(255,160,60,${.14 + fl * .08})`; vctx.beginPath(); vctx.ellipse(c.x, c.y, 16, 10, 0, 0, Math.PI * 2); vctx.fill();
+    vctx.fillStyle = `rgba(255,160,60,${.14 + fl * .08})`; vctx.beginPath(); vctx.ellipse(c.x, c.y, 16, 10, 0, 0, Math.PI * 2); vctx.fill(); // el resplandor en el suelo, debajo de todo
+    campQueue.push({ y:c.y, f:() => {
     const cf = artFrame('fire:camp'); if (cf) vctx.drawImage(cf, c.x - (cf.width >> 1), c.y - cf.height + 3); else { vctx.fillStyle = '#3a2414'; vctx.fillRect(c.x - 3, c.y, 7, 2); } // piedras y troncos (dibujados); las llamas, encima
     vctx.fillStyle = '#f08030'; vctx.fillRect(c.x - 1, c.y - 3 - Math.round(fl), 3, 3 + Math.round(fl)); vctx.fillStyle = '#ffd860'; vctx.fillRect(c.x, c.y - 2, 1, 2);
     if (Math.random() < .05) smoke.push({ x:c.x, y:c.y - 4, vx:0, vy:-5, r:1, life:0, max:2 });
+    } });
   }
+  campQueue.sort((a, b) => a.y - b.y);
 }
 function launchRaid(att, def, r){
   if (!att || !def || att === def) return;
@@ -2127,7 +2134,7 @@ function politicsTick(g, dt, people){
     'tiranía':tyranny(g) ? .22 + (g.repressed || 0) * .02 : regimeOf(g) === 'monarquia' ? .06 : 0,
     ideas:cap.parties ? Math.max(0, Math.abs(avg - govIdeo(g)) - .5) * 1.1 : 0,
     guerra:[...rels.values()].some(r => r.war && r.war.def === g.id && r.war.dead > 2) ? .5 : 0,
-    bancarrota:ec && yearT - (ec.bankruptT ?? -1e9) < DAY_LEN * 2 ? 1 : 0, jornada:(hasLaw(g, 'jornada_larga') ? .25 : 0) + (restDaysOf(g) === 0 ? .25 : 0) + (restDaysOf(g) === 1 && avg < -.35 ? .1 : 0), impuestos:hasLaw(g, 'impuestos_altos') ? .12 : 0, salarios:0, vivienda:housingGrief(g) };
+    bancarrota:ec && yearT - (ec.bankruptT ?? -1e9) < DAY_LEN * 2 ? 1 : 0, jornada:(hasLaw(g, 'jornada_larga') ? .25 : 0) + (restDaysOf(g) === 0 ? .25 : 0) + (restDaysOf(g) === 1 && avg < -.35 ? .1 : 0), impuestos:(hasLaw(g, 'impuestos_altos') ? .12 : 0) + taxGrief(g), salarios:0, vivienda:housingGrief(g) };
   { const ad = adults.length || 1, mins = adults.filter(u => isMinority(u, g)).length, gays = adults.filter(lgtb).length, left = adults.filter(u => (u.ideo || 0) < -.2).length / ad;
     if (hasLaw(g, 'segregacion') && (mins / ad > .12 || left > .4)) f.racismo = .25 + mins / ad;
     if (hasLaw(g, 'persecucion') && (gays >= 2 || left > .4)) f.derechos = .2 + gays / ad * 2;
@@ -2190,6 +2197,28 @@ function runProtest(g){
   if (p.riot && !p.said) riotTick(g, p, live);
   if (!p.said && yearT > p.until - 20) { p.said = true; const rep = g.repressed || 0; respondProtest(g, live); if (g.camp && (g.repressed || 0) > rep) endCamp(g, 'desalojo'); }
   if (yearT > p.until || !live.length) { for (const u of p.who) if (u.task && u.task.k === 'protesta') u.task = null; g.protest = null; }
+}
+// Cartel sobre la plaza mientras hay manifestación o acampada (unos 12 px en pantalla a cualquier zoom), con el motivo y si hay disturbios
+function drawProtestBanners(){
+  const [x0, y0, x1, y1] = visibleRect(), fs = Math.max(3, 12 / zoom), now = performance.now();
+  vctx.font = `bold ${fs}px system-ui, sans-serif`; vctx.textAlign = 'center'; vctx.textBaseline = 'middle';
+  for (const g of villages) {
+    if (!(g.protest || g.camp) || !g.plaza) continue;
+    const r0 = g.plaza, x = (r0.x0 + r0.x1 + 1) / 2 * T, y = r0.y0 * T - 10 - fs;
+    if (x < x0 - 80 || x > x1 + 80 || y < y0 - 40 || y > y1 + 60) continue;
+    const p = g.protest, live = p ? p.who.filter(u => !u.dead && u.task && u.task.k === 'protesta').length : 0;
+    const lines = [];
+    if (p) lines.push([`✊ Manifestación contra ${GRIEF_TXT[g.grief] || 'el gobierno'} · ${live} personas`, '#f8f0d8']);
+    if (p && p.fires) lines.push([`🔥 Disturbios: ${p.fires} incendio${p.fires > 1 ? 's' : ''}`, '#ffb060']);
+    if (g.camp) lines.push([`⛺ Acampada en la plaza · ${Math.max(1, Math.ceil((g.camp.until - yearT) / DAY_LEN))} día${Math.ceil((g.camp.until - yearT) / DAY_LEN) > 1 ? 's' : ''} más como mucho`, '#d8e8f8']);
+    const w = Math.max(...lines.map(([s0]) => vctx.measureText(s0).width)) + fs * 1.2, lh = fs * 1.35, h = lh * lines.length + fs * .5, top = y - h;
+    const pulse = .75 + .25 * Math.sin(now / 260);
+    vctx.fillStyle = 'rgba(20,14,10,.78)'; vctx.fillRect(x - w / 2, top, w, h);
+    vctx.fillStyle = `rgba(216,72,58,${pulse})`; vctx.fillRect(x - w / 2, top, w, Math.max(.5, fs * .18)); // franja roja que late
+    lines.forEach(([s0, col], k) => { vctx.fillStyle = col; vctx.fillText(s0, x, top + fs * .35 + lh * (k + .5)); });
+    vctx.fillStyle = 'rgba(20,14,10,.78)'; vctx.fillRect(x - fs * .3, y, fs * .6, fs * .5); // piquito hacia la plaza
+  }
+  vctx.textBaseline = 'alphabetic'; vctx.textAlign = 'start';
 }
 // El gobierno responde: cede (república, tribu y a veces la monarquía) o reprime (dictaduras, a veces la monarquía)
 function respondProtest(g, who){
@@ -2294,7 +2323,7 @@ function wageStats(g){
   const avg = ws.length ? ws.reduce((a, b) => a + b, 0) / ws.length : 0, cost = costOfLiving(g);
   return { avg:Math.round(avg), cost, n:ws.length, low:ws.filter(w => w < cost).length };
 }
-const taxRateOf = g => { const reg = regimeOf(g); return clamp((hasLaw(g, 'ejercito') || hasLaw(g, 'expansion') ? .12 : .07) + (reg === 'comunismo' ? .25 : reg === 'socialismo' ? .12 : 0) + (reg === 'monarquia' ? .04 : 0) + (hasLaw(g, 'impuestos_altos') ? .08 : 0) - (hasLaw(g, 'impuestos_bajos') ? .04 : 0), .02, .5); };
+const taxRateOf = g => { const reg = regimeOf(g); return clamp((hasLaw(g, 'ejercito') || hasLaw(g, 'expansion') ? .12 : .07) + (reg === 'comunismo' ? .25 : reg === 'socialismo' ? .12 : 0) + (reg === 'monarquia' ? .04 : 0) + (hasLaw(g, 'impuestos_altos') ? .08 : 0) - (hasLaw(g, 'impuestos_bajos') ? .04 : 0) + taxRateExtra(g), .02, .5); };
 const ecOf = g => g.coin ? (g.ec ||= { P:1, infl:0, treas:10, debt:0, dep:0, hist:[1] }) : null;
 const priceOf = g => g.coin ? Math.max(1, Math.round(ecOf(g).P)) : 1;
 const hasBank = g => g.bank != null && !!world.objs[g.bank];
@@ -2302,6 +2331,7 @@ function econTick(g, people){
   const ec = ecOf(g), pop = Math.max(1, people.length), reg = regimeOf(g), bank = hasBank(g);
   const taxR = taxRateOf(g);
   housingTick(g, people); // la vivienda: compraventa, alquileres e hipotecas
+  taxDay(g, people, ec); // los impuestos de cada día, y si crean o quitan alguno (impuestos.js)
   let tax = 0; for (const v of people) { const t0 = Math.floor((v.money || 0) * taxR); v.money = (v.money || 0) - t0; tax += t0; }
   if (bank) for (const v of people) if ((v.money || 0) > 10 * ec.P) { const d = Math.floor(v.money * .3); v.money -= d; ec.dep += d; }
   const atWar = [...rels.values()].some(r => r.war && (r.war.att === g.id || r.war.def === g.id));
@@ -2464,11 +2494,11 @@ function econCard(g){
     <h4>Valor del ${esc(g.coin)}</h4><svg class="spark" viewBox="0 0 160 30" preserveAspectRatio="none"><polygon points="${area}" fill="rgba(240,200,64,.15)"/><polyline fill="none" stroke="#f0c840" stroke-width="1.2" vector-effect="non-scaling-stroke" points="${line}"/></svg>
     ${ec.bankruptT != null ? `<div class="alert">Bancarrota el día ${Math.floor(ec.bankruptT / DAY_LEN) + 1}</div>` : ''}
     <h4>Salarios e impuestos</h4><div class="sec">${(ws => `<div class="kv"><span>Sueldo medio al día</span><b>${ws.n ? `${ws.avg} ${coinPl(g)}` : '—'}${ws.n && ws.avg < ws.cost ? ' <span style="color:#f08a7a">(no llega para vivir)</span>' : ''}</b></div><div class="kv"><span>Coste de la vida al día</span><b>${ws.cost} ${coinPl(g)}${ws.low ? ` · <span style="color:#f08a7a">${ws.low} de ${ws.n} no llegan</span>` : ''}</b></div>${(g.wageUp || 1) > 1 ? `<div class="kv"><span>Subidas de sueldo</span><b>+${Math.round(((g.wageUp || 1) - 1) * 100)} % por las protestas</b></div>` : ''}`)(wageStats(g))}<div class="kv"><span>Salario por un viaje de trabajo</span><b>${wageOf(g, 6)} ${coinPl(g)}${hasLaw(g, 'salario_minimo') ? ' <span class="muted">(salario mínimo)</span>' : ''}</b></div>
-      <div class="kv"><span>Impuestos</span><b>${Math.round(taxRateOf(g) * 100)} % de lo que tiene cada uno</b></div>
       <div class="kv"><span>Recaudado / gastado (último cobro)</span><b>${Math.round(ec.lastTax || 0)} / ${Math.round(ec.lastSpend || 0)}</b></div></div>
     <div class="sec"><div class="kv"><span>Una comida cuesta</span><b>${priceOf(g)} ${priceOf(g) > 1 ? coinPl(g) : g.coin}</b></div>
       <div class="kv"><span>Tratos en el mercado</span><b>${g.trades || 0}</b></div>
       <div class="kv"><span>Dinero en manos de la gente</span><b>${villagers.filter(v => !v.dead && v.vid === g.id).reduce((a, v) => a + (v.money || 0), 0)}</b></div></div>
+    ${taxCard(g)}
     ${housingCard(g)}
     ${fx.length ? `<h4>Cambio de moneda</h4><div class="sec">${fx.map(o => `<div class="kv"><span>1 ${esc(g.coin)} =</span><b>${(ecOf(o).P / ec.P).toFixed(2)} ${coinPl(o)} <span class="muted">(${esc(o.name)})</span></b></div>`).join('')}</div>` : ''}`;
 }
