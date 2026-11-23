@@ -173,7 +173,9 @@ function ballGameEnd(b){
   for (const c of [H0, A0]) { c.res.push({ txt, d:day }); if (c.res.length > 8) c.res.shift(); }
   for (const u of villagers) if (u.matchHome && !u.dead) { const [x, y] = u.matchHome; u.matchHome = null; u.x = x; u.y = y; if (u.task && ['jugar', 'espectador'].includes(u.task.k)) u.task = null; }
   const r = relOf(home, away); r.known = true; r.v = Math.min(100, r.v + (gh === ga ? 4 : 2));
-  const win = gh > ga ? home : gh < ga ? away : null; if (win) win.anger = Math.max(0, (win.anger || 0) - 3);
+  const win = gh > ga ? home : gh < ga ? away : null, lose = win === home ? away : win === away ? home : null;
+  if (win) { sportResult(win, 6, `su equipo, el ${win.club.name}, ganó a ${lose.club.name}`); sportResult(lose, -5, `su equipo, el ${lose.club.name}, perdió contra ${win.club.name}`); }
+  else for (const g of [home, away]) sportResult(g, 1, `su equipo empató con ${(g === home ? away : home).club.name}`);
   notify(`Final del partido: ${txt}${win ? ` · ¡gana ${win.club.name}!` : ' · empate'}`, { x:b.x, y:b.y }); snd('cheer', b.x, b.y);
   for (const g of [home, away]) (g.log ||= []).push({ d:day, txt:`Fútbol: ${txt}` });
 }
@@ -192,6 +194,15 @@ function sportsTick(g, dt, people){
     if (o && startMatch(g, o)) { C.matchT = DAY_LEN * (2.5 + Math.random() * 2); o.club.matchT = Math.max(o.club.matchT, DAY_LEN * 1.5); }
   }
 }
+// ---- Ánimo de la nación con los resultados: ganar alegra a todo el país unos días; perder, lo contrario ----
+function sportResult(g, delta, why){
+  const n = nationOf(g); if (!n) return;
+  const cur = n.sportMood && n.sportMood.until > yearT ? n.sportMood.v : 0;
+  n.sportMood = { v:clamp(cur + delta, -15, 15), why, until:yearT + DAY_LEN * 1.5 };
+  for (const o of villages) if (popOf(o) && nationOf(o) === n) o.anger = Math.max(0, (o.anger || 0) - delta * .5);
+}
+// (desde socialMood, convivencia.js)
+function sportMoodAdd(v, g, add){ const n = nationOf(g), M = n && n.sportMood; if (M && M.until > yearT && M.v) add(Math.round(M.v), M.why); }
 // ---- Dibujo: campo, piscina, y marcador con los escudos durante los partidos ----
 function drawSports(){
   const [vx0, vy0, vx1, vy1] = visibleRect(), now = performance.now();

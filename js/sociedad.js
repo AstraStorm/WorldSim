@@ -60,7 +60,7 @@ function drawTracks(){
     vctx.fillStyle = '#f4f0e8'; vctx.fillRect(cx - .5, py, 1, 10); vctx.restore(); // línea de meta
   }
 }
-// Los Juegos: cada dos estaciones, si hay naciones en paz; atletas de cada una, carreras en la pista de la anfitriona y todos a mirar
+// Los Juegos: cada año, en una sede distinta, si hay naciones en paz; atletas de cada una, carreras en la pista de la anfitriona y todos a mirar
 function olympicsTick(dt){
   if (olymp.cur) return runOlympics(dt);
   if (yearT < olymp.next) return;
@@ -69,8 +69,11 @@ function olympicsTick(dt){
   const atWar = n => [...rels.values()].some(r => r.war && (r.war.att === n.id || r.war.def === n.id));
   const peaceful = nations.filter(n => !atWar(n));
   if (peaceful.length < 2) { if (nations.length >= 2) notify('Este año no hay Juegos: hay demasiadas guerras'); return; }
-  let host = peaceful.find(n => n.track);
-  if (!host) for (const n of peaceful.slice().sort((a, b) => popOf(b) - popOf(a))) { n.track = trackSite(n); if (n.track) { host = n; break; } }
+  // La sede cambia cada año: primero las naciones que menos veces la han tenido, y nunca la del año anterior (si construyen la pista, mejor)
+  const hosted = n => olymp.past.filter(p => p.hostId === n.id).length, last = olymp.past[olymp.past.length - 1];
+  const order = peaceful.filter(n => !last || last.hostId !== n.id).sort((a, b) => hosted(a) - hosted(b) || !!b.track - !!a.track || popOf(b) - popOf(a));
+  let host = null;
+  for (const n of order) { if (!n.track) n.track = trackSite(n) || sportSite(n, 16, 8); if (n.track) { host = n; break; } } // (sportSite busca también en las afueras: deportes.js)
   if (!host) { notify('Ninguna nación encuentra sitio para una pista: este año no hay Juegos'); return; }
   if (!host.trackMsg) { host.trackMsg = true; clearSite(host, host.track.x0, host.track.y0, host.track.x0 + 15, host.track.y0 + 7); notify(`${host.name} prepara una pista de atletismo para los Juegos`, { x:(host.track.x0 + 8) * T, y:(host.track.y0 + 4) * T }); }
   const nats = peaceful.filter(n => n === host || !(rels.get(relKey(n, host)) || {}).war), athletes = [];
@@ -117,7 +120,11 @@ function endOlympics(){
   for (const i of O.nats) for (const j of O.nats) if (i < j) { const a = villageById(i), b = villageById(j); if (a && b) { const r = relOf(a, b); r.known = true; r.v = Math.min(100, r.v + 8); } } // los Juegos acercan a los pueblos
   for (const id of O.nats) { const n = villageById(id); if (n) n.anger = Math.max(0, (n.anger || 0) - 10); }
   const top = Object.entries(O.medals).sort((a, b) => b[1] - a[1])[0];
-  olymp.past.push({ host:O.hostName, d:Math.floor(yearT / DAY_LEN) + 1, events:O.results, medals:O.medals });
+  olymp.past.push({ host:O.hostName, hostId:O.host, d:Math.floor(yearT / DAY_LEN) + 1, events:O.results, medals:O.medals });
+  // El medallero, en el ánimo de cada país: el primero lo celebra, el segundo también algo; quien no gana nada, se desanima
+  const rank = O.nats.map(id => villageById(id)).filter(Boolean).sort((a, b) => (O.medals[b.name] || 0) - (O.medals[a.name] || 0));
+  rank.forEach((n, k) => { const m = O.medals[n.name] || 0; if (k === 0 && m) sportResult(n, 10, `su país ganó el medallero de los Juegos de ${O.hostName}`); else if (k === 1 && m) sportResult(n, 5, `su país quedó segundo en los Juegos de ${O.hostName}`); else if (!m) sportResult(n, -4, `su país no ganó ninguna medalla en los Juegos de ${O.hostName}`); });
+  if (O.host && villageById(O.host)) sportResult(villageById(O.host), 3, `su país organizó los Juegos`);
   notify(`Terminan los Juegos de ${O.hostName}${top ? `: ${top[0]} gana el medallero` : ''}`);
 }
 const hasHosp = g => g && g.hospital != null && !!world.objs[g.hospital];
