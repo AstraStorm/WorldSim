@@ -336,3 +336,5 @@ canvas.ic{width:28px;height:28px;flex:none;image-rendering:pixelated;background:
 .vcard .tabs{flex-wrap:wrap;overflow:visible;row-gap:0}
 .vcard .tabs button{flex:1 1 22%;padding:7px 4px 6px}
 .vcard .cbody{min-height:0;overflow-x:hidden}
+/* Iconos de los papeles en la ficha (hoja 14B) */
+.doc-ic{height:16px;width:auto;image-rendering:pixelated;vertical-align:-3px;margin:0 4px 0 6px}

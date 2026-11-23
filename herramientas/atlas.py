@@ -234,6 +234,17 @@ if os.path.exists(os.path.join(SRC, '13C.png')):
         add(key, tex('13C.png', box, 12, 12, False, 20)) # (12 px: se dibujan en una casilla de 5, con más detalle)
     add('fair:puesto', shrink(box_parts('13C.png', (200, 620, 620, 940)), 20, 40)); add('camp:oro', shrink(box_parts('13C.png', (860, 620, 1380, 940)), 32, 48))
 
+# ---- Papeles y campos (hojas 14A y 14B) ----
+if os.path.exists(os.path.join(SRC, '14A.png')):
+    for key, box, w in [('civic:registro', (100, 130, 420, 500), 30), ('camp:centro', (520, 240, 990, 500), 40), ('camp:cantera', (1030, 190, 1510, 500), 40),
+                        ('camp:barracon', (90, 780, 430, 985), 18), ('camp:torre', (650, 590, 870, 985), 12), ('house:okupada', (1100, 700, 1420, 985), 28)]:
+        add(key, shrink(box_parts('14A.png', box), w, 40))
+if os.path.exists(os.path.join(SRC, '14B.png')):  # iconos para la ficha (no van al atlas): arte/papeles/*.png
+    dst = os.path.join(os.path.dirname(OUT_PNG), 'papeles'); os.makedirs(dst, exist_ok=True)
+    for name, box, w in [('dni', (70, 150, 460, 410), 40), ('pasaporte', (610, 95, 900, 470), 22), ('pasaporte_abierto', (1015, 135, 1495, 450), 44),
+                         ('permiso', (120, 560, 420, 985), 26), ('contrato', (540, 565, 970, 960), 32), ('sello', (1030, 600, 1500, 930), 38)]:
+        shrink(box_parts('14B.png', box), w, 32).save(os.path.join(dst, name + '.png'), optimize=True)
+
 # ---- Atlas: en filas, con 1 píxel de separación ----
 keys = list(S); W = 512; x = y = rowh = 0; pos = {}
 for k in sorted(keys, key=lambda k: -S[k]['img'].height):

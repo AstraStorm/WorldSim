@@ -48,6 +48,12 @@ function papersTick(g, dt, people){
   }
   if (docs) {
     if (!n.dniMsg) { n.dniMsg = true; notify(`${n.name} abre el registro civil: cada habitante tendrá su DNI y quien quiera viajar, su pasaporte`, at); }
+    if (!g.registry && g.hall != null && world.objs[g.hall] && !(g.regFail > yearT - DAY_LEN)) { // la oficina del registro, junto al ayuntamiento
+      const hx = g.hall % W, hy = (g.hall / W) | 0;
+      const p = ringFind(hx + 8, hy + 1, 12, (x, y) => areaClear(x - 3, y - 7, x + 3, y) && [-3, -2, -1, 0, 1, 2, 3].every(dx => tileFree(x + dx, y) && !pathMap.has(y * W + x + dx) && !farmMap.has(y * W + x + dx)) && !plotIn(x - 4, y - 7, x + 4, y + 1) && !villages.some(q => underBuilding(q, x, y)));
+      if (p) { g.registry = { x:p[0], y:p[1], x0:p[0] - 3, y0:p[1] - 6, w:7, h:7 }; composeRegion(p[0] - 8, p[1] - 12, p[0] + 8, p[1] + 4); notify(`En ${g.name} abre la oficina del registro civil: allí hacen el DNI y el pasaporte`, { x:p[0] * T, y:p[1] * T }); }
+      else g.regFail = yearT;
+    }
     let k = 0; const ec = ecOf(g);
     for (const v of people) {
       if (k >= 6) break;
@@ -77,7 +83,7 @@ function irregTick(g, people, n, at){
   if (go.length) notify(`La policía de ${g.name} detiene a ${go.length} persona${go.length > 1 ? 's' : ''} sin papeles y la${go.length > 1 ? 's' : ''} lleva al centro de internamiento`, at);
 }
 // ---- Campos: centro de internamiento de migrantes, campo de trabajo y campo de internamiento ----
-const CAMP = { deport:{ name:'un centro de internamiento de migrantes', w:7, h:4, why:'los sin papeles esperarán allí a que los devuelvan a su país' },
+const CAMP = { deport:{ name:'un centro de internamiento de migrantes', w:8, h:5, why:'los sin papeles esperarán allí a que los devuelvan a su país' },
   trabajo:{ name:'un campo de trabajos forzados', w:8, h:5, why:'los presos picarán piedra para el estado' },
   intern:{ name:'un campo de internamiento', w:8, h:5, why:'allí encierran a opositores y perseguidos' } };
 const campOn = (g, k) => k === 'deport' ? hasLaw(g, 'deportaciones') && hasLaw(g, 'control_fronteras') && docsOn(g) : k === 'trabajo' ? hasLaw(g, 'trabajos_forzados') && hasCourt(g) : hasLaw(g, 'campos_internamiento');
@@ -219,11 +225,11 @@ function slaveTick(g, people, n, at){
 }; }
 function papersKv(v, g){
   const kv = b => `<div class="kv"><span>Papeles</span><b>${b}</b></div>`;
-  if (v.slave) { const o = villageById(v.slave.vid); return kv(`<span style="color:#e08070">${sexW(v, 'esclavo', 'esclava')}${o ? ' en ' + esc(o.name) : ''}</span>`); }
+  if (v.slave) { const o = villageById(v.slave.vid); return kv(`${DOC_IMG('sello')}<span style="color:#e08070">${sexW(v, 'esclavo', 'esclava')}${o ? ' en ' + esc(o.name) : ''}</span>`); }
   const bits = [];
-  if (v.dni) { const o = villageById(v.dni.nat); bits.push(`DNI ${v.dni.n}${o ? ' (' + esc(o.name) + ')' : ''}`); }
-  if (v.pass != null) bits.push('pasaporte');
-  if (v.irreg) bits.push('<span style="color:#e0a060">sin papeles</span>'); else if (v.permit && v.dni && v.dni.nat !== v.permit.nat) bits.push('permiso de residencia');
+  if (v.dni) { const o = villageById(v.dni.nat); bits.push(`${DOC_IMG('dni')}DNI ${v.dni.n}${o ? ' (' + esc(o.name) + ')' : ''}`); }
+  if (v.pass != null) bits.push(`${DOC_IMG('pasaporte')}pasaporte`);
+  if (v.irreg) bits.push('<span style="color:#e0a060">sin papeles</span>'); else if (v.permit && v.dni && v.dni.nat !== v.permit.nat) bits.push(`${DOC_IMG('permiso')}permiso de residencia`);
   if (inCamp(v)) bits.push(`<span style="color:#e08070">${v.camp.k === 'deport' ? 'en el centro de internamiento' : v.camp.k === 'intern' ? 'en un campo de internamiento' : 'en el campo de trabajo'}</span>`);
   return bits.length ? kv(bits.join(' · ')) : g && knowsSci(g, 'registro_civil') ? kv('aún sin DNI') : '';
 }
@@ -232,15 +238,26 @@ function papersKv(v, g){
   base(v, x, y, s, now);
   if (v.slave || inCamp(v) || (v.jail && v.jail.until > yearT)) { vctx.fillStyle = '#3a3a40'; vctx.fillRect(x - 2, y, 5, 1); vctx.fillStyle = '#9a9aa0'; vctx.fillRect(x - 2, y, 1, 1); vctx.fillRect(x + 2, y, 1, 1); }
 }; }
-// ---- Dibujo de los campos: cerca con alambre, barracones, torre de vigilancia y, en el de trabajo, la cantera ----
+// ---- Dibujo de los campos: con los dibujos de la hoja 14A si están (centro, cantera, barracones y torre); si no, con píxeles ----
 function drawPrisonCamps(now){
-  const [vx0, vy0, vx1, vy1] = visibleRect();
+  const [vx0, vy0, vx1, vy1] = visibleRect(), art = !!artFrame('camp:torre');
   for (const g of villages) {
+    if (g.registry && popOf(g)) { const x = g.registry.x * T + 2, y = g.registry.y * T + 3; if (x > vx0 - 30 && x < vx1 + 30 && y > vy0 - 10 && y < vy1 + 40 && artAt('civic:registro', x, y)) { const f = nationOf(g).flag; if (f) drawFlag(f, x + 1, y - ART_MAP['civic:registro'][3] + 1, 6, 4, 1, now); } }
     if (!g.camps) continue; const n = nationOf(g);
     for (const [k, C] of Object.entries(g.camps)) {
       const px = C.x0 * T, py = C.y0 * T, w = C.w * T, h = C.h * T;
-      if (px > vx1 + 10 || py > vy1 + 10 || px + w < vx0 - 10 || py + h < vy0 - 20) continue;
+      if (px > vx1 + 10 || py > vy1 + 30 || px + w < vx0 - 10 || py + h < vy0 - 20) continue;
       vctx.fillStyle = k === 'trabajo' ? 'rgba(130,118,100,.75)' : 'rgba(118,104,82,.7)'; vctx.fillRect(px, py, w, h); // tierra pisada
+      if (art) {
+        if (k === 'deport') artAt('camp:centro', px + (w >> 1), py + 9);
+        else if (k === 'trabajo') artAt('camp:cantera', px + (w >> 1), py + h + 1);
+        else { artAt('camp:barracon', px + 10, py + 9); artAt('camp:barracon', px + w - 15, py + 9); }
+        if (k !== 'deport') { artAt('camp:torre', px + w - 2, py + 6); if (isNight()) { const a = now / 900 + C.x0, tx = px + w - 2, ty = py - 12; vctx.fillStyle = 'rgba(255,240,180,.12)'; vctx.beginPath(); vctx.moveTo(tx, ty); vctx.lineTo(tx + Math.cos(a) * 26 - 5, ty + 26); vctx.lineTo(tx + Math.cos(a) * 26 + 5, ty + 26); vctx.fill(); } }
+        const fx = px + 2, fy = py - 1; vctx.fillStyle = '#4a3a28'; vctx.fillRect(fx, fy - 12, 1, 13); // mástil con la bandera
+        if (n.flag) drawFlag(n.flag, fx + 1, fy - 12, 6, 4, 1, now); else { vctx.fillStyle = `rgb(${villageColor(n).join(',')})`; vctx.fillRect(fx + 1, fy - 12, 6, 4); }
+        if (k === 'trabajo') continue; // la cantera ya trae su cerca de madera
+        campFence(px, py, w, h, k === 'deport' ? 9 : 0); continue;
+      }
       if (k === 'trabajo') { // la cantera: bloques y un montón de piedra
         vctx.fillStyle = '#22201e'; vctx.fillRect(px + w - 13, py + h - 9, 10, 6); vctx.fillStyle = '#9a968e'; vctx.fillRect(px + w - 12, py + h - 8, 8, 4); vctx.fillStyle = '#c8c4b8'; vctx.fillRect(px + w - 12, py + h - 8, 3, 1); vctx.fillRect(px + w - 8, py + h - 7, 2, 1);
         vctx.fillStyle = '#7a766e'; for (let j = 0; j < 4; j++) vctx.fillRect(px + 4 + j * 4, py + h - 5, 3, 2);
@@ -250,25 +267,29 @@ function drawPrisonCamps(now){
         const bx = px + 3 + j * 17, by = py + 7;
         vctx.fillStyle = '#22201e'; vctx.fillRect(bx - 1, by - 7, 15, 8); vctx.fillStyle = k === 'deport' ? '#8a8e94' : '#6a5440'; vctx.fillRect(bx, by - 4, 13, 4);
         vctx.fillStyle = k === 'deport' ? '#5a6068' : '#4a3a2c'; vctx.fillRect(bx, by - 6, 13, 2); vctx.fillStyle = '#2a2420'; vctx.fillRect(bx + 6, by - 3, 2, 3);
-        vctx.fillStyle = '#d8c070'; if (isNight()) { vctx.fillRect(bx + 2, by - 3, 1, 1); vctx.fillRect(bx + 10, by - 3, 1, 1); }
       }
-      // torre de vigilancia en una esquina
-      const tx = px + w - 3, ty = py + 2;
+      const tx = px + w - 3, ty = py + 2; // torre de vigilancia
       vctx.fillStyle = '#4a3a28'; vctx.fillRect(tx - 3, ty - 9, 1, 10); vctx.fillRect(tx + 1, ty - 9, 1, 10);
-      vctx.fillStyle = '#22201e'; vctx.fillRect(tx - 4, ty - 12, 7, 4); vctx.fillStyle = '#7a5a38'; vctx.fillRect(tx - 3, ty - 11, 5, 2);
-      vctx.fillStyle = '#3a3028'; vctx.fillRect(tx - 4, ty - 14, 7, 2);
-      if (isNight()) { const a = now / 900 + C.x0; vctx.fillStyle = 'rgba(255,240,180,.12)'; vctx.beginPath(); vctx.moveTo(tx, ty - 10); vctx.lineTo(tx + Math.cos(a) * 26 - 5, ty - 10 + 22); vctx.lineTo(tx + Math.cos(a) * 26 + 5, ty - 10 + 22); vctx.fill(); } // el foco
+      vctx.fillStyle = '#22201e'; vctx.fillRect(tx - 4, ty - 12, 7, 4); vctx.fillStyle = '#7a5a38'; vctx.fillRect(tx - 3, ty - 11, 5, 2); vctx.fillStyle = '#3a3028'; vctx.fillRect(tx - 4, ty - 14, 7, 2);
       if (n.flag) drawFlag(n.flag, tx, ty - 20, 6, 4, 1, now); else { vctx.fillStyle = `rgb(${villageColor(n).join(',')})`; vctx.fillRect(tx, ty - 20, 6, 4); }
       vctx.fillStyle = '#4a3a28'; vctx.fillRect(tx - 1, ty - 20, 1, 6);
-      // cerca: postes y alambre (con espino), con la puerta abajo en medio
-      const gate0 = px + (w >> 1) - 3, gate1 = gate0 + 6;
-      vctx.fillStyle = '#9a9aa2';
-      vctx.fillRect(px, py, w, 1); vctx.fillRect(px, py + 2, w, 1); vctx.fillRect(px, py, 1, h); vctx.fillRect(px + w - 1, py, 1, h);
-      vctx.fillRect(px, py + h - 1, gate0 - px, 1); vctx.fillRect(gate1, py + h - 1, px + w - gate1, 1); vctx.fillRect(px, py + h - 3, gate0 - px, 1); vctx.fillRect(gate1, py + h - 3, px + w - gate1, 1);
-      vctx.fillStyle = '#4a3a28';
-      for (let x = px; x <= px + w - 1; x += 4) { vctx.fillRect(x, py - 2, 1, 5); if (x < gate0 || x > gate1) vctx.fillRect(x, py + h - 4, 1, 5); }
-      for (let y = py; y <= py + h; y += 4) { vctx.fillRect(px, y - 2, 1, 4); vctx.fillRect(px + w - 1, y - 2, 1, 4); }
-      vctx.fillStyle = '#5a4a38'; vctx.fillRect(gate0, py + h - 5, 1, 6); vctx.fillRect(gate1, py + h - 5, 1, 6); vctx.fillRect(gate0, py + h - 6, 7, 1); // la puerta
+      campFence(px, py, w, h, 0);
     }
   }
 }
+// Cerca de postes y alambre de espino, con la puerta abajo en medio (top: desde dónde empieza, si arriba hay un edificio)
+function campFence(px, py, w, h, top){
+  const gate0 = px + (w >> 1) - 3, gate1 = gate0 + 6, y0 = py + top;
+  vctx.fillStyle = '#9a9aa2';
+  if (!top) { vctx.fillRect(px, py, w, 1); vctx.fillRect(px, py + 2, w, 1); }
+  vctx.fillRect(px, y0, 1, h - top); vctx.fillRect(px + w - 1, y0, 1, h - top);
+  vctx.fillRect(px, py + h - 1, gate0 - px, 1); vctx.fillRect(gate1, py + h - 1, px + w - gate1, 1); vctx.fillRect(px, py + h - 3, gate0 - px, 1); vctx.fillRect(gate1, py + h - 3, px + w - gate1, 1);
+  vctx.fillStyle = '#4a3a28';
+  for (let x = px; x <= px + w - 1; x += 4) { if (!top) vctx.fillRect(x, py - 2, 1, 5); if (x < gate0 || x > gate1) vctx.fillRect(x, py + h - 4, 1, 5); }
+  for (let y = y0; y <= py + h; y += 4) { vctx.fillRect(px, y - 2, 1, 4); vctx.fillRect(px + w - 1, y - 2, 1, 4); }
+  vctx.fillStyle = '#5a4a38'; vctx.fillRect(gate0, py + h - 5, 1, 6); vctx.fillRect(gate1, py + h - 5, 1, 6); vctx.fillRect(gate0, py + h - 6, 7, 1); // la puerta
+}
+// Casas ocupadas: con el dibujo de la casa okupada (tablones en las ventanas, colchón en la puerta)
+{ const base = artSprite; artSprite = function(o){ if (o && o.okupa && o.key && o.key.startsWith('house') && ART.ready && ART_MAP['house:okupada']) return artFrame('house:okupada'); return base(o); }; }
+// Iconos de los papeles para la ficha (hoja 14B: arte/papeles)
+const DOC_IMG = k => `<img class="doc-ic" src="arte/papeles/${k}.png" alt="" onerror="this.remove()">`;

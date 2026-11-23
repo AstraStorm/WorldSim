@@ -31,7 +31,7 @@ function okupaTick(g, dt, people){
   }
   // Okupas que ya no viven allí
   for (const u of people) if (u.okupa != null && u.home !== u.okupa) u.okupa = null;
-  for (const h of hs) { const d = D[h]; if (d && d.okupa && !residentsOf(h).some(u => u.okupa === h)) delete d.okupa; }
+  for (const h of hs) { const d = D[h]; if (d && d.okupa && !residentsOf(h).some(u => u.okupa === h)) delete d.okupa; okMark(h, !!(d && d.okupa)); }
   okupaMoveIn(g, people, hs, D, byPid, at);
   okupaEvict(g, people, hs, D, at);
   // Una vez al día: contratos que acaban y caseros que no cumplen
@@ -58,6 +58,8 @@ function okupaTick(g, dt, people){
   if (gone) notify(`En ${g.name} ${gone} inquilino${gone > 1 ? 's' : ''} se queda${gone > 1 ? 'n' : ''} en la calle: al acabar el contrato, el alquiler ha subido demasiado`, at);
 }
 // La gente sin casa se mete en casas vacías
+// La casa se dibuja como okupada (hoja 14A) mientras lo está
+function okMark(h, on){ const o = world.objs[h]; if (!o || !!o.okupa === on) return; o.okupa = on; const x = h % W, y = (h / W) | 0; composeRegion(x - 8, y - 12, x + 8, y + 12); }
 function okupaMoveIn(g, people, hs, D, byPid, at){
   const homeless = people.filter(u => adultV(u) && !u.away && !u.boat && !u.slave && !inCamp(u) && (u.home == null || !hs.includes(u.home)) && !(u.task && BUSY_POL.includes(u.task.k)));
   if (!homeless.length || Math.random() > .5) return;
@@ -65,7 +67,7 @@ function okupaMoveIn(g, people, hs, D, byPid, at){
   if (!empty.length) return;
   const h = empty[Math.floor(Math.random() * empty.length)], go = homeless.slice(0, Math.min(houseRoom(h), 1 + Math.floor(Math.random() * 3)));
   for (const u of go) { u.home = h; u.okupa = h; floats.push({ x:u.x, y:u.y - 12, txt:'okupa', col:'#e0c080', life:0 }); }
-  D[h].okupa = { t:yearT };
+  D[h].okupa = { t:yearT }; okMark(h, true);
   const o = D[h].o > 0 && byPid.get(D[h].o), pol = okPolicy(g);
   notify(`${go.length === 1 ? go[0].name : `${go[0].name} y ${go.length - 1} más`} ocupa${go.length > 1 ? 'n' : ''} una casa vacía ${o ? `de ${o.name} ` : 'en venta '}en ${g.name}${pol === 'proteger' ? ': la ley los protege' : pol === 'desalojo' ? ': el gobierno ya habla de desalojarlos' : ''}`, { x:(h % W) * T, y:((h / W) | 0) * T });
 }
@@ -84,7 +86,7 @@ function okupaEvict(g, people, hs, D, at){
         for (const u of sold) { u.task = null; u.actT = 0; }
         const fight = sold.length && ok.length >= 2 && Math.random() < .35;
         if (fight) { for (const u of ok) u.hp = Math.max(.2, (u.hp ?? 1) - .25); g.anger = Math.min(100, (g.anger || 0) + 5); }
-        g.anger = Math.min(100, (g.anger || 0) + 1.5); delete d.okupa;
+        g.anger = Math.min(100, (g.anger || 0) + 1.5); delete d.okupa; okMark(h, false);
         notify(sold.length ? `Los soldados desalojan a ${ok.length} okupa${ok.length > 1 ? 's' : ''} en ${g.name}${fight ? ': se resisten y hay heridos' : ''}` : `En ${g.name} el dueño echa por su cuenta a los okupas de su casa`, { x:hx, y:hy });
       }
       continue;
