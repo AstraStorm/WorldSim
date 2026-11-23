@@ -31,7 +31,7 @@ const fireXY = g => [g.fx * T + 2, g.fy * T + 2];
 const fireSpot = (v, g) => { v.slotA ??= Math.random() * Math.PI * 2; return [g.fx * T + 2 + Math.cos(v.slotA) * 9, g.fy * T + 4 + Math.sin(v.slotA) * 6]; };
 const popOf = g => villagers.filter(v => !v.dead && v.vid === g.id).length;
 const housesOf = g => g.houses.filter(i => world.objs[i] && world.objs[i].key.startsWith('house') && !world.objs[i].burnt);
-const houseRoom = i => world.objs[i] && world.objs[i].key === 'house:piedra' ? 6 : 4; // la casa de piedra tiene un piso más
+const houseRoom = i => { const k = world.objs[i] && world.objs[i].key; return k === 'house:piedra' || k === 'house:mansion' ? 6 : k === 'house:chabola' ? 3 : 4; }; // la de piedra (y la mansión), un piso más; la chabola, menos
 const houseCap = g => housesOf(g).reduce((a, i) => a + houseRoom(i), 0);
 const penAnimals = g => animals.filter(a => !a.dead && a.dom === g.id);
 const MALE_ONLY = new Set(['barba', 'calvo', 'coronilla', 'calvoBarba', 'cresta']), FEMALE_ONLY = new Set(['largo', 'melena', 'coleta', 'mono']);
@@ -336,6 +336,7 @@ function chooseJob(v, g){
   institutionJobs(v, g, add); // tribunal, cárcel, imprenta, sindicato, parlamento y academia (instituciones.js)
   mineJobs(v, g, add); // abrir la mina y trabajar en ella (minas.js)
   umbrellaJobs(v, g, add); // coser paraguas (lluvia.js)
+  seasonJobs(v, g, add); shackJobs(v, g, add); // conservas, leña, árboles (estaciones.js) y chabolas (riqueza.js)
   scienceJobs(v, g, add); // investigar en la universidad (ciencia.js)
   add('carro', know.montar && houses >= 3 && (g.carts || 0) < 1 + Math.floor(pop / 10) && spare >= 10 && !busyWith(g, 'carro') ? 2.5 : 0);
   add('ayuntamiento', g.hall == null && pop >= 8 && houses >= 2 && ((g.wood >= 10 && g.stone >= 6) || g.wood >= 18) && !busyWith(g, 'ayuntamiento') ? 12 : 0);
@@ -391,10 +392,12 @@ function setupTask(v, g, job){
   const [fx, fy] = fireXY(g);
   switch (job) {
     case 'tejer': case 'manga': case 'globo': case 'cesta': case 'volar': return balloonTarget(v, g, job);
-    case 'tribunal': case 'carcel': case 'imprenta': case 'sindicato': case 'parlamento': case 'academia': case 'universidad': case 'consejo': case 'espias': return institutionTarget(v, g, job);
+    case 'tribunal': case 'carcel': case 'imprenta': case 'sindicato': case 'parlamento': case 'academia': case 'universidad': case 'consejo': case 'espias': case 'granero': case 'ahumadero': case 'lenera': case 'postas': return institutionTarget(v, g, job);
     case 'investigar': return scienceTarget(v, g, job);
     case 'mina': case 'extraer': return mineTarget(v, g, job);
     case 'refugio': return shelterTarget(v, g);
+    case 'conservar': return seasonTarget(v, g, job);
+    case 'chabola': return shackTarget(v, g);
     case 'paraguas': return umbrellaTarget(v, g);
     case 'talar': {
       const i = objNear(g, (g.treesNear ?? 99) < 12 ? 60 : 30, o => OBJ[o.key][1] === 'tree' && o.st !== 'b' && o.st !== 'j', v); const p = i != null && standBy(i); // sin árboles cerca, van más lejos
@@ -695,10 +698,12 @@ function runTask(v, g, dt){
   switch (t.k) {
     case 'tejer': case 'manga': case 'globo': case 'cesta': case 'volar': balloonArrive(v, g, t); break;
     case 'embarcar': balloonArrive(v, g, t); return;
-    case 'tribunal': case 'carcel': case 'imprenta': case 'sindicato': case 'parlamento': case 'academia': case 'universidad': case 'consejo': case 'espias': institutionArrive(v, g, t); break;
+    case 'tribunal': case 'carcel': case 'imprenta': case 'sindicato': case 'parlamento': case 'academia': case 'universidad': case 'consejo': case 'espias': case 'granero': case 'ahumadero': case 'lenera': case 'postas': institutionArrive(v, g, t); break;
     case 'investigar': scienceArrive(v, g, t); break;
     case 'mina': case 'extraer': mineArrive(v, g, t); break;
     case 'refugio': shelterArrive(v, g, t); break;
+    case 'conservar': seasonArrive(v, g, t); break;
+    case 'chabola': shackArrive(v, g, t); break;
     case 'paraguas': umbrellaArrive(v, g, t); break;
     case 'dormir': dismount(v); v.sleep = true; v.home = t.h ?? null; v.task = null; return;
     case 'beber': v.actT = 2; v.onDone = () => { v.water = 1; v.hot = Math.max(0, (v.hot || 0) - .6);

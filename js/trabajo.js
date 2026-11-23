@@ -22,7 +22,7 @@ function addFiesta(g, name){
 }
 // Oficios: cuáles puede tener cada pueblo y reparto poco a poco
 function oficioOk(g, o){
-  return !((o === 'cartógrafo' && !hasPaper(g)) || (o === 'sabio' && !hasInst(g, 'universidad')) || (o === 'soldado' && !hasBarracks(g)) || (o === 'ingeniero' && !hasBarracks(g) && !hasForge(g)) || (o === 'mercader' && g.market == null)
+  return !((o === 'cartógrafo' && !hasPaper(g)) || (o === 'sabio' && !hasInst(g, 'universidad')) || (o === 'mensajero' && !(g.know || {}).escritura) || (o === 'soldado' && !hasBarracks(g)) || (o === 'ingeniero' && !hasBarracks(g) && !hasForge(g)) || (o === 'mercader' && g.market == null)
     || (o === 'bombero' && !(g.know || {}).bomberos) || (o === 'maestro' && !hasSchool(g)) || (o === 'curandero' && !hasHosp(g) && popOf(g) < 15));
 }
 // Falta de maestros, médicos (curanderos) o bomberos: si hay para qué y son pocos, la gente se queja

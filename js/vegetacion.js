@@ -50,7 +50,7 @@ function updateLife(dt){
     }
     if (st !== o.st) { o.st = st; composeRegion(tx - 7, ty - 11, tx + 7, ty + 12); if (OBJ[o.key][2] >= 2) rareDirty = true; }
     // Reproducción: los adultos con más vigor dejan más semillas, y los hijos heredan su vigor con una pequeña mutación
-    if ((st === 'a' || st === 'v') && seedF > 0 && Math.random() < .06 * seedF * (.4 + 1.2 * o.vig)) {
+    if ((st === 'a' || st === 'v') && seedF > 0 && Math.random() < .09 * seedF * (.4 + 1.2 * o.vig)) {
       const a = Math.random() * Math.PI * 2, d = 2 + Math.random() * 4, nx = Math.round(tx + Math.cos(a) * d), ny = Math.round(ty + Math.sin(a) * d);
       if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
       const j = ny * W + nx, b = world.biome[j];
@@ -67,7 +67,7 @@ function updateLife(dt){
 }
 let lastT = 0, gameSpeed = 1;
 const SYSTEMS = [dt => { updateBallGames(dt); olympicsTick(dt); }, dt => updateSieges(dt), dt => updateVillagers(dt), dt => updateAnimals(dt), dt => updateFires(dt), dt => updateClimate(dt), dt => updateLife(dt), (dt, t) => updateVolcanoes(dt, t),
-  dt => updateWeather(dt), dt => { updateStorms(dt); updateWhirls(dt); }, dt => updateSandstorms(dt), dt => updateMeteors(dt), dt => updateBalloons(dt), dt => updateLanguages(dt), dt => clearWallsOverPens(dt), dt => updateCouncil(dt), dt => updatePirates(dt), dt => updateQuakes(dt), (dt, t) => updateWaves(t)];
+  dt => updateWeather(dt), dt => { updateStorms(dt); updateWhirls(dt); }, dt => updateSandstorms(dt), dt => updateMeteors(dt), dt => updateBalloons(dt), dt => updateLanguages(dt), dt => clearWallsOverPens(dt), dt => updateCouncil(dt), dt => updatePirates(dt), dt => updateBandits(dt), dt => updateQuakes(dt), (dt, t) => updateWaves(t)];
 function loop(t){
   const dt = Math.min(.1, (t - (lastT || t)) / 1000); lastT = t;
   if (loadingShown) drawGlobe(t);

@@ -196,6 +196,13 @@ if H10:
     for key, pt, w in [('university:universidad', (256, 300), 50), ('council:consejo', (768, 300), 62), ('spy:espias', (1280, 320), 30)]:
         add(key, shrink(cut(H10, [pt]), w))
 
+# ---- Vida cotidiana (hoja 11, si ya está): granero, ahumadero, leñera, casa de postas, mansión y chabola ----
+H11 = next((n for n in ['11.png', 'hoja_11.png'] if os.path.exists(os.path.join(SRC, n))), None)
+if H11:
+    for key, pt, w in [('granary:granero', (256, 300), 34), ('smoke:ahumadero', (768, 300), 30), ('woodshed:lenera', (1280, 320), 32),
+                       ('post:postas', (256, 790), 38), ('house:mansion', (768, 790), 40), ('house:chabola', (1280, 820), 18)]:
+        add(key, shrink(cut(H11, [pt]), w))
+
 # ---- Atlas: en filas, con 1 píxel de separación ----
 keys = list(S); W = 512; x = y = rowh = 0; pos = {}
 for k in sorted(keys, key=lambda k: -S[k]['img'].height):

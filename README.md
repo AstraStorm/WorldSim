@@ -38,6 +38,10 @@ También se puede abrir `index.html` directamente en el navegador (con la carpet
 - Piratas: barcos con bandera negra que asaltan barcas y saquean costas; las naciones con muelle y cuartel mandan su armada a hundirlos y recuperar el botín.
 - Colonias: las naciones grandes con muelle mandan colonos a costas lejanas. Una colonia bien llevada (provisiones, misma lengua, ley de autonomía) no quiere irse; si aun así el descontento crece y la capital vota, hay referéndum de independencia.
 - Cultura: obras escritas en su lengua sobre lo que les pasó, leyendas de las grandes desgracias y estatuas a sus héroes. Pensiones (ley) para los mayores. Guerras santas con fe oficial y cismas en las religiones extendidas.
+- Estaciones: la comida se estropea (con calor, deprisa); el granero la guarda mejor y en el ahumadero se hacen conservas (ahumadas o en salazón). Con frío, casas y hoguera queman leña: sin leña no calientan; la leñera hace que dure más. En otoño se tala más y se planta mucho más (los bosques también crecen algo más deprisa).
+- Bandidos: campamentos en bosques y colinas que asaltan caravanas y viajeros y roban en pueblos pequeños; los pueblos con soldados mandan patrullas a desmantelarlos.
+- Ricos y pobres: los más ricos convierten su casa en mansión, los pobres sin casa se levantan chabolas, y se nota en la ropa (collar y capa, o remiendos).
+- Noticias: las guerras, paces, cambios de régimen y descubrimientos viajan con mensajeros (oficio nuevo; a caballo con casa de postas). Batidas: los pueblos salen a buscar lejos los animales que les faltan en el cercado.
 - Lluvia: la gente se resguarda (en casa, en la taberna, bajo un árbol…) y quien sigue fuera se tapa con una hoja. Donde llueve a menudo cosen paraguas con tela: quien lo tiene sigue trabajando bajo la lluvia, con un paraguas del color de su pueblo.
 - Pueblos casi vacíos: votan en la plaza si piden la anexión a una nación amiga, se van todos a vivir con un pueblo amigo o siguen solos; el otro país vota (o decide quien manda) si los acepta.
 - Murallas: se empiezan antes y con más gente; tras un ataque el pueblo se vuelca en ellas y se aprueba la ley de «fortificación» (el doble de rápido y a mitad de precio; las dictaduras ya la llevan). Las puertas se cierran de noche, con alarma o en guerra, y cada lado tiene una en el centro.
@@ -93,6 +97,10 @@ Sin dependencias ni compilación: cada archivo es un script normal y se cargan e
 | `js/cultura.js` | Obras, leyendas, estatuas, pensiones y cismas |
 | `js/anexiones.js` | Pueblos casi vacíos: anexión, mudanza o seguir solos |
 | `js/lluvia.js` | Resguardarse de la lluvia, paraguas de tela y hojas |
+| `js/estaciones.js` | Comida que se estropea, conservas, leña, granero, ahumadero, leñera y más árboles |
+| `js/bandidos.js` | Bandidos y patrullas |
+| `js/riqueza.js` | Mansiones, chabolas y la ropa de ricos y pobres |
+| `js/noticias.js` | Mensajeros, casa de postas y batidas en busca de animales |
 | `js/defensa.js` | Murallas antes y más rápido, puertas que se cierran y ley de fortificación |
 | `js/trabajo.js` | Reparto de oficios, escuelas, días libres, festivos y quejas por falta de maestros, médicos o bomberos |
 | `js/arte_mapa.js`, `js/arte.js`, `arte/atlas.png` | Arte dibujado (edificios, árboles, rocas, barca, catapulta…) con colores por estación; si un objeto no tiene dibujo, se usa el de siempre |

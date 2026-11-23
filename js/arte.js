@@ -9,7 +9,7 @@ const ART = { img:null, ready:false, cache:new Map() };
   if (typeof ART_MAP === 'undefined') return;
   const im = new Image();
   im.onload = () => { ART.img = im; ART.ready = true; ART.cache.clear(); if (typeof world !== 'undefined' && world && typeof composeRegion === 'function') composeRegion(0, 0, W - 1, H - 1); };
-  im.src = 'arte/atlas.png?v=202611231532';
+  im.src = 'arte/atlas.png?v=202611231548';
 })();
 const ART_DECID = new Set(['oak:forest', 'birch:birch', 'willow:swamp', 'willow:moss', 'acacia:dry', 'acacia:sunset', 'oak:cherry', 'pine:autumn']);
 const ART_EVER = new Set(['pine:pine', 'pine:snow', 'pine:blue', 'ancient:elder', 'ancient:mangrove', 'ancient:life', 'ancient:baobab']);
@@ -48,7 +48,7 @@ function seasonal(c, key, season, variant){
 function artSprite(o){
   if (!ART.ready || o.st === 'b') return null; // (los retoños, como siempre)
   if (o.st === 'm' && !ART_MAP[o.key + ':bare']) return null; // (un árbol muerto sin dibujo desnudo: el de siempre)
-  const key = o.key; if (!ART_MAP[key]) return null;
+  const key = ART_MAP[o.key] ? o.key : (SPRITE_ALIAS[o.key] || o.key); if (!ART_MAP[key]) return null; // sin dibujo propio todavía: el del edificio más parecido
   const season = typeof treeSeason === 'function' ? treeSeason(o) : 1, tree = ART_DECID.has(key) || ART_EVER.has(key);
   let k2 = key, mode = 1;
   if (tree) {
