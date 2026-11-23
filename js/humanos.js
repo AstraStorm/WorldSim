@@ -262,6 +262,7 @@ const farmable = (g, x, y, i) => (tileFree(x, y) || (fieldObjOk(i) && !WATER[wor
 const busyWith = (g, job) => villagers.filter(o => !o.dead && o.vid === g.id && o.task && (o.task.k === job || o.task.job === job)).length;
 function chooseJob(v, g){
   if (retired(v, g)) return Math.random() < .6 ? 'ocio' : 'pasear'; // jubilados (cultura.js)
+  if (wantsShelter(v, g)) return 'refugio'; // llueve: a cubierto (lluvia.js)
   const pop = popOf(g), houses = housesOf(g).length, farms = [...farmMap.values()].filter(f => f.vid === g.id);
   const si = seasonInfo().i, J = [];
   const mine = OFICIOS[v.oficio] || [];
@@ -334,6 +335,7 @@ function chooseJob(v, g){
   balloonJobs(v, g, add); // tela, manga de viento, globo, cesta y vuelos (globos.js)
   institutionJobs(v, g, add); // tribunal, cárcel, imprenta, sindicato, parlamento y academia (instituciones.js)
   mineJobs(v, g, add); // abrir la mina y trabajar en ella (minas.js)
+  umbrellaJobs(v, g, add); // coser paraguas (lluvia.js)
   scienceJobs(v, g, add); // investigar en la universidad (ciencia.js)
   add('carro', know.montar && houses >= 3 && (g.carts || 0) < 1 + Math.floor(pop / 10) && spare >= 10 && !busyWith(g, 'carro') ? 2.5 : 0);
   add('ayuntamiento', g.hall == null && pop >= 8 && houses >= 2 && ((g.wood >= 10 && g.stone >= 6) || g.wood >= 18) && !busyWith(g, 'ayuntamiento') ? 12 : 0);
@@ -392,6 +394,8 @@ function setupTask(v, g, job){
     case 'tribunal': case 'carcel': case 'imprenta': case 'sindicato': case 'parlamento': case 'academia': case 'universidad': case 'consejo': case 'espias': return institutionTarget(v, g, job);
     case 'investigar': return scienceTarget(v, g, job);
     case 'mina': case 'extraer': return mineTarget(v, g, job);
+    case 'refugio': return shelterTarget(v, g);
+    case 'paraguas': return umbrellaTarget(v, g);
     case 'talar': {
       const i = objNear(g, (g.treesNear ?? 99) < 12 ? 60 : 30, o => OBJ[o.key][1] === 'tree' && o.st !== 'b' && o.st !== 'j', v); const p = i != null && standBy(i); // sin árboles cerca, van más lejos
       return p ? { k:job, i, x:p[0], y:p[1] } : null;
@@ -694,6 +698,8 @@ function runTask(v, g, dt){
     case 'tribunal': case 'carcel': case 'imprenta': case 'sindicato': case 'parlamento': case 'academia': case 'universidad': case 'consejo': case 'espias': institutionArrive(v, g, t); break;
     case 'investigar': scienceArrive(v, g, t); break;
     case 'mina': case 'extraer': mineArrive(v, g, t); break;
+    case 'refugio': shelterArrive(v, g, t); break;
+    case 'paraguas': umbrellaArrive(v, g, t); break;
     case 'dormir': dismount(v); v.sleep = true; v.home = t.h ?? null; v.task = null; return;
     case 'beber': v.actT = 2; v.onDone = () => { v.water = 1; v.hot = Math.max(0, (v.hot || 0) - .6);
       if (t.cup) { g.cups = Math.max(0, (g.cups || 0) - 1); const pr = Math.min(v.money || 0, 1); if (pr > 0) { v.money -= pr; ecOf(g).treas += pr * .5; } floats.push({ x:v.x, y:v.y - 12, txt:'taza de agua', col:'#9cc8f0', life:0 }); }

@@ -410,6 +410,7 @@ function drawVillagers(){
       if (v.bucket) { const bx = x + v.dir * 3, by = y - 5; vctx.fillStyle = '#6a6a70'; vctx.fillRect(bx - 1, by, 3, 3); vctx.fillStyle = '#5a9ae0'; vctx.fillRect(bx, by, 1, 1); }
       // Lo que lleva a la aldea, sobre la cabeza: madera, piedra o comida
       if (v.carry) { vctx.fillStyle = v.carry.k === 'madera' ? '#8a5a30' : v.carry.k === 'piedra' ? '#9a948c' : '#d84a3a'; vctx.fillRect(x - 1, y - s.height - 2, 3, 2); }
+      drawRainCover(v, x, y - s.height + 1); // paraguas u hoja si llueve (lluvia.js)
     }
     if (selected) { vctx.fillStyle = `rgba(233,185,73,${ringA})`; for (const [dx, dy] of RING) if (dy >= 1) vctx.fillRect(x + dx, y + dy, 1, 1); }
     if (!params.objects) continue;
