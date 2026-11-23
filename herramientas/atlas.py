@@ -228,6 +228,10 @@ if os.path.exists(os.path.join(SRC, '13B.png')):  # los grandes de la izquierda 
         add(key, shrink(box_parts('13B.png', box, 40), w, 48))
 if os.path.exists(os.path.join(SRC, '13C.png')):
     add('tex:carretera', tex('13C.png', (95, 112, 305, 160), 22, 5, True, 12)) # solo los adoquines (el bordillo lo pone el juego)
+    # Vía del tren por casillas: recta, cruce, desvío (en T, con el ramal hacia abajo; el juego lo gira) y curvas (N = arriba, E = derecha...)
+    for key, box in [('rail:h', (868, 92, 948, 175)), ('rail:v', (853, 252, 937, 334)), ('rail:x', (1335, 95, 1417, 177)), ('rail:t', (1068, 236, 1150, 318)),
+                     ('rail:nw', (838, 425, 965, 545)), ('rail:se', (1000, 425, 1120, 545)), ('rail:sw', (1160, 425, 1290, 545)), ('rail:ne', (1325, 425, 1452, 545))]:
+        add(key, tex('13C.png', box, 12, 12, False, 20)) # (12 px: se dibujan en una casilla de 5, con más detalle)
     add('fair:puesto', shrink(box_parts('13C.png', (200, 620, 620, 940)), 20, 40)); add('camp:oro', shrink(box_parts('13C.png', (860, 620, 1380, 940)), 32, 48))
 
 # ---- Atlas: en filas, con 1 píxel de separación ----

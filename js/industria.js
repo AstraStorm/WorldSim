@@ -29,7 +29,8 @@ function roadJobs(v, g, add){
 }
 function roadTarget(v, g){
   let best = null, bd = 1e9;
-  for (const i of pathMap) { if (isRoad(i) || plazaSet.has(i) || bridgeSet.has(i)) continue; const d = Math.hypot(i % W - g.fx, ((i / W) | 0) - g.fy); if (d < 30 && d < bd) { bd = d; best = i; } }
+  const rails = railTiles();
+  for (const i of pathMap) { if (isRoad(i) || plazaSet.has(i) || bridgeSet.has(i) || rails.has(i)) continue; const d = Math.hypot(i % W - g.fx, ((i / W) | 0) - g.fy); if (d < 30 && d < bd) { bd = d; best = i; } }
   if (best == null) { g.roadDone = yearT; return null; }
   return { k:'empedrar', i:best, x:(best % W) * T + 2, y:((best / W) | 0) * T + 3 };
 }
@@ -75,30 +76,79 @@ function industryTick(g, dt, people){
 }
 // Ferrocarril (desde routeTick): vía y estaciones entre dos pueblos con ruta por tierra que lo conocen
 function railCheck(a, b, r){
-  if (r.rail || !r.route || r.route.sea || !knowsSci(a, 'ferrocarril') || !knowsSci(b, 'ferrocarril')) return;
+  if (r.rail || !r.route || r.route.sea || !knowsSci(a, 'ferrocarril') || !knowsSci(b, 'ferrocarril') || yearT - (r.railFail ?? -1e9) < DAY_LEN * 2) return;
   const d = Math.hypot(b.fx - a.fx, b.fy - a.fy) || 1, ux = (b.fx - a.fx) / d, uy = (b.fy - a.fy) / d;
   const st = (g, s) => ringFind(Math.round(g.fx + ux * s * 10), Math.round(g.fy + uy * s * 10), 8, (x, y) => tileFree(x, y) && tileFree(x - 2, y) && tileFree(x + 2, y) && !pathMap.has(y * W + x) && !villages.some(o => underBuilding(o, x, y)));
   const sa = st(a, 1), sb = st(b, -1); if (!sa || !sb) return;
-  r.rail = { a:a.id, b:b.id, sa, sb, since:Math.floor(yearT / DAY_LEN) + 1 };
+  const path = railPath(sa, sb); if (!path) { r.railFail = yearT; return; }
+  r.rail = { a:a.id, b:b.id, sa, sb, path, since:Math.floor(yearT / DAY_LEN) + 1 }; layRail(path);
   notify(`¡Se inaugura el ferrocarril entre ${a.name} y ${b.name}! Estaciones en los dos pueblos y trenes que van y vienen`, { x:(a.fx + b.fx) / 2 * T, y:(a.fy + b.fy) / 2 * T }); snd('horn', a.fx * T, a.fy * T, .6);
 }
+// La vía va por casillas: rodea los pueblos, los edificios y los campos; cruza ríos y lagos con un puente (el mar no)
+function railPath(sa, sb){
+  const s0 = sa[1] * W + sa[0], s1 = sb[1] * W + sb[0], tx1 = sb[0], ty1 = sb[1];
+  const cost = i => {
+    const x = i % W, y = (i / W) | 0; if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1) return Infinity;
+    const b = world.biome[i]; if (b === B.DEEP || b === B.SEA || b === B.LAVA || (wallSet.has(i) && !gateSet.has(i)) || plazaSet.has(i)) return Infinity;
+    if (villages.some(g => popOf(g) && underBuilding(g, x, y))) return i === s0 || i === s1 ? 1 : Infinity;
+    const o = world.objs[i]; if (o && !(OBJ[o.key][1] === 'tree' || OBJ[o.key][1] === 'berry')) return Infinity;
+    let c = WATER[b] ? 9 : 1; if (o) c += 2; if (farmMap.has(i)) c += 5; if (pathMap.has(i)) c += .5;
+    for (const g of villages) if (popOf(g)) { const d = Math.hypot(g.fx - x, g.fy - y); if (d < 9) c += (9 - d) * 1.5; } // por fuera de los pueblos
+    return c;
+  };
+  const gs = new Map([[s0, 0]]), par = new Map(), heap = [[0, s0]];
+  const push = (f, i) => { heap.push([f, i]); let k = heap.length - 1; while (k) { const q = (k - 1) >> 1; if (heap[q][0] <= heap[k][0]) break; [heap[q], heap[k]] = [heap[k], heap[q]]; k = q; } };
+  const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let k = 0; for (;;) { const l = 2 * k + 1, r2 = l + 1; let m = k; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r2 < heap.length && heap[r2][0] < heap[m][0]) m = r2; if (m === k) break; [heap[m], heap[k]] = [heap[k], heap[m]]; k = m; } } return top; };
+  for (let n = 0; heap.length && n < 60000; n++) {
+    const [, i] = pop();
+    if (i === s1) { const out = []; for (let j = i; j !== undefined; j = par.get(j)) out.push(j); return out.reverse(); }
+    for (const j of [i - 1, i + 1, i - W, i + W]) {
+      const c = cost(j); if (c === Infinity) continue;
+      const turn = par.has(i) && (j - i) !== (i - par.get(i)) ? .6 : 0; // mejor recta que en zigzag
+      const ng = gs.get(i) + c + turn; if (ng < (gs.get(j) ?? Infinity)) { gs.set(j, ng); par.set(j, i); push(ng + Math.abs((j % W) - tx1) + Math.abs(((j / W) | 0) - ty1), j); }
+    }
+  }
+  return null;
+}
+// Al tender la vía: se talan los árboles que estorban y el trazado queda como camino (nadie construye encima)
+function layRail(path){ for (const i of path) { const o = world.objs[i]; if (o && (OBJ[o.key][1] === 'tree' || OBJ[o.key][1] === 'berry')) { world.objs[i] = null; composeRegion(i % W - 7, ((i / W) | 0) - 11, i % W + 7, ((i / W) | 0) + 12); } if (!WATER[world.biome[i]]) pathMap.add(i); } railCache = null; }
+let railCache = null;
+function railTiles(){
+  if (railCache && railCache.n === rels.size) return railCache.set;
+  const set = new Set(); for (const r of rels.values()) if (r.rail && r.rail.path) for (const i of r.rail.path) set.add(i);
+  railCache = { set, n:rels.size }; return set;
+}
+// Pieza de vía de cada casilla según sus vecinas: recta, curva, desvío (girado) o cruce
+const RAIL_PIECE = { 5:['rail:v', 0], 10:['rail:h', 0], 1:['rail:v', 0], 4:['rail:v', 0], 2:['rail:h', 0], 8:['rail:h', 0], 0:['rail:h', 0],
+  3:['rail:ne', 0], 9:['rail:nw', 0], 6:['rail:se', 0], 12:['rail:sw', 0], 14:['rail:t', 0], 13:['rail:t', 1], 11:['rail:t', 2], 7:['rail:t', 3], 15:['rail:x', 0] };
+function drawRailTile(i, S, now){
+  const x = (i % W) * T, y = ((i / W) | 0) * T, m = (S.has(i - W) ? 1 : 0) | (S.has(i + 1) ? 2 : 0) | (S.has(i + W) ? 4 : 0) | (S.has(i - 1) ? 8 : 0);
+  if (WATER[world.biome[i]]) { vctx.fillStyle = '#5a3e24'; vctx.fillRect(x - 1, y, T + 2, T); vctx.fillStyle = '#3a2614'; vctx.fillRect(x, y + T, 1, 3); vctx.fillRect(x + T - 1, y + T, 1, 3); } // puente de madera
+  const [k, rot] = RAIL_PIECE[m] || ['rail:h', 0], c = artFrame(k);
+  if (!c) { vctx.fillStyle = '#5a3e24'; vctx.fillRect(x, y + 1, T, 3); vctx.fillStyle = '#9a9aa0'; vctx.fillRect(x, y + 1, T, 1); vctx.fillRect(x, y + 3, T, 1); return; }
+  if (!rot) { vctx.drawImage(c, x, y, T, T); return; }
+  vctx.save(); vctx.translate(x + T / 2, y + T / 2); vctx.rotate(rot * Math.PI / 2); vctx.drawImage(c, -T / 2, -T / 2, T, T); vctx.restore();
+}
+// Dónde está el tren: un punto a lo largo del trazado (de casilla en casilla)
+function railPoint(path, d){ const n = path.length - 1, k = clamp(Math.floor(d), 0, n - 1), f = clamp(d - k, 0, 1), a = path[k], b = path[k + 1] ?? a; return [((a % W) + ((b % W) - (a % W)) * f) * T + T / 2, (((a / W) | 0) + (((b / W) | 0) - ((a / W) | 0)) * f) * T + T / 2 + 1, Math.sign((b % W) - (a % W))]; }
 // ---- Dibujo ----
 // Si ya está el dibujo en el atlas (hojas 13 de la carpeta de prompts), se usa; si no, el dibujo hecho a mano de abajo
 function artAt(key, x, y, flip){ const c = artFrame(key); if (!c) return false; const f = ART_MAP[key]; if (flip) { vctx.save(); vctx.translate(Math.round(x), 0); vctx.scale(-1, 1); vctx.drawImage(c, -f[4], Math.round(y) - f[3] + 1); vctx.restore(); } else vctx.drawImage(c, Math.round(x) - f[4], Math.round(y) - f[3] + 1); return true; }
 function drawIndustry(now){
   const [vx0, vy0, vx1, vy1] = visibleRect(), ts = now / 1000, onS = (x, y, m = 60) => x > vx0 - m && x < vx1 + m && y > vy0 - m && y < vy1 + m;
-  // Vías, estaciones y trenes
+  // Vías (por casillas), estaciones y trenes
+  const S = railTiles();
+  for (const i of S) { const x = (i % W) * T, y = ((i / W) | 0) * T; if (x > vx0 - 10 && x < vx1 + 10 && y > vy0 - 10 && y < vy1 + 10) drawRailTile(i, S, now); }
   for (const r of rels.values()) {
     const R = r.rail; if (!R) continue;
-    const ax = R.sa[0] * T + 2, ay = R.sa[1] * T + 3, bx = R.sb[0] * T + 2, by = R.sb[1] * T + 3, L = Math.hypot(bx - ax, by - ay) || 1, ux = (bx - ax) / L, uy = (by - ay) / L, nx = -uy, ny = ux;
-    if (Math.max(ax, bx) < vx0 - 30 || Math.min(ax, bx) > vx1 + 30 || Math.max(ay, by) < vy0 - 30 || Math.min(ay, by) > vy1 + 30) continue;
-    vctx.fillStyle = '#5a3e24'; for (let s = 0; s < L; s += 3) vctx.fillRect(Math.round(ax + ux * s - nx * 2), Math.round(ay + uy * s - ny * 2), Math.abs(nx) > .5 ? 5 : 1, Math.abs(nx) > .5 ? 1 : 5); // traviesas
-    vctx.strokeStyle = '#8a8a90'; vctx.lineWidth = .6;
-    for (const o of [-1.3, 1.3]) { vctx.beginPath(); vctx.moveTo(ax + nx * o, ay + ny * o); vctx.lineTo(bx + nx * o, by + ny * o); vctx.stroke(); } // raíles
-    for (const [sx, sy, g] of [[ax, ay, villageById(R.a)], [bx, by, villageById(R.b)]]) if (g && onS(sx, sy)) drawStation(sx, sy, g, now);
+    if (!R.path && !R.tried) { R.tried = true; R.path = railPath(R.sa, R.sb); if (R.path) layRail(R.path); else { r.rail = null; continue; } } // (partidas de antes: la vía iba en línea recta)
+    if (!R.path) continue;
+    for (const [st, g] of [[R.sa, villageById(R.a)], [R.sb, villageById(R.b)]]) { const sx = st[0] * T + 2, sy = st[1] * T + 3; if (g && onS(sx, sy)) drawStation(sx, sy, g, now); }
     if (!r.route) continue; // sin comercio (guerra, sanciones) no circula
-    const q = (ts / (L / 22)) % 2, t = q < 1 ? q : 2 - q, dir = q < 1 ? 1 : -1, tx = ax + (bx - ax) * t, ty = ay + (by - ay) * t;
-    if (onS(tx, ty)) drawTrain(tx, ty, ux * dir, uy * dir, now);
+    const n = R.path.length - 1, q = (ts * 4 / Math.max(1, n)) % 2, fwd = q < 1, d = (fwd ? q : 2 - q) * n;
+    const [tx, ty, sx] = railPoint(R.path, d); if (!onS(tx, ty)) continue;
+    R.dir = sx ? sx * (fwd ? 1 : -1) : R.dir || 1;
+    drawTrainOn(R.path, d, fwd ? -1 : 1, R.dir, now);
   }
   for (const g of villages) {
     if (!popOf(g)) continue;
@@ -120,6 +170,12 @@ function drawStation(x, y, g, now){
   vctx.fillStyle = '#f0d890'; vctx.fillRect(x - 6, y - 9, 2, 3); vctx.fillRect(x + 5, y - 9, 2, 3); vctx.fillStyle = '#5a3e24'; vctx.fillRect(x - 1, y - 8, 3, 6); // ventanas y puerta
   vctx.fillStyle = '#2a2018'; vctx.fillRect(x - 12, y - 9, 1, 8); vctx.fillRect(x + 13, y - 9, 1, 8); vctx.fillStyle = '#ffd890'; vctx.fillRect(x - 13, y - 10, 3, 2); vctx.fillRect(x + 12, y - 10, 3, 2); // farolas
   if (zoom >= 2) { vctx.font = 'bold 4px sans-serif'; vctx.textAlign = 'center'; vctx.fillStyle = '#22201e'; vctx.fillRect(x - 10, y - 25, 21, 5); vctx.fillStyle = '#f8e080'; vctx.fillText(g.name.slice(0, 12), x + .5, y - 21.3); vctx.textAlign = 'start'; } // letrero
+}
+function drawTrainOn(path, d, back, dir, now){
+  const flip = dir < 0, keys = ['train:locomotora', 'train:vagon_p', 'train:vagon_m'];
+  if (!artFrame(keys[0])) { const [x, y] = railPoint(path, d); drawTrain(x, y, dir, 0, now); return; }
+  for (let k = 2; k >= 0; k--) { const [x, y] = railPoint(path, d + back * k * 4.6); artAt(keys[k], x, y, flip); }
+  const [x, y] = railPoint(path, d); if (Math.random() < .4) chips.push({ x:x + (flip ? -3 : 3), y:y - 15, vx:-dir * 9 + (Math.random() - .5) * 3, vy:-6 - Math.random() * 3, life:0, max:1.2, col:'rgba(215,215,210,.75)' });
 }
 function drawTrain(x, y, ux, uy, now){
   if (artFrame('train:locomotora')) { const flip = ux < 0; for (let k = 2; k >= 0; k--) artAt(k ? (k === 1 ? 'train:vagon_p' : 'train:vagon_m') : 'train:locomotora', x - ux * k * 23, y - uy * k * 23, flip); if (Math.random() < .4) chips.push({ x:x + (flip ? -3 : 3), y:y - 15, vx:-ux * 9 + (Math.random() - .5) * 3, vy:-6 - Math.random() * 3, life:0, max:1.2, col:'rgba(215,215,210,.75)' }); return; } // (humo: lo pone el juego)
