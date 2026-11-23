@@ -38,6 +38,7 @@ También se puede abrir `index.html` directamente en el navegador (con la carpet
 - Piratas: barcos con bandera negra que asaltan barcas y saquean costas; las naciones con muelle y cuartel mandan su armada a hundirlos y recuperar el botín.
 - Colonias: las naciones grandes con muelle mandan colonos a costas lejanas. Una colonia bien llevada (provisiones, misma lengua, ley de autonomía) no quiere irse; si aun así el descontento crece y la capital vota, hay referéndum de independencia.
 - Cultura: obras escritas en su lengua sobre lo que les pasó, leyendas de las grandes desgracias y estatuas a sus héroes. Pensiones (ley) para los mayores. Guerras santas con fe oficial y cismas en las religiones extendidas.
+- Pueblos casi vacíos: votan en la plaza si piden la anexión a una nación amiga, se van todos a vivir con un pueblo amigo o siguen solos; el otro país vota (o decide quien manda) si los acepta.
 - Murallas: se empiezan antes y con más gente; tras un ataque el pueblo se vuelca en ellas y se aprueba la ley de «fortificación» (el doble de rápido y a mitad de precio; las dictaduras ya la llevan). Las puertas se cierran de noche, con alarma o en guerra, y cada lado tiene una en el centro.
 - Edificios de las instituciones: tribunal (sin él no hay juicios), cárcel, imprenta (sin ella no hay periódicos), casa del sindicato (negocia mejor), parlamento (en los regímenes parlamentarios) y academia de la lengua (con ley de reforma o de pureza de la lengua). Piden madera y piedra, y la cárcel e imprenta también hierro y el parlamento oro; si les falta algo, más gente se pone a talar, a la cantera o a la mina. Los del gobierno llevan la bandera de su nación en lo alto.
 - Prensa: periódicos afines a cada partido con su titular del día (contado a su manera), que van moviendo las ideas de sus lectores y destapan escándalos. Con censura solo queda el oficial.
@@ -89,6 +90,7 @@ Sin dependencias ni compilación: cada archivo es un script normal y se cargan e
 | `js/piratas.js` | Piratas y armadas |
 | `js/colonias.js` | Colonias, provisiones, autonomía y referéndums de independencia |
 | `js/cultura.js` | Obras, leyendas, estatuas, pensiones y cismas |
+| `js/anexiones.js` | Pueblos casi vacíos: anexión, mudanza o seguir solos |
 | `js/defensa.js` | Murallas antes y más rápido, puertas que se cierran y ley de fortificación |
 | `js/trabajo.js` | Reparto de oficios, escuelas, días libres, festivos y quejas por falta de maestros, médicos o bomberos |
 | `js/arte_mapa.js`, `js/arte.js`, `arte/atlas.png` | Arte dibujado (edificios, árboles, rocas, barca, catapulta…) con colores por estación; si un objeto no tiene dibujo, se usa el de siempre |

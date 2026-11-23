@@ -3033,6 +3033,7 @@ function updateVillages(dt){
     diseaseTick(g, dt, people);
     if (!isNight() && g.plaza && people.length >= 8 && Math.random() < dt * .03) startBallGame(g, people); // los niños juegan cuando quieren; los mayores, en su tiempo libre
     if ((g.migT = (g.migT ?? DAY_LEN / 3) - dt) <= 0) { g.migT = DAY_LEN / 3; migrationTick(g, people); }
+    smallTownTick(g, dt, people); // pueblos casi vacíos: anexión o mudanza (anexiones.js)
     if (g.leader && g.leader.dead && nationOf(g) === g && !['tribu', 'republica'].includes(regimeOf(g)) && !votes(g)) succession(g, people);
     // Líder: si no tienen (o ha muerto), eligen al adulto de más edad que no sea un anciano (hasta que haya elecciones)
     if (!g.leader || g.leader.dead || g.leader.vid !== g.id) {
