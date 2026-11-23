@@ -205,6 +205,14 @@ if H11:
         pts = [((p['x0'] + p['x1']) // 2, (p['y0'] + p['y1']) // 2) for p in parts if x0 <= (p['x0'] + p['x1']) / 2 < x0 + 512 and y0 <= (p['y0'] + p['y1']) / 2 < y0 + 512 and p['area'] > 150]
         add(key, shrink(cut(H11, pts), w)) # todas las piezas de su casilla (sacos, humo, el caballo), recortadas justas
 
+# ---- Deportes (sedes_deportes.png): estadio de fútbol, piscina y estadio de atletismo (la fila de abajo no se usa) ----
+H12 = next((n for n in ['sedes_deportes.png', '12.png'] if os.path.exists(os.path.join(SRC, n))), None)
+if H12:
+    for key, cell, w in [('sport:futbol', (0, 0), 74), ('sport:natacion', (1, 0), 66), ('sport:atletismo', (2, 0), 78)]:
+        _, _, parts = sheet(H12); x0, y0 = cell[0] * 512, cell[1] * 512
+        pts = [((p['x0'] + p['x1']) // 2, (p['y0'] + p['y1']) // 2) for p in parts if x0 <= (p['x0'] + p['x1']) / 2 < x0 + 512 and y0 <= (p['y0'] + p['y1']) / 2 < y0 + 512 and p['area'] > 150]
+        add(key, shrink(cut(H12, pts), w, 64))
+
 # ---- Atlas: en filas, con 1 píxel de separación ----
 keys = list(S); W = 512; x = y = rowh = 0; pos = {}
 for k in sorted(keys, key=lambda k: -S[k]['img'].height):

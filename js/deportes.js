@@ -9,17 +9,17 @@
 //   se llevan bien (los visitantes vienen a jugar y vuelven a casa); en el descanso entra el suplente
 // · Categorías: infantil, juvenil, absoluta y veteranos, según la edad de cada deportista
 const SPORT_NAME = { futbol:'Fútbol', natacion:'Natación', atletismo:'Atletismo' };
-const SPORT_DIMS = { futbol:[14, 8], natacion:[9, 6], atletismo:[16, 8] };
+const SPORT_DIMS = { futbol:[15, 8], natacion:[13, 6], atletismo:[16, 8] }; // (a la medida de los dibujos del atlas)
 const sportsOf = g => ({ futbol:g.pitch || null, natacion:g.pool || null, atletismo:g.track || null });
 const sportCat = v => { const a = ageOf(v), L = v.life || 20; return a < ADULT_H ? 'infantil' : a < L * .3 ? 'juvenil' : a > L * .62 ? 'veteranos' : 'absoluta'; };
 const SPORT_CATS = ['infantil', 'juvenil', 'absoluta', 'veteranos'];
 // Un sitio libre para una instalación (como el de la pista de atletismo)
 function sportSite(g, w, h){
-  for (let k = 0; k < 700; k++) { // primero cerca; si no cabe, en las afueras
+  for (let k = 0; k < 700; k++) { // primero cerca; si no cabe, en las afueras (y con sitio por arriba para las gradas)
     const a = Math.random() * Math.PI * 2, d = 10 + Math.random() * (k < 200 ? 18 : k < 450 ? 36 : 55), x0 = Math.round(g.fx + Math.cos(a) * d - w / 2), y0 = Math.round(g.fy + Math.sin(a) * d * .8 - h / 2);
     if (x0 < 2 || y0 < 2 || x0 + w >= W - 2 || y0 + h >= H - 2) continue;
     let ok = !plotIn(x0 - 1, y0 - 1, x0 + w, y0 + h) && !holyNear(x0, y0, x0 + w - 1, y0 + h - 1) && !penOverlap(null, x0, y0, x0 + w - 1, y0 + h - 1) && !volcDanger(x0, y0);
-    for (let y = y0; ok && y < y0 + h; y++) for (let x = x0; ok && x < x0 + w; x++) { const i = y * W + x, o = world.objs[i]; if (WATER[world.biome[i]] || world.biome[i] === B.LAVA || pathMap.has(i) || plazaSet.has(i) || farmMap.has(i) || wallSet.has(i) || bridgeSet.has(i) || underBuilding(g, x, y) || (o && !['tree', 'berry', 'stone'].includes(OBJ[o.key][1]))) ok = false; }
+    for (let y = y0 - 3; ok && y < y0 + h; y++) for (let x = x0; ok && x < x0 + w; x++) { const i = y * W + x, o = world.objs[i]; if (WATER[world.biome[i]] || world.biome[i] === B.LAVA || pathMap.has(i) || plazaSet.has(i) || farmMap.has(i) || wallSet.has(i) || bridgeSet.has(i) || underBuilding(g, x, y) || (o && !['tree', 'berry', 'stone'].includes(OBJ[o.key][1]))) ok = false; }
     if (ok) return { x0, y0, w, h };
   }
   return null;
@@ -57,7 +57,7 @@ function sportsLeisure(v, g, J){
   if (g.track && !olymp.cur) J.push(['correr', 2 * law]);
 }
 function sportTarget(v, g, job){
-  if (job === 'nadar' && g.pool) { const p = g.pool; return { k:'nadar', x:(p.x0 + 1.5 + Math.random() * (p.w - 3)) * T, y:(p.y0 + 1.5 + Math.random() * (p.h - 3)) * T }; }
+  if (job === 'nadar' && g.pool) { const p = g.pool, a = artRect(p, 'sport:natacion', .14, .68, .5, .78) || { x0:p.x0 + 1.5, x1:p.x0 + p.w - 1.5, y0:p.y0 + 1.5, y1:p.y0 + p.h - 1.5 }; return { k:'nadar', x:(a.x0 + Math.random() * (a.x1 - a.x0)) * T, y:(a.y0 + Math.random() * (a.y1 - a.y0)) * T }; }
   if (job === 'correr' && g.track) { const [x, y] = trackPoint(g.track, Math.random(), Math.floor(Math.random() * 4)); return { k:'correr', x, y }; }
   return null;
 }
@@ -118,7 +118,9 @@ function clubRoster(g, people){
   if (C.bench == null && cand.length) { const u = cand.shift(); C.bench = pidOf(u); (u.sports ||= {}).futbol = u.sports.futbol || 1; }
   if (C.coach == null) { const u = people.filter(u => ageOf(u) >= (u.life || 20) * .45 && !used.has(pidOf(u)) && u !== g.leader && !u.away).sort((a, b) => (b.edu || 0) - (a.edu || 0))[0]; if (u) C.coach = pidOf(u); }
 }
-const pitchRect = p => ({ x0:p.x0 + 1, y0:p.y0 + 1, x1:p.x0 + p.w - 2, y1:p.y0 + p.h - 2 });
+// El césped donde se juega: con el dibujo del estadio, su campo (arriba en el centro); sin él, todo el solar
+const artRect = (p, k, fx0, fx1, fy0, fy1) => { const f = ART_MAP[k]; if (!f || !ART.ready) return null; const [, , w, h] = f, left = (p.x0 + p.w / 2) * T - w / 2, top = (p.y0 + p.h) * T - h; return { x0:(left + w * fx0) / T, x1:(left + w * fx1) / T, y0:(top + h * fy0) / T, y1:(top + h * fy1) / T }; };
+const pitchRect = p => { const a = artRect(p, 'sport:futbol', .24, .76, .33, .54); return a ? { x0:Math.round(a.x0), x1:Math.round(a.x1), y0:Math.round(a.y0), y1:Math.round(a.y1) } : { x0:p.x0 + 1, y0:p.y0 + 1, x1:p.x0 + p.w - 2, y1:p.y0 + p.h - 2 }; };
 const freeFor = u => u && !u.dead && !u.away && !u.boat && !u.sleep && !(u.task && ['asalto', 'jugar', 'atleta', 'detenido', 'votar', 'golpe'].includes(u.task.k));
 function coachTo(u, p, until){ releaseTask(u); if (u.actT > 0) { u.actT = 0; u.onDone = null; } u.task = { k:'espectador', x:(p.x0 + p.w / 2) * T, y:(p.y0 + p.h) * T + 3, until }; }
 // Entreno: los cuatro juegan en su campo y el entrenador mira desde la banda
@@ -194,9 +196,10 @@ function sportsTick(g, dt, people){
 function drawSports(){
   const [vx0, vy0, vx1, vy1] = visibleRect(), now = performance.now();
   for (const g of villages) {
-    const P = g.pitch, Q = g.pool;
-    if (P && !(P.x0 * T > vx1 || (P.x0 + P.w) * T < vx0 || P.y0 * T > vy1 || (P.y0 + P.h) * T < vy0)) {
-      const px = P.x0 * T, py = P.y0 * T, pw = P.w * T, ph = P.h * T;
+    const P = g.pitch, Q = g.pool, sprite = (r, k) => { const c = artFrame(k); if (!c) return false; const [, , w, h] = ART_MAP[k]; vctx.drawImage(c, Math.round((r.x0 + r.w / 2) * T - w / 2), (r.y0 + r.h) * T - h); return true; };
+    const onS = r => r && !(r.x0 * T > vx1 || (r.x0 + r.w) * T < vx0 || (r.y0 - 4) * T > vy1 || (r.y0 + r.h) * T < vy0);
+    if (onS(P) && sprite(P, 'sport:futbol')) { if (g.club && !ballGames.some(b => b.match && b.match.home === g.id)) vctx.drawImage(crestCanvas(g.club), (P.x0 + P.w / 2) * T - 4, (P.y0 + P.h) * T - 15, 8, 9.5); }
+    else if (onS(P)) {      const px = P.x0 * T, py = P.y0 * T, pw = P.w * T, ph = P.h * T;
       for (let k = 0; k < P.w; k++) { vctx.fillStyle = k % 2 ? '#4e9a3a' : '#58a842'; vctx.fillRect(px + k * T, py, T, ph); }
       vctx.strokeStyle = 'rgba(255,255,255,.85)'; vctx.lineWidth = .8; vctx.strokeRect(px + 3.5, py + 3.5, pw - 7, ph - 7);
       vctx.beginPath(); vctx.moveTo(px + pw / 2, py + 3.5); vctx.lineTo(px + pw / 2, py + ph - 3.5); vctx.stroke();
@@ -206,7 +209,8 @@ function drawSports(){
       vctx.fillRect(px + pw - 3, py + ph / 2 - 4, 2, 1); vctx.fillRect(px + pw - 3, py + ph / 2 + 4, 2, 1); vctx.fillRect(px + pw - 2, py + ph / 2 - 4, 1, 9);
       if (g.club && !ballGames.some(b => b.match && b.match.home === g.id)) vctx.drawImage(crestCanvas(g.club), px + 1, py - 11, 8, 9.5); // el escudo del club, en una esquina
     }
-    if (Q && !(Q.x0 * T > vx1 || (Q.x0 + Q.w) * T < vx0 || Q.y0 * T > vy1 || (Q.y0 + Q.h) * T < vy0)) {
+    if (onS(Q) && sprite(Q, 'sport:natacion')) {}
+    else if (onS(Q)) {
       const px = Q.x0 * T, py = Q.y0 * T, pw = Q.w * T, ph = Q.h * T;
       vctx.fillStyle = '#c8c0b0'; vctx.fillRect(px, py, pw, ph); vctx.fillStyle = '#9a9488'; vctx.fillRect(px, py + ph - 1, pw, 1);
       vctx.fillStyle = '#3a8ac8'; vctx.fillRect(px + 3, py + 3, pw - 6, ph - 6);

@@ -75,6 +75,13 @@ function makeVillage(tx, ty){
   return g;
 }
 // ---- Búsquedas alrededor de un punto (en anillos, de cerca a lejos) ----
+// Al bajar de una barca: a la casilla de tierra firme más cercana (nunca de cara al agua)
+function landAt(v, x, y){
+  v.x = x; v.y = y; v.offBoat = yearT;
+  if (!inWater(x, y) && walkable(x, y)) return;
+  const p = ringFind(Math.floor(x / T), Math.floor(y / T), 8, (tx, ty) => walkable(tx * T + 2, ty * T + 3) && !inWater(tx * T + 2, ty * T + 3));
+  if (p) { v.x = p[0] * T + 2; v.y = p[1] * T + 3; }
+}
 function ringFind(tx, ty, R, test){
   if (test(tx, ty)) return [tx, ty];
   for (let r = 1; r <= R; r++) for (let k = 0; k < 8 * r; k++) {
@@ -690,15 +697,15 @@ function runTask(v, g, dt){
       v.boat = true; g.boatOut = true; t.phase = 'remar'; t.tx = spot[0]; t.ty = spot[1]; v.x = (g.port.launch % W) * T + 2; v.y = ((g.port.launch / W) | 0) * T + 3; return;
     }
     const bi0 = Math.floor(v.y / T) * W + Math.floor(v.x / T);
-    if (!openWater(bi0) && !bridgeSet.has(bi0)) { v.boat = false; g.boatOut = false; v.x = t.x; v.y = t.y; v.task = { k:'volver' }; return; } // el agua se ha secado o helado bajo la barca: a tierra
+    if (!openWater(bi0) && !bridgeSet.has(bi0)) { v.boat = false; g.boatOut = false; landAt(v, t.x, t.y); v.task = { k:'volver' }; return; } // el agua se ha secado o helado bajo la barca: a tierra
     if (t.phase === 'pescando') { v.moving = false; if ((t.ft -= dt) <= 0) { v.carry = { k:'comida', t:'carne', n:6 }; gainText(v); g.fished = (g.fished || 0) + 1; t.phase = 'volviendo'; } return; }
     const [tx, ty] = t.phase === 'remar' ? [t.tx, t.ty] : [(g.port.launch % W) * T + 2, ((g.port.launch / W) | 0) * T + 3], d = Math.hypot(tx - v.x, ty - v.y);
     if (d < 2) {
       if (t.phase === 'remar') { t.phase = 'pescando'; t.ft = 6; }
-      else { v.boat = false; g.boatOut = false; v.x = t.x; v.y = t.y; v.task = { k:'volver' }; }
+      else { v.boat = false; g.boatOut = false; landAt(v, t.x, t.y); v.task = { k:'volver' }; }
       return;
     }
-    if (!openWater(Math.floor(v.y / T) * W + Math.floor(v.x / T)) && !bridgeSet.has(Math.floor(v.y / T) * W + Math.floor(v.x / T))) { v.boat = false; g.boatOut = false; v.x = t.x; v.y = t.y; v.task = { k:'volver' }; return; } // el agua se ha secado o helado: la barca se queda varada
+    if (!openWater(Math.floor(v.y / T) * W + Math.floor(v.x / T)) && !bridgeSet.has(Math.floor(v.y / T) * W + Math.floor(v.x / T))) { v.boat = false; g.boatOut = false; landAt(v, t.x, t.y); v.task = { k:'volver' }; return; } // el agua se ha secado o helado: la barca se queda varada
     const sp = Math.min(d, 6 * dt); v.x += (tx - v.x) / d * sp; v.y += (ty - v.y) / d * sp;
     if (Math.abs(tx - v.x) > .5) v.dir = tx < v.x ? -1 : 1; v.moving = true; v.walk += dt; return;
   }

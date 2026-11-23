@@ -47,7 +47,7 @@ function colonyTick(n, dt, people, adults){
 // Llegan: fundan la colonia (si no se puede, se instalan donde llegan y siguen siendo de los suyos)
 function foundColony(t, n){
   const [x, y] = t.site, crew = t.crew.filter(u => !u.dead), c = n && makeVillage(x, y);
-  for (const u of crew) { u.away = false; u.task = null; u.x = x * T + 2 + (Math.random() - .5) * 8; u.y = y * T + 6 + Math.random() * 4; }
+  for (const u of crew) { u.away = false; u.task = null; landAt(u, x * T + 2 + (Math.random() - .5) * 8, y * T + 6 + Math.random() * 4); }
   if (!c) { notify(`Los colonos de ${n ? n.name : '?'} no encuentran dónde asentarse y se quedan por la costa`, { x:x * T, y:y * T }); return; }
   for (const u of crew) { u.vid = c.id; u.home = null; }
   c.nation = n.id; c.colony = { cap:n.id, born:yearT }; c.lang = n.lang; c.food += 30; c.wood += 20; c.faith = n.faith ? { ...n.faith, pantheon:[...(n.faith.pantheon || [])] } : null;

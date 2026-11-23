@@ -1764,7 +1764,7 @@ function updateTravelers(dt){
       t.phase = 'vuelta'; t.tx = t.hx; t.ty = t.hy; continue;
     }
     if (t.crew) for (const u of t.crew) if (!u.dead && u !== v) { u.away = false; u.task = null; u.x = t.x; u.y = t.y; } // el comando (y el rescatado)
-    t.done = true; v.away = false; v.task = null; v.wait = .5; const [fx, fy] = fireSpot(v, from); if (!t.sea) { v.x = fx; v.y = fy; } else { v.x = t.x; v.y = t.y; }
+    t.done = true; v.away = false; v.task = null; v.wait = .5; const [fx, fy] = fireSpot(v, from); if (!t.sea) { v.x = fx; v.y = fy; } else landAt(v, t.x, t.y); // del barco, a tierra firme
   }
   if (travelers.some(t => t.done)) travelers = travelers.filter(t => !t.done);
 }
@@ -2751,6 +2751,7 @@ function updateVillagers(dt){
     }
     // Quien no sabe nadar y cae al agua (una riada, un tsunami, la corriente) se ahoga si no sale enseguida
     if (v.swims === false && !v.boat && inWater(v.x, v.y)) {
+      if (yearT - (v.offBoat ?? -1e9) < 15) { landAt(v, v.x, v.y); v.offBoat = -1e9; } // recién bajado de la barca: a tierra, no al agua
       v.drownT = (v.drownT || 0) + dt;
       if (v.drownT > 4) { notify(`${v.name} no sabía nadar y se ha ahogado`, { x:v.x, y:v.y }); releaseTask(v); killVillager(v, 'ahogado'); continue; }
     } else v.drownT = 0;
@@ -2784,7 +2785,7 @@ function updateVillagers(dt){
     if (v.food < (hasLaw(g, 'reparto') ? .16 : .08)) eatFrom(v, g, .8); // con reparto, antes se tira de las provisiones
     v.hp = Math.min(1, (v.hp ?? 1) + dt * .008 * (hasLaw(g, 'sanidad') ? 3 : 1) * (hasHosp(g) ? 2 : 1) * (v.sick ? 0 : 1)); // enfermo no se repone if (v.hurtT > 0) v.hurtT -= dt; if (v.stab > 0) v.stab -= dt;
     // Defensa: con un lobo o un oso encima, quien tiene arma le planta cara; los demás corren a la hoguera
-    if (v.boat) { if (!v.task || v.task.k !== 'barca') { v.boat = false; g.boatOut = false; if (g.port) { v.x = (g.port.end % W) * T + 2; v.y = ((g.port.end / W) | 0) * T + 3; } } }
+    if (v.boat) { if (!v.task || v.task.k !== 'barca') { v.boat = false; g.boatOut = false; if (g.port) landAt(v, (g.port.end % W) * T + 2, ((g.port.end / W) | 0) * T + 3); } }
     if (!(v.scanA > 0)) { v.scanA = .4; v.foe = v.boat ? null : threatFor(v, g); } else v.scanA -= dt;
     if (v.foe && (v.foe.dead || v.foe.fleeT > 0)) v.foe = null;
     if (v.foe && v.sleep) { v.sleep = false; v.task = null; } // una fiera los despierta
