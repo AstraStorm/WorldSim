@@ -67,7 +67,7 @@ function updateLife(dt){
 }
 let lastT = 0, gameSpeed = 1;
 const SYSTEMS = [dt => { updateBallGames(dt); olympicsTick(dt); }, dt => updateSieges(dt), dt => updateVillagers(dt), dt => updateAnimals(dt), dt => updateFires(dt), dt => updateClimate(dt), dt => updateLife(dt), (dt, t) => updateVolcanoes(dt, t),
-  dt => updateWeather(dt), dt => { updateStorms(dt); updateWhirls(dt); }, dt => updateSandstorms(dt), dt => updateMeteors(dt), dt => updateBalloons(dt), dt => updateLanguages(dt), dt => clearWallsOverPens(dt), dt => updateCouncil(dt), dt => updateQuakes(dt), (dt, t) => updateWaves(t)];
+  dt => updateWeather(dt), dt => { updateStorms(dt); updateWhirls(dt); }, dt => updateSandstorms(dt), dt => updateMeteors(dt), dt => updateBalloons(dt), dt => updateLanguages(dt), dt => clearWallsOverPens(dt), dt => updateCouncil(dt), dt => updatePirates(dt), dt => updateQuakes(dt), (dt, t) => updateWaves(t)];
 function loop(t){
   const dt = Math.min(.1, (t - (lastT || t)) / 1000); lastT = t;
   if (loadingShown) drawGlobe(t);

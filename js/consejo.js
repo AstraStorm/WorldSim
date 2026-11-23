@@ -10,6 +10,8 @@ const COUNCIL_NAME = 'Consejo de las Naciones';
 const nationsAlive = () => villages.filter(g => popOf(g) && nationOf(g) === g);
 const council = () => world.council || null;
 const sanctioned = g => { const C = council(); const s = C && C.sanctions[nationOf(g).id]; return !!(s && s.until > yearT); };
+// Embargo: los miembros no comercian con el sancionado
+const councilEmbargo = (a, b) => { const C = council(); if (!C) return false; return (sanctioned(a) && C.members.includes(nationOf(b).id)) || (sanctioned(b) && C.members.includes(nationOf(a).id)); };
 const sanctionPressure = g => sanctioned(g) ? .02 : 0; // (en econTick)
 // El delegado: alguien de la capital que hable la lengua común (si no hay nadie, no se entera)
 function delegateOf(n){ return villagers.find(u => !u.dead && u.vid === n.id && ageOf(u) >= ADULT_H && speaks(u, LANG_COMMON)) || null; }

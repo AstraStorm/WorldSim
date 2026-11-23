@@ -433,7 +433,7 @@ function drawVillagers(){
   }
   while (ci < camps.length) drawCampFlames(camps[ci++], now);
   while (qi < campQueue.length) campQueue[qi++].f();
-  drawTravelers(now); drawSieges(now); drawBallGames(); drawMoneyFlows(now);
+  drawTravelers(now); drawPirates(now); drawSieges(now); drawBallGames(); drawMoneyFlows(now);
   drawArrows();
   drawWorkFx(now);
   drawProtestBanners();

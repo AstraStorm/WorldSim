@@ -23,6 +23,7 @@ function research(g, pts){
   n.research -= next.cost; S[next.k] = Math.floor(yearT / DAY_LEN) + 1;
   const first = !(world.sciFirst ||= {})[next.k]; if (first) world.sciFirst[next.k] = n.id;
   notify(`${first ? '¡Por primera vez en el mundo! ' : ''}Los sabios de ${n.name} descubren ${next.txt}: ${next.eff}`, { x:n.fx * T, y:n.fy * T });
+  if (first) { const sage = villagers.filter(u => !u.dead && u.vid === n.id && ageOf(u) >= ADULT_H).sort((a, b) => (b.oficio === 'sabio') - (a.oficio === 'sabio') || (b.edu || 0) - (a.edu || 0))[0]; if (sage) addHero(n, sage, `fue de los primeros del mundo en descubrir ${next.txt}`); }
 }
 // Al tratar con otros (comercio, visitas) a veces se aprende uno de sus descubrimientos
 function spreadScience(a, b){

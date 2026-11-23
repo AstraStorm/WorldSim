@@ -1351,14 +1351,14 @@ function renderVillageCard(force){
       <h4>Muertes</h4><div>${Object.entries(g.deaths || {}).sort((a, b) => b[1] - a[1]).map(([c, k]) => `${k} por ${c}`).join(' · ') || 'Ninguna todavía'}</div>
       <h4>Gente destacada</h4><div class="famrow">${notable.map(v => famNode(v, v === g.leader ? leaderTitle(g) : oficioTxt(v) || stageOf(v))).join('')}</div>`;
   } else if (cardTab === 'economia') {
-    body = `<div>${econCard(g)}</div>${mineCard(g)}${unionCard(g)}${instCard(g)}`;
+    body = `<div>${econCard(g)}</div>${goodsCard(g)}${mineCard(g)}${unionCard(g)}${instCard(g)}`;
   } else if (cardTab === 'politica') {
     const vr = n.voteRes;
     body = `<div>${govCard(g)}</div>
       ${n.parties ? `<h4>Partidos</h4><div class="parties">${n.parties.map((q, k) => { const pct = vr && vr[k] != null ? vr[k] : null; return `<div class="party${n.ruling === k ? ' on' : ''}">${logoImg(q, 30)}<div class="pi"><b style="color:${q.col}">${esc(q.name)}${n.ruling === k ? ' <span class="gold">★ gobierna</span>' : ''}</b><span class="muted">${sideTxt(q)} · propone: ${q.laws.map(l => LAW_TXT[l]).join(', ')}</span>${pct != null ? `<span class="pv">${bar(pct / 100, q.col, 150)} ${pct} %</span>` : ''}</div></div>`; }).join('')}</div>` : '<h4>Partidos</h4><div>Aún no tienen partidos</div>'}
       <h4>Leyes</h4><div class="laws">${lawsOf(g).map(l => `<div><b>${LAW_TXT[l]}</b><span class="muted">${LAW_DESC[l] || ''}</span></div>`).join('') || '<div class="muted">Sin leyes propias todavía</div>'}</div>
       ${(nationOf(g).lawHist || []).length ? `<h4>Historia de las leyes</h4><ul class="log">${nationOf(g).lawHist.slice().reverse().map(e => `<li class="pol"><span class="d">día ${e.d}</span>${esc(e.txt.replace(`En ${nationOf(g).name} `, ''))}</li>`).join('')}</ul>` : ''}
-      ${justiceCard(g)}${pressCard(g)}${scienceCard(g)}${councilCard(g)}${spyCard(g)}
+      ${colonyCard(g)}${justiceCard(g)}${pressCard(g)}${scienceCard(g)}${councilCard(g)}${spyCard(g)}${cultureCard(g)}
       <h4>Horario</h4><div>${shiftTxt(g)}${inShift(g) ? ' · <b>ahora trabajan</b>' : isNight() ? ' · ahora duermen' : ' · <b>ahora es su tiempo libre</b>'}</div>
       <h4>Nación</h4><div>${status}${provinces.length ? `: ${provinces.map(o => `<button class="lnk" data-vid="${o.id}">${esc(o.name)}</button>`).join(', ')}` : ''}${n !== g ? ` · descontento con la capital ${Math.round(g.unrest || 0)} %` : ''}</div>
       ${calendarCard(g)}${allyCard(g)}${warCard(g)}${treatyCard(g)}
@@ -1558,7 +1558,7 @@ function diploTick(){
     }
     // Lo que acerca y lo que separa (cada 10 s, poco a poco)
     const f = {};
-    if (a.faith && b.faith) f['religión'] = allGods(a.faith).some(d => allGods(b.faith).some(e => e.god === d.god)) ? 1.5 : -1;
+    if (a.faith && b.faith) f['religión'] = allGods(a.faith).some(d => allGods(b.faith).some(e => e.god === d.god)) ? 1.5 : regimeOf(a) === 'teocracia' || regimeOf(b) === 'teocracia' || hasLaw(a, 'fe') || hasLaw(b, 'fe') ? -2.5 : -1; // con fe oficial, la otra fe enfada mucho más
     const sd = Math.abs(skinAvg(a) - skinAvg(b)); if (sd > 1.5) f.raza = -.8 * (sd - 1.5) * (hasLaw(a, 'segregacion') || hasLaw(b, 'segregacion') ? 2 : 1) * (hasLaw(a, 'derechos_humanos') && hasLaw(b, 'derechos_humanos') ? .3 : hasLaw(a, 'derechos_humanos') || hasLaw(b, 'derechos_humanos') ? .6 : 1);
     if (dist < 55) f.territorio = -(55 - dist) / 22;
     const fa = a.food / Math.max(1, popOf(a)), fb = b.food / Math.max(1, popOf(b));
@@ -1584,6 +1584,7 @@ function diploTick(){
       att.danger = def.danger = 120;
       const sol = g0 => villagers.filter(v => !v.dead && v.vid === g0.id && v.weapon).length;
       notify(`¡${att.name} declara la guerra a ${def.name}! Motivo: ${REASON_TXT[r.war.reason] || 'el territorio'}. ${att.name} tiene ${sol(att)} soldados y ${popOf(att)} habitantes; ${def.name}, ${sol(def)} soldados y ${popOf(def)} habitantes`, { x:def.fx * T, y:def.fy * T });
+      if (r.war.reason === 'religión') notify(`¡Es una guerra santa! ${att.name} quiere imponer ${godTxt(att.faith)} a ${def.name}`, { x:def.fx * T, y:def.fy * T });
       callAllies(nationOf(att), nationOf(def));
       misfortune(def, 'guerra');
     }
@@ -1716,6 +1717,7 @@ function sendTraveler(kind, from, to){
   const sea = !!(from.port && to.port && lineWater(home[0], home[1], dest[0], dest[1]) > .6);
   releaseTask(v); v.task = { k:'viaje' }; v.away = true; dismount(v);
   travelers.push({ kind, v, from:from.id, to:to.id, x:sea ? home[0] : v.x, y:sea ? home[1] : v.y, tx:dest[0], ty:dest[1], hx:home[0], hy:home[1], sea, phase:'ida', dir:1 });
+  if (kind === 'caravana') loadCargo(travelers[travelers.length - 1], from, to); // la mercancía que más gana (comercio.js)
 }
 function updateTravelers(dt){
   for (const t of travelers) {
@@ -1731,6 +1733,7 @@ function updateTravelers(dt){
     if (t.kind === 'emigrante') { if (to) welcomeMigrant(v, from, to); t.done = true; v.away = false; v.task = null; v.home = null; if (to && popOf(to) !== undefined) { v.vid = to.id; v.x = t.x; v.y = t.y; floats.push({ x:v.x, y:v.y - 12, txt:'¡nuevo hogar!', col:'#c8e0a0', life:0 }); } continue; } // de vuelta al muelle, a pie hasta casa
     if (t.kind === 'flota' && t.phase === 'ida') { if (to) arriveFleet(t, from, to); if (t.crewOff) { t.done = true; continue; } t.phase = 'vuelta'; t.path = t.back.slice(); const nx = t.path.shift(); t.tx = nx[0]; t.ty = nx[1]; continue; }
     if (t.kind === 'flota') { t.done = true; for (const u of t.crew) if (!u.dead) { u.away = false; u.task = null; u.x = t.x; u.y = t.y; } continue; }
+    if (t.kind === 'colonos') { foundColony(t, from); t.done = true; continue; } // colonias.js
     if (t.kind === 'rescate' && t.phase === 'ida') { if (to) rescueArrive(t, from, to); if (t.failed) { t.done = true; continue; } t.phase = 'vuelta'; t.tx = t.hx; t.ty = t.hy; continue; } // espionaje.js
     if (t.kind === 'espia' && t.phase === 'ida') { if (to && spyArrive(t, from, to)) { t.done = true; continue; } t.phase = 'vuelta'; t.tx = t.hx; t.ty = t.hy; continue; } // espionaje.js
     if (t.phase === 'ida') {
@@ -1738,9 +1741,9 @@ function updateTravelers(dt){
       if (to && r) {
         const und = langUnderstand(v, to); // si no se entienden, la visita sirve de poco
         if (t.kind === 'caravana') {
-          const got = doTrade(from, to); r.v = clamp(r.v + 4 * und, -100, 100); shareCharts(from, to); spreadCoin(from, to);
+          const got = doTrade(from, to), sold = sellCargo(t, from, to); r.v = clamp(r.v + 4 * und, -100, 100); shareCharts(from, to); spreadCoin(from, to);
           const sickHome = villagers.find(u => !u.dead && u.vid === from.id && u.sick); if (sickHome && !hasLaw(to, 'cuarentena') && Math.random() < .3) { const tgt = villagers.find(u => !u.dead && u.vid === to.id && !u.sick); if (tgt) infect(tgt, sickHome.sick, to); } // la caravana trae la enfermedad
-          notify(`Una caravana de ${from.name} llega a ${to.name} ${t.sea ? 'por mar' : 'por tierra'}${got.length ? `: ${got.join(', ')}` : ''}`, { x:t.x, y:t.y });
+          notify(`Una caravana de ${from.name} llega a ${to.name} ${t.sea ? 'por mar' : 'por tierra'}${sold}${got.length ? `: ${got.join(', ')}` : ''}`, { x:t.x, y:t.y });
         } else if (r.war) {
           if (Math.random() < (.3 + Math.min(.4, (yearT - r.war.start) / (DAY_LEN * 6))) * und) makePeace(from, to, r, `gracias a un diplomático de ${from.name}`);
           else notify(`${to.name} rechaza al diplomático de ${from.name}${und < .5 ? ` (ni le entienden: no habla su lengua ni ${langName(LANG_COMMON)})` : ''}: sigue la guerra`, { x:t.x, y:t.y });
@@ -1761,7 +1764,7 @@ function drawTravelers(now){
     const wet = inWater(t.x, t.y); // en un cauce seco, sobre el hielo o en tierra no se dibuja la barca: van andando
     if (t.crew && wet) { const crew = t.crew.filter(u => !u.dead); crew.forEach((u, k) => { if (k % 2) return; const ox = -t.dir * Math.floor(k / 2) * 14, oy = (Math.floor(k / 2) % 2 ? 6 : -4); drawBoat(x + ox, y + oy, t.dir, now, true, personSprite(u, 0, t.dir < 0)); }); redrawFront(x - 15 - crew.length * 7, x + 15 + crew.length * 7, y - 20, y + 6); if (crew.length) { vctx.fillStyle = '#c8302a'; vctx.fillRect(x + t.dir * 2, y - 22, 3, 2); vctx.fillStyle = '#5a3a20'; vctx.fillRect(x + t.dir, y - 22, 1, 8); } continue; }
     if (wet) { drawBoat(x, y, t.dir, now, true, s); redrawFront(x - 15, x + 15, y - s.height - 6, y); continue; } // lo que hay delante (en la orilla) tapa la barca
-    if (t.kind === 'caravana') drawCart(x - t.dir * 8, y, t.dir, now, '#c8a050');
+    if (t.kind === 'caravana') { drawCart(x - t.dir * 8, y, t.dir, now, '#c8a050'); if (t.cargo) { vctx.fillStyle = '#2a1a10'; vctx.fillRect(x - t.dir * 8 - 3, y - 9, 6, 4); vctx.fillStyle = GOODS[t.cargo.k].col; vctx.fillRect(x - t.dir * 8 - 2, y - 8, 4, 2); } } // con su carga, del color de la mercancía
     vctx.drawImage(s, x - (s.width >> 1), y - s.height + 1);
     redrawFront(x - 14, x + 14, y - s.height - 14, y);
     if (t.kind === 'diplomatico') { // con la bandera de su pueblo en un palo
@@ -1970,14 +1973,14 @@ const PARTY_A = ['Partido', 'Unión', 'Frente', 'Movimiento', 'Liga', 'Alianza',
 const PARTY_B = { izq:['Socialista', 'Socialista del Trabajo', 'del Pueblo', 'de la Hoguera Común', 'de los Pastores', 'del Pan para Todos', 'Popular', 'de los Jornaleros', 'del Reparto'],
   centro:['del Arado', 'del Río', 'de la Concordia', 'de las Cosechas', 'del Camino', 'Verde', 'de la Fe'],
   der:['del Comercio', 'de la Espada', 'Libre', 'de los Linajes', 'del Orden', 'de la Corona de Piedra', 'de los Mercaderes'] };
-const LAW_TXT = { fortificacion:'fortificación', derecho_huelga:'derecho a huelga', prohibir_huelgas:'prohibición de huelgas', lengua_unica:'una sola lengua', plurilinguismo:'todas las lenguas', reforma_lengua:'reforma de la lengua', pureza_lengua:'pureza de la lengua', reparto:'reparto de comida', obras:'obras públicas', paz:'paz con los vecinos', comercio:'comercio libre', ejercito:'ejército', expansion:'expansión', fe:'fe oficial', estatal:'economía estatal', censura:'censura',
+const LAW_TXT = { aranceles:'aranceles', autonomia:'autonomía de las provincias', pensiones:'pensiones', fortificacion:'fortificación', derecho_huelga:'derecho a huelga', prohibir_huelgas:'prohibición de huelgas', lengua_unica:'una sola lengua', plurilinguismo:'todas las lenguas', reforma_lengua:'reforma de la lengua', pureza_lengua:'pureza de la lengua', reparto:'reparto de comida', obras:'obras públicas', paz:'paz con los vecinos', comercio:'comercio libre', ejercito:'ejército', expansion:'expansión', fe:'fe oficial', estatal:'economía estatal', censura:'censura',
   jornada_corta:'jornada corta', jornada_larga:'jornada larga', sanidad:'sanidad pública', educacion:'escuelas', impuestos_altos:'impuestos altos', impuestos_bajos:'impuestos bajos',
   bosques:'protección de los bosques', orden:'mano dura', natalidad:'más hijos', laicidad:'laicidad', salario_minimo:'salario mínimo', fronteras_abiertas:'fronteras abiertas', fronteras_cerradas:'fronteras cerradas', cuarentena:'cuarentena', vivienda_publica:'vivienda pública', mercado_vivienda:'libre mercado de la vivienda', tope_alquiler:'tope a los alquileres', libertad_religiosa:'libertad de culto', persecucion_religiosa:'persecución religiosa', derechos_humanos:'derechos humanos', segregacion:'segregación racial', matrimonio_igualitario:'matrimonio igualitario', persecucion:'persecución de homosexuales' };
-const LAW_DESC = { fortificacion:'todo el mundo arrima el hombro en las murallas: cada tramo se levanta el doble de rápido y cuesta la mitad', derecho_huelga:'los sindicatos pueden hacer huelga y el gobierno tiene que negociar antes', prohibir_huelgas:'las huelgas son ilegales: se rompen y los cabecillas van a juicio', lengua_unica:'en la escuela solo se enseña la lengua oficial: las demás se van perdiendo (y sus hablantes protestan)', plurilinguismo:'en la escuela se enseñan todas las lenguas del país (a los de una sola lengua no les gusta)', reforma_lengua:'una academia moderniza la lengua: cambia antes (los mayores se quejan de que ya no es la de siempre)', pureza_lengua:'la lengua no se toca: casi no cambia y cuesta más aprender palabras de fuera', vivienda_publica:'el gobierno construye muchas casas y las da a quien no tiene, sin alquiler', mercado_vivienda:'el gobierno no construye casas: solo se hacen las que alguien compra, y los precios suben', tope_alquiler:'los alquileres no pueden pasar de un tope y cuesta más desahuciar', libertad_religiosa:'cada uno reza a quien quiera: los forasteros de otra fe viven en paz (y sus predicadores convierten más)', persecucion_religiosa:'solo se tolera la fe del pueblo: a los de otra fe se les expulsa', derechos_humanos:'todos tienen los mismos derechos, sea cual sea su origen o su piel: mejor trato con los vecinos', segregacion:'quien tiene otra piel cobra menos y vive peor: muchos se van y los vecinos lo ven mal', matrimonio_igualitario:'las parejas del mismo sexo se casan y pueden adoptar', persecucion:'las parejas del mismo sexo se esconden; si las descubren, las destierran', reparto:'se reparte comida antes a quien tiene hambre', obras:'se construye más', paz:'menos guerras y más diplomacia', comercio:'más comercio y caravanas', ejercito:'más soldados y más impuestos',
+const LAW_DESC = { aranceles:'las mercancías de otras naciones pagan una parte al entrar (y aparece el contrabando)', autonomia:'las provincias y colonias se gobiernan solas en lo suyo: apenas quieren irse', pensiones:'los mayores dejan de trabajar y cobran del tesoro', fortificacion:'todo el mundo arrima el hombro en las murallas: cada tramo se levanta el doble de rápido y cuesta la mitad', derecho_huelga:'los sindicatos pueden hacer huelga y el gobierno tiene que negociar antes', prohibir_huelgas:'las huelgas son ilegales: se rompen y los cabecillas van a juicio', lengua_unica:'en la escuela solo se enseña la lengua oficial: las demás se van perdiendo (y sus hablantes protestan)', plurilinguismo:'en la escuela se enseñan todas las lenguas del país (a los de una sola lengua no les gusta)', reforma_lengua:'una academia moderniza la lengua: cambia antes (los mayores se quejan de que ya no es la de siempre)', pureza_lengua:'la lengua no se toca: casi no cambia y cuesta más aprender palabras de fuera', vivienda_publica:'el gobierno construye muchas casas y las da a quien no tiene, sin alquiler', mercado_vivienda:'el gobierno no construye casas: solo se hacen las que alguien compra, y los precios suben', tope_alquiler:'los alquileres no pueden pasar de un tope y cuesta más desahuciar', libertad_religiosa:'cada uno reza a quien quiera: los forasteros de otra fe viven en paz (y sus predicadores convierten más)', persecucion_religiosa:'solo se tolera la fe del pueblo: a los de otra fe se les expulsa', derechos_humanos:'todos tienen los mismos derechos, sea cual sea su origen o su piel: mejor trato con los vecinos', segregacion:'quien tiene otra piel cobra menos y vive peor: muchos se van y los vecinos lo ven mal', matrimonio_igualitario:'las parejas del mismo sexo se casan y pueden adoptar', persecucion:'las parejas del mismo sexo se esconden; si las descubren, las destierran', reparto:'se reparte comida antes a quien tiene hambre', obras:'se construye más', paz:'menos guerras y más diplomacia', comercio:'más comercio y caravanas', ejercito:'más soldados y más impuestos',
   expansion:'conquistan a quien puedan', fe:'una religión oficial', estatal:'el estado lo controla todo', censura:'menos protestas, más rabia contenida', jornada_corta:'trabajan menos horas y viven más contentos',
   jornada_larga:'trabajan de sol a sol: producen más, pero se quejan', sanidad:'los heridos se curan antes', educacion:'los niños aprenden más (a nadar, un oficio)', impuestos_altos:'más dinero público, menos en el bolsillo',
   impuestos_bajos:'menos gasto público, más dinero para la gente', bosques:'talan menos y replantan más', orden:'las protestas se reprimen y cuesta más que salgan', natalidad:'nacen más niños', laicidad:'los dioses dan menos miedo', salario_minimo:'cobran más por su trabajo (y los precios suben algo)', fronteras_abiertas:'entran caravanas y viajeros libremente: más comercio y mejores relaciones', fronteras_cerradas:'las puertas se atrancan para los de fuera: casi no entran caravanas por tierra', cuarentena:'aíslan a los enfermos: las epidemias se contagian mucho menos' };
-const LAW_LEAN = { fortificacion:.35, derecho_huelga:-.45, prohibir_huelgas:.6, lengua_unica:.55, plurilinguismo:-.4, reforma_lengua:-.25, pureza_lengua:.45, vivienda_publica:-.6, tope_alquiler:-.45, mercado_vivienda:.55, libertad_religiosa:-.35, persecucion_religiosa:.75, derechos_humanos:-.45, matrimonio_igualitario:-.5, segregacion:.7, persecucion:.8, cuarentena:.1, fronteras_abiertas:-.35, fronteras_cerradas:.45, salario_minimo:-.55, reparto:-.7, jornada_corta:-.6, sanidad:-.5, impuestos_altos:-.5, educacion:-.4, paz:-.35, bosques:-.3, laicidad:-.3, obras:-.15, comercio:.45, fe:.4, natalidad:.3, jornada_larga:.5, impuestos_bajos:.55, ejercito:.6, orden:.6, expansion:.7 };
+const LAW_LEAN = { aranceles:.4, autonomia:-.2, pensiones:-.5, fortificacion:.35, derecho_huelga:-.45, prohibir_huelgas:.6, lengua_unica:.55, plurilinguismo:-.4, reforma_lengua:-.25, pureza_lengua:.45, vivienda_publica:-.6, tope_alquiler:-.45, mercado_vivienda:.55, libertad_religiosa:-.35, persecucion_religiosa:.75, derechos_humanos:-.45, matrimonio_igualitario:-.5, segregacion:.7, persecucion:.8, cuarentena:.1, fronteras_abiertas:-.35, fronteras_cerradas:.45, salario_minimo:-.55, reparto:-.7, jornada_corta:-.6, sanidad:-.5, impuestos_altos:-.5, educacion:-.4, paz:-.35, bosques:-.3, laicidad:-.3, obras:-.15, comercio:.45, fe:.4, natalidad:.3, jornada_larga:.5, impuestos_bajos:.55, ejercito:.6, orden:.6, expansion:.7 };
 const LAW_CLASH = [['derecho_huelga', 'prohibir_huelgas'], ['lengua_unica', 'plurilinguismo'], ['reforma_lengua', 'pureza_lengua'], ['vivienda_publica', 'mercado_vivienda'], ['tope_alquiler', 'mercado_vivienda'], ['libertad_religiosa', 'persecucion_religiosa'], ['laicidad', 'persecucion_religiosa'], ['derechos_humanos', 'segregacion'], ['matrimonio_igualitario', 'persecucion'], ['fronteras_abiertas', 'fronteras_cerradas'], ['salario_minimo', 'impuestos_bajos'], ['jornada_corta', 'jornada_larga'], ['impuestos_altos', 'impuestos_bajos'], ['fe', 'laicidad'], ['paz', 'expansion']];
 // Programa de un partido: 3 o 4 leyes cercanas a sus ideas, con algo de sorpresa (dos partidos del mismo lado no proponen lo mismo)
 function partyProgram(ideo, n = 3 + (Math.random() < .5 ? 1 : 0), keep = []){
@@ -2163,9 +2166,9 @@ function succession(g, people){
   }
 }
 // ---- Descontento, manifestaciones y golpes de estado ----
-const SLOGANS = { profesores:['¡Más maestros!', '¡Nuestros hijos merecen aprender!', '¡Escuela digna!'], medicos:['¡Más médicos!', '¡La salud no espera!', '¡Nos morimos sin curanderos!'], bomberos:['¡Más bomberos!', '¡Que no ardan nuestras casas!', '¡Protección contra el fuego!'], idioma:['¡Nuestra lengua en la escuela!', '¡Respeto a nuestro idioma!', '¡Hablamos como queremos!'], presupuestos:['¡Presupuestos ya!', '¡Queremos saber en qué se gasta!', '¡Las cuentas claras!'], 'corrupción':['¡Ladrones!', '¡Devolved lo robado!', '¡Fuera los corruptos!'], vivienda:['¡Casas para todos!', '¡Alquileres justos!', '¡Ni gente sin casa ni casas sin gente!', '¡Stop desahucios!'], jornada:['¡Queremos descansar!', '¡Menos horas!', '¡Días libres!'], impuestos:['¡Menos impuestos!', '¡No más tributos!'], hambre:['¡Pan!', '¡Tenemos hambre!', '¡Comida para todos!'], 'inflación':['¡Precios justos!', '¡Nuestro dinero no vale nada!', '¡Salarios dignos!'],
+const SLOGANS = { pensiones:['¡Pensiones dignas!', '¡Nuestros mayores se lo han ganado!', '¡Respeto a los abuelos!'], profesores:['¡Más maestros!', '¡Nuestros hijos merecen aprender!', '¡Escuela digna!'], medicos:['¡Más médicos!', '¡La salud no espera!', '¡Nos morimos sin curanderos!'], bomberos:['¡Más bomberos!', '¡Que no ardan nuestras casas!', '¡Protección contra el fuego!'], idioma:['¡Nuestra lengua en la escuela!', '¡Respeto a nuestro idioma!', '¡Hablamos como queremos!'], presupuestos:['¡Presupuestos ya!', '¡Queremos saber en qué se gasta!', '¡Las cuentas claras!'], 'corrupción':['¡Ladrones!', '¡Devolved lo robado!', '¡Fuera los corruptos!'], vivienda:['¡Casas para todos!', '¡Alquileres justos!', '¡Ni gente sin casa ni casas sin gente!', '¡Stop desahucios!'], jornada:['¡Queremos descansar!', '¡Menos horas!', '¡Días libres!'], impuestos:['¡Menos impuestos!', '¡No más tributos!'], hambre:['¡Pan!', '¡Tenemos hambre!', '¡Comida para todos!'], 'inflación':['¡Precios justos!', '¡Nuestro dinero no vale nada!', '¡Salarios dignos!'],
   'tiranía':['¡Libertad!', '¡Abajo el tirano!', '¡Fuera!'], ideas:['¡Fuera el gobierno!', '¡Otro gobierno!', '¡No nos representan!'], guerra:['¡Paz!', '¡No a la guerra!'], bancarrota:['¡Devolved nuestros ahorros!', '¡Ladrones!'], salarios:['¡Sueldos dignos!', '¡No llegamos a fin de mes!', '¡Más salario!'], culto:['¡Libertad de culto!', '¡Dejadnos rezar!'], racismo:['¡No al racismo!', '¡Todos somos iguales!', '¡Derechos para todos!'], derechos:['¡Amar no es delito!', '¡Igualdad!', '¡Libres de amar!'] };
-const GRIEF_TXT = { idioma:'la política de idiomas', profesores:'la falta de maestros', medicos:'la falta de médicos', bomberos:'la falta de bomberos', presupuestos:'la falta de presupuestos', 'corrupción':'la corrupción', vivienda:'la falta de vivienda', jornada:'las jornadas interminables', impuestos:'los impuestos', hambre:'el hambre', 'inflación':'la subida de precios', 'tiranía':'la tiranía', ideas:'el gobierno', guerra:'la guerra', bancarrota:'la bancarrota', salarios:'los sueldos bajos', culto:'la persecución religiosa', racismo:'la segregación racial', derechos:'la persecución por amar' };
+const GRIEF_TXT = { pensiones:'que los mayores no tengan pensión', idioma:'la política de idiomas', profesores:'la falta de maestros', medicos:'la falta de médicos', bomberos:'la falta de bomberos', presupuestos:'la falta de presupuestos', 'corrupción':'la corrupción', vivienda:'la falta de vivienda', jornada:'las jornadas interminables', impuestos:'los impuestos', hambre:'el hambre', 'inflación':'la subida de precios', 'tiranía':'la tiranía', ideas:'el gobierno', guerra:'la guerra', bancarrota:'la bancarrota', salarios:'los sueldos bajos', culto:'la persecución religiosa', racismo:'la segregación racial', derechos:'la persecución por amar' };
 const atWarJ0 = g => [...rels.values()].some(r => r.war && [r.war.att, r.war.def].includes(nationOf(g).id));
 const BUSY_POL = ['asalto', 'apagar', 'viaje', 'votar', 'golpe', 'protesta', 'reprimir', 'detenido', 'ritual'];
 function politicsTick(g, dt, people){
@@ -2183,6 +2186,7 @@ function politicsTick(g, dt, people){
     if (hasLaw(g, 'persecucion') && (gays >= 2 || left > .4)) f.derechos = .2 + gays / ad * 2;
     f.idioma = languageGrief(g, adults); // idiomas.js
     Object.assign(f, staffGrief(g, adults, people)); // faltan maestros, médicos o bomberos (trabajo.js)
+    f.pensiones = pensionGrief(g, adults); // (cultura.js)
     const others = adults.filter(u => otherFaith(u, g)).length; if (hasLaw(g, 'persecucion_religiosa') && (others >= 2 || left > .45)) f.culto = .2 + others / ad * 1.5; }
   if (g.coin) { const ws = wageStats(g); if (ws.n >= 3 && (ws.avg < ws.cost || ws.low / ws.n > .4)) f.salarios = Math.min(.8, Math.max((1 - ws.avg / ws.cost) * 1.3, (ws.low / ws.n - .3) * 1.2)); } // no les llega el sueldo
   let up = -(.32 + (hasLaw(g, 'reparto') ? .12 : 0) + (cap.wonder != null && world.objs[cap.wonder] ? .1 : 0) + (hasLaw(g, 'censura') ? .1 : 0)), worst = null;
@@ -2193,6 +2197,8 @@ function politicsTick(g, dt, people){
   regimeTick(g, dt, people, adults); // oligarquía, tecnocracia, anarquía y la corona parlamentaria (regimenes.js)
   justiceTick(g, dt, people, adults); unionTick(g, dt, people, adults); pressTick(g, dt, people, adults); // justicia.js, sindicatos.js, prensa.js
   scienceTick(g, dt, people); spyTick(g, dt, people, adults); // ciencia.js, espionaje.js
+  colonyTick(g, dt, people, adults); cultureTick(g, dt, people, adults); // colonias.js, cultura.js
+  if ((g.goodsT = (g.goodsT || 0) - dt) <= 0) { g.goodsT = 20; goodsTick(g); } // mercancías (comercio.js)
   if (cap === g && regimeOf(g) === 'republica' && hasSchool(g) && (g.know || {}).escritura && popOf(g) >= 18 && yearT - (g.regimeT || 0) > YEAR && !atWarJ0(g) && Math.random() < dt * .0006) {
     setRegime(g, 'democracia', null); notify(`La república de ${g.name} se convierte en una democracia parlamentaria: más partidos, y si nadie gana por mayoría, gobiernos de coalición`, { x:g.fx * T, y:g.fy * T });
   }
@@ -2231,7 +2237,7 @@ function proposeLaw(g, adults){
   } else { const txt = `En ${g.name} el pueblo rechaza la ley de «${LAW_TXT[law]}» que proponía ${artP(p)} ${p.name} (solo un ${pct} % a favor)`; lawLog(g, txt); notify(txt, at); g.anger = Math.min(100, (g.anger || 0) + 3); }
 }
 function startProtest(g, adults){
-  const gi = govIdeo(g), econ = ['hambre', 'inflación', 'bancarrota', 'guerra', 'jornada', 'impuestos', 'vivienda', 'presupuestos', 'corrupción', 'profesores', 'medicos', 'bomberos'].includes(g.grief); g.protestT = yearT;
+  const gi = govIdeo(g), econ = ['pensiones', 'hambre', 'inflación', 'bancarrota', 'guerra', 'jornada', 'impuestos', 'vivienda', 'presupuestos', 'corrupción', 'profesores', 'medicos', 'bomberos'].includes(g.grief); g.protestT = yearT;
   let who = adults.filter(u => u !== g.leader && !u.away && !u.boat && !u.sleep && !(u.task && BUSY_POL.includes(u.task.k)) && (econ ? Math.random() < .6 : Math.abs((u.ideo || 0) - gi) > .3));
   if (g.grief === 'vivienda') who.sort((a, b) => (a.home == null ? 0 : 1) - (b.home == null ? 0 : 1)); // los que no tienen casa, delante
   if (g.grief === 'idioma') who = adults.filter(u => u !== g.leader && !u.away && !u.boat && !u.sleep && !(u.task && BUSY_POL.includes(u.task.k)) && langProtester(u, g));
@@ -2300,6 +2306,7 @@ function respondProtest(g, who){
     else if (g.grief === 'vivienda') { g.hDem = Math.max(.7, (g.hDem || 1) * .8); what = 'prometen más casas y bajan los precios de la vivienda'; }
     else if (g.grief === 'salarios' && g.coin) { g.wageUp = Math.min(2.5, (g.wageUp || 1) * 1.3); what = 'suben los sueldos un 30 %'; }
     else if (g.grief === 'idioma') what = langConcede(g);
+    else if (g.grief === 'pensiones' && cap.parties && cap.ruling != null) { const P = cap.parties[cap.ruling]; if (!P.laws.includes('pensiones')) P.laws.push('pensiones'); what = 'aprueban las pensiones para los mayores'; }
     else if (['profesores', 'medicos', 'bomberos'].includes(g.grief)) what = staffConcede(g, g.grief) || 'prometen buscar a alguien';
     else if (votes(g) && cap.parties && !cap.election) { what = 'convocan elecciones anticipadas'; cap.voteT = -1e9; }
     else if (reg === 'monarquia' && ['tiranía', 'ideas'].includes(g.grief) && cap === g && Math.random() < .4) { setRegime(g, 'monarquia_parlamentaria', null); what = `${leaderRef(g)} acepta un parlamento elegido por el pueblo: nace una monarquía parlamentaria`; }
@@ -2394,6 +2401,7 @@ const priceOf = g => g.coin ? Math.max(1, Math.round(ecOf(g).P)) : 1;
 const hasBank = g => g.bank != null && !!world.objs[g.bank];
 function econTick(g, people){
   coinTick(g); // ¿pasan a una moneda mejor? (monedas.js)
+  payPensions(g, people); // los mayores jubilados cobran del tesoro (cultura.js)
   const ec = ecOf(g), pop = Math.max(1, people.length), reg = regimeOf(g), bank = hasBank(g);
   const taxR = taxRateOf(g);
   marketTick(); // la bolsa mundial, una vez al día (bolsa.js)
@@ -3034,11 +3042,11 @@ function updateVillages(dt){
     // Descontento de los pueblos de una nación: lejos de la capital, con otra fe, con hambre o conquistados a la fuerza;
     // si se acumula, se independizan
     if (g.nation && g.nation !== g.id && villageById(g.nation) && popOf(villageById(g.nation))) {
-      const cap = villageById(g.nation), f = { distancia:Math.hypot(g.fx - cap.fx, g.fy - cap.fy) > 70 ? .6 : 0, 'religión':g.faith && cap.faith && g.faith.god !== cap.faith.god ? .8 : 0,
+      const cap = villageById(g.nation), f = { distancia:Math.hypot(g.fx - cap.fx, g.fy - cap.fy) > 70 ? .6 * colonyCare(g, cap) : 0, 'religión':g.faith && cap.faith && g.faith.god !== cap.faith.god ? .8 : 0,
         hambre:g.food < popOf(g) ? .6 : 0, impuestos:hasLaw(cap, 'ejercito') || hasLaw(cap, 'expansion') ? .3 : 0 };
-      const up = Object.values(f).reduce((a2, b2) => a2 + b2, 0) - .5 - (hasLaw(cap, 'reparto') ? .2 : 0);
+      const up = Object.values(f).reduce((a2, b2) => a2 + b2, 0) - .5 - (hasLaw(cap, 'reparto') ? .2 : 0) - (hasLaw(cap, 'autonomia') ? .25 : 0);
       g.unrest = clamp((g.unrest || 0) + up * dt, 0, 100);
-      if (g.unrest > 70) {
+      if (g.unrest > 70 && independenceReferendum(g, cap)) { // donde la capital vota, antes hay referéndum (colonias.js)
         const why = Object.entries(f).sort((a2, b2) => b2[1] - a2[1])[0][0];
         becomeIndependent(g); addFiesta(g, 'Día de la Independencia'); const r = relOf(g, cap); r.known = true; r.v = -35; r.reason = why === 'religión' ? 'religión' : why === 'hambre' ? 'recursos' : 'territorio';
         notify(`¡${g.name} se independiza de ${cap.name}! (por ${{ distancia:'estar tan lejos', 'religión':'la religión', hambre:'el hambre', impuestos:'los impuestos y las levas' }[why]})`, { x:g.fx * T, y:g.fy * T });

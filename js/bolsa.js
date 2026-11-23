@@ -12,7 +12,7 @@ function marketOf(){ world.mkId ||= Math.random(); if (!market || market.wid !==
 const nationsLive = () => [...new Set(villages.filter(o => popOf(o)).map(nationOf))];
 const stockOf = n => marketOf().stocks[n.id];
 const sanctionsOn = () => marketOf().sanctions.filter(s => s.until > yearT);
-const sanctionedPair = (a, b) => { const x = nationOf(a).id, y = nationOf(b).id; return x !== y && sanctionsOn().some(s => (s.from === x && s.to === y) || (s.from === y && s.to === x)); };
+const sanctionedPair = (a, b) => { const x = nationOf(a).id, y = nationOf(b).id; return x !== y && (sanctionsOn().some(s => (s.from === x && s.to === y) || (s.from === y && s.to === x)) || councilEmbargo(a, b)); };
 const pct = x => `${x >= 0 ? '+' : ''}${Math.round(x * 100)} %`;
 // Cómo le va a una nación ahora mismo (se compara con el día anterior)
 function nationSnap(n){

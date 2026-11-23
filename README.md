@@ -34,6 +34,10 @@ También se puede abrir `index.html` directamente en el navegador (con la carpet
 - Ciencia: con escuela y escritura se levanta la universidad, donde los sabios investigan. Cada nación descubre, por orden, la medicina, la rotación de cultivos, la metalurgia, la astronomía, la ciencia económica, la aeronáutica, la pólvora y las vacunas, y cada descubrimiento se nota en el juego. Se contagian al comerciar y la crónica dice quién fue el primero del mundo.
 - Consejo de las Naciones: cuando hay naciones que saben escribir, la más poblada en paz lo funda y levanta su palacio. Vota altos el fuego en las guerras y sanciones contra quien persigue a su gente (con inflación y peores relaciones). Se debate en la lengua común: quien no la habla, no se entera.
 - Espionaje: las naciones con rivales mandan espías a robar mapas o descubrimientos, sabotear, sembrar discordia o preparar golpes. Si los pillan, crisis diplomática, cárcel y petición de rescate. Donde lo tienen preso se vota en la plaza si lo ejecutan (o lo decide quien manda); en su país se vota si pagan el rescate, mandan un comando armado o lo dejan a su suerte.
+- Mercancías y rutas: cada pueblo produce según dónde vive (sal, especias, telas, pieles, vino, cerámica, pescado salado, armas, joyas) y lo que escasea sube de precio. Las caravanas cargan lo que más gana (se ve la carga de su color) y lo venden al llegar. Aranceles (ley) y contrabando; el Consejo puede embargar a un sancionado.
+- Piratas: barcos con bandera negra que asaltan barcas y saquean costas; las naciones con muelle y cuartel mandan su armada a hundirlos y recuperar el botín.
+- Colonias: las naciones grandes con muelle mandan colonos a costas lejanas. Una colonia bien llevada (provisiones, misma lengua, ley de autonomía) no quiere irse; si aun así el descontento crece y la capital vota, hay referéndum de independencia.
+- Cultura: obras escritas en su lengua sobre lo que les pasó, leyendas de las grandes desgracias y estatuas a sus héroes. Pensiones (ley) para los mayores. Guerras santas con fe oficial y cismas en las religiones extendidas.
 - Murallas: se empiezan antes y con más gente; tras un ataque el pueblo se vuelca en ellas y se aprueba la ley de «fortificación» (el doble de rápido y a mitad de precio; las dictaduras ya la llevan). Las puertas se cierran de noche, con alarma o en guerra, y cada lado tiene una en el centro.
 - Edificios de las instituciones: tribunal (sin él no hay juicios), cárcel, imprenta (sin ella no hay periódicos), casa del sindicato (negocia mejor), parlamento (en los regímenes parlamentarios) y academia de la lengua (con ley de reforma o de pureza de la lengua). Piden madera y piedra, y la cárcel e imprenta también hierro y el parlamento oro; si les falta algo, más gente se pone a talar, a la cantera o a la mina. Los del gobierno llevan la bandera de su nación en lo alto.
 - Prensa: periódicos afines a cada partido con su titular del día (contado a su manera), que van moviendo las ideas de sus lectores y destapan escándalos. Con censura solo queda el oficial.
@@ -81,6 +85,10 @@ Sin dependencias ni compilación: cada archivo es un script normal y se cargan e
 | `js/justicia.js` | Tribunal, juicios, cárcel, presos políticos y amnistías |
 | `js/sindicatos.js` | Sindicatos, huelgas por oficios, piquetes y negociación |
 | `js/prensa.js` | Periódicos, titulares, influencia en las ideas, escándalos y censura |
+| `js/comercio.js` | Mercancías, precios, cargas de las caravanas, aranceles y contrabando |
+| `js/piratas.js` | Piratas y armadas |
+| `js/colonias.js` | Colonias, provisiones, autonomía y referéndums de independencia |
+| `js/cultura.js` | Obras, leyendas, estatuas, pensiones y cismas |
 | `js/defensa.js` | Murallas antes y más rápido, puertas que se cierran y ley de fortificación |
 | `js/trabajo.js` | Reparto de oficios, escuelas, días libres, festivos y quejas por falta de maestros, médicos o bomberos |
 | `js/arte_mapa.js`, `js/arte.js`, `arte/atlas.png` | Arte dibujado (edificios, árboles, rocas, barca, catapulta…) con colores por estación; si un objeto no tiene dibujo, se usa el de siempre |

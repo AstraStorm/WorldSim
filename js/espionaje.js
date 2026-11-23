@@ -135,7 +135,7 @@ function rescueArrive(t, from, to){
   const p = .35 + armed * .1 - (hasInst(to, 'carcel') ? .15 : 0) - (tyranny(to) ? .1 : 0);
   if (Math.random() < p) {
     release(v, to); v.away = true; v.task = { k:'viaje' }; t.crew.push(v); if (h) h.rescue = 'ok';
-    notify(`¡Un comando de ${from.name} asalta la cárcel de ${to.name} y libera a ${v.name}!`, at);
+    notify(`¡Un comando de ${from.name} asalta la cárcel de ${to.name} y libera a ${v.name}!`, at); if (crew[0]) addHero(from, crew[0], `rescató a ${v.name} de la cárcel de ${to.name}`);
   } else {
     const dead = crew[0]; if (dead) { dead.away = false; killVillager(dead, 'guerra'); }
     for (const u of crew.slice(1)) { u.away = false; u.task = null; u.x = to.fx * T + 2; u.y = to.fy * T + 6; jail(u, to, 1.5, 'espionaje'); }

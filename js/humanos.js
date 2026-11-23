@@ -261,6 +261,7 @@ const farmable = (g, x, y, i) => (tileFree(x, y) || (fieldObjOk(i) && !WATER[wor
 // Cuántos de la aldea están ya con ese trabajo (para no ir todos a lo mismo)
 const busyWith = (g, job) => villagers.filter(o => !o.dead && o.vid === g.id && o.task && (o.task.k === job || o.task.job === job)).length;
 function chooseJob(v, g){
+  if (retired(v, g)) return Math.random() < .6 ? 'ocio' : 'pasear'; // jubilados (cultura.js)
   const pop = popOf(g), houses = housesOf(g).length, farms = [...farmMap.values()].filter(f => f.vid === g.id);
   const si = seasonInfo().i, J = [];
   const mine = OFICIOS[v.oficio] || [];
