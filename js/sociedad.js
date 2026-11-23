@@ -2136,6 +2136,8 @@ function politicsTick(g, dt, people){
   let up = -(.32 + (hasLaw(g, 'reparto') ? .12 : 0) + (cap.wonder != null && world.objs[cap.wonder] ? .1 : 0) + (hasLaw(g, 'censura') ? .1 : 0)), worst = null;
   for (const [k, d] of Object.entries(f)) { up += d; if (d > 0 && (!worst || d > f[worst])) worst = k; }
   g.anger = clamp((g.anger || 0) + up * dt, 0, 100); if (worst) g.grief = worst;
+  if (g.camp) campTick(g);
+  if (g.protestN) for (const k in g.protestN) if (!(f[k] > 0)) delete g.protestN[k]; // ya no hay motivo: se olvida
   if (g.protest) { runProtest(g); return; }
   if (g.coup) { if (yearT > g.coup.until) resolveCoup(g); return; }
   if (g.anger > (hasLaw(g, 'orden') ? 50 : 35) && g.grief && !isNight() && g.plaza && !cap.election && yearT - (g.protestT ?? -1e9) > DAY_LEN * .5) { startProtest(g, adults); return; }
@@ -2171,18 +2173,22 @@ function proposeLaw(g, adults){
 function startProtest(g, adults){
   const gi = govIdeo(g), econ = ['hambre', 'inflación', 'bancarrota', 'guerra', 'jornada', 'impuestos', 'vivienda'].includes(g.grief); g.protestT = yearT;
   let who = adults.filter(u => u !== g.leader && !u.away && !u.boat && !u.sleep && !(u.task && BUSY_POL.includes(u.task.k)) && (econ ? Math.random() < .6 : Math.abs((u.ideo || 0) - gi) > .3));
+  if (g.grief === 'vivienda') who.sort((a, b) => (a.home == null ? 0 : 1) - (b.home == null ? 0 : 1)); // los que no tienen casa, delante
   if (who.length < 3) return;
   who = who.slice(0, 14);
+  const pn = g.protestN ||= {}; pn[g.grief] = (pn[g.grief] || 0) + 1;
   const r0 = g.plaza, pts = [[r0.x0, r0.y0], [r0.x1, r0.y0], [r0.x1, r0.y1], [r0.x0, r0.y1]].map(([x, y]) => [x * T + 2, y * T + 3]);
   const slog = SLOGANS[g.grief], col = ['#f2efe6', '#f0d060', '#f08a7a'][Math.floor(Math.random() * 3)];
   who.forEach((u, k) => { releaseTask(u); if (u.actT > 0) { u.actT = 0; u.onDone = null; } u.task = { k:'protesta', pts, idx:k % 4, until:yearT + 30, slogan:slog[k % slog.length], col }; u.lastD = Infinity; u.hitBy = null; });
-  g.protest = { until:yearT + 30, who, said:false };
+  g.protest = { until:yearT + 30, who, said:false, riot:g.anger > 60 || pn[g.grief] >= 3 }; // muy enfadados, o hartos de protestar por lo mismo: disturbios
+  if (g.grief === 'vivienda') startCamp(g, who);
   notify(`¡Manifestación en ${g.name}! ${who.length} personas salen con carteles contra ${GRIEF_TXT[g.grief]}: «${slog[0]}»`, { x:g.fx * T, y:g.fy * T });
 }
 function runProtest(g){
   const p = g.protest, live = p.who.filter(u => !u.dead && u.task && u.task.k === 'protesta');
   if (live.length && Math.random() < .6) { const u = live[Math.floor(Math.random() * live.length)]; floats.push({ x:u.x, y:u.y - 16, txt:u.task.slogan, col:'#f8f0d8', life:0 }); }
-  if (!p.said && yearT > p.until - 20) { p.said = true; respondProtest(g, live); }
+  if (p.riot && !p.said) riotTick(g, p, live);
+  if (!p.said && yearT > p.until - 20) { p.said = true; const rep = g.repressed || 0; respondProtest(g, live); if (g.camp && (g.repressed || 0) > rep) endCamp(g, 'desalojo'); }
   if (yearT > p.until || !live.length) { for (const u of p.who) if (u.task && u.task.k === 'protesta') u.task = null; g.protest = null; }
 }
 // El gobierno responde: cede (república, tribu y a veces la monarquía) o reprime (dictaduras, a veces la monarquía)
@@ -2742,7 +2748,7 @@ function updateVillagers(dt){
         // Antes de acostarse, si quedan antorchas apagadas, uno las va encendiendo
         const al = !child && !busyWith(g, 'alumbrar') && torchesOf(g).some(tc => !tc.lit && !raining(tc.i)) ? setupTask(v, g, 'alumbrar') : null;
         if (al) { v.task = al; v.lastD = Infinity; }
-        else { const h = homeOf(v, g), [sx, sy] = h != null ? [(h % W) * T + 2, ((h / W) | 0) * T + 3 + T] : fireSpot(v, g); v.task = { k:'dormir', x:sx, y:sy, h }; v.lastD = Infinity; }
+        else { const h = homeOf(v, g), [sx, sy] = h != null ? [(h % W) * T + 2, ((h / W) | 0) * T + 3 + T] : campSpot(v, g) || fireSpot(v, g); v.task = { k:'dormir', x:sx, y:sy, h }; v.lastD = Infinity; }
       }
     }
     if (v.actT > 0) { v.actT -= dt; v.walk = 0; if (v.actT <= 0) { const had = v.carry, tk0 = v.task; if (v.onDone) v.onDone(); v.onDone = null; if (tk0 && !v.carry && !UNPAID.has(tk0.k)) payWage(v, g, 3); /* obras, oficios y servicios también se pagan */ if (v.carry && v.carry !== had) { if (v.cart) v.carry.n = Math.round(v.carry.n * 2.5); gainText(v); } if (v.task === tk0) v.task = v.carry ? { k:'volver' } : null; } continue; } // (si al acabar se ha puesto otra tarea, se respeta)

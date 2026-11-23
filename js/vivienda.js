@@ -183,3 +183,46 @@ function housingCard(g){
     <div class="kv"><span>Inquilinos</span><b>${tenants}${big.length ? ` · ${big.length} casero${big.length > 1 ? 's' : ''}${top ? ` (${esc(top.name)}, ${big[0][1]} casas)` : ''}` : ''}</b></div>
     <div class="kv"><span>Sin casa</span><b>${g.homeless ? `<span style="color:#f08a7a">${g.homeless}</span>` : 0}${g.evictions ? ` · ${g.evictions} desahucio${g.evictions > 1 ? 's' : ''} en total` : ''}</b></div></div>`;
 }
+// ---- Acampada por la vivienda: tiendas en la plaza donde duermen los que no tienen casa, hasta que haya casas o los desalojen ----
+function startCamp(g, who){
+  const r0 = g.plaza; if (!r0 || g.camp) return;
+  const tents = clamp(2 + Math.round((g.homeless || who.length) / 2), 3, 7);
+  g.camp = { vid:g.id, x:Math.round((r0.x0 + r0.x1 + 1) / 2 * T), y:Math.round((r0.y0 + r0.y1 + 1) / 2 * T) + 3, tents, hide:true, seed:Math.random() * 6, until:yearT + DAY_LEN * 3, done:false };
+  warCamps.push(g.camp);
+  notify(`Los que no tienen casa en ${g.name} acampan en la plaza con ${tents} tiendas: no se irán hasta que haya vivienda para todos`, { x:g.camp.x, y:g.camp.y });
+}
+function endCamp(g, why){
+  if (!g.camp) return; g.camp.done = true; const at = { x:g.camp.x, y:g.camp.y }; g.camp = null;
+  notify(why === 'desalojo' ? `La policía desaloja a la fuerza la acampada de la plaza de ${g.name}` : why === 'casas' ? `Levantan la acampada de ${g.name}: ya hay casa para todos` : `Tras días en la plaza, se levanta la acampada de ${g.name}`, at);
+}
+function campTick(g){
+  const c = g.camp; if (!warCamps.includes(c)) warCamps.push(c); // tras cargar una partida
+  if (yearT > c.until) return endCamp(g, 'tiempo');
+  if (housingGrief(g) < .05 && !g.protest) return endCamp(g, 'casas');
+  if (!isNight() && Math.random() < .004) floats.push({ x:c.x + (Math.random() - .5) * 26, y:c.y - 14, txt:SLOGANS.vivienda[Math.floor(Math.random() * SLOGANS.vivienda.length)], col:'#f8f0d8', life:0 });
+}
+// Sitio para dormir en la acampada (alrededor de las tiendas)
+const campSpot = (v, g) => { const c = g.camp; if (!c || c.done) return null; const a = pidOf(v) * 40, r = 6 + (pidOf(v) * 97 % 1) * 8; return [c.x + Math.cos(a) * r * 1.6, c.y + Math.sin(a) * r]; };
+// ---- Disturbios: si están muy enfadados (o ya han protestado tres veces por lo mismo sin arreglo), queman cosas ----
+function riotTargets(g){
+  const byPid = peopleByPid(g), D = deedsOf(g), t = [];
+  if (g.grief === 'vivienda') { // primero, las casas de los caseros
+    const own = new Map(); for (const h of housesOf(g)) if (D[h] && D[h].o > 0) own.set(D[h].o, [...(own.get(D[h].o) || []), h]);
+    for (const [pid, hs] of own) if (hs.length >= 2) for (const h of hs) if (!residentsOf(h).some(u => u.pid === pid)) t.push([h, `la casa de ${byPid.get(pid) ? byPid.get(pid).name : 'un casero'}, que la alquila`]);
+    if (hasBank(g)) t.push([g.bank, 'el banco']);
+  }
+  if (g.hall != null) t.push([g.hall, 'el ayuntamiento']);
+  if (g.grief !== 'vivienda' && hasBank(g)) t.push([g.bank, 'el banco']);
+  if (g.market != null) t.push([g.market, 'el mercado']);
+  return t.filter(([i]) => i != null && world.objs[i] && !world.objs[i].burnt && !fires.has(i));
+}
+function riotTick(g, p, live){
+  if ((p.fires || 0) >= 3 || !live.length || yearT < (p.riotT ?? -1e9) + 5 || raining(g.fy * W + g.fx)) return;
+  const tg = riotTargets(g); if (!tg.length) return;
+  const [i, what] = tg[Math.floor(Math.random() * Math.min(tg.length, g.grief === 'vivienda' ? 3 : tg.length))], u = live[Math.floor(Math.random() * live.length)];
+  p.riotT = yearT; p.fires = (p.fires || 0) + 1;
+  fires.set(i, { t:0, life:10 + Math.random() * 3, tree:true, bld:true });
+  floats.push({ x:u.x, y:u.y - 16, txt:'¡A quemarlo!', col:'#ffb060', life:0 });
+  g.riots = (g.riots || 0) + 1;
+  notify(`¡Disturbios en ${g.name}! Los manifestantes, furiosos, prenden fuego a ${what}`, { x:(i % W) * T + 2, y:((i / W) | 0) * T + 3 });
+}
