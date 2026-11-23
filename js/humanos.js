@@ -339,7 +339,7 @@ function chooseJob(v, g){
   add('almacen', Math.max(g.food, g.wood, g.stone) > capOf(g) * .8 && g.wood >= 8 && !busyWith(g, 'almacen') ? 8 : 0);
   add('torre', g.hall != null && (g.sawBeast || pop >= 16) && towersOf(g).length < 1 + Math.floor(pop / 10) && spare >= 12 && g.stone >= 4 && !busyWith(g, 'torre') ? 3 : 0);
   if (g.hall != null && g.wallPlan && wallLeft(g) === 0 && (g.wallRing || 1) < 2 && (pop >= 25 || atWarJ)) { g.wallRing = 2; g.wallPlan = null; notify(`En ${g.name} empiezan una segunda muralla, más amplia`, { x:g.fx * T, y:g.fy * T }); }
-  add('muralla', g.hall != null && pop >= 10 && (g.wood >= (needHouse ? 8 : 3) || g.stone >= 10) && wallLeft(g) > 0 && busyWith(g, 'muralla') < (atWarJ ? 3 : 1) ? ((g.danger || 0) > 0 || atWarJ ? 9 : 3.5) : 0);
+  add('muralla', wallJob(g, pop, needHouse, atWarJ)); // antes, con más gente y, tras un ataque, con prisa (defensa.js)
   add('orar', g.faith ? ((g.wrath || 0) > .3 ? 2 + g.wrath : dayT() < .12 ? .6 : .05) : 0);
   add('altar', g.faith && g.holy && pop >= 5 && (g.altar == null || !world.objs[g.altar]) && g.stone >= 4 && !busyWith(g, 'altar') ? 3 : 0);
   add('templo', g.faith && houses >= 4 && (g.hall != null || pop >= 14) && (g.temple == null || !world.objs[g.temple]) && g.stone >= 15 && spare >= 10 && !busyWith(g, 'templo') ? 3 + (g.devotion || 0) * .3 : 0);
@@ -826,16 +826,17 @@ function runTask(v, g, dt){
       // Un tramo de empalizada (hasta 6 casillas); donde cruza un camino queda una puerta
       const pl = wallPlan(g); let k = Math.max(g.wallIdx || 0, t.from), built = 0;
       let half = 0; // de madera, media unidad por tramo; de piedra, una piedra por tramo
-      while (k < pl.length && built < 10 && (g.wood >= 1 || g.stone >= 10)) { // (lo que se gasta abajo: piedra solo con 10 o más; si no, madera)
+      const stretch = wallStretch(g), cost = wallCost(g); // con la ley de fortificación, el doble y a mitad de precio (defensa.js)
+      while (k < pl.length && built < stretch && (g.wood >= 1 || g.stone >= 10)) { // (lo que se gasta abajo: piedra solo con 10 o más; si no, madera)
         const i = pl[k], o = world.objs[i]; k++;
         if (WATER[world.biome[i]] || bridgeSet.has(i) || farmMap.has(i) || plazaSet.has(i)) continue;
-        if (pathMap.has(i)) { gateSet.add(i); gateOwner.set(i, g.id); continue; }
+        if (pathMap.has(i) || midGate(g, i)) { gateSet.add(i); gateOwner.set(i, g.id); continue; } // puerta donde cruza un camino y en el centro de cada lado
         if (o && !['tree', 'berry'].includes(OBJ[o.key][1])) continue;
         if (underBuilding(g, i % W, (i / W) | 0) || plotIn(i % W, (i / W) | 0, i % W, (i / W) | 0) || villages.some(o => inPen(o, i % W, (i / W) | 0, 1))) continue; // ni a través de un edificio, una parcela o un cercado
         if (o) { if (OBJ[o.key][1] === 'tree') fallObj(i); world.objs[i] = null; composeRegion((i % W) - 7, ((i / W) | 0) - 11, (i % W) + 7, ((i / W) | 0) + 12); }
         if (villagers.some(u => !u.dead && Math.floor(u.x / T) === i % W && Math.floor(u.y / T) === ((i / W) | 0))) { k--; break; } // alguien encima: luego
         wallSet.add(i); built++;
-        if (g.stone >= 10) { g.stone -= 1; wallStone.add(i); } else if ((half += .5) >= 1) { half = 0; g.wood -= 1; }
+        if (g.stone >= 10) { if ((half += cost) >= 1) { half -= 1; g.stone -= 1; } wallStone.add(i); } else if ((half += .5 * cost) >= 1) { half = 0; g.wood -= 1; }
       }
       g.wallIdx = k;
       if (k >= pl.length && !(g.wallRing === 2 ? g.wall2Msg : g.wallMsg)) { if (g.wallRing === 2) g.wall2Msg = true; else g.wallMsg = true; notify(g.wallRing === 2 ? `${g.name} ya tiene doble muralla` : `${g.name} ya está amurallada`, { x:g.fx * T, y:g.fy * T }); }

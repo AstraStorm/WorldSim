@@ -66,13 +66,16 @@ function personName(g, sex){
   const P = L.phon, r = Math.random;
   if (!P.fem) { P.fem = P.vow[Math.floor(r() * P.vow.length)]; const m = P.coda ? 'nrsl'[Math.floor(r() * 4)] : P.vow.replace(P.fem, '')[0] || 'o'; P.masc = m === P.fem ? 'n' : m; }
   let w = '';
-  for (let k = 0; k < 6 && !/[aeiou].*[^aeiou]$|[aeiou]{1}[^aeiou]+$/.test(w); k++) w = langWord(P, r() < .7 ? 2 : 3, r).replace(/[aeiou]+$/, ''); // con alguna vocal dentro
+  for (let k = 0; k < 12 && (!/[aeiou].*[^aeiou]$|[aeiou]{1}[^aeiou]+$/.test(w) || !decent(w + P.fem) || !decent(w + P.masc)); k++) w = langWord(P, r() < .7 ? 2 : 3, r).replace(/[aeiou]+$/, ''); // con alguna vocal dentro (y sin palabrotas)
   if (!/[aeiou]/.test(w)) w = P.cons[0] + P.vow[0] + P.cons[1 % P.cons.length];
   return capFirst(w + (sex === 'm' ? P.fem : P.masc)); // (sex 'm' es mujer, 'h' hombre)
 }
 // Nombre de pueblo en su lengua, corto y legible: una raíz y la terminación de lugar de esa lengua (todos los pueblos
 // de una misma lengua acaban igual, como pasa con los topónimos de verdad)
-const readable = w => w.length >= 4 && w.length <= 11 && !/[^aeiouáéíóú]{3}/.test(w.replace(/sh|ch|ts|tz|kh|gh|th|ng|ny/g, 'x')) && !/(.)/.test(w) && /[aeiou]/.test(w);
+// Que ningún nombre inventado forme una palabrota (en español o en inglés)
+const BAD_NAME = /put[aoe]|mierd|culo|cul[oa]s|co[nñ]o|pene|poll[ao]|caca|ped[oa]s?$|^ped[oa]|teta|nazi|maric|joder|foll|cabr[oó]n|zorr|guarr|pito|chocho|mam[oó]n|polla|fuck|shit|cunt|dick|cock|nigg|negrat|retras|idiot|subnor|anal|sexo|porn|orto|ojete|verga|chingu?|pinche|gilip|capull|hostia/i;
+const decent = w => !BAD_NAME.test(w);
+const readable = w => decent(w) && w.length >= 4 && w.length <= 11 && !/[^aeiouáéíóú]{3}/.test(w.replace(/sh|ch|ts|tz|kh|gh|th|ng|ny/g, 'x')) && !/(.)/.test(w) && /[aeiou]/.test(w);
 function placeName(g){
   const L = langList()[villageLang(g)]; if (!L || L.common) return null;
   const P = L.phon, r = Math.random;
@@ -118,7 +121,7 @@ function langUnderstand(v, g){
   return .3;
 }
 // Quién va de viaje: los diplomáticos, a poder ser, que se hagan entender; las caravanas, mejor un mercader
-const travelerScore = (u, kind, to) => (kind === 'espia' ? (u.edu || 0) * 2 + (speaks(u, to ? villageLang(to) : -1) ? 1 : 0) : 0) + (u.oficio === 'mercader' && kind === 'caravana' ? 1 : 0) + (kind === 'diplomatico' && to ? langUnderstand(u, to) * 2 + (speaks(u, LANG_COMMON) ? .5 : 0) : 0);
+const travelerScore = (u, kind, to) => (kind === 'rescate' ? (u.weapon ? 3 : 0) : 0) + (kind === 'espia' ? (u.edu || 0) * 2 + (speaks(u, to ? villageLang(to) : -1) ? 1 : 0) : 0) + (u.oficio === 'mercader' && kind === 'caravana' ? 1 : 0) + (kind === 'diplomatico' && to ? langUnderstand(u, to) * 2 + (speaks(u, LANG_COMMON) ? .5 : 0) : 0);
 // Lengua oficial y ley de lenguas de cada nación: «oficial» (en la escuela, solo la oficial) o «todas»
 function nationLangLaw(n){
   if (n.offLang == null || !langList()[n.offLang] || langList()[n.offLang].dead) n.offLang = villageLang(n);
