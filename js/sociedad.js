@@ -2189,7 +2189,7 @@ function startProtest(g, adults){
   const r0 = g.plaza, pts = [[r0.x0, r0.y0], [r0.x1, r0.y0], [r0.x1, r0.y1], [r0.x0, r0.y1]].map(([x, y]) => [x * T + 2, y * T + 3]);
   const slog = SLOGANS[g.grief], col = ['#f2efe6', '#f0d060', '#f08a7a'][Math.floor(Math.random() * 3)];
   who.forEach((u, k) => { releaseTask(u); if (u.actT > 0) { u.actT = 0; u.onDone = null; } u.task = { k:'protesta', pts, idx:k % 4, until:yearT + 30, slogan:slog[k % slog.length], col }; u.lastD = Infinity; u.hitBy = null; });
-  g.protest = { until:yearT + 30, who, said:false, riot:g.anger > 60 || pn[g.grief] >= 3, lynch:['corrupción', 'presupuestos'].includes(g.grief) && g.anger > 75 }; // furiosos con su líder: van a por él // muy enfadados, o hartos de protestar por lo mismo: disturbios
+  g.protest = { until:yearT + 30, who, said:false, riot:g.anger > 60 || pn[g.grief] >= 3, lynch:(g.grief === 'corrupción' && g.anger > 75) || (g.grief === 'presupuestos' && g.anger > 85 && (g.noBudgetDays || 0) >= 3) }; // furiosos con su líder: van a por él // muy enfadados, o hartos de protestar por lo mismo: disturbios
   if (g.grief === 'vivienda') startCamp(g, who);
   notify(`¡Manifestación en ${g.name}! ${who.length} personas salen con carteles contra ${GRIEF_TXT[g.grief]}: «${slog[0]}»`, { x:g.fx * T, y:g.fy * T });
 }

@@ -50,7 +50,10 @@ function budgetDay(g, ec, people, L){
   b.day = day;
   // Votación cada 2 días donde se vota; si no sale, prorrogados (y si nunca hubo, sin presupuestos)
   if (votes(g) && day - (b.voteD ?? -9) >= 2) {
-    const cap = nationOf(g), sup = (cap.voteRes && cap.ruling != null ? cap.voteRes[cap.ruling] : 50) + (Math.random() - .5) * 30 - (g.anger || 0) * .15;
+    // Votan a favor los del partido del gobierno y buena parte de los partidos de ideas parecidas (coalición)
+    const cap = nationOf(g), ps = cap.parties || [], gov = ps[cap.ruling], vr = cap.voteRes || [];
+    const base = gov ? ps.reduce((a, q, k) => a + (vr[k] || 0) * (k === cap.ruling ? 1 : Math.abs(q.ideo - gov.ideo) < .5 ? .75 : Math.abs(q.ideo - gov.ideo) < .9 ? .25 : 0), 0) : 55;
+    const sup = base + (Math.random() - .5) * 30 - (g.anger || 0) * .15;
     b.voteD = day; b.vote = true; b.support = Math.round(clamp(sup, 0, 100));
     if (sup >= 50) { b.how = 'votados'; b.shares = budgetShares(g, [...rels.values()].some(r => r.war && (r.war.att === g.id || r.war.def === g.id))); b.d = day + 1; g.noBudgetDays = 0; }
     else { b.how = b.d ? 'prorrogados' : 'sin'; g.noBudgetDays = (g.noBudgetDays || 0) + 1;
@@ -83,12 +86,13 @@ const afraid = g => g.threat && yearT < g.threat.until && (g.anger || 0) < 85;
 // El pueblo, harto, acaba con su líder: lo lincha o, si es muy devoto, lo sacrifica a su dios
 function lynchLeader(g, who){
   const L = budgetLeader(g); if (!L || L.vid !== g.id) return false;
+  const why = g.grief === 'corrupción' ? 'por haberles robado' : 'por dejarlos sin presupuestos', la = sexW(L, 'lo', 'la');
   const holy = g.faith && ((g.devotion || 0) > 3 || regimeOf(g) === 'teocracia'), at = { x:L.x, y:L.y }, was = tyranny(g);
   killVillager(L, holy ? 'sacrificado por el pueblo' : 'linchado por el pueblo');
   if (g.leader === L) g.leader = null; const cap = nationOf(g); if (cap.leader === L) cap.leader = null;
   g.anger = Math.max(0, (g.anger || 0) - 45); g.scandal = null; g.threat = null; g.stolen = 0;
   for (const u of who) u.ideo = clamp((u.ideo || 0) * .8, -1, 1);
-  notify(holy ? `¡En ${g.name} la multitud arrastra a ${L.name} hasta el altar y lo sacrifica a ${g.faith.god} por haberles robado!` : `¡En ${g.name} la multitud, furiosa, lincha a ${L.name}!`, at);
+  notify(holy ? `¡En ${g.name} la multitud arrastra a ${L.name} hasta el altar y ${la} sacrifica a ${g.faith.god} ${why}!` : `¡En ${g.name} la multitud, furiosa, lincha a ${L.name} ${why}!`, at);
   if (was) { setRegime(g, 'republica', null); setTimeout(() => notify(`Tras la caída de ${L.name}, ${g.name} se proclama república y habrá elecciones`, { x:g.fx * T, y:g.fy * T }), 600); }
   else cap.voteT = -1e9;
   return true;
