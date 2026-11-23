@@ -14,11 +14,11 @@ function peopleByPid(g){ const m = new Map(); for (const u of villagers) if (!u.
 const residentsOf = h => villagers.filter(u => !u.dead && u.home === h);
 const ownedBy = (g, v) => housesOf(g).filter(h => { const d = deedOf(g, h); return d && d.o === pidOf(v); });
 const forSaleOf = g => housesOf(g).filter(h => { const d = deedOf(g, h); return d && d.o === FOR_SALE; });
-// Precio de una casa: la de piedra, más cara; sube cuanta más gente se queda sin casa y con el libre mercado
-const housePrice = (g, h, stone = !!(world.objs[h] && world.objs[h].key === 'house:piedra')) => Math.max(4, Math.round(priceOf(g) * (stone ? 20 : 13) * (g.hDem || 1)
+// Precio de una casa: unos 5 días de sueldo medio (la de piedra, la mitad más); sube cuanta más gente se queda sin casa y con el libre mercado
+const housePrice = (g, h, stone = !!(world.objs[h] && world.objs[h].key === 'house:piedra')) => Math.max(4, Math.round(Math.max(priceOf(g) * 13, (g.hWage || 0) * 5) * (stone ? 1.5 : 1) * (g.hDem || 1)
   * (hasLaw(g, 'mercado_vivienda') ? 1.15 : hasLaw(g, 'vivienda_publica') ? .9 : 1)));
 // Alquiler de un día por persona adulta; con tope, no pasa de una parte del coste de la vida
-const rentOf = (g, h) => { const r = Math.max(1, Math.round(housePrice(g, h) * .1)); return hasLaw(g, 'tope_alquiler') ? Math.min(r, Math.max(1, Math.round(costOfLiving(g) * .2))) : r; };
+const rentOf = (g, h) => { const r = Math.max(1, Math.round(housePrice(g, h) * .06)); return hasLaw(g, 'tope_alquiler') ? Math.min(r, Math.max(1, Math.round(costOfLiving(g) * .2))) : r; };
 const socialRent = g => hasLaw(g, 'vivienda_publica') ? 0 : Math.max(1, Math.round(costOfLiving(g) * .1)); // lo que se paga al pueblo por una casa pública
 const adultV = v => ageOf(v) >= ADULT_H;
 // Quién podría comprar ahora mismo: sin casa propia (al contado, o con hipoteca si hay banco) o con mucho dinero para invertir
@@ -113,7 +113,7 @@ function housingTick(g, people){
   }
   // Demanda: cuanta más gente sin casa y menos casas en venta, más caras
   const adults = people.filter(adultV), homeless = adults.filter(u => !u.away && (u.home == null || !hs.includes(u.home))).length, sale = forSaleOf(g);
-  g.homeless = homeless;
+  g.homeless = homeless; g.hWage = wageStats(g).avg; // el sueldo medio marca lo que cuesta una casa
   g.hDem = clamp(1 + homeless / Math.max(6, adults.length) * 2.5 - sale.length * .12, .7, 2.5);
   // Compraventa: primero quien no tiene casa (al contado o con hipoteca), luego quien compra para alquilar. Una o dos por cobro
   let sold = 0;
