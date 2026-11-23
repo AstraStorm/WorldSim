@@ -57,12 +57,13 @@ function taxDay(g, people, ec){
   g.surplusDays = !deficit && ec.treas > (ec.lastSpend || 0) * 3 + 20 * P ? (g.surplusDays || 0) + 1 : 0;
   const gi = govIdeo(g), reg = regimeOf(g), extra = taxesOf(g).filter(t => !['guerra', 'deuda'].includes(t.k));
   const need = hasLaw(g, 'impuestos_altos') ? 1 : hasLaw(g, 'impuestos_bajos') ? 4 : 2;
-  if (g.deficitDays >= need && extra.length < 4) {
+  if (g.deficitDays >= need && extra.length < 3 && day - (g.taxNewD ?? -99) >= 3) { // como mucho uno nuevo cada 3 días
     // Qué impuesto, según las ideas de quien manda (y lo que tenga sentido en el pueblo)
     const landlords = housingOn(g) && adults.filter(u => ownedBy(g, u).length >= 2).length;
     const opts = Object.entries(TAXES).filter(([k]) => !['guerra', 'deuda'].includes(k) && !hasTax(g, k)
       && (k !== 'diezmo' || (g.faith && (reg === 'teocracia' || hasLaw(g, 'fe'))))
-      && (k !== 'casas' || housingOn(g)) && (k !== 'alquileres' || landlords));
+      && (k !== 'casas' || housingOn(g)) && (k !== 'alquileres' || landlords)
+      && !extra.some(e => TAXES[e.k].lean * TAXES[k].lean < -.1)); // no mezclan impuestos de ideas contrarias
     if (opts.length) {
       const w = opts.map(([k, d]) => Math.exp(-((d.lean - gi) ** 2) / .25) * (k === 'diezmo' && reg === 'teocracia' ? 3 : 1) * (k === 'alquileres' ? 1 + landlords * .3 : 1));
       let r = Math.random() * w.reduce((a, b) => a + b, 0), k = opts[0][0]; for (let j = 0; j < opts.length; j++) if ((r -= w[j]) < 0) { k = opts[j][0]; break; }
@@ -70,7 +71,7 @@ function taxDay(g, people, ec){
         : k === 'patrimonio' ? 'porque falta dinero y quieren que pague más quien más tiene'
         : k === 'diezmo' ? `porque faltan fondos para los templos de ${g.faith.god}`
         : `para tapar el déficit (el tesoro tiene ${Math.round(ec.treas)} ${coinPl(g)}${ec.debt > P ? ` y deben ${Math.round(ec.debt)} al banco` : ''})`;
-      addTax(g, k, why); g.deficitDays = 0;
+      addTax(g, k, why); g.deficitDays = 0; g.taxNewD = day;
     }
   } else if (g.surplusDays >= (hasLaw(g, 'impuestos_bajos') ? 1 : 3) && extra.length) {
     dropTax(g, extra[extra.length - 1].k, 'sobra dinero en el tesoro'); g.surplusDays = 0;
