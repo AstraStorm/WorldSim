@@ -9,7 +9,7 @@ const ART = { img:null, ready:false, cache:new Map() };
   if (typeof ART_MAP === 'undefined') return;
   const im = new Image();
   im.onload = () => { ART.img = im; ART.ready = true; ART.cache.clear(); if (typeof world !== 'undefined' && world && typeof composeRegion === 'function') composeRegion(0, 0, W - 1, H - 1); };
-  im.src = 'arte/atlas.png?v=202611230235';
+  im.src = 'arte/atlas.png?v=202611230241';
 })();
 const ART_DECID = new Set(['oak:forest', 'birch:birch', 'willow:swamp', 'willow:moss', 'acacia:dry', 'acacia:sunset', 'oak:cherry', 'pine:autumn']);
 const ART_EVER = new Set(['pine:pine', 'pine:snow', 'pine:blue', 'ancient:elder', 'ancient:mangrove', 'ancient:life', 'ancient:baobab']);
@@ -37,7 +37,9 @@ function seasonal(c, key, season, variant){
     if (season === 2) { const q = pal[Math.min(3, Math.floor(L * 4.2))]; p[i] = q[0]; p[i + 1] = q[1]; p[i + 2] = q[2]; }
     else if (season === 0) {
       const k = i / 4, px = k % w, py = (k / w) | 0;
-      if (blossom && ((px * 7 + py * 13) % 5 === 0 || (px + py * 3) % 7 === 0)) { const pink = L > .45 ? [246, 200, 220] : [228, 150, 186]; p[i] = pink[0]; p[i + 1] = pink[1]; p[i + 2] = pink[2]; }
+      // Flores en ramilletes irregulares (manchas de 2×2 al azar, más en lo que da la luz), nunca en el borde de la copa
+      const edge = px === 0 || py === 0 || px === w - 1 || p[i + 3 - 4] < 100 || p[i + 3 + 4] < 100 || p[i + 3 - w * 4] < 100 || p[i + 3 + w * 4] < 100;
+      if (blossom && !edge && h2(px >> 1, py >> 1, 41 + variant) < .26 + L * .2 && h2(px, py, 77 + variant) < .8) { const pink = L > .5 ? [248, 206, 224] : L > .3 ? [236, 168, 198] : [212, 128, 168]; p[i] = pink[0]; p[i + 1] = pink[1]; p[i + 2] = pink[2]; }
       else { p[i] = Math.min(255, r + 14); p[i + 1] = Math.min(255, g + 18); p[i + 2] = Math.min(255, b + 4); } // verde tierno
     }
   }

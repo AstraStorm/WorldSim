@@ -95,8 +95,13 @@ T6 = [  # clave, punto del árbol con hojas, punto del desnudo (o None), ancho
   ('willow:moss', (82, 607), (170, 610), 28), ('cactus:cactus', (304, 608), None, 8), ('cactus:bloom', (500, 606), None, 11),
   ('ancient:elder', (980, 175), None, 40), ('ancient:frost', (1170, 178), None, 38), ('ancient:baobab', (1353, 178), None, 39), ('ancient:mangrove', (1528, 180), None, 38), ('ancient:life', (978, 395), None, 40),
 ]
+def trunk_clean(img):  # motas rosas o verdes sueltas en el tronco (restos de la reducción): color de tronco
+    a = np.array(img); h = a.shape[0]; r, g, b = a[..., 0].astype(int), a[..., 1].astype(int), a[..., 2].astype(int)
+    low = np.zeros_like(r, bool); low[int(h * .62):] = True
+    stray = low & (a[..., 3] > 0) & (r > 190) & (b > 140) & (g < r - 20)
+    a[stray, :3] = (110, 70, 36); return Image.fromarray(a, 'RGBA')
 for key, p, bare, w in T6:
-    add(key, shrink(cut(H6, [p]), w, 24))
+    img = shrink(cut(H6, [p]), w, 24); add(key, trunk_clean(img) if key == 'oak:cherry' else img)
     if bare: add(key + ':bare', shrink(cut(H6, [bare]), w, 16))
 for key, p, w in [('bush:red', (1169, 405), 11), ('bush:blueb', (1343, 405), 11), ('bush:goldb', (1522, 405), 11), ('bush:moon', (978, 590), 11), ('bush:empty', (1167, 590), 11),
                   ('rock:stone', (1732, 262), 8), ('big:stone', (1898, 250), 11), ('ore:iron', (2073, 250), 11), ('ore:gold', (1732, 469), 11), ('gem:amethyst', (1902, 469), 10), ('gem:mana', (2074, 464), 9)]:

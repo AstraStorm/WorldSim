@@ -30,7 +30,7 @@ function updateLife(dt){
       const t = tempAt(i), cold = C[1] + o.ad, hot = C[2] + o.ad;
       mismatch = t < cold ? cold - t : t > hot ? t - hot : 0;
       o.cs = mismatch ? (o.cs || 0) + mismatch / 25 : (o.cs || 0) * .6;
-      if (o.cs > 1) { o.life = (yearT - o.born) / YEAR; st = 'm'; }
+      if (o.cs > 1) { o.life = (yearT - o.born) / TREE_YEAR; st = 'm'; }
     }
     if (st === null) { fallObj(i); objs[i] = null; composeRegion(tx - 7, ty - 11, tx + 7, ty + 12); rareDirty = true; continue; }
     // Selección natural: al pasar de brote a joven y de joven a adulto no todos sobreviven.
@@ -45,7 +45,7 @@ function updateLife(dt){
       const survive = clamp(.25 + .65 * o.vig + .25 * fert - .12 * shade - (seasonInfo().i === 3 ? .1 : 0) - mismatch * .04, .05, .97);
       if (Math.random() > survive) {
         if (st === 'j') { objs[i] = null; composeRegion(tx - 7, ty - 11, tx + 7, ty + 12); continue; } // el brote se seca
-        o.life = (yearT - o.born) / YEAR; st = 'm';                                                // el joven muere en pie
+        o.life = (yearT - o.born) / TREE_YEAR; st = 'm';                                                // el joven muere en pie
       }
     }
     if (st !== o.st) { o.st = st; composeRegion(tx - 7, ty - 11, tx + 7, ty + 12); if (OBJ[o.key][2] >= 2) rareDirty = true; }

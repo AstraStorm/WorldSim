@@ -410,8 +410,11 @@ const LIFESPAN = { oak:[3, 5], birch:[2, 3], pine:[3, 5], acacia:[3, 4], willow:
 // rango con su adaptación (o.ad), que hereda de su padre al nacer de semilla
 const TREE_CLIMA = { oak:[12, -25, 32], birch:[6, -35, 26], pine:[2, -40, 24], acacia:[26, -2, 44], willow:[14, -20, 32], palm:[26, 0, 42], cactus:[30, -5, 48], ancient:[10, -30, 34] };
 const treeClima = o => TREE_CLIMA[o.key.split(':')[0]];
+// Los árboles van con su propio reloj, mucho más lento que el de la gente: viven meses de juego, no días
+// (si no, todo el bosque se moría a la vez en una estación y en otoño, sin semillas, no volvía a crecer)
+const TREE_YEAR = YEAR * 16; // (un año de árbol ≈ una estación y pico: la vida media, más de un año de calendario)
 function treeStage(o){
-  const age = (yearT - o.born) / YEAR;
+  const age = (yearT - o.born) / TREE_YEAR;
   if (age < .3) return 'b';
   if (age < 1) return 'j';
   if (age < o.life * .8) return 'a';
@@ -483,7 +486,7 @@ function placeObject(i, key, r, born, vig){
     const o = world.objs[i];
     o.vig = vig ?? .3 + r() * .5;
     o.life = (L[0] + r() * (L[1] - L[0])) * (.8 + .4 * o.vig);
-    o.born = born ?? yearT - r() * o.life * .85 * YEAR; // al generar el mundo hay árboles de todas las edades
+    o.born = born ?? yearT - r() * o.life * .85 * TREE_YEAR; // al generar el mundo hay árboles de todas las edades
     o.sz = Math.floor(r() * 3);
     o.st = treeStage(o);
   }
