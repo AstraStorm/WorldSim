@@ -1713,6 +1713,7 @@ function updateTravelers(dt){
     if (t.kind === 'flota' && t.phase === 'ida') { if (to) arriveFleet(t, from, to); if (t.crewOff) { t.done = true; continue; } t.phase = 'vuelta'; t.path = t.back.slice(); const nx = t.path.shift(); t.tx = nx[0]; t.ty = nx[1]; continue; }
     if (t.kind === 'flota') { t.done = true; for (const u of t.crew) if (!u.dead) { u.away = false; u.task = null; u.x = t.x; u.y = t.y; } continue; }
     if (t.kind === 'colonos') { foundColony(t, from); t.done = true; continue; } // colonias.js
+    if (t.kind === 'visita' && t.phase === 'ida') { if (to) stateVisitArrive(t.v, t.crew, from, to); t.phase = 'vuelta'; t.tx = t.hx; t.ty = t.hy; continue; } // visita oficial (visitas.js)
     if (t.kind === 'mensajero' && t.phase === 'ida') { newsArrive(t, from, to); t.phase = 'vuelta'; t.tx = t.hx; t.ty = t.hy; continue; } // noticias.js
     if (t.kind === 'batida' && t.phase === 'ida') { huntArrive(t, from); t.phase = 'vuelta'; t.tx = t.hx; t.ty = t.hy; continue; }
     if (t.kind === 'batida') huntHome(t, from);
@@ -1748,6 +1749,10 @@ function drawTravelers(now){
     if (wet) { drawBoat(x, y, t.dir, now, true, s); redrawFront(x - 15, x + 15, y - s.height - 6, y); if (t.kind === 'diplomatico') diplomatBadge(x, y - s.height - 9, now); continue; } // lo que hay delante (en la orilla) tapa la barca
     if (t.kind === 'caravana') { drawCart(x - t.dir * 8, y, t.dir, now, '#c8a050'); if (t.cargo) { vctx.fillStyle = '#2a1a10'; vctx.fillRect(x - t.dir * 8 - 3, y - 9, 6, 4); vctx.fillStyle = GOODS[t.cargo.k].col; vctx.fillRect(x - t.dir * 8 - 2, y - 8, 4, 2); } } // con su carga, del color de la mercancía
     vctx.drawImage(s, x - (s.width >> 1), y - s.height + 1);
+    if (t.kind === 'visita') { // la escolta detrás, en fila, y la corona del líder
+      t.crew.filter(u => !u.dead && u !== t.v).forEach((u, k) => { const es = personSprite(u, Math.floor(((t.walk || 0) + k * .3) * 8) % 2, t.dir < 0), ex = x - t.dir * (7 + k * 6), ey = y + (k % 2 ? 3 : -2); vctx.drawImage(es, ex - (es.width >> 1), ey - es.height + 1); vctx.fillStyle = '#7a5230'; vctx.fillRect(ex + t.dir * 3, ey - 9, 1, 9); vctx.fillStyle = '#c8ccd0'; vctx.fillRect(ex + t.dir * 3, ey - 11, 1, 2); });
+      const hy = y - s.height - 1; vctx.fillStyle = '#f0c840'; vctx.fillRect(x - 2, hy, 5, 1); vctx.fillRect(x - 2, hy - 1, 1, 1); vctx.fillRect(x, hy - 1, 1, 1); vctx.fillRect(x + 2, hy - 1, 1, 1);
+    }
     redrawFront(x - 14, x + 14, y - s.height - 14, y);
     if (t.kind === 'mensajero') { vctx.fillStyle = '#f4f0e4'; vctx.fillRect(x + t.dir * 3, y - 8, 3, 2); vctx.fillStyle = '#c8302a'; vctx.fillRect(x + t.dir * 3 + 1, y - 8, 1, 1); } // con su carta lacrada
     if (t.kind === 'diplomatico') { // con la bandera de su pueblo en un palo y su insignia flotando encima

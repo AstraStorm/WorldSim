@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611240304",
- "fecha": "2026-11-24 03:04",
+ "version": "202611240307",
+ "fecha": "2026-11-24 03:07",
  "novedades": [
   {
    "fecha": "2026-11-24",
-   "texto": "Cultivos nuevos e intercambio de semillas, los pueblos agradecen la ayuda del jugador y le rinden culto, fuegos artificiales, estatuas ordenadas, pueblos capturados y piratas que ya no se atascan"
+   "texto": "Visitas oficiales de los líderes con escolta, en dirigible, globo, barco o por tierra; los espías rivales se enteran y pueden preparar un atentado"
+  },
+  {
+   "fecha": "2026-11-24",
+   "texto": "Cultivos, devoción al jugador, pirotecnia, estatuas ordenadas y piratas sin atascos"
   },
   {
    "fecha": "2026-11-24",
@@ -46,19 +50,15 @@
   {
    "fecha": "2026-11-24",
    "texto": "Ahora se llama World Sim: interfaz nueva con el mapa a pantalla completa, una sola barra arriba (fecha, velocidad, titulares y menús), panel con tarjetas y fichas de aldea más claras"
-  },
-  {
-   "fecha": "2026-11-23",
-   "texto": "Launcher rediseñado con el logo (fondo animado, novedades con iconos, estado, ajustes de pantalla completa y actualización automática) e instalador de Windows con accesos directos"
   }
  ],
  "archivos": {
-  "index.html": "dda90ed9edaa11031303f439230beff3e68a214e",
+  "index.html": "73c09853eed8f7ab9e182983beb590ed2a4a37b2",
   "css/estilo.css": "5102a249d843e933be3be74f960883ba03efd264",
   "js/aldeanos.js": "e73d76d14422e1d57c10b250ee82a3bdafc89e0c",
   "js/ambiente.js": "cd3541c5cfa9a64de5395f84239009f959216922",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
-  "js/arte.js": "d8e051c6e6fa720dec0eb5ce7f3709381ebdd4da",
+  "js/arte.js": "28d8f713dec324610282f56fc38dc52bc99bd350",
   "js/arte_mapa.js": "98d891de2ac832b6a1d3a74577fd56b460c01af2",
   "js/bandidos.js": "675a7588d06fb17fe09f9c9ec32caa9e300cb1d9",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
@@ -87,7 +87,7 @@
   "js/estrategia.js": "20fdceec0d5194dc2d0a53037e90404cbc13979c",
   "js/fama.js": "1b98918f8d312e237c6f399a43c0a3e278a4604b",
   "js/fauna.js": "ab4d9de4dea1f9f00ee90d76625658f2edd2695c",
-  "js/globos.js": "a74b432baa6a6b51128f2138f1730ebd0bef599e",
+  "js/globos.js": "30ec2bd3b0180e3706f6e31fe9cab1997d6876a5",
   "js/guerra.js": "3e00349de418e53684d9ea9319847881f3e7f049",
   "js/humanos.js": "ccddb36ab6dfa2a5eaafd41e02e237e82a0d89ee",
   "js/idiomas.js": "76785080135c2b980a092929b1d0742a1e15a8f2",
@@ -117,7 +117,7 @@
   "js/riqueza.js": "4437665e375d993ccfc2bec62225436b8fd03dce",
   "js/rutas.js": "6e12cafc1992e09fc3c2b5b13ca7d7db6416c364",
   "js/sindicatos.js": "f7cb8bf83ff74322a6fc45cc6ac90550425c6d15",
-  "js/sociedad.js": "a28775592dd30ff09eb7a048e7167b7d8e5d0150",
+  "js/sociedad.js": "2c16462084f076cde06b4fafeb7f90cf4ccf4537",
   "js/sonido.js": "25be9d9bda62336aba463c82e31668d0e9b2bc54",
   "js/titulares.js": "0506409e843da939370bb404b894a52cffa68620",
   "js/trabajo.js": "50d504968cee2cd4f5170a8e34cd81f649d6bf04",
@@ -125,6 +125,7 @@
   "js/ui.js": "ba4cbcdaa9bb436822270b090af56ef0e9c8bc2c",
   "js/vegetacion.js": "93f69ea37ed2ba75fb87c037ae6676de3910737a",
   "js/vida.js": "5b036c14fbd1d9fc061f4f98ddd8adcb43134ef0",
+  "js/visitas.js": "5cafd3070fdf9de08e0a6eebf6644ad13c46bc1d",
   "js/vista.js": "8ca118d30bb88e4cfbcb9958f9f48d5af329389c",
   "js/vivienda.js": "0f3091767a41917156ce106447eb0e9659b69271",
   "js/volcanes.js": "f4aea099226dfe1b064fdfbd4779bddb6ed8a250",

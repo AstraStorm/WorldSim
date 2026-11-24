@@ -340,6 +340,7 @@ function missionDone(g, b){
     notify(`El globo comercial de ${g.name} aterriza en ${o.name} y vende ${G.n} de ${m.gname}${eg && eo ? ` por ${pay} ${o.coin}` : ''}`, { x:b.x, y:b.y });
   } else if (m.kind === 'visita') {
     const o = villageById(m.to); if (!o || !popOf(o)) return;
+    if (m.state) { stateVisitArrive(b.pilot, b.crew, g, o); return; } // visita oficial del líder (visitas.js)
     const r = relOf(g, o); r.v = clamp(r.v + 4 + n * 2, -100, 100);
     shareCharts(g, o); const got = r.war ? [] : doTrade(g, o);
     if (typeof languageMeet === 'function') languageMeet(g, o, b.crew);
