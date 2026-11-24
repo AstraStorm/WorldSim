@@ -145,18 +145,19 @@ function drawIndustry(now){
     if (!R.path) continue;
     for (const [st, g] of [[R.sa, villageById(R.a)], [R.sb, villageById(R.b)]]) { const sx = st[0] * T + 2, sy = st[1] * T + 3; if (g && onS(sx, sy)) drawStation(sx, sy, g, now); }
     if (!r.route) continue; // sin comercio (guerra, sanciones) no circula
-    // Va y viene con el tiempo del juego (se para en pausa y corre más a más velocidad): espera un rato en cada
-    // estación y vuelve sin dar la vuelta (la locomotora siempre en el mismo extremo, como un tren lanzadera); así
-    // los vagones nunca saltan de un lado a otro ni se amontonan al final de la vía
-    const n = R.path.length - 1, L = Math.min(9.2, n * .5), run = Math.max(.1, (n - L) / 4), cyc = 2 * (run + TRAIN_DWELL);
-    let t = ((yearT + R.a * 7.3) % cyc + cyc) % cyc, d, fwd, moving = true;
-    if (t < TRAIN_DWELL) { d = L; fwd = true; moving = false; }
-    else if ((t -= TRAIN_DWELL) < run) d = L + (n - L) * t / run, fwd = true;
-    else if ((t -= run) < TRAIN_DWELL) { d = n; fwd = false; moving = false; }
-    else d = n - (n - L) * (t - TRAIN_DWELL) / run, fwd = false;
+    // Va y viene con el tiempo del juego (se para en pausa y corre más a más velocidad), con la locomotora siempre
+    // delante: llega a la estación, espera y, mientras espera, da la vuelta (se desvanece y reaparece con la
+    // locomotora en el otro extremo, mirando hacia donde va a salir); los vagones nunca se amontonan
+    const n = R.path.length - 1, L = Math.min(9.2, n * .5), gap = L / 2, run = Math.max(.1, (n - L) / 4), cyc = 2 * (run + TRAIN_DWELL);
+    let t = ((yearT + R.a * 7.3) % cyc + cyc) % cyc, d, up, moving = false, alpha = 1; // up: la locomotora va hacia el final de la vía (hacia b)
+    const turn = (u, a1, a2) => { const h = TRAIN_DWELL / 2; alpha = clamp(Math.abs(u - h) / .5, 0, 1); return u < h ? a1 : a2; }; // la vuelta, a mitad de la espera
+    if (t < TRAIN_DWELL) [d, up] = turn(t, [0, false], [L, true]); // en la estación de a
+    else if ((t -= TRAIN_DWELL) < run) { d = L + (n - L) * t / run; up = true; moving = true; }
+    else if ((t -= run) < TRAIN_DWELL) [d, up] = turn(t, [n, true], [n - L, false]); // en la estación de b
+    else { d = (n - L) * (1 - (t - TRAIN_DWELL) / run); up = false; moving = true; }
     const [tx, ty, sx] = railPoint(R.path, d); if (!onS(tx, ty, 60 + L * T)) continue;
-    if (moving) R.dir = sx ? sx * (fwd ? 1 : -1) : R.dir || 1;
-    drawTrainOn(R.path, d, L / 2, R.dir || 1, moving);
+    R.dir = sx ? sx * (up ? 1 : -1) : R.dir || 1;
+    drawTrainOn(R.path, d, up ? gap : -gap, R.dir, moving, alpha);
   }
   for (const g of villages) {
     if (!popOf(g)) continue;
@@ -180,11 +181,30 @@ function drawStation(x, y, g, now){
   if (zoom >= 2) { vctx.font = 'bold 4px sans-serif'; vctx.textAlign = 'center'; vctx.fillStyle = '#22201e'; vctx.fillRect(x - 10, y - 25, 21, 5); vctx.fillStyle = '#f8e080'; vctx.fillText(g.name.slice(0, 12), x + .5, y - 21.3); vctx.textAlign = 'start'; } // letrero
 }
 const TRAIN_DWELL = 4; // segundos parado en cada estación
-function drawTrainOn(path, d, gap, dir, moving){
-  const flip = dir < 0, keys = ['train:locomotora', 'train:vagon_p', 'train:vagon_m'];
+function drawTrainOn(path, d, gap, dir, moving, alpha = 1){ // gap > 0: los vagones detrás, hacia el principio de la vía
+  if (alpha <= 0) return;
+  const keys = ['train:locomotora', 'train:vagon_p', 'train:vagon_m'], fw = gap >= 0 ? 1 : -1;
   if (!artFrame(keys[0])) { const [x, y] = railPoint(path, d); drawTrain(x, y, dir, 0, performance.now()); return; }
-  for (let k = 2; k >= 0; k--) { const [x, y] = railPoint(path, d - k * gap); artAt(keys[k], x, y, flip); }
-  const [x, y] = railPoint(path, d); if (Math.random() < (moving ? .4 : .08)) chips.push({ x:x + (flip ? -3 : 3), y:y - 15, vx:-dir * 9 + (Math.random() - .5) * 3, vy:-6 - Math.random() * 3, life:0, max:1.2, col:'rgba(215,215,210,.75)' });
+  // Cada coche sigue la vía: de lado en las rectas horizontales y girado al subir, bajar o tomar una curva
+  // (a pasos de 45°, para que el pixel art no se emborrone)
+  let smk = null;
+  vctx.globalAlpha = alpha;
+  for (let k = 2; k >= 0; k--) {
+    const dk = d - k * gap, [x, y] = railPoint(path, dk), [ax, ay] = railPoint(path, dk - .7), [bx, by] = railPoint(path, dk + .7);
+    let ux = (bx - ax) * fw, uy = (by - ay) * fw; if (!ux && !uy) { ux = dir; uy = 0; }
+    const flip = ux < 0 || (!ux && dir < 0), ang = Math.round(Math.atan2(flip ? -uy : uy, flip ? -ux : ux) / (Math.PI / 4)) * (Math.PI / 4);
+    if (!ang) artAt(keys[k], x, y, flip); else trainCarRot(keys[k], x, y, ang, flip);
+    if (!k) smk = [x, y, flip, ang];
+  }
+  vctx.globalAlpha = 1;
+  const [x, y, flip, ang] = smk, ox = Math.cos(ang) * 3 * (flip ? -1 : 1), oy = Math.abs(ang) > 1 ? -8 : -15;
+  if (Math.random() < (moving ? .4 : .08)) chips.push({ x:x + ox, y:y + oy, vx:-dir * 9 + (Math.random() - .5) * 3, vy:-6 - Math.random() * 3, life:0, max:1.2, col:'rgba(215,215,210,.75)' });
+}
+// Un coche girado (subiendo, bajando o en una curva): gira alrededor de su centro, encima de la vía
+function trainCarRot(key, x, y, ang, flip){
+  const c = artFrame(key), f = ART_MAP[key];
+  vctx.save(); vctx.translate(Math.round(x), Math.round(y) - 3); vctx.rotate(ang); if (flip) vctx.scale(-1, 1);
+  vctx.drawImage(c, -f[4], -f[3] / 2 - 1); vctx.restore();
 }
 function drawTrain(x, y, ux, uy, now){
   if (artFrame('train:locomotora')) { const flip = ux < 0; for (let k = 2; k >= 0; k--) artAt(k ? (k === 1 ? 'train:vagon_p' : 'train:vagon_m') : 'train:locomotora', x - ux * k * 23, y - uy * k * 23, flip); if (Math.random() < .4) chips.push({ x:x + (flip ? -3 : 3), y:y - 15, vx:-ux * 9 + (Math.random() - .5) * 3, vy:-6 - Math.random() * 3, life:0, max:1.2, col:'rgba(215,215,210,.75)' }); return; } // (humo: lo pone el juego)

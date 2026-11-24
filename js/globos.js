@@ -122,9 +122,10 @@ function pickMission(g){
   const friends = villages.filter(o => o !== g && popOf(o) && Math.hypot(o.fx - g.fx, o.fy - g.fy) < 170 && (() => { const r = rels.get(relKey(g, o)); return r && r.known && !r.war; })());
   if (friends.length) {
     const o = friends[Math.floor(Math.random() * friends.length)];
-    // Si tienen puerto de globos, a uno de sus huecos libres; si no, junto al pueblo
+    // Si tienen puerto de globos, a uno de sus huecos libres; si no, junto al pueblo. Los dirigibles solo amarran en
+    // plataformas de dirigibles y los globos solo en puertos de globos: si no es el suyo, se posan junto al pueblo
     const taken = new Set(villages.flatMap(q => balloonsOf(q).map(b => b.mission && b.mission.to === o.id && b.mission.slot)).filter(Boolean));
-    const slot = hasSock(o) ? [3, 4].find(k => !taken.has(k)) : null;
+    const slot = hasSock(o) && knowsSci(o, 'dirigible') === knowsSci(g, 'dirigible') ? [3, 4].find(k => !taken.has(k)) : null;
     if (slot) { const [sx, sy] = aeroSpot(o, slot); opts.push([2, { kind:'visita', to:o.id, tx:sx, ty:sy, slot }]); }
     else { const p = ringFind(o.fx, o.fy + 8, 14, ftile); if (p) opts.push([2, { kind:'visita', to:o.id, tx:p[0] * T + 2, ty:p[1] * T + 3 }]); }
   }
@@ -456,16 +457,16 @@ function drawBalloons(now){
       vctx.beginPath(); vctx.moveTo(px, py); vctx.quadraticCurveTo((px + bx) / 2, Math.max(py, by + 2) + 2, bx, by - 1); vctx.stroke();
     }
     // Todo gira con la inclinación alrededor del fondo de la cesta
-    const inf = b.inf, mouthY = -bh - BAL_ROPE;
+    const inf = b.inf, mouthY = -bh - BAL_ROPE, zep = knowsSci(g, 'dirigible');
     vctx.save(); vctx.translate(bx, by); vctx.rotate(b.tilt);
+    if (zep) { drawAirship(col, 0, 1, now, (b.face || 1) < 0); vctx.restore(); continue; } // dirigible de vapor: sin cesta, mirando hacia donde va
     if (inf < .15) { // desinflado: la tela tendida en el suelo junto a la cesta
       if (env) vctx.drawImage(env, -env.width - 2, -4, env.width, 4); else { vctx.fillStyle = `rgb(${cr},${cg},${cb})`; vctx.beginPath(); vctx.ellipse(-8, 1, 7, 1.6, 0, 0, Math.PI * 2); vctx.fill(); }
     } else {
       // Cuerdas: de las esquinas de la cesta a la boca del globo
       vctx.strokeStyle = 'rgba(200,168,110,.95)'; vctx.lineWidth = .45;
       for (const [ax, mx] of [[-bw / 2 + .5, -2], [bw / 2 - .5, 2], [-bw / 4, -1], [bw / 4, 1]]) { vctx.beginPath(); vctx.moveTo(ax, -bh + 1); vctx.lineTo(mx, mouthY); vctx.stroke(); }
-      if (knowsSci(g, 'dirigible') && inf > .5) drawAirship(col, mouthY, inf, now, (b.face || 1) < 0); // dirigible de vapor, mirando hacia donde va
-      else if (env) { // al hincharse crece hacia arriba y se ensancha
+      if (env) { // al hincharse crece hacia arriba y se ensancha
         const ew = env.width * (.35 + .65 * inf), eh = env.height * inf;
         vctx.drawImage(env, -ew / 2, mouthY - eh + 1, ew, eh);
       } else {
@@ -491,12 +492,14 @@ function drawBalloons(now){
     }
   }
 }
-// Dirigible (con el descubrimiento del dirigible): cigarro alargado con costillas, timones, góndola y hélice
+// Dirigible (con el descubrimiento del dirigible): cigarro alargado con costillas, timones, góndola y hélice.
+// Más grande que el globo y sin cesta: la gente va en su góndola. mouthY es el fondo de la góndola
+const AIRSHIP_K = 1.8;
 function drawAirship(col, mouthY, inf, now, flip){
   if (flip) { vctx.save(); vctx.scale(-1, 1); drawAirship(col, mouthY, inf, now, false); vctx.restore(); return; } // el dibujo mira a la derecha
   const art = tintedArt('airship:dirigible', col);
-  if (art) { const w = art.width * inf, h = art.height * inf; vctx.drawImage(art, -w / 2, mouthY - h + 6, w, h); const sp = Math.abs(Math.sin(now / 40)); vctx.fillStyle = 'rgba(230,220,200,.9)'; vctx.fillRect(-w / 2 - 1, mouthY - h * .3, 1, 1 + 3 * sp); return; } // (hélice girando)
-  const L = 26 * inf, Hh = 9 * inf, cy = mouthY - Hh / 2 - 1;
+  if (art) { const w = art.width * inf * AIRSHIP_K, h = art.height * inf * AIRSHIP_K; vctx.drawImage(art, -w / 2, mouthY - h, w, h); const sp = Math.abs(Math.sin(now / 40)); vctx.fillStyle = 'rgba(230,220,200,.9)'; vctx.fillRect(-w / 2 - 1, mouthY - h * .3, 1, 1 + 3 * sp); return; } // (hélice girando)
+  const L = 26 * inf * AIRSHIP_K, Hh = 9 * inf * AIRSHIP_K, cy = mouthY - Hh / 2 - 1;
   vctx.fillStyle = '#22201e'; vctx.beginPath(); vctx.ellipse(0, cy, L / 2 + 1, Hh / 2 + 1, 0, 0, Math.PI * 2); vctx.fill();
   vctx.fillStyle = `rgb(${col.join(',')})`; vctx.beginPath(); vctx.ellipse(0, cy, L / 2, Hh / 2, 0, 0, Math.PI * 2); vctx.fill();
   vctx.fillStyle = 'rgba(255,255,255,.3)'; vctx.beginPath(); vctx.ellipse(-1, cy - Hh * .2, L * .38, Hh * .18, 0, 0, Math.PI * 2); vctx.fill();
