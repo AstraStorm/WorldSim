@@ -1825,7 +1825,7 @@ function launchRaid(att, def, r){
     if (rp) { grp.rx = rp[0] * T + 2; grp.ry = rp[1] * T + 3; } else grp.go = true;
   }
   // Formación de marcha (si ya saben luchar en grupo o son bastantes) y a caballo quien pueda
-  if (ps.length >= 4 || knowsT(att, 'grupo')) grp.form = ['columna', 'línea', 'cuña'][Math.floor(Math.random() * 3)];
+  if (ps.length >= 4 || knowsT(att, 'grupo')) grp.form = ps.length >= 8 ? ['bloque', 'bloque', 'línea', 'cuña'][Math.floor(Math.random() * 4)] : ['columna', 'línea', 'cuña', 'bloque'][Math.floor(Math.random() * 4)];
   if ((att.know || {}).montar) { const horses = animals.filter(a => !a.dead && a.sp === 'caballo' && a.dom === att.id && !a.rider); for (const v of ps) { if (!horses.length) break; if (v.mount || isRanged(v.weapon) && Math.random() < .5) continue; const a = horses.pop(); a.rider = v; v.mount = a; a.lead = null; } }
   const bearer = ps.find(v => !isRanged(v.weapon)) || ps[0]; for (const v of ps) v.bearer = v === bearer;
   const sieged = launchSiege(att, def);
@@ -2886,7 +2886,7 @@ function updateVillagers(dt){
         v.task = { k:'volver' };
       } else {
         // ¡A la carga!: al llegar cerca, rompen la formación y corren todos a la vez, gritando y levantando polvo
-        const near = Math.hypot(v.x / T - eg.fx, v.y / T - eg.fy) < 16;
+        const near = G && G.field ? Math.hypot(v.x - v.task.x, v.y - v.task.y) < 12 * T : Math.hypot(v.x / T - eg.fx, v.y / T - eg.fy) < 16; // (en una batalla campal: cerca del campo)
         if (G && near && !G.charge) {
           G.charge = true; snd('horn', v.x, v.y);
           for (const u of G.ps) if (!u.dead && u.task && u.task.k === 'asalto' && Math.random() < .6) floats.push({ x:u.x, y:u.y - 14, txt:['¡A la carga!', '¡Adelante!', '¡Aaaah!', `¡Por ${nationOf(g).name}!`][Math.floor(Math.random() * 4)], col:'#ffd0a0', life:0 });
@@ -2896,7 +2896,7 @@ function updateVillagers(dt){
         // En formación mientras están lejos: el de cabeza marca el paso y los demás van en su sitio
         if (G && G.go && G.form && !near) {
           const alive = G.ps.filter(u => !u.dead && u.task && u.task.k === 'asalto'), lead = alive[0], k = alive.indexOf(v);
-          if (lead && lead !== v && k > 0) { const dx = eg.fx * T - lead.x, dy = eg.fy * T - lead.y, dl = Math.hypot(dx, dy) || 1, fx = dx / dl, fy = dy / dl, [back, side] = formSlot(G.form, k); vGo(v, lead.x - fx * back * 7 - fy * side * 7, lead.y - fy * back * 7 + fx * side * 7, dt); continue; }
+          if (lead && lead !== v && k > 0) { const dx = lead.task.x - lead.x, dy = lead.task.y - lead.y, dl = Math.hypot(dx, dy) || 1, fx = dx / dl, fy = dy / dl, [back, side] = formSlot(G.form, k - 1, alive.length - 1); vGo(v, lead.x - fx * back * 6 - fy * side * 6, lead.y - fy * back * 6 + fx * side * 6, dt, true); continue; } // en su sitio de la formación, detrás del de cabeza
           if (lead === v) { vGo(v, v.task.x, v.task.y, dt * .7); continue; }
         }
         vGo(v, v.task.x, v.task.y, dt, !!(G && G.field)); continue; // a la batalla campal, corriendo

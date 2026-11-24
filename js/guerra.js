@@ -144,7 +144,7 @@ function startFieldBattle(att, def, r){
     || ringFind(mx0, my0, 22, (x, y) => base(x, y) && !villages.some(o => popOf(o) && Math.hypot(o.fx - x, o.fy - y) < 14)) || ringFind(mx0, my0, 12, base);
   if (!p) return false;
   const x = p[0] * T + 2, y = p[1] * T + 3, ux = (def.fx - att.fx) / dd, uy = (def.fy - att.fy) / dd, name = FIELD_NAME[world.biome[p[1] * W + p[0]]] || 'el campo';
-  const form = ['línea', 'cuña', 'columna'][Math.floor(Math.random() * 3)], until = yearT + 70 + dd / 2 * T / 7; // la marcha hasta el campo, y luego la lucha
+  const form = ['bloque', 'bloque', 'línea', 'cuña'][Math.floor(Math.random() * 4)], until = yearT + 70 + dd / 2 * T / 7; // la marcha hasta el campo, y luego la lucha
   const go = (ps, side, g, foe) => {
     const grp = { ps, go:true, until, loot:false, repelled:false, form, field:true }, bearer = ps.find(v => !isRanged(v.weapon)) || ps[0];
     ps.forEach((v, k) => { v.sleep = false; releaseTask(v); if (v.actT > 0) { v.actT = 0; v.onDone = null; } v.bearer = v === bearer; refOf(v); v.water = Math.max(v.water, .85); v.food = Math.max(v.food, .75); // salen con provisiones (si no, la sed les haría volver)

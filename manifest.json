@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611240307",
- "fecha": "2026-11-24 03:07",
+ "version": "202611240315",
+ "fecha": "2026-11-24 03:15",
  "novedades": [
   {
    "fecha": "2026-11-24",
-   "texto": "Visitas oficiales de los líderes con escolta, en dirigible, globo, barco o por tierra; los espías rivales se enteran y pueden preparar un atentado"
+   "texto": "Los ejércitos marchan en bloque, varios de frente, hasta el campo de batalla"
+  },
+  {
+   "fecha": "2026-11-24",
+   "texto": "Visitas oficiales (visitas.js): el líder visita naciones amigas con escolta, en el mejor transporte (dirigible, globo, barco o por tierra); mejoran las relaciones, hablan de tratados, comercian y hay fuegos artificiales; los espías rivales se enteran y a veces preparan un atentado que la escolta puede frustrar"
   },
   {
    "fecha": "2026-11-24",
@@ -46,19 +50,15 @@
   {
    "fecha": "2026-11-24",
    "texto": "Dirigible y tren: el dirigible mira hacia donde va, apenas cabecea y va más rápido (motor: el viento lo desvía menos); el tren va con el tiempo del juego (se para en pausa), espera en cada estación y vuelve como lanzadera sin que los vagones salten ni se amontonen"
-  },
-  {
-   "fecha": "2026-11-24",
-   "texto": "Ahora se llama World Sim: interfaz nueva con el mapa a pantalla completa, una sola barra arriba (fecha, velocidad, titulares y menús), panel con tarjetas y fichas de aldea más claras"
   }
  ],
  "archivos": {
-  "index.html": "73c09853eed8f7ab9e182983beb590ed2a4a37b2",
+  "index.html": "657d263bddd4d3f762f96b59586d6e2e7624b1f2",
   "css/estilo.css": "5102a249d843e933be3be74f960883ba03efd264",
   "js/aldeanos.js": "e73d76d14422e1d57c10b250ee82a3bdafc89e0c",
   "js/ambiente.js": "cd3541c5cfa9a64de5395f84239009f959216922",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
-  "js/arte.js": "28d8f713dec324610282f56fc38dc52bc99bd350",
+  "js/arte.js": "f297025e61b02e384485b0d9c048e161b3ffc70f",
   "js/arte_mapa.js": "98d891de2ac832b6a1d3a74577fd56b460c01af2",
   "js/bandidos.js": "675a7588d06fb17fe09f9c9ec32caa9e300cb1d9",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
@@ -88,8 +88,8 @@
   "js/fama.js": "1b98918f8d312e237c6f399a43c0a3e278a4604b",
   "js/fauna.js": "ab4d9de4dea1f9f00ee90d76625658f2edd2695c",
   "js/globos.js": "30ec2bd3b0180e3706f6e31fe9cab1997d6876a5",
-  "js/guerra.js": "3e00349de418e53684d9ea9319847881f3e7f049",
-  "js/humanos.js": "ccddb36ab6dfa2a5eaafd41e02e237e82a0d89ee",
+  "js/guerra.js": "e900c85fb00f0b77aa2b5d69d50aa0a709cbc3f9",
+  "js/humanos.js": "2618f294c2754e2aab0fb23dd33df3637c966948",
   "js/idiomas.js": "76785080135c2b980a092929b1d0742a1e15a8f2",
   "js/impuestos.js": "9820acf00db62b3039fb43433ddcc3f522453daa",
   "js/industria.js": "beb92aac57d833266a64013f2d92b3ee256a6c03",
@@ -117,7 +117,7 @@
   "js/riqueza.js": "4437665e375d993ccfc2bec62225436b8fd03dce",
   "js/rutas.js": "6e12cafc1992e09fc3c2b5b13ca7d7db6416c364",
   "js/sindicatos.js": "f7cb8bf83ff74322a6fc45cc6ac90550425c6d15",
-  "js/sociedad.js": "2c16462084f076cde06b4fafeb7f90cf4ccf4537",
+  "js/sociedad.js": "a38acd385ffdd88a0e965c16093a5823e9cd9da4",
   "js/sonido.js": "25be9d9bda62336aba463c82e31668d0e9b2bc54",
   "js/titulares.js": "0506409e843da939370bb404b894a52cffa68620",
   "js/trabajo.js": "50d504968cee2cd4f5170a8e34cd81f649d6bf04",

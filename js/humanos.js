@@ -1191,7 +1191,10 @@ function drawSieges(now){
   }
 }
 // Formación al avanzar: k (1..n) detrás del que va en cabeza; devuelve [cuántos pasos atrás, cuántos al lado]
-function formSlot(form, k){
+// El sitio de cada soldado en la formación ([filas hacia atrás, de lado], en pasos): columna, línea, cuña o en bloque
+// (la masa: filas anchas, como un ejército de verdad; con n, cuántos son)
+function formSlot(form, k, n = 12){
+  if (form === 'bloque' || form === 'columna') { const w = form === 'columna' ? 3 : Math.max(3, Math.ceil(Math.sqrt(n) * 1.5)), row = Math.floor(k / w), col = k % w - (w - 1) / 2; return [row + .6, col]; }
   const h = Math.ceil(k / 2), side = k % 2 ? -1 : 1;
-  return form === 'columna' ? [h, side * .6] : form === 'línea' ? [.4, side * h] : [h, side * h * .9]; // cuña
+  return form === 'línea' ? [.4, side * h] : [h, side * h * .9]; // cuña
 }
