@@ -108,6 +108,7 @@ Sin dependencias ni compilación: cada archivo es un script normal y se cargan e
 | `js/aldeanos.js` | Movimiento y dibujo de los aldeanos |
 | `js/sonido.js` | Sonido sintetizado: música generativa, ambiente según lo que se ve (olas, ríos, viento, lluvia, grillos, pájaros, tormentas, fuego), voces, animales, trabajos y rezos de cerca, y los volúmenes |
 | `js/industria.js` | Era industrial: carreteras empedradas, pólvora, fábricas de vapor, ferrocarril con estaciones, galeones y vapores, dirigibles, torre del reloj, observatorio y carteles |
+| `js/fabricas.js` | Revolución industrial: 10 fábricas que se desbloquean por niveles (aserradero, cantera, pozo de carbón, fundiciones de hierro y oro, textil, alfarería, curtiduría, peletería, joyería) en una zona industrial a las afueras o junto a la mina; carbón y agua para las calderas, pozos industriales y extractora de agua con tuberías, comercio del carbón, leyes de la industria e iconos de estado |
 | `js/civilizacion.js` | Ruinas antiguas, bodas y entierros, villas y ciudades, embajadas, imperios, gremios y fiebre del oro |
 | `js/libro.js` | Libro de historia por capítulos: filtros, orden, búsqueda y exportación |
 | `js/ambiente.js` | Vida en el mapa: almiares, muñecos de nieve, patinadores, flores y mariposas; farolillos, luciérnagas, estrellas fugaces y sueños; bueyes arando y esquileo |

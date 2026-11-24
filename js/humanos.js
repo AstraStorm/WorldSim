@@ -271,7 +271,7 @@ const farmable = (g, x, y, i) => (tileFree(x, y) || (fieldObjOk(i) && !WATER[wor
 const busyWith = (g, job) => villagers.filter(o => !o.dead && o.vid === g.id && o.task && (o.task.k === job || o.task.job === job)).length;
 function chooseJob(v, g){
   if (retired(v, g)) return Math.random() < .6 ? 'ocio' : 'pasear'; // jubilados (cultura.js)
-  if (v.chill > .3 && !warmthAt(v, g)) return 'refugio'; // tiene frío: a calentarse
+  if (v.chill > (ageOf(v) < ADULT_H ? .15 : .3) && !warmthAt(v, g)) return 'refugio'; // tiene frío: a calentarse (los niños, antes)
   if (wantsShelter(v, g)) return 'refugio';
   if (guildStrike(v, g) && inShift(g)) return Math.random() < .5 ? 'ocio' : 'pasear'; // huelga del gremio (civilizacion.js) // llueve: a cubierto (lluvia.js)
   const pop = popOf(g), houses = housesOf(g).length, farms = [...farmMap.values()].filter(f => f.vid === g.id);
@@ -335,7 +335,7 @@ function chooseJob(v, g){
   const wantArmy = pop * (atWarJ ? .45 : g.danger > 0 || L.includes('ejercito') ? .3 : .15) * (g.food < pop * 3 ? .5 : 1); // una pequeña guardia siempre; en guerra, a filas
   add('arma', soldiersJ < wantArmy && g.wood >= (needHouse ? 6 : 3) && busyWith(g, 'arma') < (atWarJ ? 3 : 2) ? (atWarJ ? 8 : g.danger > 0 ? 5 : 2.5) : 0); // sin dejar al pueblo sin madera para casas
   const know = g.know ||= {};
-  add('pozo', know.pozo && houses >= 1 && (g.stone >= 5 || g.wood >= 8) && wellsOf(g).length < 1 + Math.floor(pop / 10) + (g.thirsty ? 1 : 0) && !busyWith(g, 'pozo') ? (g.thirsty ? 14 : 4) : 0);
+  add('pozo', know.pozo && houses >= 1 && (g.stone >= 5 || g.wood >= 8) && wellsOf(g).length < 1 + Math.floor(pop / 10) + (g.thirsty ? 1 + Math.floor(pop / 15) : 0) && !busyWith(g, 'pozo') ? (g.thirsty ? 14 : 4) : 0);
   add('molino', know.molino && houses >= 3 && (g.mill == null || !world.objs[g.mill]) && spare >= 10 && g.stone >= 3 && farms.length >= 8 && !busyWith(g, 'molino') ? 4 : 0);
   const quarry = g.quarry != null && world.objs[g.quarry] && world.objs[g.quarry].key === 'quarry:cantera';
   const wantStone = g.stone < (g.temple != null && world.objs[g.temple] && !hasCathedral(g) ? 40 : 20); // con templo, ahorran para el grande
@@ -346,6 +346,7 @@ function chooseJob(v, g){
   balloonJobs(v, g, add); // tela, manga de viento, globo, cesta y vuelos (globos.js)
   institutionJobs(v, g, add); // tribunal, cárcel, imprenta, sindicato, parlamento y academia (instituciones.js)
   mineJobs(v, g, add); // abrir la mina y trabajar en ella (minas.js)
+  factoryJobs(v, g, add); // fábricas, pozos industriales y extractora (fabricas.js)
   umbrellaJobs(v, g, add); // coser paraguas (lluvia.js)
   volcanoJobs(v, g, add); // cercar el volcán (volcanes.js)
   sportsJobs(v, g, add); // campo de fútbol, piscina y pista (deportes.js)
@@ -412,6 +413,7 @@ function setupTask(v, g, job){
     case 'tribunal': case 'carcel': case 'imprenta': case 'sindicato': case 'parlamento': case 'academia': case 'universidad': case 'consejo': case 'espias': case 'casino': case 'granero': case 'ahumadero': case 'lenera': case 'postas': return institutionTarget(v, g, job);
     case 'investigar': return scienceTarget(v, g, job);
     case 'mina': case 'extraer': return mineTarget(v, g, job);
+    case 'fabrica': case 'fabricar': case 'pozo_fab': case 'extractora': return factoryTarget(v, g, job);
     case 'refugio': return shelterTarget(v, g, v.chill > .3);
     case 'conservar': return seasonTarget(v, g, job);
     case 'chabola': return shackTarget(v, g);
@@ -727,6 +729,7 @@ function runTask(v, g, dt){
     case 'tribunal': case 'carcel': case 'imprenta': case 'sindicato': case 'parlamento': case 'academia': case 'universidad': case 'consejo': case 'espias': case 'casino': case 'granero': case 'ahumadero': case 'lenera': case 'postas': institutionArrive(v, g, t); break;
     case 'investigar': scienceArrive(v, g, t); break;
     case 'mina': case 'extraer': mineArrive(v, g, t); break;
+    case 'fabrica': case 'fabricar': case 'pozo_fab': case 'extractora': factoryArrive(v, g, t); break;
     case 'refugio': shelterArrive(v, g, t); break;
     case 'conservar': seasonArrive(v, g, t); break;
     case 'chabola': shackArrive(v, g, t); break;

@@ -50,7 +50,7 @@ function draw(t){
   drawZones();
   drawPaths();
   drawBridges();
-  drawFarms(); drawCemeteries(); drawTracks(); drawSeasonLife(performance.now()); drawFairs(performance.now()); drawIndustry(performance.now()); drawRuins(performance.now()); drawPrisonCamps(performance.now()); drawCivEvents(performance.now()); drawEmbassies(performance.now()); drawGoldRush(performance.now()); drawAeros();
+  drawFarms(); drawCemeteries(); drawTracks(); drawSeasonLife(performance.now()); drawFairs(performance.now()); drawIndustry(performance.now()); drawFactoryGround(); drawRuins(performance.now()); drawPrisonCamps(performance.now()); drawCivEvents(performance.now()); drawEmbassies(performance.now()); drawGoldRush(performance.now()); drawAeros();
   drawPens();
   drawVolcFences(); // vallas alrededor de los volcanes (volcanes.js)
   drawWalls();
@@ -59,6 +59,7 @@ function draw(t){
   drawSports(); // los estadios y las piscinas: después de los objetos, con lo que tienen delante encima (deportes.js)
   drawArtFlames(t);
   drawInstFlags(t); // la bandera en los edificios del gobierno (instituciones.js)
+  drawFactoryIcons(t); // humo de las chimeneas e iconos de en marcha / parada (fabricas.js)
   drawSelBuilding(t); // el edificio elegido, marcado (edificios.js)
   drawCastles(t); // torres de los castillos (fama.js)
   drawMatchBoards(); // marcador con los escudos en los partidos (deportes.js)

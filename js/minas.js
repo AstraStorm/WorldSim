@@ -31,7 +31,7 @@ function mineSite(g){
 function mineJobs(v, g, add){
   const kn = g.know || {};
   if (!hasMine(g)) { add('mina', kn.mineria && (g.oresNear || 0) >= 3 && g.wood >= 12 && g.stone >= 8 && !busyWith(g, 'mina') && !(g.noMineSite > yearT) ? 9 : 0); return; }
-  const want = hasForge(g) || (g.iron || 0) < 6 || (industrial(g) && (g.coal || 0) < 25) || Object.entries(INSTS).some(([k, I]) => !hasInst(g, k) && I.want(g) && instMissing(g, I).some(([f]) => f === 'iron' || f === 'gold'));
+  const want = hasForge(g) || (g.iron || 0) < 6 || (industrial(g) && (g.coal || 0) < 25) || coalBuyer(g) || Object.entries(INSTS).some(([k, I]) => !hasInst(g, k) && I.want(g) && instMissing(g, I).some(([f]) => f === 'iron' || f === 'gold'));
   add('extraer', busyWith(g, 'extraer') < 4 && (g.mineLeft ?? MINE_RESERVE) > 0 ? (want ? 5 : 2.5) : 0);
 }
 function mineTarget(v, g, job){
@@ -58,7 +58,7 @@ function mineArrive(v, g, t){
     const m = g.mineMix || { hierro:1, oro:0, gemas:0 }, tot = m.hierro * 1 + m.oro * .8 + m.gemas * .5 || 1;
     let r = Math.random() * tot, kind = 'hierro';
     if ((r -= m.hierro) >= 0) kind = (r -= m.oro * .8) < 0 ? 'oro' : 'gemas';
-    if (industrial(g) && Math.random() < ((g.coal || 0) < 30 ? .55 : .3)) { kind = 'carbón'; if (!g.coalMsg) { g.coalMsg = true; notify(`En ${g.name} empiezan a sacar carbón de la mina: lo necesitan las máquinas de vapor`, { x:(g.mine % W) * T, y:((g.mine / W) | 0) * T }); } } // la era industrial (industria.js)
+    if ((industrial(g) || coalBuyer(g)) && Math.random() < ((g.coal || 0) < 30 ? .55 : .3)) { kind = 'carbón'; if (!g.coalMsg) { g.coalMsg = true; notify(`En ${g.name} empiezan a sacar carbón de la mina: lo necesitan las máquinas de vapor`, { x:(g.mine % W) * T, y:((g.mine / W) | 0) * T }); } } // la era industrial (industria.js)
     const n = Math.round((kind === 'hierro' || kind === 'carbón' ? 4 : kind === 'oro' ? 2 : 1) * (knowsSci(g, 'metalurgia') ? 1.5 : 1)); // metalurgia (ciencia.js)
     v.carry = { k:kind, n }; g.mineLeft = (g.mineLeft ?? MINE_RESERVE) - n;
     if (g.mineLeft <= 0) notify(`La mina de ${g.name} se ha agotado después de tantos años`, { x:(g.mine % W) * T, y:((g.mine / W) | 0) * T });

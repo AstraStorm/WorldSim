@@ -251,6 +251,14 @@ if os.path.exists(os.path.join(SRC, 'plataforma, diriglbes.png')):  # plataforma
 if os.path.exists(os.path.join(SRC, 'casino.png')):
     add('casino:casino', shrink(box_parts('casino.png', (380, 190, 1150, 830)), 40, 48))
 
+# ---- Fábricas de la revolución industrial (fabricas.png: 2 filas de 5) y extractora de agua ----
+if os.path.exists(os.path.join(SRC, 'fabricas.png')):
+    for k, name in enumerate(['textil', 'curtiduria', 'hierro', 'carbon', 'aserradero', 'cantera', 'peleteria', 'oro', 'alfareria', 'joyeria']):
+        c, r = k % 5, k // 5
+        add('fac:' + name, shrink(box_parts('fabricas.png', (c * 307, 130 + r * 390, (c + 1) * 307, 480 + r * 390)), 34, 48))
+if os.path.exists(os.path.join(SRC, 'extractoraagua.png')):
+    add('pump:extractora', shrink(box_parts('extractoraagua.png', (300, 70, 1240, 930)), 38, 48))
+
 # ---- Atlas: en filas, con 1 píxel de separación ----
 keys = list(S); W = 512; x = y = rowh = 0; pos = {}
 for k in sorted(keys, key=lambda k: -S[k]['img'].height):

@@ -1,8 +1,12 @@
 {
  "juego": "World Sim",
- "version": "202611241956",
- "fecha": "2026-11-24 19:56",
+ "version": "202611242230",
+ "fecha": "2026-11-24 22:30",
  "novedades": [
+  {
+   "fecha": "2026-11-24",
+   "texto": "Fábricas de la revolución industrial"
+  },
   {
    "fecha": "2026-11-24",
    "texto": "Arreglos de supervivencia: bandidos, piratas, frío y viajeros que cruzaban el mar"
@@ -46,20 +50,16 @@
   {
    "fecha": "2026-11-24",
    "texto": "Murallas: una puerta por lado (donde pasa el camino principal) en vez de una en cada camino, y dibujo nuevo: muros altos con almenas y adarve, torres en las esquinas y puerta con dos torreones y bandera; las partidas viejas convierten las puertas sobrantes en muro"
-  },
-  {
-   "fecha": "2026-11-24",
-   "texto": "Estrategia de guerra (estrategia.js) y combate más vivo"
   }
  ],
  "archivos": {
-  "index.html": "b222b96c3826827887499e184dc669f8e180dc25",
+  "index.html": "eb960f0bdd898e8da1a4e0746539ade4d31f0d8b",
   "css/estilo.css": "5102a249d843e933be3be74f960883ba03efd264",
   "js/aldeanos.js": "778c8c0a7f9579f13ba3cd1ed4c7b8ed792cf688",
   "js/ambiente.js": "6c96bf777f6cdfc55b648f495836521ee28aeb8f",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
-  "js/arte.js": "c714013303230867f7a072600b5161bc202b63dd",
-  "js/arte_mapa.js": "98d891de2ac832b6a1d3a74577fd56b460c01af2",
+  "js/arte.js": "b6def91f3c06ac11286f307a82ce8f3fa9871519",
+  "js/arte_mapa.js": "747a0edc6a2af6f7092adf2d17bccfd9afc839cc",
   "js/bandidos.js": "a41a64350dfb0cadc79876bf166b9e56ee1a9962",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
   "js/calendario.js": "03559b1ef711175c3f112ecaa0243a06a44b4b9c",
@@ -85,11 +85,12 @@
   "js/espionaje.js": "6291557af0a9488f321131fbfb7cdccf50cdbbf1",
   "js/estaciones.js": "e9e2f1194fdb60ca73c007b1cd7e9ae392ce2ad7",
   "js/estrategia.js": "d0bfc9b82bf35def9101723898375cf61f5b9fb8",
+  "js/fabricas.js": "f0f3d63092294191ea7014eeaa19d2df9aa9b855",
   "js/fama.js": "1b98918f8d312e237c6f399a43c0a3e278a4604b",
   "js/fauna.js": "ab4d9de4dea1f9f00ee90d76625658f2edd2695c",
   "js/globos.js": "a8829293851b57da087576ad6fb947ff8eca7c86",
   "js/guerra.js": "e900c85fb00f0b77aa2b5d69d50aa0a709cbc3f9",
-  "js/humanos.js": "daaec2a669ae8f91185553a9ec790e1a8b38abab",
+  "js/humanos.js": "acce2acc9569082f07ca82d9b2fe9f92421ce5d0",
   "js/idiomas.js": "a64e7f699431735d8b20a2eb82d317a02f4bd265",
   "js/impuestos.js": "9820acf00db62b3039fb43433ddcc3f522453daa",
   "js/industria.js": "beb92aac57d833266a64013f2d92b3ee256a6c03",
@@ -101,7 +102,7 @@
   "js/libro.js": "7af640407e7d7b885889ea8669cf05def8c41a1e",
   "js/lluvia.js": "f5d9f158319f36671117bcf52a7e408433bc153d",
   "js/mapas.js": "822f9d930f4b0a1f4fc0bbb8808ef5ba56f2f985",
-  "js/minas.js": "562930a354dae65b6c817b875f257a9d1e430996",
+  "js/minas.js": "4f093817fbd8df8654fd4d2c9507600191bcd312",
   "js/monedas.js": "140cee68524bf3ac2eb75ac948e10c1c1b93dd6e",
   "js/mundo.js": "cab572cf1b5a59576e69616206d1084f3df81450",
   "js/noticias.js": "11ffc23894887afe32946f29c6721dfd2183720d",
@@ -118,7 +119,7 @@
   "js/riqueza.js": "4437665e375d993ccfc2bec62225436b8fd03dce",
   "js/rutas.js": "6e12cafc1992e09fc3c2b5b13ca7d7db6416c364",
   "js/sindicatos.js": "f7cb8bf83ff74322a6fc45cc6ac90550425c6d15",
-  "js/sociedad.js": "fd70611b5ef170b107816a415e3fdd9d77268127",
+  "js/sociedad.js": "4f37698178ab859ecdce031f31b0e22d8fba299b",
   "js/sonido.js": "25be9d9bda62336aba463c82e31668d0e9b2bc54",
   "js/titulares.js": "0506409e843da939370bb404b894a52cffa68620",
   "js/trabajo.js": "50d504968cee2cd4f5170a8e34cd81f649d6bf04",
@@ -127,10 +128,10 @@
   "js/vegetacion.js": "93f69ea37ed2ba75fb87c037ae6676de3910737a",
   "js/vida.js": "5b036c14fbd1d9fc061f4f98ddd8adcb43134ef0",
   "js/visitas.js": "5cafd3070fdf9de08e0a6eebf6644ad13c46bc1d",
-  "js/vista.js": "25e158b4ca11cf70a73a865591d39d05e6ef27bb",
+  "js/vista.js": "eccc23e2e6a4a1b1b839b9faab5c7232a9ad38e8",
   "js/vivienda.js": "0f3091767a41917156ce106447eb0e9659b69271",
   "js/volcanes.js": "f4aea099226dfe1b064fdfbd4779bddb6ed8a250",
-  "arte/atlas.png": "e40126efcee4672b64bdcd1dfe22e263ff4b2350",
+  "arte/atlas.png": "1387d54db9d18169c9c4156954724cb83f977ad9",
   "arte/logo.png": "d18c1e289f646312aeb3ec4087060e60088f0ccd",
   "arte/papeles/contrato.png": "e1625cf1f7bb7b9b5b142d12899265fab2ce7cf0",
   "arte/papeles/dni.png": "6dcfc114b88e629bfed1b2ac368acbfcd1474f34",

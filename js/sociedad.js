@@ -137,7 +137,7 @@ let pathMap = new Set(), bridgeSet = new Set(), bridges = [];
 // Desgaste de tanto pisar: hierba gastada y, si se sigue pasando, un camino; si se deja de usar, vuelve la hierba
 let wear = null, wornSet = new Set(), desireSet = new Set();
 const storesOf = g => (g.stores ||= []).filter(i => world.objs[i] && world.objs[i].key === 'store:almacen');
-const buildingsOf = g => [...g.houses, ...(g.wells || []).map(w => w.i), ...(g.mill != null ? [g.mill] : []), ...(g.quarry != null ? [g.quarry] : []), ...(g.hall != null ? [g.hall] : []), ...(g.stores || []), ...(g.towers || []), ...[g.altar, g.temple, g.monument, g.market, g.bank, g.wonder, g.forge, g.hospital, g.barracks, g.lonja, g.theater, g.coliseum, g.tavern, g.cathedral, g.school, g.court, g.prison, g.press, g.unionHall, g.parliament, g.academy, g.mine, g.university, g.councilHall, g.spyHouse, g.granary, g.smokehouse, g.woodshed, g.postHouse].filter(b => b != null)];
+const buildingsOf = g => [...g.houses, ...(g.wells || []).map(w => w.i), ...(g.mill != null ? [g.mill] : []), ...(g.quarry != null ? [g.quarry] : []), ...(g.hall != null ? [g.hall] : []), ...(g.stores || []), ...(g.towers || []), ...[g.altar, g.temple, g.monument, g.market, g.bank, g.wonder, g.forge, g.hospital, g.barracks, g.lonja, g.theater, g.coliseum, g.tavern, g.cathedral, g.school, g.court, g.prison, g.press, g.unionHall, g.parliament, g.academy, g.mine, g.university, g.councilHall, g.spyHouse, g.granary, g.smokehouse, g.woodshed, g.postHouse, g.pump].filter(b => b != null), ...(g.facs || []).map(f => f.i)];
 // Capacidad del almacén: lo que cabe junto a la hoguera, más lo de cada almacén
 const capOf = g => Math.max(20, 80 * storesOf(g).length); // sin almacén, solo lo poco que cabe junto a la hoguera
 let plazaSet = new Set(), holySet = new Map();
@@ -252,9 +252,9 @@ function planSite(g, kind){
   const ok = (x, y) => { const i = y * W + x; return x > hw && y > hh + 1 && x < W - hw - 1 && y < H - 3 && !farmMap.has(i) && !pathMap.has(i)
     && !penOverlap(g, x - hw, y - hh, x + hw, y + 1) && !plazaIn(x - hw, y - hh, x + hw, y) && (kind === 'ayuntamiento' || !hallIn(g, x - hw, y - hh, x + hw, y + 1)) && !farmIn(x - hw, y - hh, x + hw, y + 1) && !pathIn(x - hw, y - hh, x + hw, y) && clearable(x - hw, y - hh, x + hw, y + 1) && !buildingClash(x, y, kind === 'casa' ? 'casa' : kind); };
   // Pozos: lejos unos de otros (al menos 10 casillas), primero en la plaza y si no, por el pueblo (nunca en fila por una calle)
-  const wellOk = (x, y) => wellsOf(g).every(w => Math.hypot((w.i % W) - x, ((w.i / W) | 0) - y) >= 10);
+  const wellGap = g.thirsty ? 6 : 10, wellOk = (x, y) => wellsOf(g).every(w => Math.hypot((w.i % W) - x, ((w.i / W) | 0) - y) >= wellGap); // con sed, más juntos
   if (kind === 'pozo') { for (const [x, y] of [[g.fx - 4, g.fy - 1], [g.fx + 4, g.fy - 1], [g.fx - 4, g.fy + 6], [g.fx + 4, g.fy + 6]]) if (ok(x, y) && wellOk(x, y)) return [x, y];
-    return siteNear(g, 6, 20, (x, y) => ok(x, y) && wellOk(x, y) && !streetZone(g, x, y)); }
+    return siteNear(g, 6, 20, (x, y) => ok(x, y) && wellOk(x, y) && !streetZone(g, x, y)) || (g.thirsty ? siteNear(g, 6, 30, (x, y) => ok(x, y) && wellOk(x, y)) : null); }
   const streetSlot = k => { for (const [dx, dy] of STREETS) {
     // Calles este-oeste: casas en fila al norte de la calle; calles norte-sur: a un lado y a otro
     const cands = dx ? [[g.fx + dx * (8 + k * 9), g.fy + 1]] : [[g.fx - 6, g.fy + dy * (10 + k * 7)], [g.fx + 6, g.fy + dy * (10 + k * 7)]];
@@ -1320,7 +1320,7 @@ function renderVillageCard(force){
       <h4>Muertes</h4><div>${Object.entries(g.deaths || {}).sort((a, b) => b[1] - a[1]).map(([c, k]) => `${k} por ${c}`).join(' · ') || 'Ninguna todavía'}</div>
       <h4>Gente destacada</h4><div class="famrow">${notable.map(v => famNode(v, v === g.leader ? leaderTitle(g) : oficioTxt(v) || stageOf(v))).join('')}</div>`;
   } else if (cardTab === 'economia') {
-    body = `<div>${econCard(g)}</div>${rescueCard(g)}${wealthCard(g)}${classCard(g)}${seasonsCard(g)}${goodsCard(g)}${mineCard(g)}${unionCard(g)}${instCard(g)}`;
+    body = `<div>${econCard(g)}</div>${rescueCard(g)}${wealthCard(g)}${classCard(g)}${seasonsCard(g)}${goodsCard(g)}${mineCard(g)}${factoryCard(g)}${unionCard(g)}${instCard(g)}`;
   } else if (cardTab === 'politica') {
     const vr = n.voteRes;
     body = `<div>${govCard(g)}</div>
@@ -2846,11 +2846,11 @@ function updateVillagers(dt){
     }
     const out = tHere, shelter = warmthAt(v, g) > 0 || !!v.fogata, shade = out > 24 && inForest(v), temp = shelter ? (out < 18 ? Math.min(18, out + WARMTH) : out - 8) : shade ? out - 5 : out; // la casa (gruesa) y la sombra refrescan // los árboles también dan sombra
     const cold = H_COLD + v.ad + (child ? 4 : 0), hot = H_HEAT + v.ad;
-    v.chill = temp < cold ? v.chill + dt * (cold - temp) / (300 * (1 + (v.fit || 0) * .4)) : Math.max(0, v.chill - dt * .1);
+    v.chill = temp < cold ? v.chill + dt * (cold - temp) / (300 * (1 + (v.fit || 0) * .4) * (v.coat ? 1.8 : 1)) : Math.max(0, v.chill - dt * .1);
     v.hot = temp > hot ? v.hot + dt * (temp - hot) / (90 * (1 + (v.fit || 0) * .4)) : Math.max(0, v.hot - dt * .1);
     if (v.chill >= 1) { killVillager(v, 'frío'); continue; }
-    // Quien se está helando deja lo que hace y corre a una casa o edificio caliente (lluvia.js)
-    if (g && v.chill > .3 && !shelter && !v.boat && !(v.task && ['refugio', 'asalto'].includes(v.task.k))) { const p = shelterTarget(v, g, true); if (p) { releaseTask(v); v.task = p; v.lastD = Infinity; } }
+    // Quien se está helando deja lo que hace y corre a una casa o edificio caliente (lluvia.js); los niños, antes
+    if (g && v.chill > (child ? .15 : .3) && !shelter && !v.boat && !(v.task && ['refugio', 'asalto'].includes(v.task.k))) { const p = shelterTarget(v, g, true); if (p) { releaseTask(v); v.task = p; v.lastD = Infinity; } }
     if (v.hot >= 1) { killVillager(v, 'calor'); continue; }
     if (g && v.hot > .4 && v.task && !['beber', 'asalto', 'trabajando'].includes(v.task.k) && !v.boat) { const p = drinkSpot(v, g); if (p) { releaseTask(v); v.task = { k:'beber', ...p }; v.lastD = Infinity; } } // acalorados: a beber y refrescarse
     // Sin aldea: se une a la más cercana o funda una nueva donde está
@@ -3090,7 +3090,7 @@ function updateVillages(dt){
     if (!g.coin && ((g.hall != null && people.length >= 12) || people.length >= 22 || g.market != null) && Math.random() < dt * .012) { g.coin = coinName(); notify(`En ${g.name} el gobierno acuña su propia moneda, el ${g.coin}: desde ahora el trabajo se paga con sueldo`, { x:g.fx * T, y:g.fy * T }); }
     // Un cementerio encima de una plaza sagrada (partidas de antes): se traslada (se vuelve a hacer en otro sitio)
     const cm = g.cemetery; if (cm && villages.some(o => o.holy && !(cm.x0 + cm.w - 1 < o.holy.x0 || cm.x0 > o.holy.x1 || cm.y0 + cm.h - 1 < o.holy.y0 || cm.y0 > o.holy.y1))) { g.cemetery = null; notify(`En ${g.name} trasladan el cementerio fuera de la plaza sagrada`, { x:(cm.x0 + cm.w / 2) * T, y:(cm.y0 + cm.h / 2) * T }); }
-    for (const w of wellsOf(g)) w.q = Math.min(1, w.q + (raining(w.i) ? .04 : .006) * dt); // con la lluvia se llena; sin ella, poco a poco, del agua de debajo
+    { const pump = knowsSci(g, 'vapor') ? 1.6 : 1; for (const w of wellsOf(g)) w.q = Math.min(1, w.q + (raining(w.i) ? .04 : .006 * pump) * dt); } // con la lluvia se llenan; sin ella, poco a poco (más rápido con la bomba de la máquina de vapor)
     for (const ti of towersOf(g)) {
       const o = world.objs[ti], tx = (ti % W) * T + 2, ty = ((ti / W) | 0) * T - 28;
       o.archer ||= { x:tx, y:ty, vid:g.id, carry:{ k:'-' }, dead:false, foe:null, name:'la torre' };
