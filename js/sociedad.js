@@ -1090,6 +1090,7 @@ function drawTorches(g, t){
     vctx.fillStyle = 'rgba(0,0,0,.25)'; vctx.fillRect(px - 1, py, 3, 1);
     const ta = artFrame(tc.lit ? 'antorcha:encendida' : 'antorcha:apagada');
     if (ta) vctx.drawImage(ta, px - (ta.width >> 1), py + 1 - ta.height); else { vctx.fillStyle = '#5a3a20'; vctx.fillRect(px, py - 7, 1, 8); vctx.fillStyle = '#3a2414'; vctx.fillRect(px - 1, py - 8, 3, 2); }
+    redrawFront(px - 6, px + 6, py - 14, py); // lo que está delante (una casa más abajo) tapa la antorcha
     if (tc.lit) {
       const f = Math.floor(t / 110 + tc.i) % 3;
       vctx.fillStyle = '#ff8a2a'; vctx.fillRect(px - 1, py - 10, 3, 2);

@@ -228,3 +228,61 @@ function centralFits(g, kind, x, y){
   }
   return ring(15, 24) || base.apply(this, arguments); // si no, el solar libre más cercano al centro
 }; }
+// ---- Como en WorldBox: espadas cruzadas sobre cada pelea y la conquista en porcentaje ----
+// · Donde hay soldados luchando sale un icono de espadas que chocan (late y se balancea); sobre los ejércitos que van
+//   hacia el enemigo, uno más pequeño
+// · Si los atacantes ocupan el centro de un pueblo y hay pocos defensores armados, se va conquistando: una barra
+//   «Conquistando N %» sobre el pueblo, que sube mientras dominan y baja si resisten; al 100 %, el pueblo cae
+function conquestTick(dt){
+  for (const r of rels.values()) {
+    if (!r.war) continue; const att = villageById(r.war.att), def = villageById(r.war.def); if (!att || !def) continue;
+    for (const eg of villages.filter(o => popOf(o) && nationOf(o) === nationOf(def))) {
+      const cx = eg.fx * T, cy = eg.fy * T, R = 9 * T;
+      const atk = villagers.filter(v => !v.dead && !v.away && v.task && v.task.k === 'asalto' && v.task.enemy === eg.id && Math.hypot(v.x - cx, v.y - cy) < R).length;
+      const dfn = villagers.filter(v => !v.dead && !v.away && v.vid === eg.id && v.weapon && Math.hypot(v.x - cx, v.y - cy) < R * 1.4).length;
+      const S = (r.war.siege ||= {}), p = S[eg.id] || 0;
+      if (atk > 0 && atk > dfn) S[eg.id] = Math.min(100, p + dt * (atk - dfn) * 2.2);
+      else if (p > 0) S[eg.id] = Math.max(0, p - dt * (2 + dfn));
+      if (S[eg.id] >= 100) { delete S[eg.id]; notify(`¡Las tropas de ${att.name} toman ${eg.name}!`, { x:cx, y:cy }); conquer(nationOf(att), eg, r); return; }
+    }
+  }
+}
+SYSTEMS.push(dt => conquestTick(dt));
+function swordsIcon(sx, sy, s, t, hot){
+  const sw = Math.sin(t / 110) * (hot ? .35 : .15), k = hot ? 1 + Math.abs(Math.sin(t / 160)) * .25 : 1, R = 10.5 * s * k;
+  vctx.save(); vctx.translate(sx, sy);
+  vctx.fillStyle = 'rgba(20,10,10,.78)'; vctx.beginPath(); vctx.arc(0, 0, R, 0, Math.PI * 2); vctx.fill();
+  vctx.strokeStyle = hot ? `rgba(240,70,50,${.7 + .3 * Math.sin(t / 120)})` : 'rgba(240,190,90,.8)'; vctx.lineWidth = 1.6 * s; vctx.stroke();
+  for (const d of [-1, 1]) { // las dos espadas, cruzándose
+    vctx.save(); vctx.rotate(d * (Math.PI / 4 + sw));
+    vctx.fillStyle = '#e8ecf0'; vctx.fillRect(-1 * s, -6.5 * s * k, 2 * s, 9 * s * k); // la hoja
+    vctx.fillStyle = '#c8a040'; vctx.fillRect(-3 * s, 2.5 * s * k, 6 * s, 1.5 * s); vctx.fillStyle = '#6a4426'; vctx.fillRect(-.8 * s, 4 * s * k, 1.6 * s, 2.6 * s); // guarda y empuñadura
+    vctx.restore();
+  }
+  if (hot && Math.sin(t / 110) > .85) { vctx.fillStyle = '#ffe080'; vctx.fillRect(-1.5 * s, -2 * s, 3 * s, 3 * s); } // la chispa del choque
+  vctx.restore();
+}
+function drawWarIcons(t){
+  if (!world || ![...rels.values()].some(r => r.war)) return;
+  const sc = p => [offX + p[0] * zoom, offY + p[1] * zoom];
+  // Peleas: se agrupan los que luchan cerca unos de otros
+  const cells = new Map();
+  for (const v of villagers) {
+    if (v.dead || v.away || !v.enemy || v.enemy.dead || Math.hypot(v.enemy.x - v.x, v.enemy.y - v.y) > 40) continue;
+    const k = Math.floor(v.x / 60) + ',' + Math.floor(v.y / 60), c = cells.get(k) || { x:0, y:0, n:0 }; c.x += v.x; c.y += v.y; c.n++; cells.set(k, c);
+  }
+  const s = Math.max(1.2, Math.min(1.8, zoom / 2.2));
+  for (const c of cells.values()) if (c.n >= 2) { const [x, y] = sc([c.x / c.n, c.y / c.n - 22]); if (x > -30 && y > -30 && x < cw + 30 && y < ch + 30) swordsIcon(x, y, s * (c.n >= 6 ? 1.3 : 1), t, true); }
+  // Ejércitos en marcha (sin pelea todavía)
+  const groups = new Map();
+  for (const v of villagers) if (!v.dead && !v.away && v.task && v.task.k === 'asalto' && v.task.grp && !v.enemy) { const G = v.task.grp, c = groups.get(G) || { x:0, y:0, n:0 }; c.x += v.x; c.y += v.y; c.n++; groups.set(G, c); }
+  for (const c of groups.values()) if (c.n >= 3) { const [x, y] = sc([c.x / c.n, c.y / c.n - 24]); if (x > -30 && y > -30 && x < cw + 30 && y < ch + 30) swordsIcon(x, y, s * .8, t, false); }
+  // La conquista en marcha: barra con el porcentaje sobre el pueblo
+  for (const r of rels.values()) for (const [id, p] of Object.entries((r.war && r.war.siege) || {})) {
+    if (p < 1) continue; const eg = villageById(+id); if (!eg) continue;
+    const [x, y] = sc([eg.fx * T, eg.fy * T - 46]); if (x < -80 || y < -30 || x > cw + 80 || y > ch + 30) continue;
+    const w = 96, h = 14; vctx.fillStyle = 'rgba(20,10,10,.85)'; vctx.fillRect(x - w / 2 - 2, y - 2, w + 4, h + 4);
+    vctx.fillStyle = '#4a1a14'; vctx.fillRect(x - w / 2, y, w, h); vctx.fillStyle = `rgb(${200 + Math.round(40 * Math.sin(t / 200))},60,40)`; vctx.fillRect(x - w / 2, y, w * p / 100, h);
+    vctx.font = 'bold 10px system-ui, sans-serif'; vctx.textAlign = 'center'; vctx.textBaseline = 'middle'; vctx.fillStyle = '#fff'; vctx.fillText(`Conquistando ${Math.floor(p)} %`, x, y + h / 2 + .5); vctx.textAlign = 'start'; vctx.textBaseline = 'alphabetic';
+  }
+}

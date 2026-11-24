@@ -264,7 +264,7 @@ function sportMoodAdd(v, g, add){
 function drawSports(){
   const [vx0, vy0, vx1, vy1] = visibleRect(), now = performance.now();
   for (const g of villages) {
-    const P = g.pitch, Q = g.pool, sprite = (r, k) => { const c = artFrame(k); if (!c) return false; const [, , w, h] = ART_MAP[k]; vctx.drawImage(c, Math.round((r.x0 + r.w / 2) * T - w / 2), (r.y0 + r.h) * T - h); return true; };
+    const P = g.pitch, Q = g.pool, sprite = (r, k) => { const c = artFrame(k); if (!c) return false; const [, , w, h] = ART_MAP[k]; vctx.drawImage(c, Math.round((r.x0 + r.w / 2) * T - w / 2), (r.y0 + r.h) * T - h); redrawFront((r.x0 + r.w / 2) * T - w / 2, (r.x0 + r.w / 2) * T + w / 2, (r.y0 + r.h) * T - h, (r.y0 + r.h) * T); return true; }; // el estadio va por encima de lo de detrás; lo de delante, encima de él
     const onS = r => r && !(r.x0 * T > vx1 || (r.x0 + r.w) * T < vx0 || (r.y0 - 4) * T > vy1 || (r.y0 + r.h) * T < vy0);
     if (onS(P) && sprite(P, 'sport:futbol')) { if (g.club && !ballGames.some(b => b.match && b.match.home === g.id)) vctx.drawImage(crestCanvas(g.club), (P.x0 + P.w / 2) * T - 4, (P.y0 + P.h) * T - 15, 8, 9.5); }
     else if (onS(P)) {      const px = P.x0 * T, py = P.y0 * T, pw = P.w * T, ph = P.h * T;

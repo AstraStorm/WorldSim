@@ -309,7 +309,7 @@ function chooseJob(v, g){
   add('vender', g.market != null && world.objs[g.market] && busyWith(g, 'vender') < 3 ? (v.oficio === 'mercader' ? 3 : .3) : 0);
   add('taberna', !hasTavern(g) && houses >= 3 && pop >= 10 && g.wood >= 12 && g.stone >= 4 && !busyWith(g, 'taberna') ? 3.5 : 0);
   // El gran templo: con templo ya hecho, mucha fe y mucha piedra (más si es teocracia)
-  add('escuela', hasLaw(g, 'educacion') && !hasSchool(g) && (g.know || {}).escritura && g.hall != null && pop >= 10 && g.wood >= 12 && g.stone >= 6 && !busyWith(g, 'escuela') ? 5 : 0);
+  add('escuela', !hasSchool(g) && (g.know || {}).escritura && g.hall != null && pop >= 10 && (g.wood >= 12 && g.stone >= 6 || g.wood >= 22) && !busyWith(g, 'escuela') ? (hasLaw(g, 'educacion') ? 6 : 3.5) : 0); // (sin piedra, toda de madera: más cara) // con la ley de educación, con más prisa
   add('enseñar', hasSchool(g) && v.oficio === 'maestro' && !isFreeDay(g) && villagers.some(u => !u.dead && u.vid === g.id && u.task && u.task.k === 'clase') ? 6 : 0);
   add('catedral', g.faith && g.temple != null && world.objs[g.temple] && !hasCathedral(g) && pop >= 20 && g.stone >= 30 && g.wood >= 15 && (g.devotion || 0) >= 3 && !busyWith(g, 'catedral') ? (2 + Math.min(4, (g.devotion || 0) * .2)) * (regimeOf(g) === 'teocracia' ? 2 : 1) : 0);
   add('explorar', hasPaper(g) && pop >= 8 && !(g.noExplore > yearT) && !travelers.some(t => t.kind === 'expedicion' && t.from === g.id) && !busyWith(g, 'explorar') ? (v.oficio === 'cartógrafo' ? 4 : 1) * ((g.expeditions || 0) < 3 ? 2 : 1) : 0);
@@ -998,10 +998,10 @@ function runTask(v, g, dt){
     }; break;
     case 'escuela': v.actT = 12; v.onDone = () => {
       const x = t.i % W, y = (t.i / W) | 0;
-      if (hasSchool(g) || g.wood < 12 || g.stone < 6) return;
+      const wooden = g.stone < 6; if (hasSchool(g) || (wooden ? g.wood < 22 : g.wood < 12)) return;
       if (clearable(x - 5, y - 9, x + 5, y + 1)) clearSite(g, x - 5, y - 9, x + 5, y + 1);
       if (!tileFree(x, y) || buildingClash(x, y, 'escuela', t.i)) return;
-      world.objs[t.i] = { key:'school:escuela', v:0, ox:0, oy:0, vid:g.id }; g.school = t.i; g.wood -= 12; g.stone -= 6;
+      world.objs[t.i] = { key:'school:escuela', v:0, ox:0, oy:0, vid:g.id }; g.school = t.i; if (wooden) g.wood -= 22; else { g.wood -= 12; g.stone -= 6; }
       composeRegion(x - 10, y - 16, x + 10, y + 12); addEffect(x * T + 2, y * T + 3, 'poof'); connect(g, x, y); snd('bell', x * T, y * T);
       notify(`En ${g.name} abren una escuela: los niños aprenderán lo que saben los mayores`, { x:x * T, y:y * T });
     }; break;

@@ -50,12 +50,13 @@ function draw(t){
   drawZones();
   drawPaths();
   drawBridges();
-  drawFarms(); drawCemeteries(); drawTracks(); drawSports(); drawSeasonLife(performance.now()); drawFairs(performance.now()); drawIndustry(performance.now()); drawRuins(performance.now()); drawPrisonCamps(performance.now()); drawCivEvents(performance.now()); drawEmbassies(performance.now()); drawGoldRush(performance.now()); drawAeros();
+  drawFarms(); drawCemeteries(); drawTracks(); drawSeasonLife(performance.now()); drawFairs(performance.now()); drawIndustry(performance.now()); drawRuins(performance.now()); drawPrisonCamps(performance.now()); drawCivEvents(performance.now()); drawEmbassies(performance.now()); drawGoldRush(performance.now()); drawAeros();
   drawPens();
   drawVolcFences(); // vallas alrededor de los volcanes (volcanes.js)
   drawWalls();
   drawCracks();
   vctx.drawImage(worldCv, 0, 0);
+  drawSports(); // los estadios y las piscinas: después de los objetos, con lo que tienen delante encima (deportes.js)
   drawArtFlames(t);
   drawInstFlags(t); // la bandera en los edificios del gobierno (instituciones.js)
   drawSelBuilding(t); // el edificio elegido, marcado (edificios.js)
@@ -134,6 +135,7 @@ function draw(t){
     }
   }
   vctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  drawWarIcons(t); // espadas sobre las peleas y la conquista en porcentaje (estrategia.js)
   if (params.objects && params.markers) {
     // Con el mapa alejado solo se señalan épicos y legendarios, para no llenarlo de rombos
     const minTier = zoom < 1.5 ? 4 : zoom < 3 ? 3 : 2;

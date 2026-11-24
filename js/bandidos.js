@@ -55,7 +55,19 @@ function drawBandits(now){
   for (const b of bandits()) {
     if (b.cx > x0 - 30 && b.cx < x1 + 30 && b.cy > y0 - 30 && b.cy < y1 + 30) { if (tent) vctx.drawImage(tent, Math.round(b.cx - tent.ax), Math.round(b.cy - tent.height + 1)); vctx.fillStyle = `rgba(255,140,40,${.6 + Math.sin(now / 90) * .3})`; vctx.fillRect(Math.round(b.cx) + 8, Math.round(b.cy) - 2, 2, 2); }
     if (b.x < x0 - 20 || b.x > x1 + 20 || b.y < y0 - 20 || b.y > y1 + 20) continue;
-    b.faces.forEach((f, k) => { const s = personSprite(f, Math.floor((b.walk || 0) * 8 + k) % 2, b.dir < 0), x = Math.round(b.x + (k - 1) * 4), y = Math.round(b.y + (k % 2) * 2);
-      vctx.drawImage(s, x - (s.width >> 1), y - s.height + 1); vctx.fillStyle = '#1a1a1a'; vctx.fillRect(x - 1, y - s.height + 4, 3, 1); }); // con el pañuelo tapándoles la cara
+    // La banda: separados (el de delante, más abajo), con capucha, el pañuelo tapándoles la boca y su arma
+    const L = b.faces.map((f, k) => ({ f, k, x:Math.round(b.x + (k - (b.faces.length - 1) / 2) * 7 * (b.dir < 0 ? -1 : 1)), y:Math.round(b.y + (k % 2 ? 3 : 0)) })).sort((p, q) => p.y - q.y);
+    for (const { f, k, x, y } of L) {
+      const s = personSprite(f, b.moving === false ? 0 : Math.floor((b.walk || 0) * 8 + k) % 2, b.dir < 0), top = y - s.height + 1, d = b.dir < 0 ? -1 : 1;
+      vctx.fillStyle = 'rgba(0,0,0,.3)'; vctx.fillRect(x - 2, y + 1, 5, 1); // la sombra
+      vctx.drawImage(s, x - (s.width >> 1), top);
+      vctx.fillStyle = '#3a2a1e'; vctx.fillRect(x - 2, top, 5, 2); vctx.fillRect(x - 2, top + 2, 1, 2); vctx.fillRect(x + 2, top + 2, 1, 2); // la capucha
+      vctx.fillStyle = '#7a1a1a'; vctx.fillRect(x - 1, top + 4, 3, 1); // el pañuelo, sobre la boca
+      const wx = x + d * 3;
+      if (k % 3 === 0) { vctx.fillStyle = '#5a3a20'; vctx.fillRect(wx, y - 6, 1, 2); vctx.fillStyle = '#d8dce0'; vctx.fillRect(wx, y - 9, 1, 3); } // puñal
+      else if (k % 3 === 1) { vctx.fillStyle = '#6a4426'; vctx.fillRect(wx, y - 9, 1, 6); vctx.fillRect(wx - 1, y - 10, 3, 2); } // garrote
+      else { vctx.fillStyle = '#6a4426'; vctx.fillRect(wx - d * 2, y - 6, 4, 1); vctx.fillStyle = '#8a8e96'; vctx.fillRect(wx + d * 2, y - 8, 1, 5); } // ballesta
+    }
+    redrawFront(b.x - 20, b.x + 20, b.y - 16, Math.round(b.y + 3));
   }
 }

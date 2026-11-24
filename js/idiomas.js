@@ -197,7 +197,7 @@ function updateLanguages(dt){
     const people = villagers.filter(v => !v.dead && v.vid === g.id); if (!people.length) continue;
     const kn = g.know ||= {};
     if (kn.papel && !kn.escritura) kn.escritura = true; // partidas de antes: quien ya tenía papel, sabe escribir
-    if (!kn.escritura && g.hall != null && people.length >= 8 && Math.random() < el * .004) learnWriting(g);
+    if (!kn.escritura && g.hall != null && people.length >= 8 && Math.random() < el * .01) learnWriting(g);
     villageLang(g);
     // Pueblo recién fundado: su nombre, en su lengua (y se corrige en la crónica si ya había salido con el provisional)
     if (g.freshName) { g.freshName = false; const nn = placeName(g); if (nn) { const old = g.name; g.name = nn; for (const e of chronicle) if (e.text.includes(old)) e.text = e.text.split(old).join(nn); for (const e of g.log || []) e.txt = e.txt.split(old).join(nn); for (const q of g.parties || []) { q.name = q.name.split(old).join(nn); q.abbr = siglas(q.name); } } }

@@ -35,11 +35,14 @@ function spreadScience(a, b){
   }
 }
 // Trabajos: investigar en la universidad (los sabios, sobre todo)
-function scienceJobs(v, g, add){ if (hasInst(g, 'universidad') && ageOf(v) >= ADULT_H) add('investigar', busyWith(g, 'investigar') < 3 ? (v.oficio === 'sabio' ? 8 : (v.edu || 0) > .3 ? 2 : .5) : 0); }
+// Cuántos pueden investigar a la vez (más cuanto mayor es el pueblo) y cuánto rinde (la imprenta y la academia ayudan)
+const sciSlots = g => Math.min(8, 3 + Math.floor(popOf(g) / 15));
+const sciBoost = g => 1.5 * (hasInst(g, 'imprenta') ? 1.25 : 1) * (hasInst(g, 'academia') ? 1.2 : 1);
+function scienceJobs(v, g, add){ if (hasInst(g, 'universidad') && ageOf(v) >= ADULT_H) add('investigar', busyWith(g, 'investigar') < sciSlots(g) ? (v.oficio === 'sabio' ? 8 : (v.edu || 0) > .3 ? 3 : 1) : 0); }
 function scienceTarget(v, g, job){ const sb = hasInst(g, 'universidad') && standBy(g.university); return sb ? { k:job, x:sb[0] + (Math.random() - .5) * 8, y:sb[1] } : null; }
 function scienceArrive(v, g, t){
   v.actT = 10; v.dir = Math.random() < .5 ? -1 : 1;
-  v.onDone = () => { research(g, 1 + (v.edu || 0) * 2 + (v.oficio === 'sabio' ? 1 : 0)); if (Math.random() < .3) floats.push({ x:v.x, y:v.y - 12, txt:['¡Eureka!', 'hipótesis…', 'experimento', 'tesis'][Math.floor(Math.random() * 4)], col:'#c8e0f0', life:0 }); };
+  v.onDone = () => { research(g, (1 + (v.edu || 0) * 2 + (v.oficio === 'sabio' ? 1 : 0)) * sciBoost(g)); if (Math.random() < .3) floats.push({ x:v.x, y:v.y - 12, txt:['¡Eureka!', 'hipótesis…', 'experimento', 'tesis'][Math.floor(Math.random() * 4)], col:'#c8e0f0', life:0 }); };
   return true;
 }
 // Los efectos que no dependen de otro sistema (los demás se miran con knowsSci donde toca)
@@ -49,6 +52,7 @@ function scienceTick(g, dt, people){
   if (med) for (const u of people) if (u.sick && Math.random() < med * el) { u.sick = null; u.hp = Math.min(1, (u.hp ?? 1) + .3); }
   if (knowsSci(g, 'agronomia')) g.food += people.length * .015 * el;
   if (knowsSci(g, 'astronomia')) g.cartoSkill = Math.max(g.cartoSkill || 0, 6);
+  if (hasSchool(g)) research(g, .25); // en la escuela también se aprende y se pregunta: un poco de saber para la nación
 }
 function scienceCard(g){
   const S = sciOf(g), n = nationOf(g), got = DISCOVERIES.filter(d => S[d.k]), next = DISCOVERIES.find(d => !S[d.k]);

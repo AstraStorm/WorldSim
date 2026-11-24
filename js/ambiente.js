@@ -15,7 +15,7 @@ function ambOf(g, now){
   for (let y = Math.max(1, g.fy - R); y <= Math.min(H - 2, g.fy + R); y++) for (let x = Math.max(1, g.fx - R); x <= Math.min(W - 2, g.fx + R); x++) {
     const i = y * W + x, h = h2(x, y, 61);
     const f = farmMap.get(i); if (f && h < .08 && (f.st === 'madura' || f.st === 'arada')) A.hay.push([x * T + 2, y * T + 3]);
-    if (pathMap.has(i) && !plazaSet.has(i) && h > .955) A.lamps.push([x * T + 2, y * T + 2]);
+    if (pathMap.has(i) && !plazaSet.has(i) && h > .955 && ![0, 1, 2].some(d => villages.some(o => underBuilding(o, x, y + d)))) A.lamps.push([x * T + 2, y * T + 2]); // (no detrás de un edificio: se vería encima del tejado)
     if (!world.objs[i] && !pathMap.has(i) && !farmMap.has(i) && !WATER[world.biome[i]]) {
       if (snowA && snowA[i] > .3 && h < .012 && A.snow.length < 4) A.snow.push([x * T + 2, y * T + 3]);
       if ([B.GRASS, B.PLAINS, B.FOREST].includes(world.biome[i]) && h < .07) A.flowers.push([x * T + (h * 97 % 4), y * T + (h * 61 % 4), Math.floor(h * 1000) % 4]);
