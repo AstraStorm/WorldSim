@@ -1088,10 +1088,11 @@ function drawTorches(g, t){
     const px = (tc.i % W) * T + 2, py = ((tc.i / W) | 0) * T + 4;
     if (px < x0 - 6 || px > x1 + 6 || py < y0 - 12 || py > y1 + 4) continue;
     vctx.fillStyle = 'rgba(0,0,0,.25)'; vctx.fillRect(px - 1, py, 3, 1);
-    const ta = artFrame(tc.lit ? 'antorcha:encendida' : 'antorcha:apagada');
-    if (ta) vctx.drawImage(ta, px - (ta.width >> 1), py + 1 - ta.height); else { vctx.fillStyle = '#5a3a20'; vctx.fillRect(px, py - 7, 1, 8); vctx.fillStyle = '#3a2414'; vctx.fillRect(px - 1, py - 8, 3, 2); }
+    const ta = artFrame(tc.lit ? 'antorcha:encendida' : 'antorcha:apagada'), lantern = g.hall != null && popOf(g) >= 20; // pueblo ya crecido: farolas de vela en vez de antorchas
+    if (lantern) { vctx.fillStyle = '#2a2018'; vctx.fillRect(px, py - 9, 1, 10); vctx.fillRect(px - 1, py - 14, 3, 1); vctx.fillStyle = '#3a3028'; vctx.fillRect(px - 2, py - 13, 5, 5); vctx.fillStyle = tc.lit ? '#ffd890' : '#5a5448'; vctx.fillRect(px - 1, py - 12, 3, 3); if (tc.lit) { vctx.fillStyle = '#fff4c0'; vctx.fillRect(px, py - 11 - (Math.floor(t / 300 + tc.i) % 2), 1, 1); } } // el farol: poste, caja de cristal y la vela
+    else if (ta) vctx.drawImage(ta, px - (ta.width >> 1), py + 1 - ta.height); else { vctx.fillStyle = '#5a3a20'; vctx.fillRect(px, py - 7, 1, 8); vctx.fillStyle = '#3a2414'; vctx.fillRect(px - 1, py - 8, 3, 2); }
     redrawFront(px - 6, px + 6, py - 14, py); // lo que está delante (una casa más abajo) tapa la antorcha
-    if (tc.lit) {
+    if (tc.lit && !lantern) { // la llama de la antorcha (el farol ya lleva su vela)
       const f = Math.floor(t / 110 + tc.i) % 3;
       vctx.fillStyle = '#ff8a2a'; vctx.fillRect(px - 1, py - 10, 3, 2);
       vctx.fillStyle = '#ffd860'; vctx.fillRect(px - (f === 1 ? 1 : 0), py - 11 - (f === 2 ? 1 : 0), 1 + (f === 0 ? 1 : 0), 2);

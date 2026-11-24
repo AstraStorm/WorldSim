@@ -64,7 +64,7 @@ function nightLights(glow, k){
   for (const g of villages) {
     if (!popOf(g) || g.fx * T < vx0 - 100 || g.fx * T > vx1 + 100 || g.fy * T < vy0 - 100 || g.fy * T > vy1 + 100) continue;
     const A = ambOf(g, performance.now());
-    for (const [x, y] of A.lamps) { glow(x, y - 5, 14, .5 * k, '255,190,90'); vctx.fillStyle = 'rgba(255,220,140,.9)'; vctx.fillRect(x, y - 6, 1, 2); }
+    // (las farolas son las de vela de cada pueblo: se encienden a mano, ver drawTorches en sociedad.js)
     if (warm) for (let n = 0; n < 10; n++) { // luciérnagas
       const s = Math.sin(ts * 2 + n * 3.1); if (s < .4) continue;
       const x = g.fx * T + Math.sin(n * 7.3 + ts * .3) * 60, y = g.fy * T + Math.cos(n * 5.1 + ts * .25) * 40;
@@ -80,7 +80,6 @@ function drawNightLife(now){
   for (const g of villages) {
     if (!popOf(g) || g.fx * T < vx0 - 100 || g.fx * T > vx1 + 100 || g.fy * T < vy0 - 100 || g.fy * T > vy1 + 100) continue;
     const A = ambOf(g, now);
-    for (const [x, y] of A.lamps) { vctx.fillStyle = '#2a2018'; vctx.fillRect(x, y - 5, 1, 6); vctx.fillStyle = '#ffd890'; vctx.fillRect(x - 1, y - 7, 3, 2); }
     // Sueños: sobre alguna casa donde duermen, un bocadillo con lo que sueñan
     if (zoom >= 2.5) for (const h of g.houses.slice(0, 12)) {
       const s = Math.sin(now / 1800 + h); if (s < .7 || !villagers.some(v => v.sleep && v.home === h)) continue;
