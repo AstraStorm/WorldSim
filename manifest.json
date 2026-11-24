@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611240212",
- "fecha": "2026-11-24 02:12",
+ "version": "202611240222",
+ "fecha": "2026-11-24 02:22",
  "novedades": [
   {
    "fecha": "2026-11-24",
-   "texto": "Guerra más visible y con bajas, guerra en el mar con cañones, volcanes que crean islas y nubes tóxicas, carbón para la era industrial, más minerales y diplomáticos con insignia"
+   "texto": "Los buques de guerra navegan rodeando la costa y solo salen si hay paso por mar hasta el enemigo"
+  },
+  {
+   "fecha": "2026-11-24",
+   "texto": "Guerra, mar, volcanes y carbón"
   },
   {
    "fecha": "2026-11-24",
@@ -46,19 +50,15 @@
   {
    "fecha": "2026-11-23",
    "texto": "Hojas 14A y 14B: oficina del registro civil junto al ayuntamiento, centro de internamiento, cantera del campo de trabajo, barracones y torre de vigilancia, casa okupada, e iconos de DNI, pasaporte, permiso y grilletes en la ficha"
-  },
-  {
-   "fecha": "2026-11-23",
-   "texto": "Ficha del pueblo: pestañas en dos filas, siempre visibles (ya no se encogen ni tapan Historia). Los meteoritos derrumban y dañan edificios y matan o hieren a la gente según lo cerca que caigan"
   }
  ],
  "archivos": {
-  "index.html": "36685ac97a2669036f443ed963a42a286e1b0a1c",
+  "index.html": "eba632a9536c2f76a84e3b2986064b968e9f796f",
   "css/estilo.css": "5102a249d843e933be3be74f960883ba03efd264",
   "js/aldeanos.js": "b19f0a5727d1b90ee7b2c96a821f38e2ded09772",
   "js/ambiente.js": "cd3541c5cfa9a64de5395f84239009f959216922",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
-  "js/arte.js": "a0e30644794bd5e5db21c1fbebdbd4a2d68f9190",
+  "js/arte.js": "d04f0cdbbfe9285ceefbe8ca8836a5071dc56172",
   "js/arte_mapa.js": "98d891de2ac832b6a1d3a74577fd56b460c01af2",
   "js/bandidos.js": "675a7588d06fb17fe09f9c9ec32caa9e300cb1d9",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
@@ -105,7 +105,7 @@
   "js/okupas.js": "8bf7e443dddd18ca6dca6ccfbe64b9cbb772f040",
   "js/papeles.js": "4613eec891d5d45018f60dfd7bdb6cfa5d55f917",
   "js/partidas.js": "87f983d0e5b5d0cde3a74da304ce93775a7dfb46",
-  "js/piratas.js": "85477919e208decbb3327711f3e68918a5ede162",
+  "js/piratas.js": "a1b064b6f939ff12d7f051c6a05cfe8286a7f0a2",
   "js/potencias.js": "92f95b1429ed22221248d46e587f32f7bbcf9e54",
   "js/prensa.js": "61134ccce4b95a026605717fa5ab37600850af2a",
   "js/presupuestos.js": "27743ad6dbf256cc4d124f2bff019d6b0ee1eb75",

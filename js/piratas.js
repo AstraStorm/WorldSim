@@ -22,6 +22,46 @@ function sail(o, tx, ty, sp, dt){
   }
   return false;
 }
+// Navegar de verdad: si hay tierra por medio, sigue una ruta por el agua (se recalcula si el blanco se mueve mucho).
+// Devuelve false si no hay forma de llegar por mar
+const seaLine = (x0, y0, x1, y1) => { const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / T); for (let k = 1; k <= n; k++) if (!seaTile(x0 + (x1 - x0) * k / n, y0 + (y1 - y0) * k / n)) return false; return true; };
+function navigate(o, tx, ty, sp, dt){
+  if (seaLine(o.x, o.y, tx, ty)) { o.route = null; return sail(o, tx, ty, sp, dt); }
+  if (!o.route || Math.hypot(o.routeTo[0] - tx, o.routeTo[1] - ty) > 50 || (o.routeT -= dt) <= 0) {
+    o.routeT = 8; o.routeTo = [tx, ty]; o.route = seaRoute(seaFrom(o.x, o.y), seaFrom(tx, ty));
+    if (!o.route) return false;
+  }
+  // Hacia el punto más lejano de la ruta que se ve en línea recta por el agua (así no va en zigzag de casilla en casilla)
+  let k = 0; for (let j = Math.min(o.route.length - 1, 14); j > 0; j--) if (seaLine(o.x, o.y, o.route[j][0], o.route[j][1])) { k = j; break; }
+  if (k) o.route.splice(0, k);
+  if (o.route.length > 1 && Math.hypot(o.route[0][0] - o.x, o.route[0][1] - o.y) < 2) o.route.shift();
+  const wp = o.route[0] || [tx, ty];
+  return sail(o, wp[0], wp[1], sp, dt);
+}
+// Ruta por mar abierto de casilla en casilla (en diagonal solo si no corta una esquina de tierra)
+function seaRoute(a, b){
+  if (a === b) return [];
+  const prev = new Int32Array(N).fill(-1), q = [a]; prev[a] = a;
+  for (let h = 0; h < q.length && h < 150000; h++) {
+    const i = q[h]; if (i === b) break;
+    const x = i % W, y = (i / W) | 0;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      if (!dx && !dy) continue; const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+      const n = ny * W + nx; if (prev[n] !== -1 || !openWater(n)) continue;
+      if (dx && dy && !(openWater(y * W + nx) && openWater(ny * W + x))) continue; // sin cortar esquinas
+      prev[n] = i; q.push(n);
+    }
+  }
+  if (prev[b] === -1) return null;
+  const path = []; for (let i = b; i !== a; i = prev[i]) path.push([(i % W) * T + T / 2, ((i / W) | 0) * T + T / 2]);
+  return path.reverse();
+}
+// La casilla de mar abierto más cercana (para salir de un muelle en un río o pegado a la orilla)
+function seaFrom(x, y){
+  const tx = Math.floor(x / T), ty = Math.floor(y / T);
+  for (let r = 0; r < 12; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue; const nx = tx + dx, ny = ty + dy; if (nx >= 0 && ny >= 0 && nx < W && ny < H && openWater(ny * W + nx)) return ny * W + nx; }
+  return ty * W + tx;
+}
 // ¿Avanza de verdad hacia su objetivo? Si en unos segundos no se ha acercado, está atascado (costa por medio)
 function stuckOn(o, d, dt){
   if (o.bestD == null || d < o.bestD - 4) { o.bestD = d; o.stuckT = 0; return false; }
@@ -36,7 +76,7 @@ const portXY = g => [(g.port.launch % W) * T + 2, ((g.port.launch / W) | 0) * T 
 const sailorsOf = g => villagers.filter(u => !u.dead && !u.away && u.vid === g.id && u.weapon && ageOf(u) >= ADULT_H);
 // Un buque de guerra de una nación: contra los piratas o contra otra nación
 function launchNavy(g, kind, foe){
-  const [sx, sy] = portXY(g), n = sailorsOf(g).length, steam = knowsSci(g, 'vapor') && (g.coal || 0) >= 8, hp = 3 + Math.min(4, Math.floor(n / 2)) + (knowsSci(g, 'polvora') ? 1 : 0) + (steam ? 2 : 0);
+  const L = seaFrom(...portXY(g)), sx = (L % W) * T + 2, sy = ((L / W) | 0) * T + 3, n = sailorsOf(g).length, steam = knowsSci(g, 'vapor') && (g.coal || 0) >= 8, hp = 3 + Math.min(4, Math.floor(n / 2)) + (knowsSci(g, 'polvora') ? 1 : 0) + (steam ? 2 : 0);
   if (steam) g.coal -= 8; // el acorazado de vapor: más rápido y más duro, pero quema carbón
   const ship = { nation:g.id, kind, foe:foe ? foe.id : null, x:sx, y:sy, dir:1, hp, max:hp, home:[sx, sy], t:0, cd:Math.random() * 2, steam };
   navies().push(ship); return ship;
@@ -57,6 +97,7 @@ function updatePirates(dt){
         if (!r.war) continue; const ia = r.war.att === g.id, id = r.war.def === g.id; if (!ia && !id) continue;
         const foe = villageById(ia ? r.war.def : r.war.att); if (!foe || !popOf(foe) || !nationOf(foe).port) continue;
         if (N.some(n => n.nation === g.id && n.kind === 'guerra') || yearT - ((r.war.navyT ||= {})[g.id] ?? -1e9) < DAY_LEN * .8) continue;
+        r.war.seaLink ??= !!seaRoute(seaFrom(...portXY(g)), seaFrom(...portXY(nationOf(foe)))); if (!r.war.seaLink) continue; // en mares distintos: no hay guerra naval
         r.war.navyT[g.id] = yearT; launchNavy(g, 'guerra', nationOf(foe));
         notify(`¡${g.name} saca su buque de guerra contra ${nationOf(foe).name}!`, { x:g.fx * T, y:g.fy * T });
       }
@@ -86,18 +127,19 @@ function updatePirates(dt){
     if (n.sink != null) continue;
     const g = villageById(n.nation); n.t += dt; n.cd -= dt;
     if (!g || !popOf(g)) { n.done = true; continue; }
-    if (n.back) { if (!sail(n, n.home[0], n.home[1], 14, dt) || Math.hypot(n.home[0] - n.x, n.home[1] - n.y) < 8) n.done = true; continue; } // de vuelta a puerto
+    const sp = n.steam ? 20 : 15;
+    if (n.back) { if (!navigate(n, n.home[0], n.home[1], sp, dt) || Math.hypot(n.home[0] - n.x, n.home[1] - n.y) < 8) n.done = true; continue; } // de vuelta a puerto
     let tgt = null, bd = Infinity;
     const natOf = o => { const v = villageById(o.nation); return v ? nationOf(v).id : null; };
     const foes = n.kind === 'guerra' ? N.filter(o => o !== n && o.sink == null && o.kind === 'guerra' && natOf(o) === n.foe) : P.filter(p => p.sink == null);
     for (const o of foes) { const d = Math.hypot(o.x - n.x, o.y - n.y); if (d < bd) { bd = d; tgt = o; } }
     const war = n.kind === 'guerra' ? warRel(g, villageById(n.foe) || g) : null;
     if (n.kind === 'guerra' && (!war || !war.war)) { n.back = true; notify(`El buque de guerra de ${g.name} vuelve a puerto: se ha acabado la guerra`, { x:n.x, y:n.y }); continue; }
-    if (tgt) { if (bd > SHIP_RANGE * .7) sail(n, tgt.x, tgt.y, n.steam ? 20 : 15, dt); if (bd < SHIP_RANGE) fireAt(n, tgt, bd); continue; }
+    if (tgt) { if (bd > SHIP_RANGE * .7 && !navigate(n, tgt.x, tgt.y, sp, dt)) { n.back = true; continue; } if (bd < SHIP_RANGE) fireAt(n, tgt, bd); continue; } // (si no hay paso por mar hasta él, vuelve)
     if (n.kind === 'guerra') { // sin barcos enemigos: a cañonear su puerto
       const foe = villageById(n.foe); if (!foe || !foe.port) { n.back = true; continue; }
       const [px, py] = portXY(foe), d = Math.hypot(px - n.x, py - n.y);
-      if (d > 40) { if (!sail(n, px, py, n.steam ? 20 : 15, dt) || stuckOn(n, d, dt)) { n.back = true; } continue; }
+      if (d > 40) { if (!navigate(n, px, py, sp, dt) || (!n.route && stuckOn(n, d, dt))) n.back = true; continue; }
       bombardPort(n, foe); if (n.t > 160) n.back = true; continue;
     }
     if (n.t > 140) n.back = true; // contra piratas: sin encontrarlos, vuelve
