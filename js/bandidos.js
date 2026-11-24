@@ -22,20 +22,36 @@ function updateBandits(dt){
     const roads = travelers.some(t => !t.sea && t.kind === 'caravana') || villages.some(g => popOf(g) >= 15 && g.coin);
     if (roads && Bs.length < 2 && yearT > DAY_LEN * 2 && Math.random() < .06) { const s = banditSite(); if (s) { const names = ['los Lobos del Camino', 'la Banda del Tuerto', 'los Hijos de la Niebla', 'los Sin Tierra', 'la Banda de la Cicatriz']; const used = new Set(Bs.map(b => b.name)); const name = names.find(n => !used.has(n)) || 'una banda'; Bs.push({ name, cx:s[0] * T + 2, cy:s[1] * T + 3, x:s[0] * T + 2, y:s[1] * T + 3, men:3 + Math.floor(Math.random() * 3), loot:0, cd:0, faces:[banditFace(), banditFace(), banditFace()], dir:1 }); notify(`En el bosque se esconde una banda de salteadores: ${name}`, { x:s[0] * T, y:s[1] * T }); } }
     // Patrullas contra los campamentos que han hecho daño
-    for (const b of Bs) if (!b.patrol) { const g = villages.find(o => popOf(o) && (o.banditT ?? -1e9) > yearT - DAY_LEN * 2 && Math.hypot(o.fx * T - b.cx, o.fy * T - b.cy) < 90 * T);
-      if (g) { const sol = villagers.filter(u => !u.dead && !u.away && u.vid === g.id && u.weapon && u !== g.leader && ageOf(u) >= ADULT_H).slice(0, 5); if (sol.length >= 2) { b.patrol = { vid:g.id, n:sol.length, t:DAY_LEN * .2 }; notify(`${g.name} manda una patrulla de ${sol.length} contra ${b.name}`, { x:g.fx * T, y:g.fy * T }); } } }
+    // (tras una emboscada el pueblo tarda en volver a intentarlo, y solo va si tiene gente suficiente para la banda)
+    for (const b of Bs) if (!b.patrol) { const g = villages.find(o => popOf(o) && (o.banditT ?? -1e9) > yearT - DAY_LEN * 2 && (o.patrolCd ?? -1e9) < yearT && Math.hypot(o.fx * T - b.cx, o.fy * T - b.cy) < 90 * T);
+      if (g) { const sol = villagers.filter(u => !u.dead && !u.away && u.vid === g.id && u.weapon && u !== g.leader && ageOf(u) >= ADULT_H).slice(0, 6); if (sol.length >= Math.max(2, b.men - 1)) { b.patrol = { vid:g.id, n:sol.length, t:DAY_LEN * .2 }; notify(`${g.name} manda una patrulla de ${sol.length} contra ${b.name}`, { x:g.fx * T, y:g.fy * T }); } } }
   }
   for (const b of Bs) {
     b.cd -= dt;
+    // Una banda no dura para siempre: al cabo de unos días se reparte el botín y se va de la comarca
+    b.life ??= DAY_LEN * (5 + Math.random() * 4);
+    if (!b.patrol && (b.life -= dt) <= 0) { b.dead = true; notify(`${capFirst(b.name)} levantan el campamento y se van de la comarca`, { x:b.cx, y:b.cy }); continue; }
     // La patrulla llega al cabo de un rato: combate
     if (b.patrol && (b.patrol.t -= dt) <= 0) { const g = villageById(b.patrol.vid), sol = g ? villagers.filter(u => !u.dead && u.vid === g.id && u.weapon).slice(0, b.patrol.n) : [];
       if (sol.length && Math.random() * (sol.length + b.men) < sol.length * 1.2) { b.dead = true; if (g) { g.food += b.loot; g.banditT = -1e9; } notify(`La patrulla de ${g ? g.name : '?'} desmantela el campamento de ${b.name}${b.loot ? ` y recupera ${Math.round(b.loot)} de comida y mercancías` : ''}`, { x:b.cx, y:b.cy }); }
-      else { const lost = sol.slice(0, 2); for (const u of lost) killVillager(u, 'bandidos'); b.patrol = null; notify(`${b.name} tiende una emboscada a la patrulla de ${g ? g.name : '?'}: mueren ${lost.length}`, { x:b.cx, y:b.cy }); }
+      else { // la patrulla pierde, pero también cae alguno de la banda; si quedan muy pocos, se dispersan
+        const lost = sol.slice(0, Math.random() < .5 ? 1 : 2); for (const u of lost) killVillager(u, 'bandidos'); b.patrol = null; b.men--; if (g) g.patrolCd = yearT + DAY_LEN * 1.5;
+        notify(`${b.name} tiende una emboscada a la patrulla de ${g ? g.name : '?'}: mueren ${lost.length}`, { x:b.cx, y:b.cy });
+        if (b.men <= 1) { b.dead = true; if (g) g.banditT = -1e9; notify(`Lo que queda de ${b.name} se dispersa`, { x:b.cx, y:b.cy }); } }
       continue; }
     // Buscan caravanas o viajeros a pie cerca del campamento
-    let tgt = null, bd = 70 * T; for (const t of travelers) if (!t.sea && !t.done && ['caravana', 'diplomatico', 'emigrante', 'mensajero'].includes(t.kind)) { const d = Math.hypot(t.x - b.cx, t.y - b.cy); if (d < bd) { bd = d; tgt = t; } }
+    // (a pie: no cruzan el mar ni los lagos; si no hay forma de llegar, dejan esa presa)
+    if ((b.giveUpT = (b.giveUpT || 0) - dt) <= 0) b.skip = null;
+    let tgt = null, bd = 70 * T; for (const t of travelers) if (!t.sea && !t.done && t !== b.skip && ['caravana', 'diplomatico', 'emigrante', 'mensajero'].includes(t.kind) && !inWater(t.x, t.y)) { const d = Math.hypot(t.x - b.cx, t.y - b.cy); if (d < bd) { bd = d; tgt = t; } }
+    if (tgt !== b.lastTgt) { b.lastTgt = tgt; b.bestD = null; b.stuckT = 0; }
     const [gx, gy] = tgt ? [tgt.x, tgt.y] : [b.cx, b.cy], d = Math.hypot(gx - b.x, gy - b.y);
-    if (d > 2) { const sp = 11 * dt; b.x += (gx - b.x) / d * Math.min(d, sp); b.y += (gy - b.y) / d * Math.min(d, sp); b.dir = gx < b.x ? -1 : 1; b.walk = (b.walk || 0) + dt; }
+    if (d > 2) {
+      const sp = Math.min(d, 11 * dt), a0 = Math.atan2(gy - b.y, gx - b.x); let moved = false;
+      for (const da of [0, .6, -.6, 1.2, -1.2, 1.8, -1.8]) { const nx = b.x + Math.cos(a0 + da) * sp, ny = b.y + Math.sin(a0 + da) * sp; if (walkable(nx, ny) && !inWater(nx, ny)) { b.x = nx; b.y = ny; moved = true; break; } }
+      b.dir = gx < b.x ? -1 : 1; if (moved) b.walk = (b.walk || 0) + dt;
+      if (tgt && (!moved || stuckOn(b, d, dt))) { b.skip = tgt; b.giveUpT = 30; b.bestD = null; } // atascados contra el agua: a otra cosa
+      else if (!tgt && !moved) { b.x = b.cx; b.y = b.cy; } // (vuelven al campamento por el bosque)
+    }
     if (tgt && d < 6 && b.cd <= 0) { b.cd = 25; ambush(b, tgt); }
     // De vez en cuando, roban en un pueblo pequeño
     if (!tgt && b.cd <= 0 && Math.random() < dt * .006) { const g = villages.find(o => popOf(o) && popOf(o) < 14 && Math.hypot(o.fx * T - b.cx, o.fy * T - b.cy) < 60 * T); if (g) { b.cd = 60; const take = Math.min(g.food, 10); g.food -= take; b.loot += take; g.banditT = yearT; notify(`${b.name} entra de noche en ${g.name} y se lleva ${Math.round(take)} de comida`, { x:g.fx * T, y:g.fy * T }); } }

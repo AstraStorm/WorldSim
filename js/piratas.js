@@ -87,7 +87,8 @@ function updatePirates(dt){
   for (const s of [...P, ...N]) { s.max ??= s.hp; s.cd ??= 0; }
   if ((pirateClock += dt) > 10) { pirateClock = 0;
     const traffic = travelers.some(t => t.sea) || villages.filter(g => g.port && popOf(g)).length >= 2;
-    if (traffic && P.length < 3 && yearT > DAY_LEN * 2 && Math.random() < .08) { const s = seaSpawnFar(); if (s) { const used = new Set(P.map(p => p.name)); const name = PIRATE_NAMES.find(n => !used.has(n)) || 'Los Sin Nombre', hp = 3 + Math.floor(Math.random() * 3); P.push({ name, x:s[0], y:s[1], dir:1, hp, max:hp, gold:0, cd:0, raidCd:0, wx:s[0], wy:s[1] }); notify(`Aparecen piratas en alta mar: el barco «${name}», con bandera negra`, { x:s[0], y:s[1] }); } }
+    const ports = villages.filter(g => g.port && popOf(g)).length, maxP = Math.min(3, 1 + Math.floor(ports / 3)); // más puertos, más piratas (como mucho tres)
+    if (traffic && P.filter(p => !p.leave).length < maxP && yearT > DAY_LEN * 2 && Math.random() < .04) { const s = seaSpawnFar(); if (s) { const used = new Set(P.map(p => p.name)); const name = PIRATE_NAMES.find(n => !used.has(n)) || 'Los Sin Nombre', hp = 3 + Math.floor(Math.random() * 3); P.push({ name, x:s[0], y:s[1], dir:1, hp, max:hp, gold:0, cd:0, raidCd:0, wx:s[0], wy:s[1] }); notify(`Aparecen piratas en alta mar: el barco «${name}», con bandera negra`, { x:s[0], y:s[1] }); } }
     for (const g of villages) {
       if (!popOf(g) || nationOf(g) !== g || !g.port || !hasBarracks(g) || sailorsOf(g).length < 3) continue;
       // Contra los piratas, si les han atacado hace poco
@@ -106,6 +107,10 @@ function updatePirates(dt){
   // Piratas
   for (const p of P) {
     if (p.sink != null) continue;
+    // Al cabo de unos días (o con la bodega llena) se van con el botín a otros mares: se alejan de la costa y se pierden de vista
+    p.life ??= DAY_LEN * (4 + Math.random() * 3);
+    if (p.leave == null && ((p.life -= dt) <= 0 || p.gold >= 15)) { p.leave = 0; p.route = null; const far = seaSpawnFar(); [p.wx, p.wy] = far || [p.x, p.y]; notify(`Los piratas de «${p.name}» se van con su botín a otros mares`, { x:p.x, y:p.y }); }
+    if (p.leave != null) { navigate(p, p.wx, p.wy, 12, dt); if ((p.leave += dt) > 20) p.gone = true; continue; }
     shoreFire(p, dt, () => true); // desde la costa, cualquiera les dispara
     p.volleyCd = (p.volleyCd || 0) - dt;
     if (p.volleyCd <= 0 && coastFire(p, () => true)) { const o = villages.find(g => popOf(g) && Math.hypot(g.fx * T - p.x, g.fy * T - p.y) < 160); if (o) o.piracyT = yearT; if ((p.volleys = (p.volleys || 0) + 1) >= 4) { p.volleys = 0; p.volleyCd = 60; } } // cañonean la costa (unas andanadas y se van)
@@ -262,6 +267,7 @@ function drawWarShip(s, now, pirate){
   const x = Math.round(s.x), y = Math.round(s.y), k = s.sink != null ? Math.min(1, s.sink / SINK_T) : 0, K = SHIP_K;
   const moving = Math.hypot(s.x - (s.lx ?? s.x), s.y - (s.ly ?? s.y)) > .01; s.lx = s.x; s.ly = s.y;
   vctx.save();
+  if (s.leave != null) vctx.globalAlpha = Math.max(0, 1 - s.leave / 20); // se pierde de vista en el horizonte
   if (k) { vctx.globalAlpha = 1 - k * .85; vctx.translate(x, y); vctx.rotate(s.dir * k * .6); vctx.translate(-x, -y + k * 9); }
   if (pirate) vctx.filter = 'brightness(.42) saturate(.6)';
   drawShip(x, y, s.dir, !!s.steam, [40, 40, 40], now, K, moving && !k);

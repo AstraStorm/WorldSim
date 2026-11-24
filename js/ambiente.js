@@ -99,6 +99,12 @@ function drawNightLife(now){
 // ---- Campo: buey arando, capa de los héroes (desde drawVillagers, antes de pintar a la persona) ----
 const OX = { sp:'vaca', born:-1e9, v:3, ad:0, dir:1 };
 function drawPersonExtras(v, x, y, s, now){
+  if (v.fogata) { // la fogata de quien se ha helado lejos de casa: unos palos y la llama
+    const fx = Math.round(v.fogata.x), fy = Math.round(v.fogata.y), fl = 2 + Math.round(Math.abs(Math.sin(now / 110)) * 2);
+    vctx.fillStyle = '#5a3a20'; vctx.fillRect(fx - 2, fy, 5, 1);
+    vctx.fillStyle = '#f08030'; vctx.fillRect(fx - 1, fy - fl, 3, fl); vctx.fillStyle = '#ffd860'; vctx.fillRect(fx, fy - Math.ceil(fl / 2), 1, Math.ceil(fl / 2));
+    if (Math.random() < .05) smoke.push({ x:fx, y:fy - 4, vx:0, vy:-4, r:1.2, life:0, max:1.4 });
+  }
   if (v.task && v.task.k === 'trabajando' && v.task.job === 'arar') {
     OX.dir = v.dir; const fr = Math.floor(now / 300) % 2, o = animalSprite(OX, fr), ox = x + v.dir * 9 - (o.width >> 1);
     vctx.drawImage(o, ox, y - o.height + 1); vctx.fillStyle = '#6e4626'; vctx.fillRect(Math.min(x, x + v.dir * 5), y - 3, 5, 1); // el yugo

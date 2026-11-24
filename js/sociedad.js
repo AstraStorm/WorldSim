@@ -1700,9 +1700,48 @@ function sendTraveler(kind, from, to){
   travelers.push({ kind, v, from:from.id, to:to.id, x:sea ? home[0] : v.x, y:sea ? home[1] : v.y, tx:dest[0], ty:dest[1], hx:home[0], hy:home[1], sea, phase:'ida', dir:1 });
   if (kind === 'caravana') loadCargo(travelers[travelers.length - 1], from, to); // la mercancía que más gana (comercio.js)
 }
+// Rutas de los viajeros: a pie no cruzan el mar ni los lagos (los ríos sí se vadean) y buscan un camino por tierra; si
+// no lo hay, cogen una barca. Los barcos, al revés: si hay tierra por medio, la rodean por el mar (piratas.js)
+const landOk = i => { const b = world.biome[i]; return b !== B.LAVA && (!WATER[b] || b === B.RIVER || bridgeSet.has(i) || dried(i) || frozen(i)); };
+const tileOfXY = (x, y) => Math.min(H - 1, Math.max(0, Math.floor(y / T))) * W + Math.min(W - 1, Math.max(0, Math.floor(x / T)));
+function landLine(x0, y0, x1, y1){ const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / (T / 2)); for (let k = 1; k < n; k++) if (!landOk(tileOfXY(x0 + (x1 - x0) * k / n, y0 + (y1 - y0) * k / n))) return false; return true; }
+function landRoute(x0, y0, x1, y1){
+  const a = tileOfXY(x0, y0), b = tileOfXY(x1, y1), prev = new Int32Array(N).fill(-1), q = [a]; prev[a] = a;
+  for (let h = 0; h < q.length; h++) {
+    const i = q[h]; if (i === b) break; const x = i % W, y = (i / W) | 0;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      if (!dx && !dy) continue; const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+      const n = ny * W + nx; if (prev[n] !== -1 || (n !== b && !landOk(n))) continue;
+      if (dx && dy && !(landOk(y * W + nx) && landOk(ny * W + x))) continue; // sin cortar esquinas de agua
+      prev[n] = i; q.push(n);
+    }
+  }
+  if (prev[b] === -1) return null;
+  const pts = []; for (let i = b; i !== a; i = prev[i]) pts.push([(i % W) * T + 2, ((i / W) | 0) * T + 3]); pts.reverse();
+  if (pts.length) pts[pts.length - 1] = [x1, y1]; else return [[x1, y1]];
+  return thinRoute(x0, y0, pts, landLine);
+}
+// Se queda solo con los puntos que hacen falta (de uno al siguiente se va en línea recta sin salirse)
+function thinRoute(x0, y0, pts, ok){
+  const out = []; let cx = x0, cy = y0, k = 0;
+  while (k < pts.length) { let j = Math.min(pts.length - 1, k + 30); while (j > k && !ok(cx, cy, pts[j][0], pts[j][1])) j--; out.push(pts[j]); [cx, cy] = pts[j]; k = j + 1; }
+  return out;
+}
+function routeTraveler(t){
+  const key = `${Math.round(t.tx)},${Math.round(t.ty)}`; if (t.routed === key) return; t.routed = key;
+  let r = null;
+  if (!t.sea) { if (landLine(t.x, t.y, t.tx, t.ty)) return; r = landRoute(t.x, t.y, t.tx, t.ty); if (!r) { t.sea = true; t.routed = null; return; } } // sin camino por tierra: en barca
+  else {
+    if (seaLine(t.x, t.y, t.tx, t.ty)) return;
+    const sr = seaRoute(seaFrom(t.x, t.y), seaFrom(t.tx, t.ty)); if (!sr) return; // (mares distintos: como antes)
+    r = thinRoute(t.x, t.y, [...sr, [t.tx, t.ty]], (a, b, c, d) => seaLine(a, b, c, d));
+  }
+  const [f, ...rest] = r; t.path = rest.concat(t.path || []); t.tx = f[0]; t.ty = f[1]; t.routed = `${Math.round(t.tx)},${Math.round(t.ty)}`;
+}
 function updateTravelers(dt){
   for (const t of travelers) {
     const from = villageById(t.from), to = villageById(t.to); let v = t.v;
+    if (!t.done && !t.v.dead) try { routeTraveler(t); } catch (err) { t.routed = `${Math.round(t.tx)},${Math.round(t.ty)}`; }
     if (t.crew) { t.v = t.crew.find(u => !u.dead) || t.v; if (!t.crew.some(u => !u.dead)) { t.done = true; continue; } } // la flota sigue mientras quede alguien
     if (t.v.dead || !from) { t.done = true; if (!t.v.dead) { t.v.away = false; t.v.task = null; } continue; }
     v = t.v; let d = Math.hypot(t.tx - t.x, t.ty - t.y); const sp = (t.sea && inWater(t.x, t.y) ? 14 : 10) * (t.fast ? 1.8 : 1) * dt; // sobre el hielo bajan de la barca y van andando
@@ -2799,13 +2838,19 @@ function updateVillagers(dt){
     if (v.food <= 0) { v.starve += dt; if (v.starve > 25) { killVillager(v, 'hambre'); continue; } } else v.starve = 0;
     if (v.water <= 0) { v.thirst += dt; if (v.thirst > 20) { killVillager(v, 'sed'); continue; } } else v.thirst = 0;
     // El abrigo (hoguera, casa) solo calienta cuando hace frío, hasta unos 18 °C; con calor, la casa da algo de sombra
-    const out = tHere, shelter = warmthAt(v, g) > 0, shade = out > 24 && inForest(v), temp = shelter ? (out < 18 ? Math.min(18, out + WARMTH) : out - 8) : shade ? out - 5 : out; // la casa (gruesa) y la sombra refrescan // los árboles también dan sombra
+    // Lejos de cualquier refugio y helándose: se paran y encienden una fogata donde están (si no llueve)
+    if (v.fogata && (yearT > v.fogata.t || Math.hypot(v.fogata.x - v.x, v.fogata.y - v.y) > 10)) v.fogata = null;
+    if (g && v.chill > .55 && !v.fogata && !v.boat && !inWater(v.x, v.y) && !raining(ri) && warmthAt(v, g) === 0 && Math.hypot(g.fx - v.x / T, g.fy - v.y / T) > 14) {
+      v.fogata = { x:v.x + v.dir * 4, y:v.y + 1, t:yearT + 14 }; releaseTask(v); v.task = null; v.actT = 12; v.onDone = null;
+      floats.push({ x:v.x, y:v.y - 12, txt:'¡qué frío! una fogata', col:'#ffb060', life:0 });
+    }
+    const out = tHere, shelter = warmthAt(v, g) > 0 || !!v.fogata, shade = out > 24 && inForest(v), temp = shelter ? (out < 18 ? Math.min(18, out + WARMTH) : out - 8) : shade ? out - 5 : out; // la casa (gruesa) y la sombra refrescan // los árboles también dan sombra
     const cold = H_COLD + v.ad + (child ? 4 : 0), hot = H_HEAT + v.ad;
-    v.chill = temp < cold ? v.chill + dt * (cold - temp) / (120 * (1 + (v.fit || 0) * .4)) : Math.max(0, v.chill - dt * .1);
+    v.chill = temp < cold ? v.chill + dt * (cold - temp) / (300 * (1 + (v.fit || 0) * .4)) : Math.max(0, v.chill - dt * .1);
     v.hot = temp > hot ? v.hot + dt * (temp - hot) / (90 * (1 + (v.fit || 0) * .4)) : Math.max(0, v.hot - dt * .1);
     if (v.chill >= 1) { killVillager(v, 'frío'); continue; }
     // Quien se está helando deja lo que hace y corre a una casa o edificio caliente (lluvia.js)
-    if (g && v.chill > .4 && !shelter && !v.boat && !(v.task && ['refugio', 'asalto'].includes(v.task.k))) { const p = shelterTarget(v, g, true); if (p) { releaseTask(v); v.task = p; v.lastD = Infinity; } }
+    if (g && v.chill > .3 && !shelter && !v.boat && !(v.task && ['refugio', 'asalto'].includes(v.task.k))) { const p = shelterTarget(v, g, true); if (p) { releaseTask(v); v.task = p; v.lastD = Infinity; } }
     if (v.hot >= 1) { killVillager(v, 'calor'); continue; }
     if (g && v.hot > .4 && v.task && !['beber', 'asalto', 'trabajando'].includes(v.task.k) && !v.boat) { const p = drinkSpot(v, g); if (p) { releaseTask(v); v.task = { k:'beber', ...p }; v.lastD = Infinity; } } // acalorados: a beber y refrescarse
     // Sin aldea: se une a la más cercana o funda una nueva donde está
