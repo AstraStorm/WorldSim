@@ -1,4 +1,4 @@
-// Forja de Mundos · Más leyes, con sus efectos
+// World Sim · Más leyes, con sus efectos
 // ================= Leyes nuevas =================
 // · Ley seca: la taberna cierra; la gente se enfada y aparece el alcohol de contrabando
 // · Toque de queda: de noche nadie sale a divertirse; menos delitos, más enfado

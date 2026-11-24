@@ -1,4 +1,4 @@
-// Forja de Mundos · Espionaje: espías que roban mapas y descubrimientos, sabotean, siembran discordia o preparan golpes
+// World Sim · Espionaje: espías que roban mapas y descubrimientos, sabotean, siembran discordia o preparan golpes
 // ================= Espionaje =================
 // · Las naciones que saben escribir y tienen un rival (relaciones muy malas o guerra) mandan espías de vez en cuando;
 //   con casa de espías, más a menudo y con más éxito

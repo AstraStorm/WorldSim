@@ -1,4 +1,4 @@
-// Forja de Mundos · Generación del mundo y pintado del terreno
+// World Sim · Generación del mundo y pintado del terreno
 // ================= Generación =================
 function makeBlobs(type, rand, asp){
   const list = [];

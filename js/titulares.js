@@ -1,4 +1,4 @@
-// Forja de Mundos · Titulares: lo más importante, en una barra arriba del mapa
+// World Sim · Titulares: lo más importante, en una barra arriba del mapa
 // ================= Titulares =================
 // · A la izquierda, las guerras en curso con su marcador (días y bajas de cada bando); a la derecha, las últimas
 //   noticias importantes (guerras, paces, conquistas, golpes, revoluciones, bancarrotas y rescates, rutas

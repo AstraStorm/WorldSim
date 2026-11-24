@@ -1,4 +1,4 @@
-// Forja de Mundos · Edificios de las instituciones: tribunal, cárcel, imprenta, casa del sindicato, parlamento y academia
+// World Sim · Edificios de las instituciones: tribunal, cárcel, imprenta, casa del sindicato, parlamento y academia
 // ================= Instituciones =================
 // · Tribunal: sin él no hay juicios (hace falta saber escribir y tener ayuntamiento)
 // · Cárcel: los presos cumplen allí (sin cárcel, delante del tribunal o del ayuntamiento)

@@ -1,4 +1,4 @@
-// Forja de Mundos · Launcher: comprueba si hay una versión nueva en la nube, la descarga y abre el juego
+// World Sim · Launcher: comprueba si hay una versión nueva en la nube, la descarga y abre el juego
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
 const verTxt = v => v ? `${v.slice(6, 8)}/${v.slice(4, 6)}/${v.slice(0, 4)} · ${v.slice(8, 10)}:${v.slice(10, 12)}` : '—';

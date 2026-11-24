@@ -1,4 +1,4 @@
-// Forja de Mundos · Oficios, escuelas, días libres y festivos
+// World Sim · Oficios, escuelas, días libres y festivos
 // ================= Trabajo y calendario =================
 // · Los oficios se reparten de nuevo poco a poco: cuando aparece uno nuevo (cartógrafo, curandero, bombero, maestro…)
 //   alguien se pasa a él, sin esperar a que crezca una generación

@@ -1,4 +1,4 @@
-// Forja de Mundos · Defensa: murallas antes y más deprisa, puertas que se cierran, y la ley de fortificación
+// World Sim · Defensa: murallas antes y más deprisa, puertas que se cierran, y la ley de fortificación
 // ================= Defensa =================
 // · Las murallas se empiezan antes (con 8 habitantes, aunque aún no haya ayuntamiento) y con más gente
 // · Tras un ataque, el pueblo se vuelca en ellas (más constructores, más prisa) durante unos días, y donde hay

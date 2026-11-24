@@ -1,4 +1,4 @@
-// Forja de Mundos · La lluvia: la gente busca dónde resguardarse (y quien sigue fuera, se tapa)
+// World Sim · La lluvia: la gente busca dónde resguardarse (y quien sigue fuera, se tapa)
 // ================= Lluvia =================
 // · Cuando llueve (o nieva) donde está alguien que va a elegir qué hacer, lo normal es que se resguarde: en su casa, si
 //   no en la taberna, el ayuntamiento, el mercado, el almacén o el templo, y si no hay nada cerca, bajo un árbol. Se queda

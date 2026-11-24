@@ -1,4 +1,4 @@
-// Forja de Mundos · Las potencias mundiales: economía, ejército, expansión y ciudadanos
+// World Sim · Las potencias mundiales: economía, ejército, expansión y ciudadanos
 // ================= Potencias =================
 // Una pestaña más en Historia: cada nación con su puesto en cada categoría y en la clasificación general
 // (superpotencia, gran potencia, potencia regional o nación menor). Cuando cambia la primera, sale en las noticias.

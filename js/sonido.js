@@ -1,4 +1,4 @@
-// Forja de Mundos · Sonido: música, ambiente según lo que se ve y sonidos de cerca (todo sintetizado, sin archivos)
+// World Sim · Sonido: música, ambiente según lo que se ve y sonidos de cerca (todo sintetizado, sin archivos)
 // Tres canales con su volumen (música, ambiente y efectos) que van a un volumen general.
 // El ambiente (olas, ríos, viento, lluvia, grillos, pájaros, tormentas, fuego) suena siempre según lo que hay en
 // pantalla; lo que hacen los aldeanos (talar, construir, picar, rezar, luchar) solo se oye al acercarse.

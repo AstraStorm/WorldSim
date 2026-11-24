@@ -342,3 +342,167 @@ canvas.ic{width:28px;height:28px;flex:none;image-rendering:pixelated;background:
 .cas-t{width:100%;border-collapse:collapse;margin:6px 0;font-size:12px}.cas-t th,.cas-t td{padding:3px 4px;text-align:right;border-bottom:1px solid var(--line)}.cas-t th:first-child,.cas-t td:first-child{text-align:left}.cas-t th{color:var(--muted);font-weight:600}.cas-t .tot td{font-weight:700;border-bottom:0}
 .cls-pyr{display:grid;gap:3px}.cls-row{display:grid;grid-template-columns:150px 1fr 30px;gap:8px;align-items:center;font-size:12.5px}.cls-row b{text-align:right}.cls-bar{height:8px;background:rgba(0,0,0,.3);border-radius:4px;overflow:hidden}.cls-bar i{display:block;height:100%}
 .cls-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:0}
+
+/* ======================================================================================================
+   World Sim · Interfaz nueva: el mapa a pantalla completa, una sola barra arriba, todo lo que flota sobre el
+   mapa con el mismo cristal oscuro, y el panel de la derecha pegado al borde, con tarjetas
+   ====================================================================================================== */
+:root{
+  --bg:#0d1015; --panel:#13181f; --panel2:#1a2029; --panel3:#222a35; --line:#283140; --line2:#3a4555;
+  --fg:#eceae3; --muted:#a2adb8; --accent:#f2c14e; --accent2:#d99a2b; --ink:#1b1405;
+  --glass:rgba(14,18,24,.84); --glass-b:rgba(255,255,255,.09);
+  --r:10px; --sh:0 6px 22px rgba(0,0,0,.38);
+}
+body{margin:0;-webkit-font-smoothing:antialiased}
+.app{padding:0;gap:0;grid-template-columns:minmax(0,1fr) 340px}
+.stage{border:0;border-radius:0;container:stage / inline-size;--top:58px}
+*{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.16) transparent}
+
+/* Botones: suaves, con el color al pasar por encima; el dorado solo para lo principal y lo activo */
+button{border-radius:7px;background:var(--panel2);border-color:var(--line);transition:background .12s,border-color .12s,color .12s,transform .08s}
+button:hover{background:var(--panel3);border-color:var(--line2);color:var(--fg)}
+button:active{transform:translateY(1px)}
+.primary{border-radius:9px;background:linear-gradient(180deg,#f7d06c,var(--accent) 55%,var(--accent2));border-color:var(--accent2);color:var(--ink);font-weight:600;box-shadow:0 4px 14px rgba(242,193,78,.18),inset 0 1px 0 rgba(255,255,255,.4)}
+.primary:hover{background:linear-gradient(180deg,#fbdc86,#f5c95c 55%,#e0a537);color:var(--ink);border-color:var(--accent2)}
+select{border-radius:7px !important}
+
+/* Lo que flota sobre el mapa: el mismo cristal */
+.season,.speed,.ticker,.zoom,.zoomctl,.spawn,.hud,.thermo,.notice,.follow,.toast,.load-card{background:var(--glass);border:1px solid var(--glass-b);box-shadow:var(--sh);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.vcard,.pcard,.chron,.bcard{background:linear-gradient(180deg,rgba(24,30,39,.98),rgba(15,19,25,.98));border:1px solid var(--glass-b);border-radius:14px;box-shadow:0 14px 40px rgba(0,0,0,.5)}
+
+/* ---- Barra de arriba: fecha y velocidad · titulares · menús ---- */
+.topbar{position:absolute;top:10px;left:10px;right:10px;z-index:4;display:flex;align-items:flex-start;gap:8px;pointer-events:none}
+.topbar>*{pointer-events:auto}
+.topbar .topleft{position:static;flex:none;max-width:none;display:flex;flex-wrap:nowrap;align-items:stretch;gap:6px}
+.topbar .season,.topbar .speed{position:static;height:38px;box-sizing:border-box;border-radius:var(--r)}
+.season{padding:0 12px;gap:9px;font-size:14px;white-space:nowrap}
+.season:hover{border-color:rgba(242,193,78,.5);background:var(--glass)}
+.season .sdot{box-shadow:0 0 0 3px rgba(255,255,255,.08)}
+.season .sbar{width:54px;height:5px;background:rgba(255,255,255,.1)}
+.speed{padding:3px;gap:2px;align-items:center}
+.speed button{height:30px;min-width:32px;padding:0 8px;border-radius:7px;font-family:var(--f-display);font-size:13px}
+.speed button.on{background:var(--accent);color:var(--ink);box-shadow:inset 0 -2px 0 rgba(0,0,0,.18)}
+.topbar .ticker{position:static;flex:1 1 auto;min-width:0;height:38px;box-sizing:border-box;border-radius:var(--r);padding:0 6px;font-size:13px}
+.ticker .tk-war{border-radius:6px;padding:4px 8px}
+.topbar .zoom{position:static;flex:none;display:flex;gap:2px;padding:3px;border-radius:var(--r);height:38px;box-sizing:border-box;align-items:center}
+.zoom button{height:30px;display:inline-flex;align-items:center;gap:6px;padding:0 10px;background:transparent;border:0;border-radius:7px;font-size:13px;white-space:nowrap;box-shadow:none}
+.zoom button:hover{background:rgba(255,255,255,.08)}
+.zoom button[data-ic]::before{margin:0;font-size:14px;font-family:system-ui,"Segoe UI Emoji",sans-serif}
+.zoom button[aria-pressed="true"]{background:rgba(242,193,78,.16);color:var(--accent)}
+#chronBtn[data-n]::after{top:-3px;right:-3px;box-shadow:0 0 0 2px var(--bg)}
+/* Si no cabe: los menús, solo con el icono; y más estrecho aún, los titulares bajan a su propia fila */
+@container stage (max-width:1180px){ .zoom button{font-size:0;gap:0;width:34px;justify-content:center;padding:0} .zoom button[data-ic]::before{font-size:15px} }
+@container stage (max-width:860px){ .topbar{flex-wrap:wrap} .topbar .ticker{order:3;flex-basis:100%} .topbar .zoom{margin-left:auto} }
+
+/* Lo de debajo de la barra se coloca con --top (lo mide ui.js) */
+.hud{position:absolute;top:var(--top);left:10px;bottom:auto;max-width:min(460px,calc(100% - 20px));border-radius:8px;padding:6px 11px;font-size:12.5px;color:#d9dde2}
+.follow{top:var(--top) !important;left:10px;border-radius:var(--r);border-color:rgba(242,193,78,.55);padding:4px 4px 4px 12px}
+.pcard{top:calc(var(--top) + 46px);left:10px;max-height:calc(100% - var(--top) - 120px)}
+.vcard{top:var(--top);right:10px;max-height:calc(100% - var(--top) - 70px)}
+.thermo{top:var(--top);border-radius:var(--r)}
+.chron{top:var(--top);max-height:min(70%,calc(100% - var(--top) - 70px))}
+.loading.quiet{padding-top:calc(var(--top) - 4px)}
+
+/* ---- Abajo: crear vida / desatar en el centro, zoom a la derecha, avisos a la izquierda ---- */
+.spawn{left:50%;right:auto;transform:translateX(-50%);margin:0;width:max-content;max-width:calc(100% - 120px);border-radius:12px;padding:5px;gap:4px}
+.spawn button{border-radius:8px;background:rgba(255,255,255,.04);border-color:transparent;min-height:32px}
+.spawn button:hover{background:rgba(255,255,255,.1);border-color:transparent}
+.spawn .sp-tabs{background:rgba(0,0,0,.28);border-radius:9px;padding:2px;border-right:0;margin-right:4px}
+.spawn .sp-tabs button{border-radius:7px;min-height:28px}
+.spawn .sp-tabs button.on{background:var(--accent);color:var(--ink);box-shadow:inset 0 -2px 0 rgba(0,0,0,.18)}
+.spawn button[aria-pressed="true"]{background:var(--accent);color:var(--ink)}
+.spawn select{min-height:32px;background:rgba(255,255,255,.04);border-color:var(--line)}
+.spawn .pop{font-family:var(--f-display);color:var(--accent);font-size:12.5px;padding:0 8px}
+.zoomctl{bottom:10px;gap:0;border-radius:var(--r);overflow:hidden}
+.zoomctl button{width:38px;height:38px;border-radius:0;background:transparent;border:0;border-bottom:1px solid var(--glass-b)}
+.zoomctl button:last-child{border-bottom:0}
+.zoomctl button:hover{background:rgba(255,255,255,.1)}
+.toasts{bottom:62px;width:min(440px,calc(100% - 20px))}
+.toast{border-radius:9px;border-left-width:4px}
+.notice{bottom:62px;border-radius:var(--r);border-color:rgba(232,116,58,.7)}
+.bcard{bottom:62px}
+
+/* ---- Fichas, crónica y paneles flotantes ---- */
+.vcard .x,.pcard .x,.chron .x,.bcard .x{border-radius:8px}
+.chron .ch-h{padding:14px 16px 8px}
+.cl-f{padding:4px 16px 10px}
+.cl-f button,.chips span,.pills span{border-radius:20px}
+.tile,.wv-stats div,.slot,.party,.pw-row{border-radius:9px}
+
+/* ---- Pantalla de carga ---- */
+.loading{background:radial-gradient(ellipse at center,rgba(13,16,21,.7),rgba(8,10,14,.92))}
+.loading.quiet{background:transparent}
+.load-card{border-radius:16px;padding:26px 34px}
+.loading.quiet .load-card{border-radius:var(--r)}
+.load-title{font-size:24px}
+.load-bar{height:10px;border-radius:6px;background:rgba(0,0,0,.35);border-color:var(--line)}
+.load-bar span{border-radius:6px;background:linear-gradient(90deg,var(--accent2),var(--accent),#ffe39a)}
+
+/* ---- Panel de la derecha ---- */
+.panel{border:0;border-left:1px solid var(--line);border-radius:0;background:linear-gradient(180deg,#151a22,#11151b);padding:0 14px 18px;gap:12px}
+.brandhead{display:flex;align-items:center;gap:12px;padding:16px 2px 4px}
+.brandhead img{width:52px;height:52px;flex:none;filter:drop-shadow(0 4px 10px rgba(0,0,0,.55))}
+.brandhead h1{font-size:28px;line-height:1;letter-spacing:.02em;background:linear-gradient(180deg,#fff3cf,#f2c14e 60%,#d99a2b);-webkit-background-clip:text;background-clip:text;color:transparent}
+.brandhead .sub{margin-top:5px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700}
+.ptabs{position:sticky;top:0;margin:0 -14px;padding:10px 14px;background:rgba(17,21,27,.97);border-bottom:1px solid var(--line);gap:3px}
+.ptabs button{background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:8px;padding:8px 2px;font-size:12.5px;color:var(--muted)}
+.ptabs button:hover{background:rgba(255,255,255,.06);color:var(--fg)}
+.ptabs button.on{background:var(--accent);border-color:var(--accent);color:var(--ink);box-shadow:0 2px 10px rgba(242,193,78,.22)}
+.panel>.group,.panel>div[data-pt]{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px}
+.panel h2{display:flex;align-items:center;gap:8px;font-size:13px;letter-spacing:.14em;color:#c6ced6;margin:0 0 12px}
+.panel h2::before{content:"";width:7px;height:7px;border-radius:2px;background:var(--accent);box-shadow:0 0 8px rgba(242,193,78,.5);flex:none}
+.group{gap:12px}
+#seed{border-radius:8px;background:rgba(0,0,0,.3);padding:7px 10px}
+.seg{gap:5px}
+.seg button{border-radius:8px;padding:7px 4px;background:rgba(255,255,255,.03)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--ink);border-color:var(--accent)}
+.tools{gap:5px}
+.tools button{border-radius:9px;padding:8px 2px;background:rgba(255,255,255,.03)}
+.tools button[aria-pressed="true"]{background:var(--accent);color:var(--ink);border-color:var(--accent)}
+.checks label{padding:3px 0}
+.note{font-size:12px;color:#8f9aa6}
+.wv-stats{gap:6px}
+.wv-stats div{background:rgba(0,0,0,.22);padding:8px 10px}
+.wv-stats b{font-size:22px;color:#fff}
+.wv-nat{border-radius:9px;padding:8px 10px;background:rgba(0,0,0,.18)}
+.wv-nat:hover{background:rgba(255,255,255,.06)}
+.tiers div,.finds button{border-radius:8px}
+
+/* Aldeas: una tarjeta por aldea, con sus cifras a la vista */
+.aldeas{display:flex;flex-direction:column;gap:8px;margin:0}
+.aldeas li.ald{padding:0;border:1px solid var(--line);border-radius:10px;background:rgba(0,0,0,.2);overflow:hidden}
+.ald-h{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;border-radius:0;background:rgba(255,255,255,.03);padding:8px 10px;font-family:var(--f-body);font-size:13.5px}
+.ald-h:hover{background:rgba(255,255,255,.08)}
+.ald-h img,.ald-h i{width:24px;height:16px;flex:none;image-rendering:pixelated;border:1px solid rgba(0,0,0,.45);border-radius:2px}
+.ald-h span{margin-left:auto;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.ald-k{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:8px 10px 2px}
+.ald-k span{display:flex;flex-direction:column;align-items:center;font-size:12px;background:rgba(255,255,255,.04);border-radius:6px;padding:3px 0;line-height:1.25}
+.ald-k b{font-family:var(--f-display);font-weight:400;font-size:14px;font-variant-numeric:tabular-nums}
+.aldeas .sub{display:block;padding:6px 10px 9px;font-size:11.5px;line-height:1.5}
+
+/* Panel oculto: el mapa ocupa todo */
+.app.wide{grid-template-columns:minmax(0,1fr) 0}
+
+@media (max-width:760px){
+  .app{grid-template-rows:100vh auto;grid-template-rows:100svh auto}
+  .topbar{top:6px;left:6px;right:6px;gap:6px;flex-wrap:wrap}
+  .topbar .topleft{flex:1 1 100%;min-width:0}
+  .topbar .season{flex:1;min-width:0;overflow:hidden;font-size:12px;padding:0 9px}
+  .topbar .speed button{min-width:0;padding:0 6px;font-size:12px}
+  .topbar .zoom{flex:1 1 100%;margin:0;overflow-x:auto;justify-content:space-between}
+  .hud{display:none}
+  .follow{left:6px}
+  .vcard,.pcard{top:var(--top);max-height:calc(100% - var(--top) - 64px)}
+  .chron{top:var(--top);max-height:calc(100% - var(--top) - 64px)}
+  .spawn{left:6px;right:52px;transform:none;width:auto;max-width:none;bottom:6px}
+  .zoomctl{right:6px;bottom:6px}
+  .zoomctl button{width:36px;height:34px}
+  .toasts,.notice{bottom:56px}
+  .panel{margin:0;border-left:0;border-top:1px solid var(--line);padding:0 12px 16px}
+  .ptabs{margin:0 -12px;padding:10px 12px}
+}
+.speed button{font-family:var(--f-body);font-weight:700;font-size:12.5px}
+.ald-k span{font-size:14px}.ald-k b{font-size:13.5px}
+/* Los titulares necesitan sitio: si la barra no da para todo, van en su propia fila debajo */
+@container stage (max-width:1250px){ .topbar{flex-wrap:wrap} .topbar .ticker{order:3;flex-basis:100%;height:32px} .topbar .zoom{margin-left:auto} }
+@media (max-width:760px){ .app{grid-template-columns:minmax(0,1fr);height:auto} }

@@ -1,4 +1,4 @@
-// Forja de Mundos · Deportes: campo de fútbol, piscina y pista de atletismo; clubes de fútbol con escudo, entrenos y partidos
+// World Sim · Deportes: campo de fútbol, piscina y pista de atletismo; clubes de fútbol con escudo, entrenos y partidos
 // ================= Deportes =================
 // · Instalaciones (se construyen como ocio, con madera y piedra): campo de fútbol, piscina y pista de atletismo
 // · Piscina: quien no sabe nadar aprende, y los nadadores ganan velocidad en el agua

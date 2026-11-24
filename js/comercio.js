@@ -1,4 +1,4 @@
-// Forja de Mundos · Mercancías y rutas comerciales: qué produce cada pueblo, qué vale, aranceles, contrabando y embargos
+// World Sim · Mercancías y rutas comerciales: qué produce cada pueblo, qué vale, aranceles, contrabando y embargos
 // ================= Comercio =================
 // · Cada pueblo produce mercancías según dónde vive (sal en la costa o el desierto, especias y vino donde hace calor,
 //   pieles en el frío y los bosques, pescado salado si tiene muelle, cerámica junto a los ríos, telas, armas con

@@ -1,8 +1,8 @@
 {
-  "name": "forja-de-mundos",
-  "productName": "Forja de Mundos",
+  "name": "world-sim",
+  "productName": "World Sim",
   "version": "1.0.0",
-  "description": "Forja de Mundos: el juego y su launcher, con actualizaciones desde la nube",
+  "description": "World Sim: el juego y su launcher, con actualizaciones desde la nube",
   "main": "main.js",
   "author": "AstraStorm",
   "license": "UNLICENSED",
@@ -17,7 +17,7 @@
   },
   "build": {
     "appId": "io.github.astrastorm.forjademundos",
-    "productName": "Forja de Mundos",
+    "productName": "World Sim",
     "directories": {
       "output": "dist"
     },
@@ -41,21 +41,21 @@
       ]
     },
     "portable": {
-      "artifactName": "ForjaDeMundos-portable.exe"
+      "artifactName": "WorldSim-portable.exe"
     },
     "nsis": {
-      "artifactName": "ForjaDeMundos-instalador.exe",
+      "artifactName": "WorldSim-instalador.exe",
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": "always",
       "createStartMenuShortcut": true,
-      "shortcutName": "Forja de Mundos",
+      "shortcutName": "World Sim",
       "runAfterFinish": true,
       "installerIcon": "launcher/icono.ico",
       "uninstallerIcon": "launcher/icono.ico",
       "installerHeaderIcon": "launcher/icono.ico",
-      "uninstallDisplayName": "Forja de Mundos",
+      "uninstallDisplayName": "World Sim",
       "language": "3082",
       "installerLanguages": [
         "es_ES"

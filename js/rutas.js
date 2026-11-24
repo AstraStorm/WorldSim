@@ -1,4 +1,4 @@
-// Forja de Mundos · Rutas comerciales: el comercio que se ve y que da dinero
+// World Sim · Rutas comerciales: el comercio que se ve y que da dinero
 // ================= Rutas comerciales =================
 // · Tras varias caravanas entre dos pueblos se abre una ruta comercial: en el mapa, un camino dorado con carros que
 //   van y vienen (o barcas, si es por mar)

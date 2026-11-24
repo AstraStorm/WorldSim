@@ -1,4 +1,4 @@
-// Forja de Mundos · Naciones de varias ciudades: la capital funda ciudades nuevas por tierra
+// World Sim · Naciones de varias ciudades: la capital funda ciudades nuevas por tierra
 // ================= Ciudades nuevas =================
 // · Hasta ahora una nación era un pueblo (y, si tenía muelle, alguna colonia al otro lado del mar). Ahora, cuando la
 //   capital crece y le falta sitio, manda a un grupo de familias a fundar una ciudad nueva en su propia tierra, a unas

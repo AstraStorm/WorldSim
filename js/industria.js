@@ -1,4 +1,4 @@
-// Forja de Mundos · La era industrial: carreteras de piedra, pólvora, vapor, fábricas, ferrocarril y dirigibles
+// World Sim · La era industrial: carreteras de piedra, pólvora, vapor, fábricas, ferrocarril y dirigibles
 // ================= Industria =================
 // Descubrimientos nuevos (después de los de siempre): carreteras empedradas, el reloj mecánico, la máquina de vapor,
 // el ferrocarril y el dirigible

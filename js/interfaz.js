@@ -1,4 +1,4 @@
-// Forja de Mundos · Herramientas del jugador, entrada, panel, pantalla de carga y oleaje
+// World Sim · Herramientas del jugador, entrada, panel, pantalla de carga y oleaje
 // ================= Pincel de dios =================
 const TOOLS = [
   ['move','Mover'], ['raise','Elevar'], ['lower','Hundir'], ['land','Tierra'],
@@ -554,7 +554,7 @@ $('chron').addEventListener('click', e => {
   const fb = e.target.closest('[data-f]'); if (fb) { $('chron').dataset.f = fb.dataset.f; renderChronicle(); return; }
   const cb = e.target.closest('[data-ci]'); if (cb) { const c = chronicle[+cb.dataset.ci]; if (c && c.target) { setFollow(null); centerOn(c.target.x, c.target.y - 10, Math.max(zoom, 5)); } }
 });
-const setPanel = wide => { document.querySelector('.app').classList.toggle('wide', wide); $('panelTog').textContent = wide ? 'Panel ⇤' : 'Panel ⇥'; $('panelTog').title = wide ? 'Mostrar el panel de la derecha' : 'Ocultar el panel de la derecha'; $('panelTog').setAttribute('aria-pressed', wide); try { localStorage.setItem('forja-panel', wide ? '1' : '0'); } catch (err) {} };
+const setPanel = wide => { document.querySelector('.app').classList.toggle('wide', wide); $('panelTog').dataset.ic = wide ? '⇤' : '⇥'; $('panelTog').title = wide ? 'Mostrar el panel de la derecha' : 'Ocultar el panel de la derecha'; $('panelTog').setAttribute('aria-pressed', wide); try { localStorage.setItem('forja-panel', wide ? '1' : '0'); } catch (err) {} };
 $('panelTog').onclick = () => setPanel(!document.querySelector('.app').classList.contains('wide'));
 try { if (localStorage.getItem('forja-panel') === '1') setPanel(true); } catch (err) {}
 window.addEventListener('keydown', e => {

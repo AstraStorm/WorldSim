@@ -1,4 +1,4 @@
-// Forja de Mundos · Qué es cada edificio: al hacer clic en uno se ve su ficha (y se marca en el mapa)
+// World Sim · Qué es cada edificio: al hacer clic en uno se ve su ficha (y se marca en el mapa)
 // ================= Edificios =================
 // · Con la herramienta Mover, un clic sobre un edificio abre su ficha: qué es, de qué pueblo, para qué sirve y lo
 //   suyo (quién vive en una casa y de quién es, qué guarda el almacén, cuántos presos hay en la cárcel...)

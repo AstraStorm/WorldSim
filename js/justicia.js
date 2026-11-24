@@ -1,4 +1,4 @@
-// Forja de Mundos · Justicia: tribunal, juicios, cárcel, presos políticos y amnistías
+// World Sim · Justicia: tribunal, juicios, cárcel, presos políticos y amnistías
 // ================= Justicia =================
 // · Con escritura se levanta el tribunal, y luego la cárcel (instituciones.js); los presos cumplen delante de ella con
 //   grilletes y les dan de comer

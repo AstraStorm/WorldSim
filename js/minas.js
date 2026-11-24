@@ -1,4 +1,4 @@
-// Forja de Mundos · Minas: se abren donde más vetas hay y sacan mineral casi sin fin; la cantera también da algo
+// World Sim · Minas: se abren donde más vetas hay y sacan mineral casi sin fin; la cantera también da algo
 // ================= Minas =================
 // · Quien ya sabe sacar mineral de las vetas (minería) busca el sitio con más vetas cerca del pueblo y abre una mina
 // · La mina da hierro, oro o gemas según lo que había alrededor, en mucha más cantidad que una veta suelta, y su

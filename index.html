@@ -2,23 +2,15 @@
 <html lang="es">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Forja de Mundos</title>
+<title>World Sim</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600&family=Nunito+Sans:wght@400;600;700&display=swap">
-<link rel="stylesheet" href="css/estilo.css?v=202611232315">
+<link rel="stylesheet" href="css/estilo.css?v=202611240109">
 
 <div class="app">
   <section class="stage" id="stage">
     <canvas id="view" aria-label="Mapa del mundo generado"></canvas>
-    <div class="zoom" role="toolbar" aria-label="Menús">
-      <button id="chronBtn" data-ic="📜" title="Todo lo que ha pasado">Crónica</button>
-      <button id="bookBtn" data-ic="📖" title="El libro de historia del mundo, por capítulos">Libro</button>
-      <button id="histBtn" data-ic="📈" title="Gráficas, línea del tiempo y Juegos">Historia</button>
-      <button id="saveBtn" data-ic="💾" title="Guardar, cargar, descargar o abrir partidas">Partidas</button>
-      <button id="sndBtn" data-ic="🔊" title="Música, ambiente y efectos">Sonido</button>
-      <button id="panelTog" title="Ocultar el panel de la derecha" aria-pressed="false">Panel ⇥</button>
-    </div>
     <div class="zoomctl" role="group" aria-label="Zoom">
       <button id="zin" aria-label="Acercar" title="Acercar">+</button>
       <button id="zout" aria-label="Alejar" title="Alejar">−</button>
@@ -31,15 +23,25 @@
     <div class="loading" id="loading" role="status" aria-live="polite">
       <div class="load-card">
         <canvas id="globe" width="32" height="32" aria-hidden="true"></canvas>
-        <p class="load-title">Forjando mundo</p>
+        <p class="load-title">Creando el mundo</p>
         <div class="load-bar"><span id="loadFill"></span></div>
         <p class="load-step" id="loadStep">Levantando montañas…</p>
       </div>
     </div>
-    <div class="ticker" id="ticker" aria-live="polite"></div>
-    <div class="topleft">
-    <button class="season" id="season" title="Pasar a la siguiente estación"><span class="sdot" id="seasonDot"></span><span id="seasonTxt"></span><span class="sbar"><span id="seasonBar"></span></span><span class="snext">»</span></button>
-    <div class="speed" id="speed" role="group" aria-label="Velocidad del juego"><button data-s="0" title="Pausa">❚❚</button><button data-s="1" class="on" title="Velocidad normal">1×</button><button data-s="2">2×</button><button data-s="3">3×</button><button data-s="4">4×</button><button data-s="5">5×</button></div>
+    <div class="topbar">
+      <div class="topleft">
+        <button class="season" id="season" title="Pasar a la siguiente estación"><span class="sdot" id="seasonDot"></span><span id="seasonTxt"></span><span class="sbar"><span id="seasonBar"></span></span><span class="snext">»</span></button>
+        <div class="speed" id="speed" role="group" aria-label="Velocidad del juego"><button data-s="0" title="Pausa">❚❚</button><button data-s="1" class="on" title="Velocidad normal">1×</button><button data-s="2">2×</button><button data-s="3">3×</button><button data-s="4">4×</button><button data-s="5">5×</button></div>
+      </div>
+      <div class="ticker" id="ticker" aria-live="polite"></div>
+      <div class="zoom" role="toolbar" aria-label="Menús">
+        <button id="chronBtn" data-ic="📜" title="Todo lo que ha pasado">Crónica</button>
+        <button id="bookBtn" data-ic="📖" title="El libro de historia del mundo, por capítulos">Libro</button>
+        <button id="histBtn" data-ic="📈" title="Gráficas, línea del tiempo y Juegos">Historia</button>
+        <button id="saveBtn" data-ic="💾" title="Guardar, cargar, descargar o abrir partidas">Partidas</button>
+        <button id="sndBtn" data-ic="🔊" title="Música, ambiente y efectos">Sonido</button>
+        <button id="panelTog" data-ic="⇥" title="Ocultar el panel de la derecha" aria-pressed="false">Panel</button>
+      </div>
     </div>
     <div class="vcard" id="vcard" hidden></div>
     <div class="pcard" id="pcard" hidden></div>
@@ -88,9 +90,9 @@
   </section>
 
   <aside class="panel">
-    <header>
-      <h1>Forja de Mundos</h1>
-      <p class="sub">Terreno, ríos, recursos y pincel de dios</p>
+    <header class="brandhead">
+      <img src="arte/logo.png" alt="" width="52" height="52">
+      <div><h1>World Sim</h1><p class="sub">Simulador de civilizaciones</p></div>
     </header>
     <nav class="ptabs" role="tablist" aria-label="Secciones del panel">
       <button data-pt="mundo" class="on" role="tab">🌍 Mundo</button><button data-pt="herr" role="tab">🖌 Pincel</button><button data-pt="ajustes" role="tab">⚙ Ajustes</button><button data-pt="datos" role="tab">📊 Datos</button>
@@ -180,73 +182,73 @@
 </div>
 
 <!-- El juego, en el orden en que se carga -->
-<script src="js/nucleo.js?v=202611232315"></script>
-<script src="js/mundo.js?v=202611232315"></script>
-<script src="js/vista.js?v=202611232315"></script>
-<script src="js/clima.js?v=202611232315"></script>
-<script src="js/fauna.js?v=202611232315"></script>
-<script src="js/desastres.js?v=202611232315"></script>
-<script src="js/mapas.js?v=202611232315"></script>
-<script src="js/humanos.js?v=202611232315"></script>
-<script src="js/partidas.js?v=202611232315"></script>
-<script src="js/vida.js?v=202611232315"></script>
-<script src="js/sociedad.js?v=202611232315"></script>
-<script src="js/impuestos.js?v=202611232315"></script>
-<script src="js/presupuestos.js?v=202611232315"></script>
-<script src="js/bolsa.js?v=202611232315"></script>
-<script src="js/vivienda.js?v=202611232315"></script>
-<script src="js/cartografia.js?v=202611232315"></script>
-<script src="js/convivencia.js?v=202611232315"></script>
-<script src="js/credos.js?v=202611232315"></script>
-<script src="js/tratados.js?v=202611232315"></script>
-<script src="js/globos.js?v=202611232315"></script>
-<script src="js/idiomas.js?v=202611232315"></script>
-<script src="js/regimenes.js?v=202611232315"></script>
-<script src="js/instituciones.js?v=202611232315"></script>
-<script src="js/monedas.js?v=202611232315"></script>
-<script src="js/minas.js?v=202611232315"></script>
-<script src="js/justicia.js?v=202611232315"></script>
-<script src="js/sindicatos.js?v=202611232315"></script>
-<script src="js/prensa.js?v=202611232315"></script>
-<script src="js/ciencia.js?v=202611232315"></script>
-<script src="js/consejo.js?v=202611232315"></script>
-<script src="js/espionaje.js?v=202611232315"></script>
-<script src="js/comercio.js?v=202611232315"></script>
-<script src="js/piratas.js?v=202611232315"></script>
-<script src="js/colonias.js?v=202611232315"></script>
-<script src="js/cultura.js?v=202611232315"></script>
-<script src="js/anexiones.js?v=202611232315"></script>
-<script src="js/lluvia.js?v=202611232315"></script>
-<script src="js/estaciones.js?v=202611232315"></script>
-<script src="js/bandidos.js?v=202611232315"></script>
-<script src="js/riqueza.js?v=202611232315"></script>
-<script src="js/noticias.js?v=202611232315"></script>
-<script src="js/defensa.js?v=202611232315"></script>
-<script src="js/trabajo.js?v=202611232315"></script>
-<script src="js/arte_mapa.js?v=202611232315"></script>
-<script src="js/arte.js?v=202611232315"></script>
-<script src="js/vegetacion.js?v=202611232315"></script>
-<script src="js/aldeanos.js?v=202611232315"></script>
-<script src="js/sonido.js?v=202611232315"></script>
-<script src="js/interfaz.js?v=202611232315"></script>
-<script src="js/civilizacion.js?v=202611232315"></script>
-<script src="js/industria.js?v=202611232315"></script>
-<script src="js/ambiente.js?v=202611232315"></script>
-<script src="js/fama.js?v=202611232315"></script>
-<script src="js/guerra.js?v=202611232315"></script>
-<script src="js/rutas.js?v=202611232315"></script>
-<script src="js/rescate.js?v=202611232315"></script>
-<script src="js/deportes.js?v=202611232315"></script>
-<script src="js/leyes.js?v=202611232315"></script>
-<script src="js/volcanes.js?v=202611232315"></script>
-<script src="js/edificios.js?v=202611232315"></script>
-<script src="js/calendario.js?v=202611232315"></script>
-<script src="js/titulares.js?v=202611232315"></script>
-<script src="js/libro.js?v=202611232315"></script>
-<script src="js/papeles.js?v=202611232315"></script>
-<script src="js/okupas.js?v=202611232315"></script>
-<script src="js/potencias.js?v=202611232315"></script>
-<script src="js/casino.js?v=202611232315"></script>
-<script src="js/clases.js?v=202611232315"></script>
-<script src="js/ciudades.js?v=202611232315"></script>
-<script src="js/ui.js?v=202611232315"></script>
+<script src="js/nucleo.js?v=202611240109"></script>
+<script src="js/mundo.js?v=202611240109"></script>
+<script src="js/vista.js?v=202611240109"></script>
+<script src="js/clima.js?v=202611240109"></script>
+<script src="js/fauna.js?v=202611240109"></script>
+<script src="js/desastres.js?v=202611240109"></script>
+<script src="js/mapas.js?v=202611240109"></script>
+<script src="js/humanos.js?v=202611240109"></script>
+<script src="js/partidas.js?v=202611240109"></script>
+<script src="js/vida.js?v=202611240109"></script>
+<script src="js/sociedad.js?v=202611240109"></script>
+<script src="js/impuestos.js?v=202611240109"></script>
+<script src="js/presupuestos.js?v=202611240109"></script>
+<script src="js/bolsa.js?v=202611240109"></script>
+<script src="js/vivienda.js?v=202611240109"></script>
+<script src="js/cartografia.js?v=202611240109"></script>
+<script src="js/convivencia.js?v=202611240109"></script>
+<script src="js/credos.js?v=202611240109"></script>
+<script src="js/tratados.js?v=202611240109"></script>
+<script src="js/globos.js?v=202611240109"></script>
+<script src="js/idiomas.js?v=202611240109"></script>
+<script src="js/regimenes.js?v=202611240109"></script>
+<script src="js/instituciones.js?v=202611240109"></script>
+<script src="js/monedas.js?v=202611240109"></script>
+<script src="js/minas.js?v=202611240109"></script>
+<script src="js/justicia.js?v=202611240109"></script>
+<script src="js/sindicatos.js?v=202611240109"></script>
+<script src="js/prensa.js?v=202611240109"></script>
+<script src="js/ciencia.js?v=202611240109"></script>
+<script src="js/consejo.js?v=202611240109"></script>
+<script src="js/espionaje.js?v=202611240109"></script>
+<script src="js/comercio.js?v=202611240109"></script>
+<script src="js/piratas.js?v=202611240109"></script>
+<script src="js/colonias.js?v=202611240109"></script>
+<script src="js/cultura.js?v=202611240109"></script>
+<script src="js/anexiones.js?v=202611240109"></script>
+<script src="js/lluvia.js?v=202611240109"></script>
+<script src="js/estaciones.js?v=202611240109"></script>
+<script src="js/bandidos.js?v=202611240109"></script>
+<script src="js/riqueza.js?v=202611240109"></script>
+<script src="js/noticias.js?v=202611240109"></script>
+<script src="js/defensa.js?v=202611240109"></script>
+<script src="js/trabajo.js?v=202611240109"></script>
+<script src="js/arte_mapa.js?v=202611240109"></script>
+<script src="js/arte.js?v=202611240109"></script>
+<script src="js/vegetacion.js?v=202611240109"></script>
+<script src="js/aldeanos.js?v=202611240109"></script>
+<script src="js/sonido.js?v=202611240109"></script>
+<script src="js/interfaz.js?v=202611240109"></script>
+<script src="js/civilizacion.js?v=202611240109"></script>
+<script src="js/industria.js?v=202611240109"></script>
+<script src="js/ambiente.js?v=202611240109"></script>
+<script src="js/fama.js?v=202611240109"></script>
+<script src="js/guerra.js?v=202611240109"></script>
+<script src="js/rutas.js?v=202611240109"></script>
+<script src="js/rescate.js?v=202611240109"></script>
+<script src="js/deportes.js?v=202611240109"></script>
+<script src="js/leyes.js?v=202611240109"></script>
+<script src="js/volcanes.js?v=202611240109"></script>
+<script src="js/edificios.js?v=202611240109"></script>
+<script src="js/calendario.js?v=202611240109"></script>
+<script src="js/titulares.js?v=202611240109"></script>
+<script src="js/libro.js?v=202611240109"></script>
+<script src="js/papeles.js?v=202611240109"></script>
+<script src="js/okupas.js?v=202611240109"></script>
+<script src="js/potencias.js?v=202611240109"></script>
+<script src="js/casino.js?v=202611240109"></script>
+<script src="js/clases.js?v=202611240109"></script>
+<script src="js/ciudades.js?v=202611240109"></script>
+<script src="js/ui.js?v=202611240109"></script>

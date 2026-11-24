@@ -1,4 +1,4 @@
-// Forja de Mundos · Vivienda: casas con dueño, compraventa, hipotecas, alquileres, desahucios y la ley de la vivienda
+// World Sim · Vivienda: casas con dueño, compraventa, hipotecas, alquileres, desahucios y la ley de la vivienda
 // ================= Vivienda =================
 // Al principio el pueblo construye casas para todos con lo que tiene en el almacén. Cuando crece y ya usa moneda,
 // cada casa pasa a tener dueño: las nuevas se venden (con vivienda pública, se dan a quien no tiene), quien tiene

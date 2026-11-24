@@ -1,4 +1,4 @@
-// Forja de Mundos · El casino: tragaperras, ruleta, blackjack, bingo y póquer
+// World Sim · El casino: tragaperras, ruleta, blackjack, bingo y póquer
 // ================= Casino =================
 // · Con moneda y bastante gente, el pueblo levanta un casino (una institución más: instituciones.js)
 // · En su tiempo libre, quien tiene dinero va a jugar: la mayoría apuesta poco y pierde o gana algo, pero hay jugadores

@@ -261,6 +261,6 @@ atlas = Image.new('RGBA', (W, y + rowh + 1), (0, 0, 0, 0))
 for k, (px, py) in pos.items(): atlas.paste(S[k]['img'], (px, py))
 import os; os.makedirs(os.path.dirname(OUT_PNG), exist_ok=True); atlas.save(OUT_PNG, optimize=True)
 mapa = {k: [pos[k][0], pos[k][1], S[k]['img'].width, S[k]['img'].height, S[k]['ax']] + ([S[k]['fl']] if S[k]['fl'] else []) for k in keys}
-open(OUT_JS, 'w', encoding='utf-8', newline='').write('// Forja de Mundos · Mapa del atlas de arte (generado: no editar a mano). clave: [x, y, ancho, alto, ancla x, llamas?]\nconst ART_MAP = ' + json.dumps(mapa, separators=(',', ':')) + ';\n')
+open(OUT_JS, 'w', encoding='utf-8', newline='').write('// World Sim · Mapa del atlas de arte (generado: no editar a mano). clave: [x, y, ancho, alto, ancla x, llamas?]\nconst ART_MAP = ' + json.dumps(mapa, separators=(',', ':')) + ';\n')
 print(len(keys), 'sprites · atlas', atlas.size)
 for k in ['house:hut', 'altar:altar', 'cathedral:zigurat', 'forge:herreria', 'mill:aspas', 'boat:0', 'catapult:0', 'oak:forest']: print(k, mapa[k])

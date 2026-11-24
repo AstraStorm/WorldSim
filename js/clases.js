@@ -1,4 +1,4 @@
-// Forja de Mundos · Clases sociales: cada país tiene las suyas según su régimen y su época
+// World Sim · Clases sociales: cada país tiene las suyas según su régimen y su época
 // ================= Clases sociales =================
 // · Una monarquía tiene nobleza, clero, burguesía y campesinado; una teocracia, clero, fieles y apóstatas; un estado
 //   comunista, la nomenklatura del partido y los trabajadores; una democracia industrial, burguesía, clase media y

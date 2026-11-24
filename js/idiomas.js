@@ -1,4 +1,4 @@
-// Forja de Mundos · Idiomas: cada tribu con su lengua, la lengua común, escritura, escuelas y política lingüística
+// World Sim · Idiomas: cada tribu con su lengua, la lengua común, escritura, escuelas y política lingüística
 // ================= Idiomas =================
 // Cada tribu nace con su propia lengua (con sus sonidos: vocales, consonantes, ritmo y entonación). Los hijos
 // aprenden en casa la de sus padres; quien se muda aprende poco a poco la del pueblo. Las naciones que conquistan

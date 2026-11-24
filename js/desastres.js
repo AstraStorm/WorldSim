@@ -1,4 +1,4 @@
-// Forja de Mundos · Temperatura, heladas, sequías, incendios, tormentas de arena y meteoritos
+// World Sim · Temperatura, heladas, sequías, incendios, tormentas de arena y meteoritos
 // ================= Temperatura, heladas y sequías =================
 // Cada casilla tiene una temperatura media (latitud, altitud y bioma: la montaña y los polos, fríos; el
 // desierto, caluroso; el mar suaviza) a la que se suma la estación y olas de calor o de frío que recorren

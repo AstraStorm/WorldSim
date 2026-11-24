@@ -1,4 +1,4 @@
-// Forja de Mundos · Vivir junto a un volcán: no construir en sus faldas, cercar el cráter y la lava que quema edificios
+// World Sim · Vivir junto a un volcán: no construir en sus faldas, cercar el cráter y la lava que quema edificios
 // ================= Volcanes y pueblos =================
 // · Nadie levanta edificios en las faldas de un volcán ni sobre coladas de lava (ni funda allí un pueblo nuevo)
 // · Un pueblo con un volcán cerca lo cerca: una valla de estacas con cuerda y carteles de peligro alrededor del

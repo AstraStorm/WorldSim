@@ -1,4 +1,4 @@
-// Forja de Mundos · Migrantes con su propia fe
+// World Sim · Migrantes con su propia fe
 // ================= Credos de fuera =================
 // Quien llega de un pueblo con otra religión la trae consigo. Unos son pacíficos (rezan a lo suyo y, con el tiempo,
 // se integran); otros predican y convierten, y si llegan a ser mayoría imponen su fe y sus costumbres.

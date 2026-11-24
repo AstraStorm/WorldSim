@@ -1,4 +1,4 @@
-// Forja de Mundos · Guardar y cargar: ranuras, archivos .forja
+// World Sim · Guardar y cargar: ranuras, archivos .forja
 // ================= Guardar y cargar la partida (en el navegador, con IndexedDB) =================
 const SAVE_VARS = ['yearT', 'climT', 'vidSeq', 'nameIdx', 'uidSeq', 'herdSeq', 'aid', 'animals', 'fishes', 'villages', 'villagers', 'rels', 'travelers', 'alliances', 'farmMap', 'pathMap', 'bridgeSet', 'bridges', 'plazaSet', 'holySet',
   'wallSet', 'gateSet', 'wallStone', 'gateOwner', 'wear', 'wornSet', 'desireSet', 'fires', 'burnt', 'chronicle', 'sieges', 'usedFlags', 'snowSet', 'snowA', 'floodSet', 'floodA', 'iceSet', 'drySet', 'snowDepth', 'soil', 'soilNorm', 'soilRain', 'drought', 'wetT', 'worldHist', 'olymp', 'epidemics', 'market'];
@@ -91,7 +91,7 @@ async function openSaveFile(file){
     const txt = gz ? await new Response(file.stream().pipeThrough(new DecompressionStream('gzip'))).text() : await file.text();
     const pk = JSON.parse(txt); if (!pk.forja) throw new Error('formato');
     await applySnap(graphDecode(pk)); $('savePanel').hidden = true;
-  } catch (err) { notify('Ese archivo no es una partida de Forja de Mundos (o está dañado)'); }
+  } catch (err) { notify('Ese archivo no es una partida de World Sim (o está dañado)'); }
 }
 // Ranuras: la automática y cinco a mano
 const SLOTS = ['auto', 's1', 's2', 's3', 's4', 's5'];

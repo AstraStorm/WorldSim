@@ -1,4 +1,4 @@
-// Forja de Mundos · Acuerdos y tratados entre pueblos
+// World Sim · Acuerdos y tratados entre pueblos
 // ================= Tratados =================
 // Además de aliarse o pelear, los pueblos firman acuerdos con fecha de caducidad:
 //  · pacto de no agresión: no se declaran la guerra mientras dure (romperlo es una traición que todos recuerdan)

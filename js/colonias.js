@@ -1,4 +1,4 @@
-// Forja de Mundos · Colonias, buen gobierno de las provincias y referéndums de independencia
+// World Sim · Colonias, buen gobierno de las provincias y referéndums de independencia
 // ================= Colonias =================
 // · Las naciones grandes con muelle mandan barcos de colonos a costas lejanas sin pueblos: fundan una colonia que es
 //   provincia suya, habla su lengua y lleva su bandera

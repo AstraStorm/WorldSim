@@ -1,4 +1,4 @@
-// Forja de Mundos · Hierba de cerca y mapas de alturas, vientos y temperatura
+// World Sim · Hierba de cerca y mapas de alturas, vientos y temperatura
 // ================= Hierba de cerca =================
 // Al acercar mucho la cámara aparecen matas de hierba que se mecen con el viento en las zonas donde crece.
 // El color depende del bioma, la estación y la sequía; bajo la nieve, en tierra quemada o con objetos encima no hay

@@ -1,4 +1,4 @@
-// Forja de Mundos · Arte dibujado a mano (atlas): sustituye los sprites que tienen dibujo nuevo
+// World Sim · Arte dibujado a mano (atlas): sustituye los sprites que tienen dibujo nuevo
 // ================= Arte =================
 // El atlas (arte/atlas.png) y su mapa (js/arte_mapa.js) salen de las hojas de sprites. Si un objeto tiene dibujo
 // aquí, se usa; si no (o mientras carga), el juego dibuja el suyo de siempre.
@@ -9,7 +9,7 @@ const ART = { img:null, ready:false, cache:new Map() };
   if (typeof ART_MAP === 'undefined') return;
   const im = new Image();
   im.onload = () => { ART.img = im; ART.ready = true; ART.cache.clear(); if (typeof world !== 'undefined' && world && typeof composeRegion === 'function') composeRegion(0, 0, W - 1, H - 1); };
-  im.src = 'arte/atlas.png?v=202611232315';
+  im.src = 'arte/atlas.png?v=202611240109';
 })();
 const ART_DECID = new Set(['oak:forest', 'birch:birch', 'willow:swamp', 'willow:moss', 'acacia:dry', 'acacia:sunset', 'oak:cherry', 'pine:autumn']);
 const ART_EVER = new Set(['pine:pine', 'pine:snow', 'pine:blue', 'ancient:elder', 'ancient:mangrove', 'ancient:life', 'ancient:baobab']);

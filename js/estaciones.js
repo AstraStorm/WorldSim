@@ -1,4 +1,4 @@
-// Forja de Mundos · Comida que se estropea, conservas, leña para el invierno y más árboles
+// World Sim · Comida que se estropea, conservas, leña para el invierno y más árboles
 // ================= Estaciones =================
 // · La comida se estropea: más deprisa con calor, casi nada con frío. El granero la guarda mejor; en el ahumadero se
 //   hacen conservas (ahumadas con leña o en salazón con sal) que no se estropean y se sacan cuando falta comida

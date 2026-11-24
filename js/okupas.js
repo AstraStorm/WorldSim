@@ -1,4 +1,4 @@
-// Forja de Mundos · Contratos de alquiler y okupas
+// World Sim · Contratos de alquiler y okupas
 // ================= Contratos y okupas =================
 // · Quien alquila una casa firma un contrato: unos días con el alquiler fijo (con la ley de contratos protegidos, el
 //   doble). Al acabar se renueva al precio de ahora, y si ya no puede pagarlo, se va

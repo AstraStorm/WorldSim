@@ -1,4 +1,4 @@
-// Forja de Mundos · Ocio, Juegos, mar, fichas de pueblo y persona, crónica, leyes y diplomacia
+// World Sim · Ocio, Juegos, mar, fichas de pueblo y persona, crónica, leyes y diplomacia
 // ================= Deportes, teatro, coliseo y Juegos =================
 let olymp = { next:SEASON_LEN * 2, cur:null, past:[] }, ballGames = [];
 const hasTheater = g => g && g.theater != null && !!world.objs[g.theater];
@@ -1341,8 +1341,8 @@ function renderVillageCard(force){
     body = `<div class="tiles">${tile('Habitantes', ps.length, `${kids} niños · ${old} ancianos`)}${tile('Casas', housesOf(g).length, `${buildingsOf(g).filter(b => world.objs[b]).length} edificios`)}${tile('Ánimo', `<span style="color:${moodCol(avgMood)}">${avgMood}</span>`, avgMood > 60 ? 'contentos' : avgMood > 40 ? 'tranquilos' : 'descontentos')}${tile('Fundada', `día ${Math.floor((g.born || 0) / DAY_LEN) + 1}`, g.leader && !g.leader.dead ? `${leaderTitle(g)}: <button class="lnk" data-pid="${refOf(g.leader)}">${esc(g.leader.name)}</button>` : 'sin líder')}</div>
       <h4>Almacén</h4><div class="needs">
         <span>Comida</span>${bar(g.food / cap, '#7ab04a', 150)}<span>${Math.floor(g.food)}</span>
-        <span>Madera</span>${bar(g.wood / cap, '#b8864e', 150)}<span>${g.wood}</span>
-        <span>Piedra</span>${bar(g.stone / cap, '#a8a49c', 150)}<span>${g.stone}</span>
+        <span>Madera</span>${bar(g.wood / cap, '#b8864e', 150)}<span>${Math.floor(g.wood)}</span>
+        <span>Piedra</span>${bar(g.stone / cap, '#a8a49c', 150)}<span>${Math.floor(g.stone)}</span>
         ${(g.know || {}).manga ? `<span>Tela</span>${bar((g.cloth || 0) / 20, '#d8ccb0', 150)}<span>${g.cloth || 0}${balloonsOf(g).length ? ` · ${balloonsOf(g).length === 1 ? 'globo' : `${balloonsOf(g).length} globos`} (${balloonsOf(g).map(b => b.cap).join(', ')} plazas)` : ''}</span>` : ''}
         <span>Agua</span>${bar((g.jars || 0) / (6 + storesOf(g).length * 8), '#5a9ad8', 150)}<span>${g.jars || 0} cántaros${g.cups ? ` · ${g.cups} tazas` : ''}</span>
         ${g.iron || g.gold || g.gems || g.hides ? `<span>Materiales</span><span class="muted">hierro ${g.iron || 0} · oro ${g.gold || 0} · gemas ${g.gems || 0} · pieles ${g.hides || 0}</span><span></span>` : ''}</div>
@@ -3378,7 +3378,9 @@ function updateVillagePanel(){
   el.innerHTML = live.length ? live.map(g => {
     const farms = [...farmMap.values()].filter(f => f.vid === g.id), ripe = farms.filter(f => f.st === 'madura').length, dead = farms.filter(f => f.st === 'muerta').length;
     const herd = penAnimals(g), learned = Object.entries(g.learn).filter(([, L]) => L.pref != null).map(([sp, L]) => `${ANIMALS[sp].n.toLowerCase()}s ${L.pref < -4 ? 'del frío' : L.pref > 4 ? 'del calor' : 'de clima templado'}`);
-    return `<li>${g.flagUrl ? `<img src="${g.flagUrl}" alt="" width="24" height="16" style="image-rendering:pixelated;vertical-align:-1px;margin-right:5px">` : ''}<b>${g.name}</b> · ${popOf(g)} hab. · ${housesOf(g).length} casas<br><span class="sub">${g.hall != null && world.objs[g.hall] ? 'Ayuntamiento · ' : ''}Almacén (cabe ${capOf(g)} de cada) · comida ${Math.floor(g.food)} (${Math.floor(g.meat || 0)} de carne y pescado) · ${dietMix(g)}${armsOf(g)}${buildsOf(g)} · madera ${g.wood} · piedra ${g.stone} · campos ${farms.length} (${ripe} maduros${dead ? `, ${dead} perdidos` : ''}) · ganado ${herd.length}${learned.length ? `<br>Han aprendido: ${learned.join(', ')}` : ''}${econLine(g)}${faithLine(g)}</span></li>`;
+    return `<li class="ald"><button class="ald-h" data-vid="${g.id}" title="Ver la ficha de ${g.name}">${g.flagUrl ? `<img src="${g.flagUrl}" alt="">` : `<i style="background:rgb(${villageColor(g).join(',')})"></i>`}<b>${g.name}</b><span>${popOf(g)} hab. · ${housesOf(g).length} casas</span></button>
+      <div class="ald-k"><span title="Comida (${Math.floor(g.meat || 0)} de carne y pescado)">🍖 <b>${Math.floor(g.food)}</b></span><span title="Madera">🪵 <b>${Math.floor(g.wood)}</b></span><span title="Piedra">🪨 <b>${Math.floor(g.stone)}</b></span><span title="Campos (${ripe} maduros${dead ? `, ${dead} perdidos` : ''})">🌾 <b>${farms.length}</b></span><span title="Ganado">🐄 <b>${herd.length}</b></span></div>
+      <span class="sub">${g.hall != null && world.objs[g.hall] ? 'Ayuntamiento · ' : ''}Almacén (cabe ${capOf(g)} de cada) · ${dietMix(g)}${armsOf(g)}${buildsOf(g)}${learned.length ? `<br>Han aprendido: ${learned.join(', ')}` : ''}${econLine(g)}${faithLine(g)}</span></li>`;
   }).join('') : '<li class="empty">Aún no hay aldeas</li>';
 }
 function villagerInfo(v){

@@ -1,4 +1,4 @@
-// Forja de Mundos · Fama: héroes de guerra, castillos y la feria ambulante
+// World Sim · Fama: héroes de guerra, castillos y la feria ambulante
 // ================= Fama =================
 // · Héroes: quien abate a varios enemigos se hace famoso: le llaman «el Valiente» (o parecido), lleva capa roja, le
 //   levantan una estatua y en la taberna los bardos cantan su balada

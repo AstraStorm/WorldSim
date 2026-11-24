@@ -1,4 +1,4 @@
-// Forja de Mundos · Consejo de las Naciones: debates, votaciones, altos el fuego y sanciones
+// World Sim · Consejo de las Naciones: debates, votaciones, altos el fuego y sanciones
 // ================= Consejo de las Naciones =================
 // · Cuando hay al menos tres naciones y dos ya saben escribir, la más poblada en paz funda el Consejo en su capital
 //   (y levanta allí su palacio). Se unen las naciones que saben escribir

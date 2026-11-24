@@ -1,4 +1,4 @@
-// Forja de Mundos · Más formas de gobierno: oligarquía, tecnocracia y anarquía, y la corona de la monarquía parlamentaria
+// World Sim · Más formas de gobierno: oligarquía, tecnocracia y anarquía, y la corona de la monarquía parlamentaria
 // ================= Regímenes =================
 // · Oligarquía: donde el dinero se acumula en pocas manos (con moneda y banco), las familias más ricas compran el
 //   gobierno; manda la persona más rica y, si muere, la siguiente. Se acaba si el pueblo protesta por los sueldos o la vivienda

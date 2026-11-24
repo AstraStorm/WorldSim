@@ -1,4 +1,4 @@
-// Forja de Mundos · Papeles: DNI, pasaportes y permisos; centros de deportación, campos y esclavitud
+// World Sim · Papeles: DNI, pasaportes y permisos; centros de deportación, campos y esclavitud
 // ================= Papeles =================
 // · Con el registro civil (un descubrimiento) y un ayuntamiento, cada nación hace el DNI a su gente y el pasaporte a
 //   quien lo pide (cuesta unas monedas). Se ven en la ficha de cada persona

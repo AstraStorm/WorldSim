@@ -1,4 +1,4 @@
-// Forja de Mundos · Tipos de moneda: conchas, sal, cobre, plata, oro y billetes; con nombre en la lengua del pueblo
+// World Sim · Tipos de moneda: conchas, sal, cobre, plata, oro y billetes; con nombre en la lengua del pueblo
 // ================= Monedas =================
 // · Cada pueblo hace su dinero con lo que tiene a mano: conchas en la costa, barras de sal en tierras secas y, si no,
 //   monedas de cobre. Con herrería y hierro funden plata; con oro de sobra acuñan oro; con papel, banco e imprenta

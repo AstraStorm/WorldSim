@@ -1,4 +1,4 @@
-// Forja de Mundos · Movimiento y dibujo de los aldeanos
+// World Sim · Movimiento y dibujo de los aldeanos
 // ================= Aldeanos de prueba (escala y visibilidad) =================
 // Se dibujan siempre por encima de árboles y rocas, con contorno oscuro, para que nunca queden tapados
 // Tonos de piel de más claro a más oscuro. Cada aldeano tiene el de su clima: en zonas frías (poco sol) la piel

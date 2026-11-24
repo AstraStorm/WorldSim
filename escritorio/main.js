@@ -1,5 +1,5 @@
-// Forja de Mundos · Escritorio: el launcher (comprueba y descarga las actualizaciones) y la ventana del juego
-// · El juego vive en la carpeta del usuario (…/AppData/Roaming/Forja de Mundos/juego). La primera vez se copia la
+// World Sim · Escritorio: el launcher (comprueba y descarga las actualizaciones) y la ventana del juego
+// · El juego vive en la carpeta del usuario (…/AppData/Roaming/World Sim/juego, o Forja de Mundos si venía de antes). La primera vez se copia la
 //   versión que trae el ejecutable (juego-base) y, desde entonces, el launcher la pone al día
 // · Actualizar: se baja manifest.json de GitHub Pages (versión, novedades y la huella de cada archivo), se compara con
 //   el de aquí y se descargan solo los archivos que han cambiado (comprobando su huella); al final se guarda el nuevo
@@ -10,7 +10,10 @@ const fs = require('fs'), path = require('path'), crypto = require('crypto'), { 
 const REMOTO = 'https://astrastorm.github.io/WorldSim/';
 const GAME = () => path.join(app.getPath('userData'), 'juego');
 const BASE = () => app.isPackaged ? path.join(process.resourcesPath, 'juego-base') : path.join(__dirname, 'juego-base');
+// Antes se llamaba «Forja de Mundos»: si ya está esa carpeta se sigue usando, para no perder las partidas ni los ajustes
+const VIEJA = path.join(app.getPath('appData'), 'Forja de Mundos');
 if (process.env.FORJA_DATA) app.setPath('userData', process.env.FORJA_DATA); // (para las pruebas: otra carpeta)
+else if (fs.existsSync(VIEJA)) app.setPath('userData', VIEJA);
 protocol.registerSchemesAsPrivileged([{ scheme:'forja', privileges:{ standard:true, secure:true, supportFetchAPI:true, corsEnabled:true, stream:true } }]);
 let launcher = null, game = null;
 // ---- Archivos del juego ----
@@ -60,7 +63,7 @@ async function update(full, send){
 }
 // ---- Ventanas ----
 function openLauncher(){
-  launcher = new BrowserWindow({ width:1200, height:740, minWidth:960, minHeight:600, frame:false, backgroundColor:'#0d1117', show:false, title:'Forja de Mundos',
+  launcher = new BrowserWindow({ width:1200, height:740, minWidth:960, minHeight:600, frame:false, backgroundColor:'#0d1117', show:false, title:'World Sim',
     icon:path.join(__dirname, 'launcher', 'icono.png'), webPreferences:{ preload:path.join(__dirname, 'preload.js') } });
   launcher.loadFile(path.join(__dirname, 'launcher', 'index.html'));
   launcher.once('ready-to-show', () => launcher.show());
@@ -68,7 +71,7 @@ function openLauncher(){
 }
 function openGame(opts = {}){
   if (game) { game.focus(); return; }
-  game = new BrowserWindow({ width:1440, height:900, backgroundColor:'#11151a', title:'Forja de Mundos', autoHideMenuBar:true, icon:path.join(__dirname, 'launcher', 'icono.png') });
+  game = new BrowserWindow({ width:1440, height:900, backgroundColor:'#11151a', title:'World Sim', autoHideMenuBar:true, icon:path.join(__dirname, 'launcher', 'icono.png') });
   game.setMenu(null); if (opts.full) game.setFullScreen(true);
   game.loadURL('forja://juego/index.html');
   game.webContents.on('before-input-event', (e, i) => { if (i.type === 'keyDown' && i.key === 'F11') { game.setFullScreen(!game.isFullScreen()); e.preventDefault(); } if (i.type === 'keyDown' && i.key === 'F12' && !app.isPackaged) game.webContents.toggleDevTools(); });

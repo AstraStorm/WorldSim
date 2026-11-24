@@ -1,4 +1,4 @@
-// Forja de Mundos · Crecimiento y muerte de la vegetación
+// World Sim · Crecimiento y muerte de la vegetación
 // ================= Vida de la vegetación =================
 // Cada árbol se revisa cada ~10 s: cambia de fase (brote → joven → adulto → viejo → muerto → desaparece)
 // y, si es adulto, esparce semillas alrededor (muchas en primavera, pocas en verano y otoño, ninguna en invierno).

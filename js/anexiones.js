@@ -1,4 +1,4 @@
-// Forja de Mundos · Pueblos que se quedan sin gente: piden la anexión o se van a vivir con otros
+// World Sim · Pueblos que se quedan sin gente: piden la anexión o se van a vivir con otros
 // ================= Anexiones =================
 // · Un pueblo independiente con muy poca gente (o que la ha perdido casi toda) se reúne en la plaza y vota: pedir que
 //   una nación vecina amiga se lo anexione (pasa a ser provincia suya), irse todos a vivir con un pueblo amigo, o seguir

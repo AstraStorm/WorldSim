@@ -1,4 +1,4 @@
-// Forja de Mundos · Arreglar la economía antes de la bancarrota: planes del gobierno y rescates de otros países
+// World Sim · Arreglar la economía antes de la bancarrota: planes del gobierno y rescates de otros países
 // ================= Rescates =================
 // Cuando la deuda se acerca al límite o los precios se disparan, el gobierno pone en marcha un plan (uno a la vez):
 //  · subir los tipos: el banco frena la inflación (los precios se calman, la gente gasta menos)

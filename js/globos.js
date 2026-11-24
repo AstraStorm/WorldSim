@@ -1,4 +1,4 @@
-// Forja de Mundos · Globos aerostáticos: tela, manga de viento, puerto de globos, vuelos y la física del globo
+// World Sim · Globos aerostáticos: tela, manga de viento, puerto de globos, vuelos y la física del globo
 // ================= Globos =================
 // Cadena: con mapas (papel) quieren saber de dónde viene el viento → tejen tela (con la lana de sus ovejas o, sin
 // ovejas, con fibra de lino de sus campos) → levantan la manga de viento junto a un puerto de globos (una

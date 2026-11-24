@@ -1,4 +1,4 @@
-// Forja de Mundos · Animales
+// World Sim · Animales
 // ================= Fauna =================
 // Cada animal tiene edad, esperanza de vida y hambre. Los herbívoros pastan (y la hierba comida tarda en
 // volver a crecer); los carnívoros cazan a sus presas, que huyen al verlos; gatos y osos pescan en los

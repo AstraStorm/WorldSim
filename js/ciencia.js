@@ -1,4 +1,4 @@
-// Forja de Mundos · Universidad y ciencia: sabios que investigan y descubrimientos que cambian el juego
+// World Sim · Universidad y ciencia: sabios que investigan y descubrimientos que cambian el juego
 // ================= Ciencia =================
 // · Con escuela y escritura se levanta la universidad; allí los sabios (y los que estudiaron) investigan
 // · Lo que se descubre es de toda la nación, en este orden: medicina, rotación de cultivos, metalurgia, astronomía,

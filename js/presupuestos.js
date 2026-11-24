@@ -1,4 +1,4 @@
-// Forja de Mundos · Presupuestos: en qué se gasta el dinero público, obras que cuestan dinero, corrupción, ciudades
+// World Sim · Presupuestos: en qué se gasta el dinero público, obras que cuestan dinero, corrupción, ciudades
 // amenazadas y líderes linchados (o sacrificados) por el pueblo
 // ================= Presupuestos =================
 // Lo que gasta el gobierno se reparte en partidas según el régimen y las leyes. Donde se vota, los presupuestos se

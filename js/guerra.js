@@ -1,4 +1,4 @@
-// Forja de Mundos · La guerra, más larga, más táctica y más visible
+// World Sim · La guerra, más larga, más táctica y más visible
 // ================= Guerra =================
 // · Al declarar la guerra, el atacante monta un campamento entre los dos pueblos (tiendas, hoguera y su bandera):
 //   desde ahí salen los ataques, que antes se reúnen allí y marchan juntos con su abanderado delante

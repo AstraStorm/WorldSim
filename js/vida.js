@@ -1,4 +1,4 @@
-// Forja de Mundos · Enfermedades, migraciones e historia
+// World Sim · Enfermedades, migraciones e historia
 // ================= Enfermedades y epidemias =================
 let epidemics = [];
 const DIS_A = ['Fiebre', 'Peste', 'Tos', 'Viruela', 'Gripe', 'Mal'], DIS_B = ['roja', 'negra', 'del pantano', 'de los ríos', 'gris', 'de invierno', 'amarilla', 'de los puertos'];

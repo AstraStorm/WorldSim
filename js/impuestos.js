@@ -1,4 +1,4 @@
-// Forja de Mundos · Impuestos: cada pueblo va creando (y quitando) impuestos según lo que necesita y quién gobierna
+// World Sim · Impuestos: cada pueblo va creando (y quitando) impuestos según lo que necesita y quién gobierna
 // ================= Impuestos =================
 // Siempre hay uno sobre lo que tiene cada uno (su porcentaje depende del régimen y de las leyes). Además, el gobierno
 // crea impuestos cuando hay guerra, deudas o le falta dinero varios días seguidos, y elige cuál según sus ideas:

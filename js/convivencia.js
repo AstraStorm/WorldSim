@@ -1,4 +1,4 @@
-// Forja de Mundos · Convivencia: parejas y orientación sexual, racismo y derechos, homofobia o igualdad
+// World Sim · Convivencia: parejas y orientación sexual, racismo y derechos, homofobia o igualdad
 // ================= Convivencia =================
 // Cada persona tiene su orientación (la mayoría heterosexual; algunos homosexuales o bisexuales) y forma pareja
 // con quien le atrae. Lo que piense el pueblo de quien es distinto (por su piel o por a quién ama) lo marcan sus

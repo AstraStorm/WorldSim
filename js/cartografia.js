@@ -1,4 +1,4 @@
-// Forja de Mundos · Papel y mapas: cada aldea dibuja el mundo que conoce (y no siempre bien)
+// World Sim · Papel y mapas: cada aldea dibuja el mundo que conoce (y no siempre bien)
 // ================= Cartografía =================
 // El mapa de cada aldea es una rejilla de zonas de 4×4 casillas con lo seguros que están de cada una (0 = ni idea,
 // 255 = la conocen al dedillo). Se llena con lo que ve la gente del pueblo, con las expediciones de sus cartógrafos

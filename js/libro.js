@@ -1,4 +1,4 @@
-// Forja de Mundos · El libro de historia: la crónica del mundo escrita por capítulos
+// World Sim · El libro de historia: la crónica del mundo escrita por capítulos
 // ================= Libro de historia =================
 // · Se escribe solo: cada noticia importante (guerras, política, diplomacia, economía, religión, catástrofes, grandes
 //   inventos) queda apuntada con su día y su año; se guarda con la partida

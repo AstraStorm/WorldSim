@@ -1,4 +1,4 @@
-// Forja de Mundos · Calendario: los días de la semana en cada lengua y el calendario laboral de cada pueblo
+// World Sim · Calendario: los días de la semana en cada lengua y el calendario laboral de cada pueblo
 // ================= Calendario =================
 // · Cada lengua pone nombre a sus siete días con sus propios sonidos (y una misma terminación, como «-es» en lunes,
 //   martes...); se muestran con el nuestro entre paréntesis. Las lenguas hijas heredan los de su madre, algo cambiados

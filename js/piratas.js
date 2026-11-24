@@ -1,4 +1,4 @@
-// Forja de Mundos · Piratas y armadas
+// World Sim · Piratas y armadas
 // ================= Piratas =================
 // · Cuando hay barcas por el mar (comercio, colonos, expediciones), aparecen barcos piratas en alta mar (como mucho
 //   tres), con su bandera negra. Buscan barcas a las que asaltar: les roban la carga y a veces matan a quien va dentro;

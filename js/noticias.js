@@ -1,4 +1,4 @@
-// Forja de Mundos · Noticias que viajan: mensajeros entre naciones y batidas para buscar animales
+// World Sim · Noticias que viajan: mensajeros entre naciones y batidas para buscar animales
 // ================= Noticias =================
 // · Las noticias importantes (una guerra, una paz, un cambio de régimen, un descubrimiento) no llegan solas: la nación
 //   manda mensajeros (a caballo si tiene casa de postas) a las naciones que conoce, y allí se enteran al llegar

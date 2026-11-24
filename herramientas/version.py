@@ -30,6 +30,6 @@ try: log = subprocess.run(['git', 'log', '-12', '--pretty=%cs\t%s'], cwd=R, capt
 except Exception: log = []
 notas = [{ 'fecha':l.split('\t')[0], 'texto':l.split('\t', 1)[1] } for l in log if '\t' in l]
 if len(sys.argv) > 1: notas.insert(0, { 'fecha':time.strftime('%Y-%m-%d'), 'texto':sys.argv[1] })
-man = { 'juego':'Forja de Mundos', 'version':v, 'fecha':time.strftime('%Y-%m-%d %H:%M'), 'novedades':notas[:12], 'archivos':files }
+man = { 'juego':'World Sim', 'version':v, 'fecha':time.strftime('%Y-%m-%d %H:%M'), 'novedades':notas[:12], 'archivos':files }
 open(os.path.join(R, 'manifest.json'), 'w', encoding='utf-8', newline='\n').write(json.dumps(man, ensure_ascii=False, indent=1))
 print('manifiesto:', len(files), 'archivos')

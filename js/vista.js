@@ -1,4 +1,4 @@
-// Forja de Mundos · Cámara, zoom y dibujo de cada fotograma
+// World Sim · Cámara, zoom y dibujo de cada fotograma
 // ================= Vista =================
 const stage = document.getElementById('stage'), view = document.getElementById('view');
 let vctx = view.getContext('2d'); // se cambia un momento para pintar capas en caché

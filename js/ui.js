@@ -1,11 +1,16 @@
-// Forja de Mundos · Interfaz: pestañas del panel y de la barra de abajo, y el resumen del mundo
+// World Sim · Interfaz: pestañas del panel y de la barra de abajo, y el resumen del mundo
 // ================= Interfaz =================
 // · El panel de la derecha va por pestañas: Mundo (resumen de naciones, guerras, lenguas y monedas, y la lista de
 //   aldeas), Herramientas (pincel de dios y cámara), Ajustes (generar el mundo, capas y clima) y Datos (rarezas,
 //   fauna, recursos y biomas). Se recuerda la última pestaña
 // · La barra de abajo, también: Crear vida o Desatar, una sola fila cada una
-// La información de la casilla va dentro del bloque de arriba a la izquierda: siempre debajo de la fecha y la velocidad
-document.querySelector('.topleft').appendChild(document.getElementById('hud'));
+// · La barra de arriba (fecha y velocidad, titulares y menús) cambia de alto según el ancho: lo que flota debajo
+//   (casilla, fichas, crónica, leyendas) se coloca con --top, que es lo que mide la barra
+{
+  const stage = document.getElementById('stage'), bar = document.querySelector('.topbar');
+  const fitTop = () => stage.style.setProperty('--top', Math.round(bar.offsetTop + bar.offsetHeight + 8) + 'px');
+  new ResizeObserver(fitTop).observe(bar); fitTop();
+}
 function setPanelTab(k){
   for (const b of document.querySelectorAll('.ptabs button')) b.classList.toggle('on', b.dataset.pt === k);
   for (const el of document.querySelectorAll('.panel > [data-pt]')) el.classList.toggle('pt-off', el.dataset.pt !== k);
@@ -39,3 +44,4 @@ function renderWorldView(){
 const natPop = n => villages.filter(g => popOf(g) && nationOf(g) === n).reduce((a, g) => a + popOf(g), 0);
 document.getElementById('worldView').addEventListener('click', e => { const b = e.target.closest('[data-vid]'); if (b) { openVillage(+b.dataset.vid); const g = villageById(+b.dataset.vid); if (g) centerOn(g.fx * T, g.fy * T, Math.max(zoom, 3)); } });
 setInterval(renderWorldView, 2000);
+document.getElementById('aldeas').addEventListener('click', e => { const b = e.target.closest('[data-vid]'); if (b) { openVillage(+b.dataset.vid); const g = villageById(+b.dataset.vid); if (g) centerOn(g.fx * T, g.fy * T, Math.max(zoom, 3)); } });

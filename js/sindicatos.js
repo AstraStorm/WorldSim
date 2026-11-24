@@ -1,4 +1,4 @@
-// Forja de Mundos · Sindicatos y huelgas
+// World Sim · Sindicatos y huelgas
 // ================= Sindicatos =================
 // · Donde hay sueldos (moneda) y bastante gente, los trabajadores fundan un sindicato; se afilian los que trabajan con
 //   las manos y no son de derechas. En el fascismo y el comunismo solo hay el sindicato oficial (y no se hace huelga)

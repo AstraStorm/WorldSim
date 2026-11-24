@@ -1,4 +1,4 @@
-# Forja de Mundos (WorldSim)
+# World Sim
 
 Simulador de mundos de pixel art que funciona en el navegador: genera un mapa, crea vida y mira cómo los aldeanos levantan pueblos, inventan religiones, monedas y gobiernos, comercian, se alían y se declaran la guerra.
 

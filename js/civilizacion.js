@@ -1,4 +1,4 @@
-// Forja de Mundos · Civilización: ruinas antiguas, bodas y entierros, villas y ciudades, embajadas, imperios, gremios
+// World Sim · Civilización: ruinas antiguas, bodas y entierros, villas y ciudades, embajadas, imperios, gremios
 // y fiebres del oro
 // ================= Civilización =================
 // · Ruinas de civilizaciones olvidadas repartidas por el mapa: los pueblos cercanos mandan a explorarlas y encuentran

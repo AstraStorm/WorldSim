@@ -1,4 +1,4 @@
-// Forja de Mundos · Constantes, sprites de pixel art, ruido y estado global
+// World Sim · Constantes, sprites de pixel art, ruido y estado global
 // ================= Constantes =================
 const T = 5; // píxeles por casilla (más píxeles por casilla: el mundo se ve más grande y detallado)
 let W, H, N, PW, PH;

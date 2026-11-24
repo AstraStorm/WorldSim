@@ -1,4 +1,4 @@
-// Forja de Mundos · Ricos y pobres que se notan: mansiones, chabolas y ropa
+// World Sim · Ricos y pobres que se notan: mansiones, chabolas y ropa
 // ================= Riqueza =================
 // · Donde hay dinero, los más ricos (los que tienen el triple que la mayoría) convierten su casa de piedra en una
 //   mansión, pagándola de su bolsillo (como mucho una por cada ocho habitantes)

@@ -1,4 +1,4 @@
-// Forja de Mundos · Clima, tornados y huracanes, placas tectónicas, terremotos y estaciones
+// World Sim · Clima, tornados y huracanes, placas tectónicas, terremotos y estaciones
 // ================= Clima: vientos, nubes, lluvia, nieve, tormentas y rayos =================
 // El viento combina una corriente general que gira despacio con borrascas (giran en sentido antihorario,
 // atraen las nubes y traen lluvia y tormentas) y anticiclones (giran en sentido horario y disuelven las nubes)

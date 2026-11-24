@@ -1,4 +1,4 @@
-// Forja de Mundos · Bolsa: un mercado de acciones común a todas las naciones, inversores que van al banco,
+// World Sim · Bolsa: un mercado de acciones común a todas las naciones, inversores que van al banco,
 // subidas y bajadas por lo que pasa en cada nación, denuncias y sanciones
 // ================= Bolsa =================
 // Hay una sola bolsa para todo el mundo, con una acción por nación. Cada día su precio sube o baja según cómo le va

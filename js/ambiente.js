@@ -1,4 +1,4 @@
-// Forja de Mundos · Vida en el mapa: estaciones, la noche y el campo
+// World Sim · Vida en el mapa: estaciones, la noche y el campo
 // ================= Ambiente =================
 // · Otoño: almiares dorados en los campos. Invierno: muñecos de nieve junto a las casas y niños patinando en los lagos
 //   helados cerca del pueblo. Primavera (y verano): flores entre la hierba y mariposas revoloteando

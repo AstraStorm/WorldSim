@@ -1,4 +1,4 @@
-// Forja de Mundos · Prensa: periódicos, titulares, influencia en el voto, escándalos y censura
+// World Sim · Prensa: periódicos, titulares, influencia en el voto, escándalos y censura
 // ================= Prensa =================
 // · Con escritura y papel, y gente suficiente, nacen los periódicos (uno; dos o tres en pueblos grandes). Cada uno es
 //   afín a un partido (o a unas ideas) y lo dirige alguien del pueblo

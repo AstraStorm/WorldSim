@@ -1,4 +1,4 @@
-// Forja de Mundos · Aldeanos, pueblos, oficios, edificios, política, economía y guerra
+// World Sim · Aldeanos, pueblos, oficios, edificios, política, economía y guerra
 // ================= Humanos: vida, aldeas, cultivos y ganado =================
 // Cada aldeano nace, crece, come, bebe, pasa frío o calor (menos junto a la hoguera o en casa) y muere de viejo,
 // de hambre, de sed o por el clima. Vive en una aldea con una hoguera y un almacén común (comida, madera, piedra).

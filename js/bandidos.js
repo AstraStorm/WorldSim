@@ -1,4 +1,4 @@
-// Forja de Mundos · Bandidos en los caminos
+// World Sim · Bandidos en los caminos
 // ================= Bandidos =================
 // · Cuando hay caravanas por tierra (o mucha pobreza), en un bosque o en unas colinas lejos de los pueblos se monta un
 //   campamento de bandidos (como mucho dos). Salen a asaltar caravanas y viajeros que pasan cerca: les roban la carga y

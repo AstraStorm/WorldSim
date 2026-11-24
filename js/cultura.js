@@ -1,4 +1,4 @@
-// Forja de Mundos · Cultura (libros, leyendas y estatuas), pensiones, guerras santas y cismas
+// World Sim · Cultura (libros, leyendas y estatuas), pensiones, guerras santas y cismas
 // ================= Cultura =================
 // · Con escritura, de vez en cuando alguien escribe una obra (poema, cantar, novela, crónica, teatro) sobre algo que
 //   les ha pasado, en su lengua; las grandes desgracias se vuelven leyendas
