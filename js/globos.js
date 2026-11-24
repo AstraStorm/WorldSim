@@ -498,19 +498,20 @@ const AIRSHIP_K = 1.8;
 function drawAirship(col, mouthY, inf, now, flip){
   if (flip) { vctx.save(); vctx.scale(-1, 1); drawAirship(col, mouthY, inf, now, false); vctx.restore(); return; } // el dibujo mira a la derecha
   const art = tintedArt('airship:dirigible', col);
-  if (art) { const w = art.width * inf * AIRSHIP_K, h = art.height * inf * AIRSHIP_K; vctx.drawImage(art, -w / 2, mouthY - h, w, h); airshipProp(-w / 2 + w * 8.5 / 34, mouthY - h + h * 15.5 / 19, 3.2 * inf * AIRSHIP_K / 1.8, now); return; }
+  if (art) { const w = art.width * inf * AIRSHIP_K, h = art.height * inf * AIRSHIP_K; vctx.drawImage(art, -w / 2, mouthY - h, w, h); airshipProp(-w / 2 + w * 7 / 34, mouthY - h + h * 15 / 19, 7 * inf, now); return; }
   const L = 26 * inf * AIRSHIP_K, Hh = 9 * inf * AIRSHIP_K, cy = mouthY - Hh / 2 - 1;
   vctx.fillStyle = '#22201e'; vctx.beginPath(); vctx.ellipse(0, cy, L / 2 + 1, Hh / 2 + 1, 0, 0, Math.PI * 2); vctx.fill();
   vctx.fillStyle = `rgb(${col.join(',')})`; vctx.beginPath(); vctx.ellipse(0, cy, L / 2, Hh / 2, 0, 0, Math.PI * 2); vctx.fill();
   vctx.fillStyle = 'rgba(255,255,255,.3)'; vctx.beginPath(); vctx.ellipse(-1, cy - Hh * .2, L * .38, Hh * .18, 0, 0, Math.PI * 2); vctx.fill();
   vctx.fillStyle = 'rgba(0,0,0,.25)'; for (let k = -2; k <= 2; k++) vctx.fillRect(k * L / 6, cy - Hh / 2 + 1, .7, Hh - 2); // costillas
   vctx.fillStyle = '#22201e'; vctx.beginPath(); vctx.moveTo(-L / 2 + 2, cy); vctx.lineTo(-L / 2 - 3, cy - Hh / 2 - 2); vctx.lineTo(-L / 2 - 1, cy); vctx.lineTo(-L / 2 - 3, cy + Hh / 2 + 2); vctx.fill(); // timones
-  airshipProp(-L / 2 - 3, cy, 3.2 * inf * AIRSHIP_K / 1.8, now);
+  airshipProp(-L / 2 - 3, cy, 7 * inf, now);
 }
 // La hélice, girando detrás de la góndola, vista de lado: un disco borroso y las palas, que se alargan y se acortan
 function airshipProp(x, y, r, now){
   const k = Math.abs(Math.cos(now / 25)) * r;
-  vctx.fillStyle = 'rgba(225,215,195,.22)'; vctx.beginPath(); vctx.ellipse(x, y, r * .35, r, 0, 0, Math.PI * 2); vctx.fill(); // el disco al girar
-  vctx.fillStyle = 'rgba(200,170,120,.95)'; vctx.fillRect(x - .45, y - k, .9, k * 2); // las palas
-  vctx.fillStyle = '#3a2a1c'; vctx.fillRect(x - .6, y - .6, 1.2, 1.2); // el eje
+  vctx.fillStyle = 'rgba(225,215,195,.28)'; vctx.beginPath(); vctx.ellipse(x, y, r * .3, r, 0, 0, Math.PI * 2); vctx.fill(); // el disco al girar
+  vctx.fillStyle = 'rgba(70,50,30,.9)'; vctx.fillRect(x - 1, y - k - .4, 2, k * 2 + .8); // las palas, con su borde
+  vctx.fillStyle = 'rgba(214,180,124,.98)'; vctx.fillRect(x - .6, y - k, 1.2, k * 2);
+  vctx.fillStyle = '#3a2a1c'; vctx.fillRect(x - 1.2, y - 1.2, 2.4, 2.4); vctx.fillStyle = '#8a6a44'; vctx.fillRect(x - .6, y - .6, 1.2, 1.2); // el buje
 }

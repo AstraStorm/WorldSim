@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611240141",
- "fecha": "2026-11-24 01:41",
+ "version": "202611240142",
+ "fecha": "2026-11-24 01:42",
  "novedades": [
   {
    "fecha": "2026-11-24",
-   "texto": "Vía de tren nueva, ancha y con curvas suaves; el tren y las estaciones ya no quedan detrás de los árboles; hélice del dirigible que gira y dirigible que crece al subir"
+   "texto": "Hélice del dirigible más grande"
+  },
+  {
+   "fecha": "2026-11-24",
+   "texto": "Vía nueva a la escala del tren (balasto, traviesas, dos raíles separados y curvas redondeadas, dibujada una vez en su propio lienzo); estaciones y trenes por encima de árboles y edificios; hélice del dirigible animada; el dirigible es más pequeño aparcado y crece al ganar altura"
   },
   {
    "fecha": "2026-11-24",
@@ -46,19 +50,15 @@
   {
    "fecha": "2026-11-23",
    "texto": "Papeles (DNI, pasaportes, permisos y sin papeles), centros de deportación, campos de trabajo y de internamiento, esclavitud con huidas y rebeliones, contratos de alquiler, okupas y desalojos, y la clasificación de potencias mundiales"
-  },
-  {
-   "fecha": "2026-11-23",
-   "texto": "Vía del tren por casillas con los tramos de la hoja 13C (rectas, curvas, desvíos girados y cruces), que rodea los pueblos y cruza ríos con puentes; el tren sigue el trazado"
   }
  ],
  "archivos": {
-  "index.html": "635629cc4da643627b9284693479a377eb0f4bea",
+  "index.html": "b5b9d1bb32e6e4f4d245d89f272cfa1a5ec4695a",
   "css/estilo.css": "5102a249d843e933be3be74f960883ba03efd264",
   "js/aldeanos.js": "d0ad9b10da1af74f147d51e037f2afd1203c6ff1",
   "js/ambiente.js": "cd3541c5cfa9a64de5395f84239009f959216922",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
-  "js/arte.js": "16697fd251a0ec0f9ac7523c299237d0eac59420",
+  "js/arte.js": "ac034855cb21f6fab1b73188a38b8317df6b2c45",
   "js/arte_mapa.js": "98d891de2ac832b6a1d3a74577fd56b460c01af2",
   "js/bandidos.js": "675a7588d06fb17fe09f9c9ec32caa9e300cb1d9",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
@@ -84,7 +84,7 @@
   "js/estaciones.js": "e9e2f1194fdb60ca73c007b1cd7e9ae392ce2ad7",
   "js/fama.js": "1b98918f8d312e237c6f399a43c0a3e278a4604b",
   "js/fauna.js": "ab4d9de4dea1f9f00ee90d76625658f2edd2695c",
-  "js/globos.js": "6ef9cf04c1d34ba5a2bfb4d511ebbeba5af991c7",
+  "js/globos.js": "e09b4f00bbb7312f0285860f0048daeddf97b265",
   "js/guerra.js": "c82411435e1c5e0624fe9353a52aa624f4b1759c",
   "js/humanos.js": "664d8ac758d828bba4cd87246ce70cac3e12c399",
   "js/idiomas.js": "76785080135c2b980a092929b1d0742a1e15a8f2",
