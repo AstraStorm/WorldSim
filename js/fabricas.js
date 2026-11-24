@@ -13,25 +13,25 @@
 // · Leyes: carbón estratégico, impuesto al carbón, protección de las aguas, libre industria y nacionalizar la industria
 // · De cerca, cada fábrica lleva encima un icono: en marcha, o parada y por qué (sin carbón, sin agua, sin material...)
 const FACS = {
-  aserradero:{ name:'Aserradero', tier:0, wood:10, stone:8, out:'wood', n:8, txt:'+8 madera', col:'#c89858',
+  aserradero:{ name:'Aserradero', pay:1.15, tier:0, wood:10, stone:8, out:'wood', n:8, txt:'+8 madera', col:'#c89858',
     desc:'Aserradero de vapor: corta troncos y tablones mucho más rápido que a hacha (y, si falta carbón, hace carbón vegetal)', ok:g => treesNear(g) },
-  cantera:{ name:'Cantera de vapor', tier:0, wood:10, stone:6, out:'stone', n:6, txt:'+6 piedra', col:'#b0aaa0',
+  cantera:{ name:'Cantera de vapor', pay:1.2, tier:0, wood:10, stone:6, out:'stone', n:6, txt:'+6 piedra', col:'#b0aaa0',
     desc:'Cantera de vapor: una grúa saca y corta bloques de piedra', ok:g => true },
-  carbon:{ name:'Pozo de carbón', tier:0, mine:true, wood:14, stone:10, iron:2, out:'coal', n:6, txt:'+6 carbón', col:'#9a9ca4',
+  carbon:{ name:'Pozo de carbón', pay:1.5, tier:0, mine:true, wood:14, stone:10, iron:2, out:'coal', n:6, txt:'+6 carbón', col:'#9a9ca4',
     desc:'Pozo de carbón junto a la mina: castillete, vagonetas y montones de carbón para las calderas', ok:g => hasMine(g) },
-  hierro:{ name:'Fundición de hierro', tier:1, mine:true, wood:12, stone:16, iron:3, out:'iron', n:3, txt:'+3 hierro', col:'#b8c0cc',
+  hierro:{ name:'Fundición de hierro', pay:1.4, tier:1, mine:true, wood:12, stone:16, iron:3, out:'iron', n:3, txt:'+3 hierro', col:'#b8c0cc',
     desc:'Fundición de hierro: funde el mineral de la mina en lingotes', ok:g => hasMine(g) && (g.mineMix || {}).hierro > 0 },
-  textil:{ name:'Fábrica textil', tier:1, wood:14, stone:10, iron:2, out:'cloth', n:3, txt:'+3 tela', col:'#e8dcc0',
+  textil:{ name:'Fábrica textil', pay:1.0, tier:1, wood:14, stone:10, iron:2, out:'cloth', n:3, txt:'+3 tela', col:'#e8dcc0',
     desc:'Fábrica textil: telares de vapor que tejen la lana y la fibra en tela', ok:g => pensOf(g).length > 0 || popOf(g) >= 24 },
-  alfareria:{ name:'Alfarería', tier:1, wood:8, stone:12, iron:1, in:{ stone:1 }, out:'jars', n:4, txt:'+4 cántaros', col:'#d89058',
+  alfareria:{ name:'Alfarería', pay:1.05, tier:1, wood:8, stone:12, iron:1, in:{ stone:1 }, out:'jars', n:4, txt:'+4 cántaros', col:'#d89058',
     desc:'Alfarería: hornos que cuecen cántaros y tazas (más agua guardada en el pueblo) y vasijas para vender', ok:g => true },
-  curtiduria:{ name:'Curtiduría', tier:2, wood:12, stone:8, iron:2, in:{ hides:2 }, out:'leather', n:2, txt:'+2 cuero', col:'#a87040',
+  curtiduria:{ name:'Curtiduría', pay:1.1, tier:2, wood:12, stone:8, iron:2, in:{ hides:2 }, out:'leather', n:2, txt:'+2 cuero', col:'#a87040',
     desc:'Curtiduría: convierte las pieles de la caza en cuero, que se vende bien', ok:g => (g.hides || 0) >= 2 || (g.hidesEver || 0) >= 6 },
-  peleteria:{ name:'Peletería', tier:1, cold:true, wood:12, stone:8, iron:1, in:{ hides:2 }, out:'coats', n:2, txt:'+2 abrigos', col:'#d8c0a0',
+  peleteria:{ name:'Peletería', pay:1.15, tier:1, cold:true, wood:12, stone:8, iron:1, in:{ hides:2 }, out:'coats', n:2, txt:'+2 abrigos', col:'#d8c0a0',
     desc:'Peletería: cose abrigos de piel; quien lleva uno pasa mucho menos frío', ok:g => (g.hides || 0) >= 2 || (g.hidesEver || 0) >= 6 },
-  oro:{ name:'Fundición de oro', tier:2, mine:true, wood:12, stone:18, iron:4, out:'gold', n:2, txt:'+2 oro', col:'#f8d850',
+  oro:{ name:'Fundición de oro', pay:1.6, tier:2, mine:true, wood:12, stone:18, iron:4, out:'gold', n:2, txt:'+2 oro', col:'#f8d850',
     desc:'Fundición de oro: funde el oro de la mina en lingotes', ok:g => hasMine(g) && (g.mineMix || {}).oro > 0 },
-  joyeria:{ name:'Joyería', tier:3, mine:true, wood:10, stone:16, iron:2, gold:3, in:{ gold:1 }, out:'jewels', n:1, txt:'joyas', col:'#d88af0',
+  joyeria:{ name:'Joyería', pay:1.9, tier:3, mine:true, wood:10, stone:16, iron:2, gold:3, in:{ gold:1 }, out:'jewels', n:1, txt:'joyas', col:'#d88af0',
     desc:'Joyería: talla las gemas de la mina y hace joyas de oro que se venden muy caras', ok:g => hasMine(g) && ((g.mineMix || {}).gemas > 0 || (g.gems || 0) > 0) },
 };
 MAT_JOBS.coal = ['extraer', 'cantear'];
@@ -43,26 +43,27 @@ OBJ['pump:extractora'] = [PUMP.name, 'house', 0]; SPRITE_ALIAS['pump:extractora'
 BLD.add('fac'); BLD.add('pump'); BUILD_DIMS.fac = [4, 5]; BUILD_DIMS.pump = [4, 5];
 KIND_DIMS.fabrica = [4, 5]; KIND_DIMS.extractora = [4, 5]; KIND_DIMS.pozo_fab = [2, 4];
 TASK_KIND.fabrica = 'fabrica'; TASK_KIND.extractora = 'extractora'; TASK_KIND.pozo_fab = 'pozo_fab';
-OFICIOS.constructor.push('fabrica', 'extractora', 'pozo_fab'); OFICIOS.ingeniero.push('fabrica', 'extractora', 'fabricar'); OFICIOS.cantero.push('fabricar');
+OFICIOS.constructor.push('fabrica', 'extractora', 'pozo_fab', 'mejorar_almacen'); OFICIOS.obrero = ['fabricar']; OFICIOS.ingeniero.push('fabrica', 'extractora', 'fabricar'); OFICIOS.cantero.push('fabricar');
 Object.assign(BLD_TYPE, { fac:'Industria', pump:'Industria' });
 BLD_DESC.pump = 'Extractora de agua: bombea agua del río o del lago con la rueda y la reparte por tuberías a las fábricas';
 // Leyes de la industria
-Object.assign(LAW_TXT, { carbon_estrategico:'carbón estratégico', impuesto_carbon:'impuesto al carbón', proteccion_aguas:'protección de las aguas', libre_industria:'libre industria', nacionalizar_industria:'industria nacionalizada' });
-Object.assign(LAW_DESC, { carbon_estrategico:'el carbón es del país: no se vende fuera mientras no sobre de verdad, y el tesoro compra reservas',
+Object.assign(LAW_TXT, { fomento_industria:'fomento de la industria', carbon_estrategico:'carbón estratégico', impuesto_carbon:'impuesto al carbón', proteccion_aguas:'protección de las aguas', libre_industria:'libre industria', nacionalizar_industria:'industria nacionalizada' });
+Object.assign(LAW_DESC, { fomento_industria:'el gobierno empuja la industria: fábricas más baratas y antes, más obreros por fábrica, sueldos de fábrica más altos y mejoras de fábrica a mitad de precio (lo paga el tesoro)', carbon_estrategico:'el carbón es del país: no se vende fuera mientras no sobre de verdad, y el tesoro compra reservas',
   impuesto_carbon:'cada carbón que se vende fuera paga un impuesto al tesoro', proteccion_aguas:'las fábricas no pueden dejar los pozos por debajo de la mitad: más pozos o extractora',
   libre_industria:'fábricas más baratas de levantar y que rinden algo más, aunque a la gente le gusta menos', nacionalizar_industria:'las fábricas son del estado: todo lo que dejan va al tesoro, pero se trabaja con menos ganas' });
-Object.assign(LAW_LEAN, { carbon_estrategico:.4, impuesto_carbon:.05, proteccion_aguas:-.35, libre_industria:.6, nacionalizar_industria:-.75 });
+Object.assign(LAW_LEAN, { fomento_industria:.1, carbon_estrategico:.4, impuesto_carbon:.05, proteccion_aguas:-.35, libre_industria:.6, nacionalizar_industria:-.75 });
 LAW_CLASH.push(['libre_industria', 'nacionalizar_industria']);
 if (REGIME_LAWS.comunismo) REGIME_LAWS.comunismo.push('nacionalizar_industria');
 if (REGIME_LAWS.oligarquia) REGIME_LAWS.oligarquia.push('libre_industria');
-if (REGIME_LAWS.tecnocracia) REGIME_LAWS.tecnocracia.push('proteccion_aguas');
+if (REGIME_LAWS.tecnocracia) REGIME_LAWS.tecnocracia.push('proteccion_aguas', 'fomento_industria');
+for (const rg of ['comunismo', 'dictadura', 'fascismo']) if (REGIME_LAWS[rg]) REGIME_LAWS[rg].push('fomento_industria');
 if (REGIME_LAWS.fascismo) REGIME_LAWS.fascismo.push('carbon_estrategico');
 
 const facsOf = g => (g.facs ||= []).filter(f => world.objs[f.i] && world.objs[f.i].key === 'fac:' + f.k);
 const hasFac = (g, k) => facsOf(g).some(f => f.k === k);
 const hasPump = g => g.pump != null && !!world.objs[g.pump] && world.objs[g.pump].key === 'pump:extractora';
 const indWellsOf = g => wellsOf(g).filter(w => w.ind);
-const facCost = (g, F) => { const m = hasLaw(g, 'libre_industria') ? .75 : 1, c = {}; for (const [f] of MATS) if (F[f]) c[f] = Math.ceil(F[f] * m); if (facsOf(g).length) { if ((g.coal || 0) >= 4) c.coal = 4; else c.wood = (c.wood || 0) + 12; } return c; }; // la caldera se estrena con carbón (o con leña si no hay); la primera, sin
+const facCost = (g, F) => { const m = (hasLaw(g, 'libre_industria') ? .75 : 1) * (hasLaw(g, 'fomento_industria') ? .85 : 1), c = {}; for (const [f] of MATS) if (F[f]) c[f] = Math.ceil(F[f] * m); if (facsOf(g).length) { if ((g.coal || 0) >= 4) c.coal = 4; else c.wood = (c.wood || 0) + 12; } return c; }; // la caldera se estrena con carbón (o con leña si no hay); la primera, sin
 const facMissing = (g, c) => [...MATS, ['coal', 'carbón']].map(([f, n]) => [f, n, Math.max(0, (c[f] || 0) - (g[f] || 0))]).filter(m => m[2] > 0);
 const facWaterCap = g => 30 + (hasPump(g) ? 40 : 0);
 const coalReserve = g => 8 + facsOf(g).length * 4 + (g.factory ? 4 : 0);
@@ -76,7 +77,7 @@ function thirstCheck(g, people){
 }
 function treesNear(g){ if (g.treesT > yearT) return g.treesOk; const z = g.indZone || { x:Math.round(g.fx), y:Math.round(g.fy) }; let n = 0; for (let y = z.y - 30; y <= z.y + 30; y += 2) for (let x = z.x - 30; x <= z.x + 30; x += 2) { const o = world.objs[y * W + x]; if (o && OBJ[o.key][1] === 'tree') n++; } g.treesT = yearT + DAY_LEN / 2; return g.treesOk = n >= 8; }
 // ¿Qué fábricas tienen desbloqueadas? Por niveles: hacen falta fábricas ya hechas, más gente y más días de vapor
-function facTierOf(g){ const n = facsOf(g).length, pop = popOf(g); let t = 0; while (t < 3 && n >= t + 1 + Math.floor(t / 2) && pop >= 16 + (t + 1) * 6) t++; return t; }
+function facTierOf(g){ const n = facsOf(g).length, pop = popOf(g); let t = 0; const fo = hasLaw(g, 'fomento_industria') ? 4 : 0; while (t < 3 && n >= t + 1 + Math.floor(t / 2) && pop >= 16 + (t + 1) * 6 - fo) t++; return t; }
 function facUnlocked(g){
   if (!industrial(g) || popOf(g) < 14) return [];
   const t = facTierOf(g);
@@ -130,7 +131,7 @@ function pickZone(g){
     if (!slot(x, y)) continue;
     let free = 1; for (const [i, j] of [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, -1], [-1, 1], [1, 1]]) if (slot(x + i * 9, y + j * 7)) free++;
     if (free < 3) continue;
-    const s = free * 5 - Math.abs(d - (rT + 6)) * .8 - (mine ? Math.hypot(mine[0] - x, mine[1] - y) * .3 : 0); // justo a las afueras
+    const s = free * 5 - Math.abs(d - Math.max(14, rT * .7)) * .8 - (mine ? Math.hypot(mine[0] - x, mine[1] - y) * .3 : 0); // justo a las afueras
     if (s > bs) { bs = s; best = { x, y }; }
   }
   return best;
@@ -161,7 +162,7 @@ function factoryJobs(v, g, add){
   const k = !surv && !busyWith(g, 'fabrica') && nextFac(g);
   if (k) {
     const c = facCost(g, FACS[k]), miss = facMissing(g, c);
-    if (!miss.length) add('fabrica', 8);
+    if (!miss.length) add('fabrica', facs.length ? 11 : 16); // la primera fábrica es el gran proyecto del pueblo
     else { const ask = g.facAsk ||= {}; for (const [f, n] of miss) { if (!ask[k + f]) { ask[k + f] = true; notify(`En ${g.name} quieren levantar su ${FACS[k].name.toLowerCase()}, pero les falta ${n}`, { x:g.fx * T, y:g.fy * T }); } if (MAT_JOBS[f]) for (const j of MAT_JOBS[f]) add(j, 2.5); } }
   }
   if (!facs.length) return;
@@ -171,10 +172,12 @@ function factoryJobs(v, g, add){
   if (wantW === 'extractora' && !busyWith(g, 'extractora')) { const miss = facMissing(g, { wood:PUMP.wood, stone:PUMP.stone, iron:PUMP.iron }); if (!miss.length) add('extractora', 6); else for (const [f] of miss) for (const j of MAT_JOBS[f] || []) add(j, 2); }
   // Trabajar en las fábricas (no si el pueblo pasa sed o hambre: antes, sobrevivir)
   if (surv || ageOf(v) < ADULT_H) return;
-  const open = facs.filter(f => f.st !== 'carbon' && f.st !== 'agua' && f.st !== 'material' && workersAt(g, f) < facSlots(g));
-  if (open.length && busyWith(g, 'fabricar') < Math.ceil(popOf(g) * .3)) add('fabricar', 7);
+  const f = crewFac(g, v), work = q => q.st !== 'carbon' && q.st !== 'agua' && q.st !== 'material' && q.st !== 'sed';
+  if (f) { if (work(f) && inShift(g)) add('fabricar', 12); return; } // los obreros, a su fábrica en su turno
+  // Con el fomento de la industria, los demás también echan una mano si hay sitio
+  if (hasLaw(g, 'fomento_industria') && facs.some(q => work(q) && workersAt(g, q) < facSlots(g))) add('fabricar', 2);
 }
-const facSlots = g => popOf(g) >= 40 ? 3 : 2;
+const facSlots = g => (popOf(g) >= 40 ? 3 : 2) + (hasLaw(g, 'fomento_industria') ? 1 : 0);
 const workersAt = (g, f) => villagers.filter(u => !u.dead && u.vid === g.id && u.task && (u.task.k === 'fabricar' || u.task.job === 'fabricar') && u.task.i === f.i).length;
 // ¿Hace falta más agua? Solo si las fábricas se han quedado sin ella hace poco y el depósito está bajo
 function waterWant(g){
@@ -203,8 +206,8 @@ function factoryTarget(v, g, job){
   }
   if (job === 'extractora') { const p = pumpSite(g); return p ? { k:job, i:p[1] * W + p[0], x:p[0] * T + 2, y:(p[1] + 1) * T + 3 } : null; }
   if (job === 'fabricar') {
-    const open = facsOf(g).filter(f => f.st !== 'carbon' && f.st !== 'agua' && f.st !== 'material' && workersAt(g, f) < facSlots(g)); if (!open.length) return null;
-    const f = open.sort((a, b) => facNeed(g, b.k) - facNeed(g, a.k) + (Math.random() - .5) * 3)[0], sb = standBy(f.i);
+    const own = crewFac(g, v), open = own ? [own] : facsOf(g).filter(f => f.st !== 'carbon' && f.st !== 'agua' && f.st !== 'material' && workersAt(g, f) < facSlots(g)); if (!open.length) return null;
+    const f = open.sort((a, b) => facNeed(g, b.k) - facNeed(g, a.k) + (Math.random() - .5) * 3)[0], sb = facSpot(f);
     return sb ? { k:job, i:f.i, x:sb[0] + (Math.random() - .5) * 4, y:sb[1] } : null;
   }
   return null;
@@ -245,7 +248,7 @@ function facCycle(v, g, i){
   if (firewood) g.wood -= 2; else { f.burn = (f.burn || 0) + 1; if (f.burn >= 2) { f.burn = 0; g.coal -= 1; } } // media unidad de carbón por tanda (o 2 de leña)
   g.indWater -= 1; for (const [r, n] of Object.entries(F.in || {})) g[r] -= n;
   f.lastWork = yearT; f.made = (f.made || 0) + 1;
-  const ec = ecOf(g), P = ec ? ec.P || 1 : 1, nat = hasLaw(g, 'nacionalizar_industria'), mul = (hasLaw(g, 'libre_industria') ? 1.1 : 1) * (nat ? .85 : 1);
+  const ec = ecOf(g), P = ec ? ec.P || 1 : 1, nat = hasLaw(g, 'nacionalizar_industria'), mul = (hasLaw(g, 'libre_industria') ? 1.1 : 1) * (nat ? .85 : 1) * (1 + (f.lv || 0) * .35);
   let n = Math.max(1, Math.round(F.n * mul * (firewood ? .5 : 1))), txt = F.txt.replace(/\d+/, n);
   switch (F.out) {
     case 'wood': if ((g.coal || 0) < coalReserve(g) && !hasMine(g)) { g.wood += Math.round(n / 2); g.coal = (g.coal || 0) + 2; txt = `+${Math.round(n / 2)} madera, +2 carbón vegetal`; } else g.wood += n; break;
@@ -261,7 +264,9 @@ function facCycle(v, g, i){
   }
   clampStore(g);
   // Lo que deja la fábrica: con la industria nacionalizada, todo al tesoro; si no, un sueldo para quien trabaja y algo al tesoro
-  if (ec) { if (nat) ec.treas += Math.round(3 * P); else { v.money = (v.money || 0) + Math.max(1, Math.round(wageOf(g, 1) / 4)); ec.treas += Math.round(1 * P); } }
+  if (ec) ec.treas += Math.round((nat ? 3 : 1) * P) - (hasLaw(g, 'fomento_industria') ? 1 : 0); // (el sueldo lo cobra al acabar la tanda, según su oficio: fabricas.js payWage)
+  if (typeof research === 'function') research(g, .12 + (f.lv || 0) * .05); // la industria también hace avanzar: técnicas nuevas
+  facLevelUp(g, f);
   g.trades = (g.trades || 0) + (F.out === 'jewels' || F.out === 'leather' ? 1 : 0);
   floats.push({ x:v.x, y:v.y - 16, txt, col:F.col, life:0 });
   if (Math.random() < .3) snd('hammer', v.x, v.y, .3);
@@ -304,11 +309,14 @@ function factoryTick(g, dt, people){
   }
   if (dry) g.facDry = (g.facDry || 0) + 1; else if (g.indWater > cap * .6) g.facDry = 0;
   coalShare(g);
+  crewTick(g, people, facs, at);
   // Peletería: los abrigos, para quien no tiene (los más mayores y los niños primero)
-  if ((g.coats || 0) > 0) for (const u of people.filter(u => !u.coat).sort((a, b) => Math.abs(ageOf(b) - 30) - Math.abs(ageOf(a) - 30)).slice(0, g.coats)) { u.coat = true; g.coats--; }
+  if ((g.coats || 0) > 0) for (const u of people.filter(u => !u.coat).sort((a, b) => coatNeed(b) - coatNeed(a)).slice(0, g.coats)) { u.coat = true; g.coats--; }
   // El carbón estratégico: el tesoro compra una reserva
   if (hasLaw(g, 'carbon_estrategico')) { const ec = ecOf(g); if (ec && ec.treas > 50 && (g.coal || 0) < coalReserve(g)) { g.coal = (g.coal || 0) + 2; ec.treas -= Math.round(2 * coalPrice() * (ec.P || 1)); } }
 }
+// Quién recibe antes un abrigo: los soldados (que marchan a la intemperie), los niños pequeños, los mayores y los obreros
+const coatNeed = u => (u.weapon ? 4 : 0) + (ageOf(u) < 6 ? 3 : 0) + (u.life && ageOf(u) > u.life * .75 ? 2 : 0) + (u.oficio === 'obrero' ? 1 : 0) + (u.chill || 0);
 // La extractora, cuando el pueblo pasa sed: llena los pozos de beber y los cántaros
 function pumpForPeople(g, dt){
   if (!hasPump(g) || !freshNear(g.pump, 3) || (g.pumpT = (g.pumpT || 0) - dt) > 0) return; g.pumpT = 10;
@@ -374,7 +382,7 @@ function factoryCard(g){
   const rows = facs.map(f => `<div>${esc(FACS[f.k].name)} <span class="muted">· ${f.zone === 'mina' ? 'junto a la mina' : 'zona industrial'}</span> <span style="color:${f.st === 'ok' ? '#7ab04a' : '#e8a838'}">· ${FAC_ST[f.st] || '—'}</span></div>`).join('');
   const next = nk ? (() => { const c = facCost(g, FACS[nk]), miss = facMissing(g, c); return `<div>Siguiente: ${esc(FACS[nk].name)} <span class="muted">(${Object.entries(c).map(([f, n]) => `${n} de ${{ wood:'madera', stone:'piedra', iron:'hierro', gold:'oro', coal:'carbón' }[f]}`).join(', ')})</span>${miss.length ? ` <span style="color:#e8a838">· faltan ${miss.map(([, n, d]) => `${d} de ${n}`).join(', ')}</span>` : ' <span style="color:#7ab04a">· listo</span>'}</div>`; })() : '';
   const locked = Object.values(FACS).filter(F => F.tier > facTierOf(g)).length;
-  return `<h4>Industria</h4><div>${rows || '<div class="muted">Aún no tienen fábricas</div>'}${next}
+  return wageCard(g) + `<h4>Industria</h4><div>${rows || '<div class="muted">Aún no tienen fábricas</div>'}${next}
     <div class="muted">Carbón ${Math.floor(g.coal || 0)} (reserva ${coalReserve(g)}) · agua para las fábricas ${Math.round(g.indWater || 0)}/${facWaterCap(g)} · ${indWellsOf(g).length} pozos industriales${hasPump(g) ? ' · extractora de agua' : ''}${g.coalSold ? ` · ha vendido ${g.coalSold} de carbón` : ''}${g.coalBought ? ` · ha comprado ${g.coalBought}` : ''}${locked ? ` · ${locked} fábricas por desbloquear` : ''}${g.leather ? ` · cuero ${g.leather}` : ''}</div></div>`;
 }
 // ---- Dibujo ----
@@ -409,6 +417,7 @@ function drawPipe(g, x0, y0, x1, y1){
 // Humo de las chimeneas (si la fábrica va) e iconos de estado encima de cada fábrica, al acercarse (después de los objetos)
 function drawFactoryIcons(now){
   if (!world) return;
+  drawStoreLevels();
   const [x0, y0, x1, y1] = visibleRect(), near = zoom >= 2.6;
   for (const g of villages) {
     const list = (g.facs && g.facs.length ? facsOf(g) : []).map(f => [f.i, f.st === 'ok' && yearT - (f.lastWork ?? -1e9) < DAY_LEN * .5 ? 'ok' : f.st === 'ok' ? 'gente' : f.st]);
@@ -417,7 +426,7 @@ function drawFactoryIcons(now){
       const o = world.objs[i], m = o && ART_MAP[o.key]; if (!m) continue;
       const bx = (i % W) * T + 2, by = ((i / W) | 0) * T + 3, top = by - m[3] + 1; if (bx + 30 < x0 || bx - 30 > x1 || by + 6 < y0 || top - 14 > y1) continue;
       if (st === 'ok' && o.key.startsWith('fac:') && Math.random() < .12) smoke.push({ x:bx - m[4] + m[2] * .75, y:top + 2, vx:1 + Math.random() * 2, vy:-5 - Math.random() * 3, r:1.2 + Math.random() * 1.3, life:0, max:2 + Math.random() * 1.5 });
-      if (near && !o.burnt) drawFacIcon(bx, top - 6, st, now);
+      if (near && !o.burnt) { drawFacIcon(bx, top - 6, st, now); const f = o.key.startsWith('fac:') && facsOf(g).find(q => q.i === i); if (f && f.lv) { vctx.fillStyle = '#f8d850'; for (let k = 0; k < f.lv; k++) vctx.fillRect(bx - f.lv + k * 2 + 1, top - 13, 1, 1); } } // estrellitas: nivel de la fábrica
     }
   }
 }
@@ -436,4 +445,105 @@ function drawFacIcon(x, y, st, now){
   else if (st === 'gente') { vctx.fillRect(x - .5, y - 2.5, 2, 2); vctx.fillRect(x - 1.5, y, 4, 2); }
   else if (st === 'sed') { vctx.fillStyle = '#bfe0ff'; vctx.fillRect(x - 2, y - 1, 1, 2); vctx.fillRect(x + 1, y - 1, 1, 2); vctx.fillStyle = '#fff'; vctx.fillRect(x - 2, y - 2.5, 4, 1); } // pausa: primero beber
   else { vctx.fillRect(x - .5, y - 2.5, 1, 3); vctx.fillRect(x - .5, y + 1.5, 1, 1); } // material: «!»
+}
+// ---- Obreros: cada fábrica tiene su cuadrilla fija, que va a trabajar en su turno ----
+const crewFac = (g, v) => v.oficio === 'obrero' ? facsOf(g).find(f => f.i === v.facI && (f.crew || []).includes(pidOf(v))) || null : null;
+// ¿Le toca ir a su fábrica? En su turno, si la fábrica puede trabajar y el pueblo no pasa sed ni hambre
+const crewShift = (v, g) => { if (!inShift(g) || survivalFirst(g) || ageOf(v) < ADULT_H) return false; const f = crewFac(g, v); return !!f && !['carbon', 'agua', 'material', 'sed'].includes(f.st); };
+// Dónde se pone cada obrero: delante de la fábrica, repartidos
+function facSpot(f){ const sb = standBy(f.i); if (!sb) return null; const k = Math.floor(Math.random() * 5) - 2; return [sb[0] + k * 3, sb[1] + (Math.random() < .5 ? 0 : 2)]; }
+// Qué oficio se pasa mejor a cada fábrica (si no, el que más abunda)
+const CREW_FROM = { aserradero:'leñador', cantera:'cantero', carbon:'cantero', hierro:'cantero', oro:'cantero', joyeria:'mercader', textil:'pastor', alfareria:'agricultor', curtiduria:'cazador', peleteria:'cazador' };
+function crewTick(g, people, facs, at){
+  const byPid = peopleByPid(g), fo = hasLaw(g, 'fomento_industria');
+  const adults = people.filter(u => ageOf(u) >= ADULT_H && !u.away && !u.slave && u !== g.leader && u.oficio !== 'soldado');
+  let total = 0;
+  for (const f of facs) { f.crew = (f.crew || []).filter(pid => { const u = byPid.get(pid); return u && !u.dead && u.vid === g.id && u.oficio === 'obrero' && u.facI === f.i; }); total += f.crew.length; }
+  // Los obreros de una fábrica que ya no está vuelven a su antiguo oficio
+  for (const u of adults) if (u.oficio === 'obrero' && !facs.some(f => f.i === u.facI && f.crew.includes(pidOf(u)))) { u.oficio = u.oldOficio || pickOficio(g); u.facI = null; }
+  (g.staffKeep ||= {}).obrero = yearT + DAY_LEN; // que el reparto de oficios no se los lleve
+  // Contratar hasta llenar cada cuadrilla, sin dejar el pueblo sin gente en el campo (no más de un 30 %, un 40 % con fomento)
+  const max = Math.ceil(adults.length * (fo ? .4 : .3)), cnt = o => adults.filter(u => u.oficio === o).length;
+  if (g.food >= popOf(g) * 2.5) for (const f of facs) while (f.crew.length < facSlots(g) && total < max) {
+    const pref = CREW_FROM[f.k], free = adults.filter(u => u.oficio !== 'obrero' && !['maestro', 'curandero', 'sabio', 'bombero', 'sacerdote'].includes(u.oficio));
+    const u = free.sort((a, b) => (b.oficio === pref) - (a.oficio === pref) || cnt(b.oficio) - cnt(a.oficio))[0]; if (!u) break;
+    u.oldOficio = u.oficio; u.oficio = 'obrero'; u.facI = f.i; f.crew.push(pidOf(u)); total++;
+    if (!f.hired) { f.hired = true; notify(`${u.name} deja de ser ${ofW(u.oldOficio, u)} y entra de ${ofW('obrero', u)} en ${FACS[f.k].name.toLowerCase()} de ${g.name}`, { x:(f.i % W) * T, y:((f.i / W) | 0) * T }); }
+  }
+  // La sirena de las fábricas al empezar el turno
+  const sh = inShift(g); if (sh && g.shiftWas === false && facs.length) { const f = facs[0]; snd('horn', (f.i % W) * T, ((f.i / W) | 0) * T, .5); for (const q of facs) floats.push({ x:(q.i % W) * T + 2, y:((q.i / W) | 0) * T - 26, txt:'¡uuuuh!', col:'#e8e0cc', life:0 }); }
+  g.shiftWas = sh;
+}
+// Mejoras: con el uso, la fábrica se moderniza (máquinas nuevas: rinde más). Con fomento, a mitad de precio
+function facLevelUp(g, f){
+  const lv = f.lv || 0; if (lv >= 2 || (f.made || 0) < 30 * (lv + 1)) return;
+  const m = hasLaw(g, 'fomento_industria') ? .5 : 1, iron = Math.ceil(4 * (lv + 1) * m), stone = Math.ceil(10 * (lv + 1) * m);
+  if ((g.iron || 0) < iron || (g.stone || 0) < stone) { if (!f.upAsk) { f.upAsk = true; notify(`${FACS[f.k].name} de ${g.name} podría modernizarse con ${iron} de hierro y ${stone} de piedra`, { x:(f.i % W) * T, y:((f.i / W) | 0) * T }); } return; }
+  g.iron -= iron; g.stone -= stone; f.lv = lv + 1; f.upAsk = false;
+  notify(`En ${g.name} modernizan ${FACS[f.k].name.toLowerCase()} (nivel ${f.lv + 1}): máquinas nuevas, rinde más`, { x:(f.i % W) * T, y:((f.i / W) | 0) * T });
+  addEffect((f.i % W) * T + 2, ((f.i / W) | 0) * T + 3, 'poof'); snd('bell', (f.i % W) * T, ((f.i / W) | 0) * T, .5);
+}
+// ---- Sueldos según el oficio (y, los obreros, según la fábrica: la mina y las fundiciones pagan más, por duras) ----
+const OFICIO_PAY = { sabio:1.6, curandero:1.5, ingeniero:1.5, maestro:1.3, 'cartógrafo':1.25, mercader:1.3, comerciante:1.2, constructor:1.15, soldado:1.1, bombero:1.1, cantero:1.1,
+  sacerdote:1, cazador:1, 'leñador':.95, agricultor:.9, pescador:.9, mensajero:.9, pastor:.85, recolector:.8 };
+function payMul(v, g){
+  if (v.oficio !== 'obrero') return OFICIO_PAY[v.oficio] ?? 1;
+  const f = facsOf(g).find(q => q.i === v.facI), base = (f ? FACS[f.k].pay * (1 + (f.lv || 0) * .1) : 1.1) * 1.5; // (cobran por tanda; la jornada entera en la fábrica)
+  return hasLaw(g, 'nacionalizar_industria') ? 1.8 : base * (hasLaw(g, 'fomento_industria') ? 1.1 : 1); // nacionalizada: el mismo sueldo para todos
+}
+{ const base = payWage; payWage = function(v, g, n){ base(v, g, g ? n * payMul(v, g) : n); }; }
+function wageCard(g){
+  if (!g.coin) return '';
+  const adults = villagers.filter(u => !u.dead && u.vid === g.id && ageOf(u) >= ADULT_H);
+  const avg = o => { const ws = adults.filter(u => u.oficio === o && u.wage != null).map(wageDay); return ws.length ? Math.round(ws.reduce((a, b) => a + b, 0) / ws.length) : null; };
+  const rows = [...new Set(adults.map(u => u.oficio).filter(Boolean))].map(o => [o, avg(o)]).filter(r => r[1] != null).sort((a, b) => b[1] - a[1]);
+  return rows.length ? `<h4>Sueldos por oficio</h4><div class="muted">${rows.map(([o, w]) => `${esc(o)} ${w}`).join(' · ')} (${esc(g.coin)} al día, de media)</div>` : '';
+}
+// ---- Almacenes más grandes: con la industria entra mucho más, así que los amplían (hasta el nivel 4) ----
+const storeCost = g => { const lv = g.storeLv || 0; return { wood:15 * (lv + 1), stone:20 * (lv + 1), iron:3 * (lv + 1) }; };
+function storeJobs(v, g, add){
+  const lv = g.storeLv || 0; if (!industrial(g) || lv >= 3 || busyWith(g, 'mejorar_almacen') || !storesOf(g).length) return;
+  const cap = capOf(g); if (Math.max(g.food, g.wood, g.stone) < cap * .8) return;
+  if (!facMissing(g, storeCost(g)).length) add('mejorar_almacen', 6);
+}
+{ const base = factoryJobs; factoryJobs = function(v, g, add){ base(v, g, add); storeJobs(v, g, add); }; }
+{ const base = factoryTarget; factoryTarget = function(v, g, job){
+  if (job !== 'mejorar_almacen') return base(v, g, job);
+  const s = storesOf(g)[0], sb = s != null && standBy(s); return sb ? { k:job, i:s, x:sb[0], y:sb[1] } : null;
+}; }
+{ const base = factoryArrive; factoryArrive = function(v, g, t){
+  if (t.k !== 'mejorar_almacen') return base(v, g, t);
+  v.actT = 14; v.onDone = () => {
+    const c = storeCost(g); if ((g.storeLv || 0) >= 3 || facMissing(g, c).length) return;
+    for (const f in c) g[f] -= c[f]; g.storeLv = (g.storeLv || 0) + 1; addEffect(v.x, v.y - 6, 'poof'); snd('bell', v.x, v.y, .5);
+    notify(`En ${g.name} amplían los almacenes (nivel ${g.storeLv + 1}): ahora caben ${capOf(g)} de cada cosa`, { x:v.x, y:v.y });
+  };
+  return true;
+}; }
+// Los almacenes ampliados: cajas apiladas al lado y un letrero con el nivel
+function drawStoreLevels(){
+  const [x0, y0, x1, y1] = visibleRect(), m = ART_MAP['store:almacen']; if (!m) return;
+  for (const g of villages) { const lv = g.storeLv || 0; if (!lv) continue;
+    for (const i of storesOf(g)) {
+      const bx = (i % W) * T + 2, by = ((i / W) | 0) * T + 3, rx = bx - m[4] + m[2] - 2; if (rx < x0 - 20 || rx > x1 + 20 || by < y0 - 10 || by - 30 > y1) continue;
+      for (let k = 0; k < lv + 1; k++) { const cx = rx + (k % 2) * 4, cy = by - 3 - Math.floor(k / 2) * 3; vctx.fillStyle = '#3a2614'; vctx.fillRect(cx - 1, cy - 1, 5, 4); vctx.fillStyle = '#b07a44'; vctx.fillRect(cx, cy, 3, 2); vctx.fillStyle = '#8a5a30'; vctx.fillRect(cx + 1, cy, 1, 2); }
+      if (zoom >= 2.6) { const sx = bx - m[4] + 3, sy = by - m[3] + 4; vctx.fillStyle = '#2a2018'; vctx.fillRect(sx - 1, sy - 1, 9, 5); vctx.fillStyle = '#e8d8a8'; vctx.fillRect(sx, sy, 7, 3); vctx.fillStyle = '#5a3a20'; for (let k = 0; k <= lv; k++) vctx.fillRect(sx + 1 + k * 2, sy + 1, 1, 1); }
+    }
+  }
+}
+// Al obrero que se hiela trabajando, la fábrica (con su caldera) le sirve de refugio si está más cerca que su casa
+{ const base = shelterTarget; shelterTarget = function(v, g, cold){
+  const t = base(v, g, cold), f = g && crewFac(g, v); if (!f) return t;
+  const fx = (f.i % W) * T, fy = ((f.i / W) | 0) * T, df = Math.hypot(fx - v.x, fy - v.y);
+  if (t && Math.hypot(t.x - v.x, t.y - v.y) <= df) return t;
+  const sb = standBy(f.i); return sb ? { k:'refugio', x:sb[0] + (Math.random() - .5) * 4, y:sb[1] } : t;
+}; }
+// ---- Ropa: abrigo de piel con el cuello blanco cuando hace frío y gorra de obrero ----
+function drawClothes(v, x, y, s, lift, drop){
+  const top = y - s.height + 1 - lift - drop;
+  if (v.coat) {
+    if (!(v.coldT > yearT)) { v.coldT = yearT + 2; v.cold = tempAt(Math.floor(v.y / T) * W + Math.floor(v.x / T)) < 10; }
+    if (v.cold) { const ty = y - 8 - lift - drop; vctx.fillStyle = '#5a3a22'; vctx.fillRect(x - 2, ty, 5, 6); vctx.fillStyle = '#8a5c36'; vctx.fillRect(x - 1, ty + 1, 3, 4); vctx.fillStyle = '#f0e6d2'; vctx.fillRect(x - 2, ty, 5, 1); vctx.fillRect(x, ty + 1, 1, 4); }
+  }
+  if (v.oficio === 'obrero' && v.born !== undefined && (yearT - v.born) / YEAR >= ADULT_H) { vctx.fillStyle = '#2e2e34'; vctx.fillRect(x - 2, top, 4, 1); vctx.fillRect(x + (v.dir < 0 ? -3 : 2), top + 1, 2, 1); } // gorra con visera
 }

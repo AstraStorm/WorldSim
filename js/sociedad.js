@@ -139,7 +139,7 @@ let wear = null, wornSet = new Set(), desireSet = new Set();
 const storesOf = g => (g.stores ||= []).filter(i => world.objs[i] && world.objs[i].key === 'store:almacen');
 const buildingsOf = g => [...g.houses, ...(g.wells || []).map(w => w.i), ...(g.mill != null ? [g.mill] : []), ...(g.quarry != null ? [g.quarry] : []), ...(g.hall != null ? [g.hall] : []), ...(g.stores || []), ...(g.towers || []), ...[g.altar, g.temple, g.monument, g.market, g.bank, g.wonder, g.forge, g.hospital, g.barracks, g.lonja, g.theater, g.coliseum, g.tavern, g.cathedral, g.school, g.court, g.prison, g.press, g.unionHall, g.parliament, g.academy, g.mine, g.university, g.councilHall, g.spyHouse, g.granary, g.smokehouse, g.woodshed, g.postHouse, g.pump].filter(b => b != null), ...(g.facs || []).map(f => f.i)];
 // Capacidad del almacén: lo que cabe junto a la hoguera, más lo de cada almacén
-const capOf = g => Math.max(20, 80 * storesOf(g).length); // sin almacén, solo lo poco que cabe junto a la hoguera
+const capOf = g => Math.max(20, Math.round(80 * storesOf(g).length * (1 + .5 * (g.storeLv || 0)))); // almacenes ampliados (fabricas.js): +50 % cada nivel // sin almacén, solo lo poco que cabe junto a la hoguera
 let plazaSet = new Set(), holySet = new Map();
 const hallZone = (g, x, y) => g.hall == null && x >= g.fx - 6 && x <= g.fx + 6 && y >= g.fy - 11 && y <= g.fy - 2;
 const hallIn = (g, x0, y0, x1, y1) => g.hall == null && !(x1 < g.fx - 6 || x0 > g.fx + 6 || y1 < g.fy - 11 || y0 > g.fy - 2);
@@ -2840,7 +2840,7 @@ function updateVillagers(dt){
     // El abrigo (hoguera, casa) solo calienta cuando hace frío, hasta unos 18 °C; con calor, la casa da algo de sombra
     // Lejos de cualquier refugio y helándose: se paran y encienden una fogata donde están (si no llueve)
     if (v.fogata && (yearT > v.fogata.t || Math.hypot(v.fogata.x - v.x, v.fogata.y - v.y) > 10)) v.fogata = null;
-    if (g && v.chill > .55 && !v.fogata && !v.boat && !inWater(v.x, v.y) && !raining(ri) && warmthAt(v, g) === 0 && Math.hypot(g.fx - v.x / T, g.fy - v.y / T) > 14) {
+    if (g && v.chill > .55 && !v.fogata && !v.boat && !inWater(v.x, v.y) && (!raining(ri) || tHere < -4) && warmthAt(v, g) === 0 && Math.hypot(g.fx - v.x / T, g.fy - v.y / T) > 14) {
       v.fogata = { x:v.x + v.dir * 4, y:v.y + 1, t:yearT + 14 }; releaseTask(v); v.task = null; v.actT = 12; v.onDone = null;
       floats.push({ x:v.x, y:v.y - 12, txt:'¡qué frío! una fogata', col:'#ffb060', life:0 });
     }

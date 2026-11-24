@@ -272,7 +272,8 @@ const busyWith = (g, job) => villagers.filter(o => !o.dead && o.vid === g.id && 
 function chooseJob(v, g){
   if (retired(v, g)) return Math.random() < .6 ? 'ocio' : 'pasear'; // jubilados (cultura.js)
   if (v.chill > (ageOf(v) < ADULT_H ? .15 : .3) && !warmthAt(v, g)) return 'refugio'; // tiene frío: a calentarse (los niños, antes)
-  if (wantsShelter(v, g)) return 'refugio';
+  if (wantsShelter(v, g) && !(v.oficio === 'obrero' && inShift(g))) return 'refugio'; // (los obreros trabajan bajo techo: van aunque llueva)
+  if (v.oficio === 'obrero' && crewShift(v, g)) return 'fabricar'; // los obreros, en su turno, a su fábrica (fabricas.js)
   if (guildStrike(v, g) && inShift(g)) return Math.random() < .5 ? 'ocio' : 'pasear'; // huelga del gremio (civilizacion.js) // llueve: a cubierto (lluvia.js)
   const pop = popOf(g), houses = housesOf(g).length, farms = [...farmMap.values()].filter(f => f.vid === g.id);
   const si = seasonInfo().i, J = [];
@@ -413,7 +414,7 @@ function setupTask(v, g, job){
     case 'tribunal': case 'carcel': case 'imprenta': case 'sindicato': case 'parlamento': case 'academia': case 'universidad': case 'consejo': case 'espias': case 'casino': case 'granero': case 'ahumadero': case 'lenera': case 'postas': return institutionTarget(v, g, job);
     case 'investigar': return scienceTarget(v, g, job);
     case 'mina': case 'extraer': return mineTarget(v, g, job);
-    case 'fabrica': case 'fabricar': case 'pozo_fab': case 'extractora': return factoryTarget(v, g, job);
+    case 'fabrica': case 'fabricar': case 'pozo_fab': case 'extractora': case 'mejorar_almacen': return factoryTarget(v, g, job);
     case 'refugio': return shelterTarget(v, g, v.chill > .3);
     case 'conservar': return seasonTarget(v, g, job);
     case 'chabola': return shackTarget(v, g);
@@ -729,7 +730,7 @@ function runTask(v, g, dt){
     case 'tribunal': case 'carcel': case 'imprenta': case 'sindicato': case 'parlamento': case 'academia': case 'universidad': case 'consejo': case 'espias': case 'casino': case 'granero': case 'ahumadero': case 'lenera': case 'postas': institutionArrive(v, g, t); break;
     case 'investigar': scienceArrive(v, g, t); break;
     case 'mina': case 'extraer': mineArrive(v, g, t); break;
-    case 'fabrica': case 'fabricar': case 'pozo_fab': case 'extractora': factoryArrive(v, g, t); break;
+    case 'fabrica': case 'fabricar': case 'pozo_fab': case 'extractora': case 'mejorar_almacen': factoryArrive(v, g, t); break;
     case 'refugio': shelterArrive(v, g, t); break;
     case 'conservar': seasonArrive(v, g, t); break;
     case 'chabola': shackArrive(v, g, t); break;

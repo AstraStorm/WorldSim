@@ -411,6 +411,7 @@ function drawVillagers(){
       if ((v.hp ?? 1) < .45 && Math.random() < .08) chips.push({ x:x + (Math.random() - .5) * 2, y:y - 5, vx:(Math.random() - .5) * 3, vy:2, life:0, max:.5, col:'#a81010' }); // herido: va sangrando
       if (v.stunT > 0) { const a0 = now / 120; vctx.fillStyle = '#ffe060'; for (let k = 0; k < 3; k++) vctx.fillRect(Math.round(x + Math.cos(a0 + k * 2.1) * 3), Math.round(y - s.height - 2 - lift - drop + Math.sin(a0 + k * 2.1)), 1, 1); } // aturdido: estrellitas
       if (v.sick) { vctx.fillStyle = 'rgba(130,200,90,.65)'; vctx.fillRect(x - 1, y - s.height + 3 - lift - drop, 3, 2); if (Math.random() < .004) { floats.push({ x, y:y - 14, txt:'*cof*', col:'#b8d890', life:0 }); snd('cough', x, y); } } // enfermo: la cara verdosa
+      drawClothes(v, x, y, s, lift, drop); // abrigo de piel con frío y gorra de obrero (fabricas.js)
       // De qué nación es: cinturón de su color (los adultos)
       if (v.born !== undefined && (yearT - v.born) / YEAR >= ADULT_H && zoom >= 3) { vctx.fillStyle = natCol(v); vctx.fillRect(x - 1, y - 4 - lift - drop, 3, 1); }
       // Arma en la mano: la lanza en vertical (adelantada al clavarla) o el arco

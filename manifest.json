@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611242230",
- "fecha": "2026-11-24 22:30",
+ "version": "202611250007",
+ "fecha": "2026-11-25 00:07",
  "novedades": [
   {
+   "fecha": "2026-11-25",
+   "texto": "Obreros, sueldos por oficio, fomento de la industria y almacenes"
+  },
+  {
    "fecha": "2026-11-24",
-   "texto": "Fábricas de la revolución industrial"
+   "texto": "Fábricas de la revolución industrial (fabricas.js)"
   },
   {
    "fecha": "2026-11-24",
@@ -46,19 +50,15 @@
   {
    "fecha": "2026-11-24",
    "texto": "Cultivos, devoción al jugador, pirotecnia, estatuas ordenadas y piratas sin atascos"
-  },
-  {
-   "fecha": "2026-11-24",
-   "texto": "Murallas: una puerta por lado (donde pasa el camino principal) en vez de una en cada camino, y dibujo nuevo: muros altos con almenas y adarve, torres en las esquinas y puerta con dos torreones y bandera; las partidas viejas convierten las puertas sobrantes en muro"
   }
  ],
  "archivos": {
-  "index.html": "eb960f0bdd898e8da1a4e0746539ade4d31f0d8b",
+  "index.html": "5e548a9db45df74bd39627ea2df317d05c430b53",
   "css/estilo.css": "5102a249d843e933be3be74f960883ba03efd264",
-  "js/aldeanos.js": "778c8c0a7f9579f13ba3cd1ed4c7b8ed792cf688",
+  "js/aldeanos.js": "d9920d364407645d80f1cdfbdcc1baf7fd203032",
   "js/ambiente.js": "6c96bf777f6cdfc55b648f495836521ee28aeb8f",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
-  "js/arte.js": "b6def91f3c06ac11286f307a82ce8f3fa9871519",
+  "js/arte.js": "d9540a39003964bc390ff1dc7e4e0258674dafce",
   "js/arte_mapa.js": "747a0edc6a2af6f7092adf2d17bccfd9afc839cc",
   "js/bandidos.js": "a41a64350dfb0cadc79876bf166b9e56ee1a9962",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
@@ -85,12 +85,12 @@
   "js/espionaje.js": "6291557af0a9488f321131fbfb7cdccf50cdbbf1",
   "js/estaciones.js": "e9e2f1194fdb60ca73c007b1cd7e9ae392ce2ad7",
   "js/estrategia.js": "d0bfc9b82bf35def9101723898375cf61f5b9fb8",
-  "js/fabricas.js": "f0f3d63092294191ea7014eeaa19d2df9aa9b855",
+  "js/fabricas.js": "6d1de01080cec0a24c534241fc460f9b5055189f",
   "js/fama.js": "1b98918f8d312e237c6f399a43c0a3e278a4604b",
   "js/fauna.js": "ab4d9de4dea1f9f00ee90d76625658f2edd2695c",
   "js/globos.js": "a8829293851b57da087576ad6fb947ff8eca7c86",
   "js/guerra.js": "e900c85fb00f0b77aa2b5d69d50aa0a709cbc3f9",
-  "js/humanos.js": "acce2acc9569082f07ca82d9b2fe9f92421ce5d0",
+  "js/humanos.js": "2fffcdb8a5ba7907eaca32a74f34b76b76300aff",
   "js/idiomas.js": "a64e7f699431735d8b20a2eb82d317a02f4bd265",
   "js/impuestos.js": "9820acf00db62b3039fb43433ddcc3f522453daa",
   "js/industria.js": "beb92aac57d833266a64013f2d92b3ee256a6c03",
@@ -119,7 +119,7 @@
   "js/riqueza.js": "4437665e375d993ccfc2bec62225436b8fd03dce",
   "js/rutas.js": "6e12cafc1992e09fc3c2b5b13ca7d7db6416c364",
   "js/sindicatos.js": "f7cb8bf83ff74322a6fc45cc6ac90550425c6d15",
-  "js/sociedad.js": "4f37698178ab859ecdce031f31b0e22d8fba299b",
+  "js/sociedad.js": "67445488dfee2ccd58d9d3333234ac779bee634b",
   "js/sonido.js": "25be9d9bda62336aba463c82e31668d0e9b2bc54",
   "js/titulares.js": "0506409e843da939370bb404b894a52cffa68620",
   "js/trabajo.js": "50d504968cee2cd4f5170a8e34cd81f649d6bf04",
