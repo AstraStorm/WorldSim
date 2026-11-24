@@ -54,11 +54,41 @@ function devoAdopt(g, at, god){
   notify(`Los de ${g.name} cuentan ya a ${god} entre sus dioses, junto a ${g.faith.god}`, at);
 }
 // ---- Pirotecnia ----
+// Cada cohete sube dejando estela de chispas y estalla en una carcasa de un tipo: peonía (bola de color), sauce (cae
+// en hilos dorados que dejan rastro), anillo, palmera (pocas ramas gruesas que se curvan), crisantemo de dos colores,
+// carcasa que se divide en cohetillos que vuelven a estallar, crepitante (chispazos blancos) o corazón. Cada estallido
+// da un destello que ilumina el suelo y deja humo; al final del espectáculo, una traca con muchos a la vez
 const canFireworks = g => !!(g && (g.know || {}).pirotecnia);
-let fireworks = [], fwQueue = [], fwClock = 0;
+let fireworks = [], fwQueue = [], fwFlash = [], fwClock = 0;
+const FW_KINDS = ['peonia', 'peonia', 'sauce', 'anillo', 'palmera', 'crisantemo', 'divide', 'crepitante', 'corazon'];
+const FW_COLS = ['#ff4040', '#ffd040', '#40c0ff', '#ff60e0', '#60ff80', '#ffffff', '#ff9a30', '#b080ff'];
 function fireworksShow(g, secs, why){
   if (!canFireworks(g) || !popOf(g)) return;
-  fwQueue.push({ g:g.id, until:yearT + secs, why, started:false });
+  fwQueue.push({ g:g.id, until:yearT + secs, why, started:false, secs });
+}
+function fwLaunch(g, cx, cy, big){
+  const [r, gg, b] = villageColor(g), cols = [`rgb(${Math.min(255, r + 60)},${Math.min(255, gg + 60)},${Math.min(255, b + 60)})`, ...FW_COLS];
+  const kind = FW_KINDS[Math.floor(Math.random() * FW_KINDS.length)];
+  fireworks.push({ x:cx + (Math.random() - .5) * 30, y:cy, vx:(Math.random() - .5) * 14, vy:-(95 + Math.random() * 50) * (big ? 1.2 : 1), fuse:1 + Math.random() * .7, t:0, rocket:true, kind,
+    col:cols[Math.floor(Math.random() * cols.length)], col2:cols[Math.floor(Math.random() * cols.length)], size:(big ? 1.4 : 1) * (.8 + Math.random() * .5) });
+  snd('arrow', cx, cy);
+}
+// El estallido de una carcasa
+function fwBurst(f){
+  const S = f.size, add = (vx, vy, o = {}) => fireworks.push({ x:f.x, y:f.y, vx, vy, t:0, life:1.3 + Math.random() * .6, col:f.col, drag:1.2, grav:16, ...o });
+  fwFlash.push({ x:f.x, y:f.y, t:0, col:f.col, r:32 * S }); snd('boom', f.x, f.y, .18 + S * .08);
+  for (let k = 0; k < 6; k++) smoke.push({ x:f.x + (Math.random() - .5) * 14 * S, y:f.y + (Math.random() - .5) * 10 * S, vx:(Math.random() - .5) * 2, vy:-1, r:2 + Math.random() * 2, life:0, max:2.5 + Math.random() * 2 });
+  const sp = 50 * S;
+  switch (f.kind) {
+    case 'sauce': for (let k = 0; k < 46; k++) { const a = Math.random() * Math.PI * 2, s = sp * (.4 + Math.random() * .6); add(Math.cos(a) * s, Math.sin(a) * s * .8 - 6, { col:'#ffcf60', life:2.6 + Math.random(), drag:2.2, grav:9, trail:true }); } break;
+    case 'anillo': { const tilt = Math.random() * Math.PI; for (let k = 0; k < 40; k++) { const a = k / 40 * Math.PI * 2, s = sp; add(Math.cos(a) * s * Math.cos(tilt) - Math.sin(a) * s * .35 * Math.sin(tilt), Math.sin(a) * s * .35 * Math.cos(tilt) + Math.cos(a) * s * Math.sin(tilt) * .6); } add(0, 0, { col:'#ffffff', life:.4 }); break; }
+    case 'palmera': for (let k = 0; k < 9; k++) { const a = k / 9 * Math.PI * 2 + Math.random() * .3, s = sp * 1.1; add(Math.cos(a) * s, Math.sin(a) * s - 10, { col:'#ffb040', life:2, drag:1.4, grav:22, trail:true, thick:true }); } break;
+    case 'crisantemo': for (let k = 0; k < 56; k++) { const a = Math.random() * Math.PI * 2, s = sp * (.85 + Math.random() * .3); add(Math.cos(a) * s, Math.sin(a) * s, { col:k % 2 ? f.col : f.col2, trail:true }); } break;
+    case 'divide': for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2, s = sp * .7; fireworks.push({ x:f.x, y:f.y, vx:Math.cos(a) * s, vy:Math.sin(a) * s - 8, t:0, rocket:true, fuse:.45 + Math.random() * .2, kind:'peonia', col:f.col2, col2:f.col, size:S * .5, mini:true }); } break;
+    case 'crepitante': for (let k = 0; k < 38; k++) { const a = Math.random() * Math.PI * 2, s = sp * (.5 + Math.random() * .5); add(Math.cos(a) * s, Math.sin(a) * s, { col:'#fff6d0', life:1 + Math.random() * .8, crackle:true }); } break;
+    case 'corazon': for (let k = 0; k < 44; k++) { const a = k / 44 * Math.PI * 2, hx = 16 * Math.pow(Math.sin(a), 3), hy = -(13 * Math.cos(a) - 5 * Math.cos(2 * a) - 2 * Math.cos(3 * a) - Math.cos(4 * a)); add(hx * S * 1.9, hy * S * 1.9, { col:'#ff5a8a', drag:2.2, grav:5 }); } break;
+    default: for (let k = 0; k < 50; k++) { const a = Math.random() * Math.PI * 2, s = sp * Math.sqrt(Math.random()); add(Math.cos(a) * s, Math.sin(a) * s); } // peonía
+  }
 }
 function updateFireworks(dt){
   if (!world) return;
@@ -73,30 +103,44 @@ function updateFireworks(dt){
   for (const q of fwQueue) {
     const g = villageById(q.g); if (!g || !popOf(g) || yearT > q.until) { q.done = true; continue; }
     if (!q.started) { if (!isNight() && q.why === 'por el Año Nuevo') { q.until += dt; continue; } q.started = true; notify(`¡Fuegos artificiales en ${g.name} ${q.why}!`, { x:g.fx * T, y:g.fy * T }); } // los de Año Nuevo esperan a la noche
-    if (Math.random() < dt * 2.2) {
-      const cx = (g.plaza ? (g.plaza.x0 + g.plaza.x1) / 2 : g.fx) * T, cy = (g.plaza ? (g.plaza.y0 + g.plaza.y1) / 2 : g.fy) * T;
-      const [r, gg, b] = villageColor(g), cols = [`rgb(${r},${gg},${b})`, '#ffe060', '#ff6040', '#60d0ff', '#ff80e0', '#ffffff'];
-      fireworks.push({ x:cx + (Math.random() - .5) * 16, y:cy, vx:(Math.random() - .5) * 10, vy:-55 - Math.random() * 25, fuse:.8 + Math.random() * .5, t:0, col:cols[Math.floor(Math.random() * cols.length)], rocket:true });
-      snd('arrow', cx, cy);
-    }
+    const cx = (g.plaza ? (g.plaza.x0 + g.plaza.x1) / 2 : g.fx) * T, cy = (g.plaza ? (g.plaza.y0 + g.plaza.y1) / 2 : g.fy) * T;
+    const finale = q.until - yearT < 3; // la traca final
+    if (Math.random() < dt * (finale ? 12 : 3.5)) { fwLaunch(g, cx, cy, finale || Math.random() < .25); if (Math.random() < .3) fwLaunch(g, cx, cy, false); } // a veces, dos a la vez
   }
   if (fwQueue.length) fwQueue = fwQueue.filter(q => !q.done);
   for (const f of fireworks) {
     f.t += dt; f.x += f.vx * dt; f.y += f.vy * dt;
-    if (f.rocket) { f.vy += 20 * dt; if (f.t >= f.fuse) { f.dead = true; snd('boom', f.x, f.y, .15); const n = 18 + Math.floor(Math.random() * 10); for (let k = 0; k < n; k++) { const a = k / n * Math.PI * 2, s = 18 + Math.random() * 10; fireworks.push({ x:f.x, y:f.y, vx:Math.cos(a) * s, vy:Math.sin(a) * s, t:0, life:1 + Math.random() * .5, col:f.col }); } } }
-    else { f.vy += 14 * dt; f.vx *= 1 - dt; if (f.t > f.life) f.dead = true; }
+    if (f.rocket) {
+      f.vy += 22 * dt;
+      if (Math.random() < .8) fireworks.push({ x:f.x + (Math.random() - .5), y:f.y + 2, vx:(Math.random() - .5) * 4, vy:6 + Math.random() * 6, t:0, life:.35 + Math.random() * .25, col:'#ffc880', grav:30, drag:0 }); // la estela del cohete
+      if (f.t >= f.fuse) { f.dead = true; fwBurst(f); }
+      continue;
+    }
+    f.vx *= 1 - (f.drag ?? 1) * dt; f.vy *= 1 - (f.drag ?? 1) * dt; f.vy += (f.grav ?? 14) * dt;
+    if (f.trail && Math.random() < .5) fireworks.push({ x:f.x, y:f.y, vx:0, vy:3, t:0, life:.5 + Math.random() * .4, col:f.col === '#ffcf60' ? '#c88a30' : f.col, grav:6, drag:3, ember:true }); // rastro
+    if (f.crackle && f.t > f.life * .6 && !f.popped && Math.random() < dt * 4) { f.popped = true; fwFlash.push({ x:f.x, y:f.y, t:0, col:'#ffffff', r:5 }); } // chispazo
+    if (f.t > f.life) f.dead = true;
   }
+  for (const l of fwFlash) l.t += dt;
   if (fireworks.length) fireworks = fireworks.filter(f => !f.dead);
+  if (fwFlash.length) fwFlash = fwFlash.filter(l => l.t < .5);
 }
 function drawFireworks(){
-  if (!fireworks.length) return;
+  if (!fireworks.length && !fwFlash.length) return;
   const [x0, y0, x1, y1] = visibleRect();
   vctx.save(); vctx.globalCompositeOperation = 'lighter';
+  for (const l of fwFlash) { // el destello: un halo que se abre y se apaga, y su reflejo en el suelo
+    const k = 1 - l.t / .5, g = vctx.createRadialGradient(l.x, l.y, 0, l.x, l.y, l.r * (1 + l.t * 2));
+    g.addColorStop(0, l.col); g.addColorStop(1, 'rgba(0,0,0,0)'); vctx.globalAlpha = .45 * k; vctx.fillStyle = g; vctx.beginPath(); vctx.arc(l.x, l.y, l.r * (1 + l.t * 2), 0, Math.PI * 2); vctx.fill();
+    vctx.globalAlpha = .12 * k; vctx.fillStyle = l.col; vctx.beginPath(); vctx.ellipse(l.x, l.y + 40, l.r * 2.2, l.r * .7, 0, 0, Math.PI * 2); vctx.fill();
+  }
   for (const f of fireworks) {
-    if (f.x < x0 - 20 || f.x > x1 + 20 || f.y < y0 - 40 || f.y > y1 + 20) continue;
-    if (f.rocket) { vctx.fillStyle = '#ffd890'; vctx.fillRect(Math.round(f.x), Math.round(f.y), 1, 2); vctx.fillStyle = 'rgba(255,200,120,.4)'; vctx.fillRect(Math.round(f.x), Math.round(f.y) + 2, 1, 3); continue; }
-    const a = Math.max(0, 1 - f.t / f.life); vctx.globalAlpha = a; vctx.fillStyle = f.col; vctx.fillRect(Math.round(f.x), Math.round(f.y), 1, 1);
-    vctx.globalAlpha = a * .35; vctx.fillRect(Math.round(f.x - f.vx * .04), Math.round(f.y - f.vy * .04), 1, 1);
+    if (f.x < x0 - 30 || f.x > x1 + 30 || f.y < y0 - 60 || f.y > y1 + 30) continue;
+    const x = Math.round(f.x), y = Math.round(f.y);
+    if (f.rocket) { vctx.globalAlpha = 1; vctx.fillStyle = '#fff0c0'; vctx.fillRect(x, y, f.mini ? 1 : 2, f.mini ? 1 : 2); continue; }
+    const a = Math.max(0, 1 - f.t / f.life), tw = f.crackle ? (Math.random() < .5 ? 1 : .2) : 1;
+    vctx.globalAlpha = a * tw * (f.ember ? .6 : 1); vctx.fillStyle = f.col; vctx.fillRect(x, y, f.thick ? 2 : 1, f.thick ? 2 : 1);
+    if (!f.ember) { vctx.globalAlpha = a * .25; vctx.fillRect(x - 1, y - 1, 3, 3); } // el brillo alrededor de cada chispa
   }
   vctx.restore();
 }

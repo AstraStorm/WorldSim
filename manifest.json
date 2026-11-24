@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611240330",
- "fecha": "2026-11-24 03:30",
+ "version": "202611240332",
+ "fecha": "2026-11-24 03:32",
  "novedades": [
   {
    "fecha": "2026-11-24",
-   "texto": "Los pueblos de islas pobres se mudan en barcas a una tierra mejor"
+   "texto": "Fuegos artificiales mucho más espectaculares"
+  },
+  {
+   "fecha": "2026-11-24",
+   "texto": "Islas (islas.js): los pueblos que viven en una isla comparan lo que les da con las costas de enfrente; si compensa y saben hacer barcas, cruzan el mar por una ruta por agua: se muda el pueblo entero (pocos o isla muy pequeña, conservando nombre, fe, lengua, gobierno y capitalidad) o parte de las familias funda una ciudad de su nación en tierra firme"
   },
   {
    "fecha": "2026-11-24",
@@ -46,19 +50,15 @@
   {
    "fecha": "2026-11-24",
    "texto": "Hélice del dirigible más grande, con palas con borde y buje"
-  },
-  {
-   "fecha": "2026-11-24",
-   "texto": "Vía nueva a la escala del tren (balasto, traviesas, dos raíles separados y curvas redondeadas, dibujada una vez en su propio lienzo); estaciones y trenes por encima de árboles y edificios; hélice del dirigible animada; el dirigible es más pequeño aparcado y crece al ganar altura"
   }
  ],
  "archivos": {
-  "index.html": "13004fb5598700706952f58ed9d282cf84997fb8",
+  "index.html": "1a76b22455af82db1535dbe7cfb3a2fb3d807c93",
   "css/estilo.css": "5102a249d843e933be3be74f960883ba03efd264",
-  "js/aldeanos.js": "e73d76d14422e1d57c10b250ee82a3bdafc89e0c",
+  "js/aldeanos.js": "778c8c0a7f9579f13ba3cd1ed4c7b8ed792cf688",
   "js/ambiente.js": "cd3541c5cfa9a64de5395f84239009f959216922",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
-  "js/arte.js": "bc9387e48ecbeb94c748585f682f95075ccce27a",
+  "js/arte.js": "c33544677b18bc20c15f9f337eaa1f848067464c",
   "js/arte_mapa.js": "98d891de2ac832b6a1d3a74577fd56b460c01af2",
   "js/bandidos.js": "675a7588d06fb17fe09f9c9ec32caa9e300cb1d9",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
@@ -80,7 +80,7 @@
   "js/defensa.js": "50f47277965d8693a629df46db4c7cbf3a84f591",
   "js/deportes.js": "666ed74d4ace8769b21bf1f869f04151ea558e14",
   "js/desastres.js": "1961763b0e85202107f673dabf369449e8c2a600",
-  "js/devocion.js": "533ca809e0dae607f720dbf115deffbfb4a64985",
+  "js/devocion.js": "009d6f53a4a628a3d196774f404c85ad9f88b318",
   "js/edificios.js": "217476a6fd1617cf12ba3dc9e9918ebec987a85a",
   "js/espionaje.js": "6291557af0a9488f321131fbfb7cdccf50cdbbf1",
   "js/estaciones.js": "e9e2f1194fdb60ca73c007b1cd7e9ae392ce2ad7",
@@ -108,7 +108,7 @@
   "js/nucleo.js": "facf12453d7aef3849fb6094680b0d8dde5d4497",
   "js/okupas.js": "8bf7e443dddd18ca6dca6ccfbe64b9cbb772f040",
   "js/papeles.js": "4613eec891d5d45018f60dfd7bdb6cfa5d55f917",
-  "js/partidas.js": "27cab94504f194763721d9bfd40541614c4d527c",
+  "js/partidas.js": "3522370350213ec55fd82429658b73b84e303b43",
   "js/piratas.js": "415f44deaa9217e724da8ec31801ec1453e6ff9a",
   "js/potencias.js": "92f95b1429ed22221248d46e587f32f7bbcf9e54",
   "js/prensa.js": "61134ccce4b95a026605717fa5ab37600850af2a",
