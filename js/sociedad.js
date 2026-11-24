@@ -1107,6 +1107,7 @@ function hurtFx(e, fromX, fromY, walk){
   const d = Math.hypot(e.x - fromX, e.y - fromY) || 1, nx = e.x + (e.x - fromX) / d * 4.5, ny = e.y + (e.y - fromY) / d * 4.5;
   if (walk(nx, ny)) { e.x = nx; e.y = ny; } // el empujón del golpe
   slashes.push({ x:e.x - (e.x - fromX) / d * 2, y:e.y - 6, t:0, impact:true }); // el destello del impacto
+  e.stunT = .3; // aturdido un instante: no puede devolver el golpe
   for (let n = 0; n < 9; n++) chips.push({ x:e.x, y:e.y - 5, vx:(Math.random() - .5) * 22 + (e.x - fromX) / d * 10, vy:-6 - Math.random() * 10, life:0, max:.35 + Math.random() * .3, col:n % 2 ? '#c81818' : '#8a0e0e' });
 }
 // El golpe se nota: un destello blanco y después una capa roja que se apaga en un tercio de segundo
@@ -1615,7 +1616,7 @@ function diploTick(){
       const att = villageById(r.war.att), def = villageById(r.war.def);
       if (!att || !def || !popOf(att) || !popOf(def)) { r.war = null; continue; }
       fieldBattleTick(att, def, r); // batallas en campo abierto (guerra.js)
-      if (r.war.dead >= warCap(att, def) || (yearT - r.war.start > DAY_LEN * 6 && Math.random() < .02)) makePeace(a, b, r, r.war.dead >= warCap(att, def) ? 'agotados por tantas muertes' : 'cansados de luchar'); // (guerras más largas: guerra.js)
+      if (warEndCheck(a, b, att, def, r)) {} // la guerra acaba al lograr su objetivo, por rendición o por un tratado que les interese a los dos (estrategia.js)
       else if (yearT - r.war.raidT > 80) { const back = Math.random() < .25, A = back ? def : att; if (!(knowsT(A, 'noche') && !isNight() && yearT - r.war.raidT < 170)) { r.war.raidT = yearT; const D = back ? att : def, far = Math.hypot(A.fx - D.fx, A.fy - D.fy); if (!(A.port && (far > 60 || Math.random() < .45) && launchNavalRaid(A, D, r))) launchRaid(A, D, r); } } // a veces contraataca el atacado
       continue;
     }
@@ -1914,7 +1915,8 @@ function fightPerson(v, e, dt){
   }
   if (v.atkT <= 0) {
     v.atkT = (v.weapon === 'ballesta' ? 2.2 : v.weapon === 'arco' ? 1.5 : 1) * (cav ? .8 : 1); v.stab = .25;
-    let dmg = { lanza:.34, espada:.42, arco:.28, ballesta:.5 }[v.weapon] || .14, hit = v.weapon === 'ballesta' ? .8 : v.weapon === 'arco' ? .7 : .85;
+    if (v.stunT > 0) return true; // aturdido por el golpe que acaba de recibir
+    let dmg = { lanza:.34, espada:.42, arco:.28, ballesta:.5, horca:.22 }[v.weapon] || .14, hit = v.weapon === 'ballesta' ? .8 : v.weapon === 'arco' ? .7 : .85;
     dmg *= guardOf(e, isRanged(v.weapon));
     if (v.weapon && knowsT(gv, 'puntas')) dmg *= 1.25;          // punta de piedra
     if (v.ironW) dmg *= 1.3;
@@ -2798,7 +2800,7 @@ function killVillager(v, cause){
   misfortune(villageById(v.vid), cause);
   funeral(v, villageById(v.vid)); // el entierro (civilizacion.js)
   if (v.boat) { const g = villageById(v.vid); if (g) g.boatOut = false; }
-  const s = personSprite(v, 0, v.dir < 0); s.ax ??= s.width >> 1;
+  const s = corpseSprite(v); // con su armadura, su escudo y su arma (aldeanos.js)
   addCorpse(s, v.x, v.y, false, cause === 'guerra' ? 25 : 0); // los caídos en la guerra se quedan un rato en el campo de batalla
   if (follow === v) setFollow(null);
 }
@@ -2857,7 +2859,7 @@ function updateVillagers(dt){
     }
     // Si el hambre aprieta de verdad y no llega a la hoguera, tira de las provisiones de la aldea
     if (v.food < (hasLaw(g, 'reparto') ? .16 : .08)) eatFrom(v, g, .8); // con reparto, antes se tira de las provisiones
-    v.hp = Math.min(1, (v.hp ?? 1) + dt * .008 * (hasLaw(g, 'sanidad') ? 3 : 1) * (hasHosp(g) ? 2 : 1) * (v.sick ? 0 : 1)); if (v.hurtT > 0) v.hurtT -= dt; if (v.stab > 0) v.stab -= dt; // (enfermo no se repone)
+    v.hp = Math.min(1, (v.hp ?? 1) + dt * .008 * (hasLaw(g, 'sanidad') ? 3 : 1) * (hasHosp(g) ? 2 : 1) * (v.sick ? 0 : 1)); if (v.hurtT > 0) v.hurtT -= dt; if (v.stab > 0) v.stab -= dt; if (v.stunT > 0) v.stunT -= dt; // (enfermo no se repone)
     // Defensa: con un lobo o un oso encima, quien tiene arma le planta cara; los demás corren a la hoguera
     if (v.boat) { if (!v.task || v.task.k !== 'barca') { v.boat = false; g.boatOut = false; if (g.port) landAt(v, (g.port.end % W) * T + 2, ((g.port.end / W) | 0) * T + 3); } }
     if (!(v.scanA > 0)) { v.scanA = .4; v.foe = v.boat ? null : threatFor(v, g); } else v.scanA -= dt;
@@ -2900,7 +2902,7 @@ function updateVillagers(dt){
         const alive = G.ps.filter(u => !u.dead && u.task && u.task.k === 'asalto');
         if (!G.camp && alive.length) {
           const cx = alive.reduce((a, u) => a + u.x, 0) / alive.length, cy = alive.reduce((a, u) => a + u.y, 0) / alive.length;
-          const p = ringFind(Math.round(cx / T), Math.round(cy / T), 8, (x, y) => tileFree(x, y) && !WATER[world.biome[y * W + x]] && !pathMap.has(y * W + x) && !farmMap.has(y * W + x) && !villages.some(o => underBuilding(o, x, y)));
+          const p = ringFind(Math.round(cx / T), Math.round(cy / T), 12, campOk); // (guerra.js: donde caben las tiendas)
           if (p) {
             const hide = (g.hides || 0) >= 2, nT = Math.min(4, Math.ceil(alive.length / 2));
             if (hide) g.hides -= Math.min(g.hides, nT); // las pieles, para las tiendas (se gastan)

@@ -6,10 +6,21 @@
 // · Las guerras duran más: se acaba cuando han muerto muchos para el tamaño de los dos pueblos, o tras varios días si
 //   nadie gana; las treguas y los tratados de paz, también más largos
 const warCap = (a, b) => Math.max(24, Math.round((popOf(a) + popOf(b)) * .3)); // (una gran batalla no acaba la guerra de golpe)
+// ¿Cabe aquí un campamento? Las tiendas ocupan unas 9×6 casillas: todo tierra libre, sin agua, árboles, caminos,
+// campos, murallas ni edificios, y lejos de los pueblos y de los volcanes
+function campOk(x, y){
+  if (x < 6 || y < 5 || x >= W - 6 || y >= H - 4 || volcDanger(x, y, 4)) return false;
+  if (villages.some(o => popOf(o) && (Math.hypot(o.fx - x, o.fy - y) < 10 || underBuilding(o, x, y)))) return false;
+  for (let yy = y - 3; yy <= y + 2; yy++) for (let xx = x - 4; xx <= x + 4; xx++) {
+    const i = yy * W + xx, o = world.objs[i];
+    if (WATER[world.biome[i]] || world.biome[i] === B.LAVA || pathMap.has(i) || farmMap.has(i) || plazaSet.has(i) || wallSet.has(i) || bridgeSet.has(i) || (o && OBJ[o.key][1] !== 'stone' && OBJ[o.key][1] !== 'berry')) return false;
+  }
+  return true;
+}
 // Campamento del atacante: a un tercio del camino, en tierra libre
 function warCamp(att, def, r){
   const dd = Math.hypot(def.fx - att.fx, def.fy - att.fy) || 1, k = Math.min(dd * .45, 40);
-  const p = ringFind(Math.round(att.fx + (def.fx - att.fx) / dd * k), Math.round(att.fy + (def.fy - att.fy) / dd * k), 8, (x, y) => tileFree(x, y) && !WATER[world.biome[y * W + x]] && !volcDanger(x, y));
+  const p = ringFind(Math.round(att.fx + (def.fx - att.fx) / dd * k), Math.round(att.fy + (def.fy - att.fy) / dd * k), 14, campOk);
   if (p) r.war.camp = { x:p[0], y:p[1], nat:nationOf(att).id };
 }
 // Una baja: se apunta al bando que la sufre (desde la pelea y los bombardeos)

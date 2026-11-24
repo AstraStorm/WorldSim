@@ -239,7 +239,7 @@ function stepBalloon(g, b, dt){
     const o = villageById(m.to);
     if (!o || !popOf(o) || !atWar(g, o) || b.rocks <= 0 || yearT > b.bombEnd) { b.phase = 'vuelta'; b.state = 'vuelo'; if (b.kills) notify(`El bombardeo desde el globo de ${g.name} deja ${b.kills} ${b.kills === 1 ? 'muerto' : 'muertos'} en ${o ? o.name : 'el pueblo enemigo'}`, { x:b.x, y:b.y }); }
     else {
-      if (!b.aim) { const bs = buildingsOf(o).filter(i => world.objs[i]); const i = bs.length ? bs[Math.floor(Math.random() * bs.length)] : o.fy * W + o.fx; b.aim = [(i % W) * T + 2, ((i / W) | 0) * T - 2]; }
+      if (!b.aim) { const vt = vitalTargets(o), bs = vt.length && Math.random() < .7 ? vt.slice(0, 3) : buildingsOf(o).filter(i => world.objs[i]); const i = bs.length ? bs[Math.floor(Math.random() * bs.length)] : o.fy * W + o.fx; b.aim = [(i % W) * T + 2, ((i / W) | 0) * T - 2]; } // primero, los sitios clave (estrategia.js)
       const d = Math.hypot(b.aim[0] - b.x, b.aim[1] - b.y) || 1, sp = 9;
       b.vx += ((b.aim[0] - b.x) / d * sp + w[0] * .4 - b.vx) * Math.min(1, dt * 1.2); b.vy += ((b.aim[1] - b.y) / d * sp + w[1] * .4 - b.vy) * Math.min(1, dt * 1.2);
       b.x += b.vx * dt; b.y += b.vy * dt; b.alt += (30 - b.alt) * Math.min(1, dt);

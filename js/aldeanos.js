@@ -174,6 +174,22 @@ function makeVillager(tx, ty, r, age, sex){
   nv.name = nameFor(nv.sex); nv.fresh = true; return nv; // (en cuanto tenga pueblo, un nombre de su lengua: idiomas.js)
 }
 
+// El cuerpo de quien muere: su figura con lo que llevaba puesto (armadura, escudo y el arma a su lado)
+function corpseSprite(v){
+  const s = personSprite(v, 0, v.dir < 0), pad = 6, c = document.createElement('canvas'); c.width = s.width + pad * 2; c.height = s.height + 2;
+  const x = c.getContext('2d'), cx = pad + (s.width >> 1), by = s.height, top = 1, d = v.dir < 0 ? -1 : 1;
+  x.drawImage(s, pad, 1);
+  const ncol = natCol(v);
+  if (v.weapon || v.armor) { x.fillStyle = ncol; x.fillRect(cx - 1, by - 7, 3, 3); }
+  if (v.armor === 'hierro') { x.fillStyle = '#8a929c'; x.fillRect(cx - 2, top, 5, 2); x.fillStyle = '#c8d0d8'; x.fillRect(cx - 1, top, 2, 1); x.fillStyle = '#9aa2ac'; x.fillRect(cx - 2, by - 7, 1, 2); x.fillRect(cx + 2, by - 7, 1, 2); }
+  else if (v.armor === 'cuero') { x.fillStyle = '#7a4a28'; x.fillRect(cx - 2, top, 5, 1); x.fillStyle = '#8a5a30'; x.fillRect(cx - 2, by - 7, 1, 2); x.fillRect(cx + 2, by - 7, 1, 2); }
+  if (v.shield) { const sx = cx - d * 3, sy = by - 8; x.fillStyle = '#3a2614'; x.fillRect(sx - 1, sy, 4, 6); x.fillStyle = ncol; x.fillRect(sx, sy + 1, 2, 4); }
+  const wx = cx + d * 4;
+  if (v.weapon === 'lanza' || v.weapon === 'horca') { x.fillStyle = v.weapon === 'horca' ? '#8a6438' : '#7a5230'; x.fillRect(wx, by - 11, 1, 11); x.fillStyle = '#c8ccd0'; x.fillRect(wx, by - 13, 1, 2); }
+  else if (v.weapon === 'espada') { x.fillStyle = '#5a3a20'; x.fillRect(wx, by - 4, 1, 2); x.fillStyle = '#e0e4ea'; x.fillRect(wx, by - 10, 1, 6); }
+  else if (v.weapon) { x.fillStyle = '#7a5230'; x.fillRect(wx, by - 8, 1, 6); }
+  c.ax = cx; return c;
+}
 // ---- Crear vida: aparición con haz de luz, onda y chispas ----
 const SPAWN_TOOLS = new Set(['person', 'family', 'remove', 'animal', 'tornado', 'tromba', 'huracan', 'remolino', 'terremoto', 'meteorito']);
 let effects = [];
@@ -392,6 +408,8 @@ function drawVillagers(){
       if (v.task && v.task.k === 'trabajando' && (v.task.job === 'orar' || v.task.job === 'ritual')) { const g0 = villageById(v.vid); if (g0) { const [r, gg, b] = villageColor(g0); vctx.fillStyle = `rgba(${Math.min(255, r + 90)},${Math.min(255, gg + 90)},${Math.min(255, b + 90)},.9)`; for (let k = 0; k < 2; k++) vctx.fillRect(x - 2 + k * 4, y - s.height - 2 - Math.floor((now / 160 + k * 3) % 6), 1, 1); } }
       if (v.task && v.task.k === 'trabajando' && (v.born === undefined || (yearT - v.born) / YEAR >= ADULT_H)) drawTool(v, x, y, now);
       if (v.bearer && v.task && v.task.k === 'asalto') { const nf = nationOf(villageById(v.vid) || {}).flag, px = x - v.dir * 3, py = y - s.height - 12 - lift - drop; vctx.fillStyle = '#5a3a20'; vctx.fillRect(px, py, 1, s.height + 12); if (nf) drawFlag(nf, v.dir > 0 ? px + 1 : px - 8, py, 15, 10, .5, now); else { vctx.fillStyle = natCol(v); vctx.fillRect(v.dir > 0 ? px + 1 : px - 7, py, 7, 5); } } // el abanderado
+      if ((v.hp ?? 1) < .45 && Math.random() < .08) chips.push({ x:x + (Math.random() - .5) * 2, y:y - 5, vx:(Math.random() - .5) * 3, vy:2, life:0, max:.5, col:'#a81010' }); // herido: va sangrando
+      if (v.stunT > 0) { const a0 = now / 120; vctx.fillStyle = '#ffe060'; for (let k = 0; k < 3; k++) vctx.fillRect(Math.round(x + Math.cos(a0 + k * 2.1) * 3), Math.round(y - s.height - 2 - lift - drop + Math.sin(a0 + k * 2.1)), 1, 1); } // aturdido: estrellitas
       if (v.sick) { vctx.fillStyle = 'rgba(130,200,90,.65)'; vctx.fillRect(x - 1, y - s.height + 3 - lift - drop, 3, 2); if (Math.random() < .004) { floats.push({ x, y:y - 14, txt:'*cof*', col:'#b8d890', life:0 }); snd('cough', x, y); } } // enfermo: la cara verdosa
       // De qué nación es: cinturón de su color (los adultos)
       if (v.born !== undefined && (yearT - v.born) / YEAR >= ADULT_H && zoom >= 3) { vctx.fillStyle = natCol(v); vctx.fillRect(x - 1, y - 4 - lift - drop, 3, 1); }
@@ -404,10 +422,14 @@ function drawVillagers(){
         if (v.armor === 'hierro') { vctx.fillStyle = '#8a929c'; vctx.fillRect(x - 2, top, 5, 2); vctx.fillStyle = '#c8d0d8'; vctx.fillRect(x - 1, top, 2, 1); vctx.fillStyle = '#9aa2ac'; vctx.fillRect(x - 2, y - 7 - lift - drop, 1, 2); vctx.fillRect(x + 2, y - 7 - lift - drop, 1, 2); vctx.fillStyle = '#5a626c'; vctx.fillRect(x - 1, y - 5 - lift - drop, 3, 1); } // casco, hombreras y cota
         else if (v.armor === 'cuero') { vctx.fillStyle = '#7a4a28'; vctx.fillRect(x - 2, top, 5, 1); vctx.fillStyle = '#8a5a30'; vctx.fillRect(x - 2, y - 7 - lift - drop, 1, 2); vctx.fillRect(x + 2, y - 7 - lift - drop, 1, 2); vctx.fillStyle = '#5a3418'; vctx.fillRect(x - 1, y - 5 - lift - drop, 3, 1); } // gorro y hombreras de cuero
         if (v.shield) { const sx = x - d * 3, sy = y - 8 - lift - drop; vctx.fillStyle = '#3a2614'; vctx.fillRect(sx - 1, sy, 4, 6); vctx.fillStyle = ncol; vctx.fillRect(sx, sy + 1, 2, 4); vctx.fillStyle = '#c8ccd0'; vctx.fillRect(sx, sy + 2, 1, 1); } // escudo pintado con su color
-        if (v.weapon === 'lanza') { vctx.fillStyle = '#7a5230'; vctx.fillRect(wx, y - 9, 1, 9); vctx.fillStyle = v.ironW ? '#e0e4ea' : '#c8ccd0'; vctx.fillRect(wx, y - 11, 1, 2); }
+        const atk = v.stab > 0 ? Math.sin(Math.min(1, v.stab / .25) * Math.PI) : 0; // el golpe: 0 → 1 → 0
+        if (v.weapon === 'lanza' && atk > .3) { vctx.fillStyle = '#7a5230'; for (let k = 0; k < 9; k++) vctx.fillRect(wx - d + d * k, y - 6 - Math.round(k * .25), 1, 1); vctx.fillStyle = v.ironW ? '#e0e4ea' : '#c8ccd0'; vctx.fillRect(wx - d + d * 9, y - 8, 1, 1); vctx.fillRect(wx - d + d * 10, y - 8, 1, 1); } // la lanza, clavándose hacia delante
+        else if (v.weapon === 'lanza') { vctx.fillStyle = '#7a5230'; vctx.fillRect(wx, y - 9, 1, 9); vctx.fillStyle = v.ironW ? '#e0e4ea' : '#c8ccd0'; vctx.fillRect(wx, y - 11, 1, 2); }
+        else if (v.weapon === 'espada' && atk > .3) { vctx.fillStyle = '#5a3a20'; vctx.fillRect(wx, y - 6, 1, 2); vctx.fillStyle = '#e0e4ea'; for (let k = 1; k < 6; k++) vctx.fillRect(wx + d * k, y - 7 + Math.round(k * (atk > .8 ? .6 : -.3)), 1, 1); } // el tajo: la hoja hacia delante
         else if (v.weapon === 'espada') { vctx.fillStyle = '#5a3a20'; vctx.fillRect(wx, y - 5, 1, 2); vctx.fillStyle = '#8a8e96'; vctx.fillRect(wx - 1, y - 6, 3, 1); vctx.fillStyle = '#e0e4ea'; vctx.fillRect(wx, y - 11, 1, 5); }
+        else if (v.weapon === 'horca') { vctx.fillStyle = '#8a6438'; vctx.fillRect(wx + (atk > .3 ? d * 2 : 0), y - 10 + (atk > .3 ? 2 : 0), 1, 10); vctx.fillStyle = '#9aa0a8'; const hx = wx + (atk > .3 ? d * 2 : 0), hy = y - 12 + (atk > .3 ? 2 : 0); vctx.fillRect(hx - 1, hy + 1, 3, 1); vctx.fillRect(hx - 1, hy, 1, 1); vctx.fillRect(hx, hy - 1, 1, 1); vctx.fillRect(hx + 1, hy, 1, 1); } // la horca de la milicia
         else if (v.weapon === 'ballesta') { vctx.fillStyle = '#6a4426'; vctx.fillRect(wx - d * 2, y - 6, 4, 1); vctx.fillStyle = '#8a8e96'; vctx.fillRect(wx + d * 2, y - 8, 1, 5); vctx.fillStyle = 'rgba(235,235,225,.8)'; vctx.fillRect(wx + d, y - 8, 1, 1); vctx.fillRect(wx + d, y - 4, 1, 1); }
-        else { vctx.fillStyle = '#7a5230'; vctx.fillRect(wx, y - 8, 1, 1); vctx.fillRect(wx + d, y - 7, 1, 4); vctx.fillRect(wx, y - 3, 1, 1); vctx.fillStyle = 'rgba(235,235,225,.8)'; vctx.fillRect(wx, y - 7, 1, 4); }
+        else { const pull = atk > .2 ? -d : 0; vctx.fillStyle = '#7a5230'; vctx.fillRect(wx, y - 8, 1, 1); vctx.fillRect(wx + d, y - 7, 1, 4); vctx.fillRect(wx, y - 3, 1, 1); vctx.fillStyle = 'rgba(235,235,225,.8)'; vctx.fillRect(wx + pull, y - 7, 1, 4); if (pull) { vctx.fillStyle = '#d8c8a0'; vctx.fillRect(wx + pull, y - 5, 3, 1); } } // el arco: al disparar tensa la cuerda
       }
       // Pescando con caña: la vara inclinada sobre el agua, el sedal y el corcho que se mece
       if (v.rod && v.task && v.task.k === 'trabajando' && v.task.job === 'pescar') {

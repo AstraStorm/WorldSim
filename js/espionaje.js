@@ -25,6 +25,8 @@ function spyTick(g, dt, people, adults){
   if (hasPaper(g) && hasPaper(to)) opts.push(['mapas', 2]);
   if (typeof DISCOVERIES !== 'undefined' && DISCOVERIES.some(d => knowsSci(to, d.k) && !knowsSci(g, d.k))) opts.push(['ciencia', 4]);
   if ((tyranny(to) || (r && r.war)) && !to.coup) opts.push(['golpe', .8]);
+  if (warRel(g, to) && warRel(g, to).war) opts.push(['informe', 6]); // en guerra: saber cuántos son y dónde golpear (estrategia.js)
+  if ((ecOf(to) && ecOf(to).treas > 20) || (to.gold || 0) > 3) opts.push(['robo', 2]);
   let k = Math.random() * opts.reduce((a, o) => a + o[1], 0); t.mission = opts[0][0]; for (const [m, w] of opts) if ((k -= w) < 0) { t.mission = m; break; }
   (g.spyLog ||= { sent:0, ok:0, caught:0 }).sent++;
 }
@@ -34,7 +36,7 @@ function spyArrive(t, from, to){
   const success = .55 + (hasInst(from, 'espias') ? .15 : 0) - (hasCourt(to) ? .1 : 0) - (tyranny(to) ? .1 : 0) - (hasInst(to, 'espias') ? .1 : 0);
   if (Math.random() > success && Math.random() < .75) {
     v.away = false; v.task = null; v.x = to.fx * T + 2; v.y = to.fy * T + 6; L.caught++;
-    r.v = clamp(r.v - 25, -100, 100);
+    r.v = clamp(r.v - 25, -100, 100); r.spyCaughtT = yearT; // (una ofensa: puede acabar en guerra por honor)
     notify(`¡En ${to.name} pillan a ${v.name}, espía de ${from.name}! Crisis diplomática entre los dos`, at);
     if (!openTrial(to, v, 'espionaje', .95)) jail(v, to, 1.5, 'espionaje');
     (to.hostages ||= []).push({ v, from:from.id, execT:yearT + DAY_LEN * .15, decideT:yearT + DAY_LEN * .3, until:yearT + DAY_LEN * 1.4 });
@@ -45,6 +47,8 @@ function spyArrive(t, from, to){
   const blame = Math.random() < .4 ? `: sospechan de ${from.name}` : '';
   if (blame) r.v = clamp(r.v - 10, -100, 100);
   switch (t.mission) {
+    case 'informe': spyReport(from, to); break;
+    case 'robo': spyRob(from, to); break;
     case 'mapas': { const A = chartOf(from), Bc = chartOf(to); for (let k = 0; k < A.length; k++) if (Bc[k] * .8 > A[k]) A[k] = Bc[k] * .8 | 0; from.chartVer++; notify(`En ${to.name} han desaparecido sus mapas${blame}`, at); break; }
     case 'ciencia': { const d = DISCOVERIES.find(d => knowsSci(to, d.k) && !knowsSci(from, d.k)); if (d) { sciOf(from)[d.k] = Math.floor(yearT / DAY_LEN) + 1; notify(`Alguien ha robado de la universidad de ${to.name} los secretos de ${d.txt}${blame}`, at); } break; }
     case 'sabotaje': { const bs = buildingsOf(to).filter(i => world.objs[i] && !world.objs[i].key.startsWith('house')); const i = bs.length ? bs[Math.floor(Math.random() * bs.length)] : null; if (i != null) { damageBuilding(i, .6); if (wooden(world.objs[i] || { key:'' })) fires.set(i, { t:0, life:8, tree:true, bld:true }); notify(`Sabotaje en ${to.name}: alguien ha dañado ${bldName(world.objs[i] || { key:'house:hut' }) || 'un edificio'}${blame}`, at); } break; }
