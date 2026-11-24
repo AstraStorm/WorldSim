@@ -19,7 +19,8 @@ function routeTick(a, b, r){
   }
   if (yearT - (r.routeT ?? -1e9) < DAY_LEN / 2) return; r.routeT = yearT;
   railCheck(a, b, r); // ¿ferrocarril? (industria.js)
-  let biz = Math.sqrt(popOf(a) * popOf(b)) * .12 * (r.rail ? 2 : 1);
+  if (r.rail) { const g = (a.coal || 0) >= (b.coal || 0) ? a : b, was = r.rail.idle; r.rail.idle = (g.coal || 0) < 1; if (!r.rail.idle) g.coal -= 1; if (r.rail.idle && !was) notify(`Se para el tren entre ${a.name} y ${b.name}: no queda carbón`, { x:(a.fx + b.fx) / 2 * T, y:(a.fy + b.fy) / 2 * T }); } // el tren quema carbón
+  let biz = Math.sqrt(popOf(a) * popOf(b)) * .12 * (r.rail && !r.rail.idle ? 2 : 1);
   if (r.route.sea && (world.pirates || []).length && Math.random() < .06) { // los piratas asaltan un barco mercante
     biz *= .3; notify(`¡Piratas! Asaltan ${knowsSci(a, 'vapor') ? 'un vapor' : 'un galeón'} mercante entre ${a.name} y ${b.name} y se llevan buena parte de la carga`, { x:(a.fx + b.fx) / 2 * T, y:(a.fy + b.fy) / 2 * T });
   }

@@ -67,11 +67,14 @@ function gunSmoke(v){
 function industryTick(g, dt, people){
   if ((g.indT = (g.indT ?? Math.random() * 30) - dt) > 0) return; g.indT = 30;
   const at = { x:g.fx * T, y:g.fy * T }, pop = popOf(g);
+  if (g.coal == null && industrial(g)) g.coal = 30; // (partidas de antes del carbón: algo de reserva para no pararlo todo de golpe)
   if (industrial(g) && pop >= 18 && !g.factory) {
     const p = ringFind(g.fx + 12, g.fy + 4, 14, (x, y) => { for (let yy = y - 3; yy <= y; yy++) for (let xx = x - 2; xx <= x + 2; xx++) if (!tileFree(xx, yy) || pathMap.has(yy * W + xx) || farmMap.has(yy * W + xx) || villages.some(o => underBuilding(o, xx, yy))) return false; return true; });
-    if (p) { g.factory = { x:p[0], y:p[1] }; notify(`¡${g.name} entra en la era industrial! Levantan una fábrica de vapor con chimeneas`, { x:p[0] * T, y:p[1] * T }); }
+    if (p && (g.coal || 0) >= 10) { g.coal -= 10; g.factory = { x:p[0], y:p[1] }; notify(`¡${g.name} entra en la era industrial! Levantan una fábrica de vapor con chimeneas`, { x:p[0] * T, y:p[1] * T }); }
+    else if (p && !g.coalWant) { g.coalWant = true; notify(`${g.name} quiere levantar una fábrica de vapor, pero le falta carbón (10): tendrá que sacarlo de una mina`, at); }
   }
-  if (g.factory) { g.wood += 4; g.stone = (g.stone || 0) + 3; g.trades = (g.trades || 0) + 1; const ec = ecOf(g); if (ec) ec.treas += Math.round(pop * .03 * ec.P); clampStore(g); }
+  if (g.factory) { g.factory.idle = (g.coal || 0) < 2; if (!g.factory.idle) g.coal -= 2; } // la fábrica quema carbón; sin él, se para
+  if (g.factory && !g.factory.idle) { g.wood += 4; g.stone = (g.stone || 0) + 3; g.trades = (g.trades || 0) + 1; const ec = ecOf(g); if (ec) ec.treas += Math.round(pop * .03 * ec.P); clampStore(g); }
   if (knowsSci(g, 'reloj') && g.plaza && !g.clock) { g.clock = true; notify(`En ${g.name} levantan la torre del reloj en la plaza`, at); }
 }
 // Ferrocarril (desde routeTick): vía y estaciones entre dos pueblos con ruta por tierra que lo conocen
@@ -80,6 +83,8 @@ function railCheck(a, b, r){
   const d = Math.hypot(b.fx - a.fx, b.fy - a.fy) || 1, ux = (b.fx - a.fx) / d, uy = (b.fy - a.fy) / d;
   const st = (g, s) => ringFind(Math.round(g.fx + ux * s * 10), Math.round(g.fy + uy * s * 10), 8, (x, y) => tileFree(x, y) && tileFree(x - 2, y) && tileFree(x + 2, y) && !pathMap.has(y * W + x) && !villages.some(o => underBuilding(o, x, y)));
   const sa = st(a, 1), sb = st(b, -1); if (!sa || !sb) return;
+  if ((a.coal || 0) + (b.coal || 0) < 20) { if (!r.railCoalMsg) { r.railCoalMsg = true; notify(`${a.name} y ${b.name} quieren unirse con el ferrocarril, pero entre los dos no tienen carbón suficiente (20)`, { x:(a.fx + b.fx) / 2 * T, y:(a.fy + b.fy) / 2 * T }); } return; }
+  { const ta = Math.min(a.coal || 0, Math.max(10, 20 - (b.coal || 0))); a.coal = (a.coal || 0) - ta; b.coal -= 20 - ta; } // lo ponen entre los dos (la mitad cada uno, si pueden)
   const path = railPath(sa, sb); if (!path) { r.railFail = yearT; return; }
   r.rail = { a:a.id, b:b.id, sa, sb, path, since:Math.floor(yearT / DAY_LEN) + 1 }; layRail(path);
   notify(`¡Se inaugura el ferrocarril entre ${a.name} y ${b.name}! Estaciones en los dos pueblos y trenes que van y vienen`, { x:(a.fx + b.fx) / 2 * T, y:(a.fy + b.fy) / 2 * T }); snd('horn', a.fx * T, a.fy * T, .6);
@@ -133,7 +138,7 @@ function drawIndustry(now){
   drawRailNet();
   for (const g of villages) {
     if (!popOf(g)) continue;
-    if (g.factory) { const x = g.factory.x * T + 2, y = g.factory.y * T + 3; if (onS(x, y)) drawFactory(x, y, now); }
+    if (g.factory) { const x = g.factory.x * T + 2, y = g.factory.y * T + 3; if (onS(x, y)) drawFactory(x, y, now, g.factory.idle); }
     if (g.clock && g.plaza) { const P = g.plaza, x = P.x1 * T + 3, y = P.y0 * T + 2; if (onS(x, y)) drawClockTower(x, y, now, g); }
     if (knowsSci(g, 'astronomia') && g.university != null && world.objs[g.university]) { const x = (g.university % W) * T + 22, y = ((g.university / W) | 0) * T + 3; if (onS(x, y)) drawObservatory(x, y, now); }
     if (g.press != null && world.objs[g.press] && zoom >= 2.5) for (const h of g.houses.slice(0, 8)) { if (!world.objs[h] || h2(h % W, (h / W) | 0, 91) > .6) continue; const x = (h % W) * T, y = ((h / W) | 0) * T - 6; if (!onS(x, y)) continue; vctx.fillStyle = '#f4ecd0'; vctx.fillRect(x, y, 3, 4); vctx.fillStyle = ['#c83a2a', '#3a6ab8', '#22201e'][h % 3]; vctx.fillRect(x, y + 1, 3, 1); vctx.fillRect(x + 1, y + 3, 1, 1); } // carteles
@@ -159,7 +164,7 @@ function drawRailTraffic(now){
   for (const r of rels.values()) {
     const R = r.rail; if (!R || !R.path) continue;
     for (const [st, g] of [[R.sa, villageById(R.a)], [R.sb, villageById(R.b)]]) { const sx = st[0] * T + 2, sy = st[1] * T + 3; if (g && onS(sx, sy)) drawStation(sx, sy, g, now); }
-    if (!r.route) continue; // sin comercio (guerra, sanciones) no circula
+    if (!r.route || R.idle) continue; // sin comercio (guerra, sanciones) o sin carbón no circula
 
     // Va y viene con el tiempo del juego (se para en pausa y corre más a más velocidad), con la locomotora siempre
     // delante: llega a la estación, espera y, mientras espera, da la vuelta (se desvanece y reaparece con la
@@ -249,8 +254,8 @@ function drawTrain(x, y, ux, uy, now){
       if (Math.random() < .35) chips.push({ x:cx + (ux >= 0 ? 3 : -2), y:cy - 10, vx:-ux * 8 + (Math.random() - .5) * 4, vy:-6 - Math.random() * 4, life:0, max:1.1, col:'rgba(210,210,205,.7)' }); }
   }
 }
-function drawFactory(x, y, now){
-  if (artAt('factory:fabrica', x, y)) { if (Math.random() < .3) chips.push({ x:x + 8, y:y - ART_MAP['factory:fabrica'][3], vx:3 + Math.random() * 4, vy:-5 - Math.random() * 4, life:0, max:1.6, col:'rgba(120,118,115,.6)' }); return; }
+function drawFactory(x, y, now, idle){
+  if (artAt('factory:fabrica', x, y)) { if (!idle && Math.random() < .3) chips.push({ x:x + 8, y:y - ART_MAP['factory:fabrica'][3], vx:3 + Math.random() * 4, vy:-5 - Math.random() * 4, life:0, max:1.6, col:'rgba(120,118,115,.6)' }); return; }
   vctx.fillStyle = 'rgba(0,0,0,.25)'; vctx.fillRect(x - 12, y + 1, 25, 2);
   vctx.fillStyle = '#22201e'; vctx.fillRect(x - 12, y - 11, 25, 12); vctx.fillStyle = '#9a4a30'; vctx.fillRect(x - 11, y - 10, 23, 10);
   vctx.fillStyle = '#7a3a24'; for (let k = 0; k < 10; k += 3) vctx.fillRect(x - 11, y - 9 + k, 23, 1);

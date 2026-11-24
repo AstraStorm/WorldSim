@@ -962,7 +962,7 @@ function runTask(v, g, dt){
       if (well ? clearable(x - 2, y - 4, x + 2, y + 1) : clearable(x - 4, y - 8, x + 4, y + 1)) well ? clearSite(g, x - 2, y - 4, x + 2, y + 1) : clearSite(g, x - 4, y - 8, x + 4, y + 1);
       if (!tileFree(x, y) || penOverlap(g, x - 4, y - 8, x + 4, y + 1) || buildingClash(x, y, t.k, t.i) || (well ? g.stone < 5 && g.wood < 8 : g.wood < 10 || g.stone < 3)) return;
       world.objs[t.i] = { key:well ? 'well:pozo' : 'mill:molino', v:0, ox:0, oy:0, vid:g.id };
-      if (well) { (g.wells ||= []).push({ i:t.i, q:.5 }); if (g.stone >= 5) g.stone -= 5; else g.wood -= 8; } // de piedra o, si no hay, entibado con madera else { g.mill = t.i; g.wood -= 10; g.stone -= 3; }
+      if (well) { (g.wells ||= []).push({ i:t.i, q:.5 }); if (g.stone >= 5) g.stone -= 5; else g.wood -= 8; } else { g.mill = t.i; g.wood -= 10; g.stone -= 3; } // el pozo, de piedra o, si no hay, entibado con madera
       composeRegion(x - 7, y - 11, x + 7, y + 12); addEffect(x * T + 2, y * T + 3, 'poof'); connect(g, x, y);
     }; break;
     case 'cementerio': v.actT = 6; v.onDone = () => {

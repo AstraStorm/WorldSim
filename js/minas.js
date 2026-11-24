@@ -31,7 +31,7 @@ function mineSite(g){
 function mineJobs(v, g, add){
   const kn = g.know || {};
   if (!hasMine(g)) { add('mina', kn.mineria && (g.oresNear || 0) >= 3 && g.wood >= 12 && g.stone >= 8 && !busyWith(g, 'mina') && !(g.noMineSite > yearT) ? 9 : 0); return; }
-  const want = hasForge(g) || (g.iron || 0) < 6 || Object.entries(INSTS).some(([k, I]) => !hasInst(g, k) && I.want(g) && instMissing(g, I).some(([f]) => f === 'iron' || f === 'gold'));
+  const want = hasForge(g) || (g.iron || 0) < 6 || (industrial(g) && (g.coal || 0) < 25) || Object.entries(INSTS).some(([k, I]) => !hasInst(g, k) && I.want(g) && instMissing(g, I).some(([f]) => f === 'iron' || f === 'gold'));
   add('extraer', busyWith(g, 'extraer') < 4 && (g.mineLeft ?? MINE_RESERVE) > 0 ? (want ? 5 : 2.5) : 0);
 }
 function mineTarget(v, g, job){
@@ -58,7 +58,8 @@ function mineArrive(v, g, t){
     const m = g.mineMix || { hierro:1, oro:0, gemas:0 }, tot = m.hierro * 1 + m.oro * .8 + m.gemas * .5 || 1;
     let r = Math.random() * tot, kind = 'hierro';
     if ((r -= m.hierro) >= 0) kind = (r -= m.oro * .8) < 0 ? 'oro' : 'gemas';
-    const n = Math.round((kind === 'hierro' ? 4 : kind === 'oro' ? 2 : 1) * (knowsSci(g, 'metalurgia') ? 1.5 : 1)); // metalurgia (ciencia.js)
+    if (industrial(g) && Math.random() < ((g.coal || 0) < 30 ? .55 : .3)) { kind = 'carbón'; if (!g.coalMsg) { g.coalMsg = true; notify(`En ${g.name} empiezan a sacar carbón de la mina: lo necesitan las máquinas de vapor`, { x:(g.mine % W) * T, y:((g.mine / W) | 0) * T }); } } // la era industrial (industria.js)
+    const n = Math.round((kind === 'hierro' || kind === 'carbón' ? 4 : kind === 'oro' ? 2 : 1) * (knowsSci(g, 'metalurgia') ? 1.5 : 1)); // metalurgia (ciencia.js)
     v.carry = { k:kind, n }; g.mineLeft = (g.mineLeft ?? MINE_RESERVE) - n;
     if (g.mineLeft <= 0) notify(`La mina de ${g.name} se ha agotado después de tantos años`, { x:(g.mine % W) * T, y:((g.mine / W) | 0) * T });
   }; return true; }
@@ -67,6 +68,7 @@ function mineArrive(v, g, t){
 // En la cantera, entre la piedra, a veces sale algo de mineral
 function quarryBonus(v, g){
   const r = Math.random(), at = { x:v.x, y:v.y - 18 };
+  if (industrial(g) && r > .85) { g.coal = (g.coal || 0) + 1; floats.push({ ...at, txt:'+1 carbón', col:'#9a9ca4', life:0 }); return; }
   if (r < .15) { g.iron = (g.iron || 0) + 1; floats.push({ ...at, txt:'+1 hierro', col:'#b8c0cc', life:0 }); }
   else if (r < .19) { g.gold = (g.gold || 0) + 1; floats.push({ ...at, txt:'+1 oro', col:'#f8d850', life:0 }); }
   else if (r < .21) { g.gems = (g.gems || 0) + 1; floats.push({ ...at, txt:'+1 gema', col:'#d88af0', life:0 }); }
@@ -75,7 +77,7 @@ function mineCard(g){
   if (!hasMine(g)) return (g.know || {}).mineria ? `<h4>Mina</h4><div class="muted">${(g.oresNear || 0) >= 3 ? 'Aún no han abierto mina' : 'No hay bastantes vetas cerca para abrir una mina'}</div>` : '';
   const m = g.mineMix || {}, left = g.mineLeft ?? MINE_RESERVE;
   return `<h4>Mina</h4><div class="needs"><span>Reserva</span>${bar(left / MINE_RESERVE, '#a8a49c', 150)}<span>${Math.round(left / MINE_RESERVE * 100)} %</span></div>
-    <div class="muted">Saca ${[m.hierro && 'hierro', m.oro && 'oro', m.gemas && 'gemas'].filter(Boolean).join(', ') || 'hierro'} · almacén: hierro ${g.iron || 0}, oro ${g.gold || 0}, gemas ${g.gems || 0}</div>`;
+    <div class="muted">Saca ${[m.hierro && 'hierro', m.oro && 'oro', m.gemas && 'gemas'].filter(Boolean).join(', ') || 'hierro'} · almacén: hierro ${g.iron || 0}, oro ${g.gold || 0}, gemas ${g.gems || 0}${industrial(g) ? `, carbón ${g.coal || 0}` : ''}</div>`;
 }
 // Arreglo de partidas antiguas: la muralla que se construyó por encima de un cercado se quita (el cercado ya tiene su valla)
 let penWallClock = 0;

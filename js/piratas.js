@@ -1,82 +1,206 @@
-// World Sim · Piratas y armadas
-// ================= Piratas =================
-// · Cuando hay barcas por el mar (comercio, colonos, expediciones), aparecen barcos piratas en alta mar (como mucho
-//   tres), con su bandera negra. Buscan barcas a las que asaltar: les roban la carga y a veces matan a quien va dentro;
-//   de vez en cuando saquean un pueblo de la costa
-// · Las naciones con muelle y cuartel que sufren a los piratas mandan su armada a por ellos: si ganan, hunden al
-//   pirata y recuperan el botín; si pierden, se hunde la armada
+// World Sim · Piratas, armadas y guerra en el mar
+// ================= Piratas y armadas =================
+// · Cuando hay barcos por el mar (comercio, colonos, expediciones), aparecen barcos piratas en alta mar (como mucho
+//   tres): galeones oscuros con bandera negra. Persiguen barcas que puedan alcanzar por mar abierto (si se atascan
+//   contra la costa, la dejan), les roban la carga y a veces matan a uno de dentro; de vez en cuando saquean la costa
+// · Las naciones con muelle y cuartel que sufren a los piratas mandan su armada a por ellos
+// · Guerra en el mar: dos naciones en guerra con muelle y cuartel sacan sus buques de guerra; buscan los del enemigo y,
+//   si no hay, cañonean el puerto enemigo (edificios de la orilla y quien esté cerca)
+// · Los combates se ven: cañonazos con fogonazo y humo, la bala volando, astillas o salpicón, y el barco que pierde se
+//   escora y se hunde dejando burbujas y restos. Las armadas vuelven a su puerto al acabar
 const PIRATE_NAMES = ['La Calavera', 'El Tiburón Negro', 'La Sirena Roja', 'El Cuervo del Mar', 'La Viuda Negra', 'El Kraken', 'La Gaviota Sangrienta', 'El Diente de Ballena'];
 const pirates = () => world.pirates ||= [], navies = () => world.navies ||= [];
 const seaTile = (x, y) => { const tx = Math.floor(x / T), ty = Math.floor(y / T); return tx >= 0 && ty >= 0 && tx < W && ty < H && openWater(ty * W + tx); };
-// Avanza por el agua hacia un punto; si delante hay tierra, prueba a girar
+const SHIP_RANGE = 60, SINK_T = 3.5;
+let cannonballs = [], pirateClock = 0;
+// Avanza por el agua hacia un punto; si delante hay tierra, prueba a girar. Devuelve si ha podido moverse
 function sail(o, tx, ty, sp, dt){
   const a0 = Math.atan2(ty - o.y, tx - o.x);
   for (const da of [0, .5, -.5, 1, -1, 1.6, -1.6, 2.4, -2.4, Math.PI]) {
     const a = a0 + da, nx = o.x + Math.cos(a) * sp * dt, ny = o.y + Math.sin(a) * sp * dt;
-    if (seaTile(nx, ny)) { o.x = nx; o.y = ny; o.dir = Math.cos(a) < 0 ? -1 : 1; return true; }
+    if (seaTile(nx, ny)) { o.x = nx; o.y = ny; if (Math.abs(Math.cos(a)) > .2) o.dir = Math.cos(a) < 0 ? -1 : 1; return true; }
   }
   return false;
+}
+// ¿Avanza de verdad hacia su objetivo? Si en unos segundos no se ha acercado, está atascado (costa por medio)
+function stuckOn(o, d, dt){
+  if (o.bestD == null || d < o.bestD - 4) { o.bestD = d; o.stuckT = 0; return false; }
+  return (o.stuckT = (o.stuckT || 0) + dt) > 6;
 }
 function seaSpawnFar(){
   for (let k = 0; k < 200; k++) { const x = Math.floor(Math.random() * W), y = Math.floor(Math.random() * H), i = y * W + x;
     if (!openWater(i) || world.biome[i] > B.SHALLOW) continue; if (villages.some(g => popOf(g) && Math.hypot(g.fx - x, g.fy - y) < 30)) continue; return [x * T + 2, y * T + 2]; }
   return null;
 }
-let pirateClock = 0;
+const portXY = g => [(g.port.launch % W) * T + 2, ((g.port.launch / W) | 0) * T + 3];
+const sailorsOf = g => villagers.filter(u => !u.dead && !u.away && u.vid === g.id && u.weapon && ageOf(u) >= ADULT_H);
+// Un buque de guerra de una nación: contra los piratas o contra otra nación
+function launchNavy(g, kind, foe){
+  const [sx, sy] = portXY(g), n = sailorsOf(g).length, steam = knowsSci(g, 'vapor') && (g.coal || 0) >= 8, hp = 3 + Math.min(4, Math.floor(n / 2)) + (knowsSci(g, 'polvora') ? 1 : 0) + (steam ? 2 : 0);
+  if (steam) g.coal -= 8; // el acorazado de vapor: más rápido y más duro, pero quema carbón
+  const ship = { nation:g.id, kind, foe:foe ? foe.id : null, x:sx, y:sy, dir:1, hp, max:hp, home:[sx, sy], t:0, cd:Math.random() * 2, steam };
+  navies().push(ship); return ship;
+}
 function updatePirates(dt){
   if (!world || !villages.length) return;
   const P = pirates(), N = navies();
+  for (const s of [...P, ...N]) { s.max ??= s.hp; s.cd ??= 0; }
   if ((pirateClock += dt) > 10) { pirateClock = 0;
     const traffic = travelers.some(t => t.sea) || villages.filter(g => g.port && popOf(g)).length >= 2;
-    if (traffic && P.length < 3 && yearT > DAY_LEN * 2 && Math.random() < .08) { const s = seaSpawnFar(); if (s) { const used = new Set(P.map(p => p.name)); const name = PIRATE_NAMES.find(n => !used.has(n)) || 'Los Sin Nombre'; P.push({ name, x:s[0], y:s[1], dir:1, hp:3 + Math.floor(Math.random() * 3), gold:0, cd:0, wx:s[0], wy:s[1] }); notify(`Aparecen piratas en alta mar: el barco «${name}», con la bandera negra`, { x:s[0], y:s[1] }); } }
-    // Las naciones que sufren a los piratas mandan su armada
-    for (const g of villages) if (popOf(g) && nationOf(g) === g && g.port && hasBarracks(g) && (g.piracyT ?? -1e9) > yearT - DAY_LEN * 2 && !N.some(n => n.nation === g.id) && P.length) {
-      const L = g.port.launch, sx = (L % W) * T + 2, sy = ((L / W) | 0) * T + 3, sailors = villagers.filter(u => !u.dead && !u.away && u.vid === g.id && u.weapon).length;
-      if (sailors < 3) continue;
-      N.push({ nation:g.id, x:sx, y:sy, dir:1, hp:2 + Math.min(4, Math.floor(sailors / 2)), home:[sx, sy], t:0 }); notify(`${g.name} manda su armada a por los piratas`, { x:sx, y:sy });
+    if (traffic && P.length < 3 && yearT > DAY_LEN * 2 && Math.random() < .08) { const s = seaSpawnFar(); if (s) { const used = new Set(P.map(p => p.name)); const name = PIRATE_NAMES.find(n => !used.has(n)) || 'Los Sin Nombre', hp = 3 + Math.floor(Math.random() * 3); P.push({ name, x:s[0], y:s[1], dir:1, hp, max:hp, gold:0, cd:0, raidCd:0, wx:s[0], wy:s[1] }); notify(`Aparecen piratas en alta mar: el barco «${name}», con bandera negra`, { x:s[0], y:s[1] }); } }
+    for (const g of villages) {
+      if (!popOf(g) || nationOf(g) !== g || !g.port || !hasBarracks(g) || sailorsOf(g).length < 3) continue;
+      // Contra los piratas, si les han atacado hace poco
+      if ((g.piracyT ?? -1e9) > yearT - DAY_LEN * 2 && P.length && !N.some(n => n.nation === g.id && n.kind !== 'guerra')) { launchNavy(g, 'piratas'); notify(`${g.name} manda su armada a por los piratas`, { x:g.fx * T, y:g.fy * T }); }
+      // Guerra: un buque contra cada nación enemiga que también tenga puerto (cuando se les hunde uno, tardan en tener otro)
+      for (const r of rels.values()) {
+        if (!r.war) continue; const ia = r.war.att === g.id, id = r.war.def === g.id; if (!ia && !id) continue;
+        const foe = villageById(ia ? r.war.def : r.war.att); if (!foe || !popOf(foe) || !nationOf(foe).port) continue;
+        if (N.some(n => n.nation === g.id && n.kind === 'guerra') || yearT - ((r.war.navyT ||= {})[g.id] ?? -1e9) < DAY_LEN * .8) continue;
+        r.war.navyT[g.id] = yearT; launchNavy(g, 'guerra', nationOf(foe));
+        notify(`¡${g.name} saca su buque de guerra contra ${nationOf(foe).name}!`, { x:g.fx * T, y:g.fy * T });
+      }
     }
   }
+  // Piratas
   for (const p of P) {
-    p.cd -= dt;
-    // Busca una barca cerca; si no, da vueltas
-    let tgt = null, bd = 260;
-    for (const t of travelers) if (t.sea && !t.done && inWater(t.x, t.y)) { const d = Math.hypot(t.x - p.x, t.y - p.y); if (d < bd) { bd = d; tgt = t; } }
-    if (tgt) { sail(p, tgt.x, tgt.y, 15, dt); if (bd < 8 && p.cd <= 0) { p.cd = 20; raid(p, tgt); } }
-    else { if (Math.hypot(p.wx - p.x, p.wy - p.y) < 6 || !sail(p, p.wx, p.wy, 9, dt)) { const a = Math.random() * Math.PI * 2; p.wx = p.x + Math.cos(a) * 160; p.wy = p.y + Math.sin(a) * 160; }
+    if (p.sink != null) continue;
+    p.cd -= dt; p.raidCd = (p.raidCd ?? 0) - dt;
+    const navy = N.filter(n => n.sink == null && n.kind !== 'guerra').map(n => [n, Math.hypot(n.x - p.x, n.y - p.y)]).sort((a, b) => a[1] - b[1])[0];
+    if (navy && navy[1] < SHIP_RANGE) { fireAt(p, navy[0], navy[1]); if (navy[1] > 30) sail(p, navy[0].x, navy[0].y, 10, dt); continue; } // se defienden de la armada
+    // Busca una barca que pueda alcanzar por mar abierto (las de ríos y lagos, no)
+    let tgt = p.tgt && !p.tgt.done && p.tgt.sea && seaTile(p.tgt.x, p.tgt.y) ? p.tgt : null;
+    if (!tgt) { p.tgt = null; let bd = 260; for (const t of travelers) if (t.sea && !t.done && seaTile(t.x, t.y) && t !== p.ignore) { const d = Math.hypot(t.x - p.x, t.y - p.y); if (d < bd) { bd = d; tgt = t; } } if (tgt) { p.tgt = tgt; p.bestD = null; } }
+    if (tgt) {
+      const d = Math.hypot(tgt.x - p.x, tgt.y - p.y);
+      if (!sail(p, tgt.x, tgt.y, 15, dt) || stuckOn(p, d, dt)) { p.ignore = tgt; p.tgt = null; p.bestD = null; continue; } // no hay forma de llegar: a otra cosa
+      if (d < 9 && p.raidCd <= 0) { p.raidCd = 20; raid(p, tgt); p.tgt = null; }
+    } else {
+      if (Math.hypot(p.wx - p.x, p.wy - p.y) < 6 || !sail(p, p.wx, p.wy, 9, dt)) { const a = Math.random() * Math.PI * 2; p.wx = p.x + Math.cos(a) * 160; p.wy = p.y + Math.sin(a) * 160; }
       // Saqueo de la costa: un pueblo con muelle cercano
-      if (p.cd <= 0 && Math.random() < dt * .01) { const g = villages.find(o => popOf(o) && o.port && Math.hypot(o.fx * T - p.x, o.fy * T - p.y) < 90); if (g) { p.cd = 40; const take = Math.min(g.food, 15); g.food -= take; p.gold += 3; g.piracyT = yearT; misfortune(g, 'guerra'); notify(`¡Los piratas de «${p.name}» saquean la costa de ${g.name} y se llevan ${Math.round(take)} de comida!`, { x:p.x, y:p.y }); } } }
-  }
-  for (const n of N) {
-    const g = villageById(n.nation); n.t += dt;
-    let tgt = null, bd = Infinity; for (const p of P) { const d = Math.hypot(p.x - n.x, p.y - n.y); if (d < bd) { bd = d; tgt = p; } }
-    if (!tgt || !g || n.t > 120) { n.done = true; continue; } // sin piratas (o tras mucho buscar), vuelve a puerto
-    sail(n, tgt.x, tgt.y, 16, dt);
-    if (bd < 10) { // combate: gana el que más aguanta (con algo de suerte)
-      if (Math.random() * (n.hp + tgt.hp) < n.hp * 1.1) { tgt.dead = true; if (g) { g.gold = (g.gold || 0) + tgt.gold; if (g.coin) ecOf(g).treas += tgt.gold * 5 * ecOf(g).P; } notify(`¡La armada de ${g ? g.name : '?'} hunde al barco pirata «${tgt.name}»${tgt.gold ? ` y recupera ${tgt.gold} de oro` : ''}!`, { x:n.x, y:n.y }); if (g) g.piracyT = -1e9; }
-      else { n.done = true; const lost = villagers.filter(u => !u.dead && u.vid === n.nation && u.weapon).slice(0, 2); for (const u of lost) killVillager(u, 'piratas'); notify(`Los piratas de «${tgt.name}» hunden la armada de ${g ? g.name : '?'}${lost.length ? `: mueren ${lost.length} marineros` : ''}`, { x:n.x, y:n.y }); tgt.hp = Math.max(1, tgt.hp - 1); }
-      n.done = n.done || tgt.dead;
+      if (p.raidCd <= 0 && Math.random() < dt * .01) { const g = villages.find(o => popOf(o) && o.port && Math.hypot(o.fx * T - p.x, o.fy * T - p.y) < 90); if (g) { p.raidCd = 40; const take = Math.min(g.food, 15); g.food -= take; p.gold += 3; g.piracyT = yearT; misfortune(g, 'guerra'); notify(`¡Los piratas de «${p.name}» saquean la costa de ${g.name} y se llevan ${Math.round(take)} de comida!`, { x:p.x, y:p.y }); } }
     }
   }
-  if (P.some(p => p.dead)) world.pirates = P.filter(p => !p.dead);
-  if (N.some(n => n.done)) world.navies = N.filter(n => !n.done);
+  // Armadas y buques de guerra
+  for (const n of N) {
+    if (n.sink != null) continue;
+    const g = villageById(n.nation); n.t += dt; n.cd -= dt;
+    if (!g || !popOf(g)) { n.done = true; continue; }
+    if (n.back) { if (!sail(n, n.home[0], n.home[1], 14, dt) || Math.hypot(n.home[0] - n.x, n.home[1] - n.y) < 8) n.done = true; continue; } // de vuelta a puerto
+    let tgt = null, bd = Infinity;
+    const natOf = o => { const v = villageById(o.nation); return v ? nationOf(v).id : null; };
+    const foes = n.kind === 'guerra' ? N.filter(o => o !== n && o.sink == null && o.kind === 'guerra' && natOf(o) === n.foe) : P.filter(p => p.sink == null);
+    for (const o of foes) { const d = Math.hypot(o.x - n.x, o.y - n.y); if (d < bd) { bd = d; tgt = o; } }
+    const war = n.kind === 'guerra' ? warRel(g, villageById(n.foe) || g) : null;
+    if (n.kind === 'guerra' && (!war || !war.war)) { n.back = true; notify(`El buque de guerra de ${g.name} vuelve a puerto: se ha acabado la guerra`, { x:n.x, y:n.y }); continue; }
+    if (tgt) { if (bd > SHIP_RANGE * .7) sail(n, tgt.x, tgt.y, n.steam ? 20 : 15, dt); if (bd < SHIP_RANGE) fireAt(n, tgt, bd); continue; }
+    if (n.kind === 'guerra') { // sin barcos enemigos: a cañonear su puerto
+      const foe = villageById(n.foe); if (!foe || !foe.port) { n.back = true; continue; }
+      const [px, py] = portXY(foe), d = Math.hypot(px - n.x, py - n.y);
+      if (d > 40) { if (!sail(n, px, py, n.steam ? 20 : 15, dt) || stuckOn(n, d, dt)) { n.back = true; } continue; }
+      bombardPort(n, foe); if (n.t > 160) n.back = true; continue;
+    }
+    if (n.t > 140) n.back = true; // contra piratas: sin encontrarlos, vuelve
+  }
+  // Balas de cañón y hundimientos
+  for (const b of cannonballs) { b.t += dt; if (b.t >= b.dur && !b.done) { b.done = true; cannonHit(b); } }
+  if (cannonballs.length) cannonballs = cannonballs.filter(b => b.t < b.dur + .05);
+  for (const s of [...P, ...N]) if (s.sink != null && (s.sink += dt) > SINK_T) s.gone = true;
+  if (P.some(p => p.gone || p.dead)) world.pirates = P.filter(p => !p.gone && !p.dead);
+  if (N.some(n => n.done || n.gone)) world.navies = N.filter(n => !n.done && !n.gone);
 }
-// Asalto a una barca: se llevan la carga y a veces matan a quien va dentro
+// Cañonazo: fogonazo y humo en el costado, y la bala vuela en arco hasta el blanco (o al agua)
+function fireAt(s, tgt, d, warn){
+  if (s.cd > 0) return;
+  s.cd = 1.6 + Math.random() * 1.2; s.dir = tgt.x < s.x ? -1 : 1;
+  const hit = !warn && Math.random() < (d < 30 ? .65 : .45), mx = s.x + s.dir * 7, my = s.y - 5;
+  cannonballs.push({ x0:mx, y0:my, tx:tgt.x + (hit ? 0 : (Math.random() - .5) * 24), ty:tgt.y - 2 + (hit ? 0 : (Math.random() - .5) * 10), t:0, dur:.35 + d / 160, hit, tgt, from:s });
+  for (let k = 0; k < 5; k++) smoke.push({ x:mx + s.dir * k, y:my, vx:s.dir * (4 + Math.random() * 6), vy:-2 - Math.random() * 3, r:1.5 + Math.random(), life:0, max:1 + Math.random() });
+  chips.push({ x:mx + s.dir * 2, y:my, vx:s.dir * 20, vy:0, life:0, max:.12, col:'#ffe080' }); snd('boom', mx, my, .25);
+}
+function cannonHit(b){
+  if (b.land) return portHit(b);
+  const s = b.tgt;
+  if (b.hit && s && s.sink == null && !s.gone && !s.done) {
+    s.hp--; for (let k = 0; k < 8; k++) chips.push({ x:s.x, y:s.y - 4, vx:(Math.random() - .5) * 30, vy:-8 - Math.random() * 12, life:0, max:.5 + Math.random() * .4, col:k % 2 ? '#8a5a30' : '#5a3a20' }); // astillas
+    if (Math.random() < .5) smoke.push({ x:s.x, y:s.y - 6, vx:0, vy:-5, r:2, life:0, max:2 });
+    if (s.hp <= 0) shipSunk(s, b.from);
+  } else { // al agua: salpicón
+    for (let k = 0; k < 6; k++) chips.push({ x:b.tx, y:b.ty, vx:(Math.random() - .5) * 14, vy:-10 - Math.random() * 10, life:0, max:.4 + Math.random() * .2, col:'rgba(220,240,255,.85)' });
+  }
+}
+// Hundido: se escora, se va al fondo y deja restos; en los buques de una nación mueren algunos marineros
+function shipSunk(s, by){
+  s.sink = 0; snd('boom', s.x, s.y, .6);
+  const isPirate = !!s.name, g = !isPirate && villageById(s.nation), bg = by && !by.name && villageById(by.nation);
+  if (!isPirate && g) { const lost = sailorsOf(g).slice(0, 2); for (const u of lost) killVillager(u, s.kind === 'guerra' ? 'guerra' : 'piratas'); if (s.kind === 'guerra') { const r = warRel(g, villageById(s.foe) || g); if (r && r.war) { r.war.dead += lost.length; for (const _ of lost) warLoss(r, g); } } }
+  if (isPirate) {
+    if (bg) { bg.gold = (bg.gold || 0) + s.gold; if (bg.coin) ecOf(bg).treas += s.gold * 5 * ecOf(bg).P; bg.piracyT = -1e9; }
+    notify(`¡${bg ? `La armada de ${bg.name}` : 'Los cañones'} hunde${bg ? '' : 'n'} al barco pirata «${s.name}»${s.gold && bg ? ` y recupera ${s.gold} de oro` : ''}!`, { x:s.x, y:s.y });
+  } else if (by && by.name) notify(`Los piratas de «${by.name}» hunden la armada de ${g ? g.name : '?'}`, { x:s.x, y:s.y });
+  else notify(`¡${bg ? `El buque de ${bg.name}` : 'El enemigo'} hunde el buque de guerra de ${g ? g.name : '?'}!`, { x:s.x, y:s.y });
+}
+// Desde el mar, contra el puerto enemigo: edificios de la orilla y quien ande cerca
+function bombardPort(n, foe){
+  if (n.cd > 0) return;
+  const [px, py] = portXY(foe), bs = buildingsOf(foe).filter(i => world.objs[i] && Math.hypot((i % W) * T - px, ((i / W) | 0) * T - py) < 70);
+  const i = bs.length ? bs[Math.floor(Math.random() * bs.length)] : null, tx = i != null ? (i % W) * T + 2 : px + (Math.random() - .5) * 30, ty = i != null ? ((i / W) | 0) * T : py + (Math.random() - .5) * 20;
+  n.cd = 2.2 + Math.random(); n.dir = tx < n.x ? -1 : 1;
+  const mx = n.x + n.dir * 7, my = n.y - 5;
+  cannonballs.push({ x0:mx, y0:my, tx, ty, t:0, dur:.4 + Math.hypot(tx - mx, ty - my) / 160, hit:false, land:{ i, foe:foe.id, nat:n.nation } });
+  for (let k = 0; k < 5; k++) smoke.push({ x:mx + n.dir * k, y:my, vx:n.dir * (4 + Math.random() * 6), vy:-2 - Math.random() * 3, r:1.5 + Math.random(), life:0, max:1 + Math.random() });
+  snd('boom', mx, my, .25);
+  if (!n.bombMsg) { n.bombMsg = true; notify(`¡El buque de guerra de ${villageById(n.nation)?.name || '?'} cañonea el puerto de ${foe.name}!`, { x:px, y:py }); }
+}
+// Las que caen en tierra: el puerto bombardeado
+function portHit(b){
+  const L = b.land, foe = villageById(L.foe), g = villageById(L.nat);
+  for (let k = 0; k < 8; k++) chips.push({ x:b.tx, y:b.ty, vx:(Math.random() - .5) * 26, vy:-8 - Math.random() * 12, life:0, max:.5 + Math.random() * .3, col:k % 2 ? '#8a7a68' : '#5a4a3a' });
+  smoke.push({ x:b.tx, y:b.ty - 3, vx:0, vy:-4, r:2.5, life:0, max:1.6 });
+  if (L.i != null && world.objs[L.i]) damageBuilding(L.i, .18);
+  const u = foe && villagers.find(v => !v.dead && !v.away && v.vid === foe.id && Math.hypot(v.x - b.tx, v.y - b.ty) < 8);
+  if (u && Math.random() < .5) { u.hp = (u.hp ?? 1) - .6; hurtFx(u, b.tx, b.ty, walkable); if (u.hp <= 0) { killVillager(u, 'guerra'); const r = g && foe && warRel(g, foe); if (r && r.war) { r.war.dead++; warLoss(r, foe); } } }
+}
+// Asalto a una barca: se llevan la carga y a veces matan a uno de dentro (si va más gente, el resto sigue su viaje)
 function raid(p, t){
   const g = villageById(t.from), at = { x:t.x, y:t.y };
   if (g) g.piracyT = yearT;
-  if (t.kind === 'flota' && (t.crew || []).filter(u => !u.dead).length >= 3 && Math.random() < .55) { p.hp--; if (p.hp <= 0) p.dead = true; notify(`Los soldados de la flota de ${g ? g.name : '?'} rechazan a los piratas de «${p.name}»${p.dead ? ' y hunden su barco' : ''}`, at); return; }
+  p.cd = 0; fireAt(p, t, Math.hypot(t.x - p.x, t.y - p.y), true); // un cañonazo de aviso
+  if (t.kind === 'flota' && (t.crew || []).filter(u => !u.dead).length >= 3 && Math.random() < .55) { p.hp--; if (p.hp <= 0) shipSunk(p, null); notify(`Los soldados de la flota de ${g ? g.name : '?'} rechazan a los piratas de «${p.name}»${p.hp <= 0 ? ' y hunden su barco' : ''}`, at); return; }
   const loot = t.cargo ? `${t.cargo.n} de ${GOODS[t.cargo.k].txt}` : 'lo que llevaban'; if (t.cargo) p.gold += Math.ceil(t.cargo.n / 4); else p.gold += 1; t.cargo = null;
-  const kill = Math.random() < .35 && t.v && !t.v.dead;
-  if (kill) { t.v.away = false; killVillager(t.v, 'piratas'); t.done = true; }
-  notify(`¡Los piratas de «${p.name}» asaltan la barca de ${g ? g.name : '?'} y se llevan ${loot}${kill ? `; ${t.v.name} muere` : ''}!`, at);
+  const crew = t.crew ? t.crew.filter(u => !u.dead) : [t.v], victim = Math.random() < .35 ? crew[crew.length - 1] : null;
+  if (victim && !victim.dead) {
+    victim.away = false; killVillager(victim, 'piratas');
+    if (!t.crew || !t.crew.some(u => !u.dead)) t.done = true; else if (victim === t.v) t.v = t.crew.find(u => !u.dead); // la barca sigue con los que quedan
+  }
+  notify(`¡Los piratas de «${p.name}» asaltan la barca de ${g ? g.name : '?'} y se llevan ${loot}${victim ? `; ${victim.name} muere` : ''}!`, at);
+}
+// Dibujo: galeones (oscuros los piratas, con la bandera de su nación las armadas), con barra de vida al recibir daño,
+// y escorándose al hundirse
+function drawWarShip(s, now, pirate){
+  const x = Math.round(s.x), y = Math.round(s.y), k = s.sink != null ? Math.min(1, s.sink / SINK_T) : 0;
+  vctx.save();
+  if (k) { vctx.globalAlpha = 1 - k * .85; vctx.translate(x, y); vctx.rotate(s.dir * k * .6); vctx.translate(-x, -y + k * 9); }
+  if (pirate) vctx.filter = 'brightness(.42) saturate(.6)';
+  drawShip(x, y, s.dir, !!s.steam, [40, 40, 40], now);
+  vctx.filter = 'none';
+  // Mástil con su bandera: la negra con calavera o la de su nación
+  const mx = x - s.dir * 1, my = y - 22;
+  vctx.fillStyle = '#3a2a1a'; vctx.fillRect(mx, my, 1, 6);
+  if (pirate) { vctx.fillStyle = '#141414'; vctx.fillRect(mx + 1, my, 7, 5); vctx.fillStyle = '#f0f0e8'; vctx.fillRect(mx + 3, my + 1, 3, 2); vctx.fillRect(mx + 3, my + 3, 1, 1); vctx.fillRect(mx + 5, my + 3, 1, 1); }
+  else { const g = villageById(s.nation), f = g && (nationOf(g).flag || g.flag); if (f) drawFlag(f, mx + 1, my, 7, 5, 1, now); else { const [r0, g0, b0] = g ? villageColor(g) : [200, 200, 200]; vctx.fillStyle = `rgb(${r0},${g0},${b0})`; vctx.fillRect(mx + 1, my, 7, 5); } }
+  vctx.restore();
+  if (k) { if (Math.random() < .4) chips.push({ x:x + (Math.random() - .5) * 10, y:y + 1, vx:0, vy:-6, life:0, max:.5, col:'rgba(220,240,255,.8)' }); return; } // burbujas
+  if (s.hp < s.max) { const w = 16; vctx.fillStyle = 'rgba(0,0,0,.6)'; vctx.fillRect(x - w / 2 - 1, y - 27, w + 2, 3); vctx.fillStyle = s.hp / s.max > .5 ? '#6ad06a' : s.hp / s.max > .25 ? '#e8c040' : '#e05040'; vctx.fillRect(x - w / 2, y - 26, Math.max(1, w * s.hp / s.max), 1); }
+  redrawFront(x - 18, x + 18, y - 24, y);
 }
 function drawPirates(now){
-  const [x0, y0, x1, y1] = visibleRect();
-  for (const p of pirates()) { if (p.x < x0 - 30 || p.x > x1 + 30 || p.y < y0 - 30 || p.y > y1 + 30) continue;
-    const x = Math.round(p.x), y = Math.round(p.y); drawBoat(x, y, p.dir, now, true);
-    vctx.fillStyle = '#3a2a1a'; vctx.fillRect(x, y - 16, 1, 12); vctx.fillStyle = '#141414'; vctx.fillRect(x + 1, y - 16, 6, 4); vctx.fillStyle = '#f0f0e8'; vctx.fillRect(x + 3, y - 15, 2, 2); // la bandera negra con su calavera
-    redrawFront(x - 15, x + 15, y - 18, y); }
-  for (const n of navies()) { if (n.x < x0 - 30 || n.x > x1 + 30 || n.y < y0 - 30 || n.y > y1 + 30) continue;
-    const g = villageById(n.nation), x = Math.round(n.x), y = Math.round(n.y); drawBoat(x, y, n.dir, now, true);
-    vctx.fillStyle = '#3a2a1a'; vctx.fillRect(x, y - 16, 1, 12); const f = g && (nationOf(g).flag || g.flag); if (f) drawFlag(f, x + 1, y - 16, 6, 4, 1, now); redrawFront(x - 15, x + 15, y - 18, y); }
+  const [x0, y0, x1, y1] = visibleRect(), on = s => s.x > x0 - 40 && s.x < x1 + 40 && s.y > y0 - 40 && s.y < y1 + 40;
+  for (const p of pirates()) if (on(p)) drawWarShip(p, now, true);
+  for (const n of navies()) if (on(n)) drawWarShip(n, now, false);
+  for (const b of cannonballs) { // la bala, en arco, con su sombra
+    const k = Math.min(1, b.t / b.dur), x = b.x0 + (b.tx - b.x0) * k, y = b.y0 + (b.ty - b.y0) * k - Math.sin(k * Math.PI) * 10;
+    vctx.fillStyle = 'rgba(0,0,0,.25)'; vctx.fillRect(Math.round(x), Math.round(b.y0 + (b.ty - b.y0) * k + 2), 2, 1);
+    vctx.fillStyle = '#1a1a1a'; vctx.fillRect(Math.round(x) - 1, Math.round(y) - 1, 2, 2);
+  }
 }

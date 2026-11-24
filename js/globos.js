@@ -158,6 +158,7 @@ function pickMission(g){
 }
 function startFlight(v, g){
   const b = parkedReady(g)[0]; if (!b || !flyWeather(g)) return;
+  if (knowsSci(g, 'dirigible')) { if ((g.coal || 0) < 2) { b.ready = yearT + 40; return; } g.coal -= 2; } // el motor del dirigible quema carbón
   const m = pickMission(g); if (!m) { b.ready = yearT + 40; return; }
   b.mission = m; b.crew = []; board(v, b); b.state = 'embarque'; b.waitT = 7; b.pilot = v;
   if (m.kind === 'comercio') { const have = m.good === 'food' ? g.food - popOf(g) * 4 : (g[m.good] || 0) - 40, n = Math.max(0, Math.min(25, Math.floor(have))); g[m.good] -= n; b.goods = { k:m.good, n }; } // la carga, en la cesta

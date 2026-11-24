@@ -371,8 +371,8 @@ function randomObject(i, r, D){
     case B.DESERT: tree = .03 * D * (.5 + v); rock = .006; break;
     case B.FOREST: tree = .6 * D * (v < .4 ? .15 : .5 + v); bush = .03 * D; break; // claros donde v es bajo
     case B.SWAMP:  tree = .18 * D * (.5 + v); bush = .02 * D; break;
-    case B.HILLS:  tree = .12 * D * (.5 + v); rock = .012; rich = true; break;
-    case B.ROCK:   tree = .02 * D; rock = .035; rich = true; break;
+    case B.HILLS:  tree = .12 * D * (.5 + v); rock = .018; rich = true; break;
+    case B.ROCK:   tree = .02 * D; rock = .05; rich = true; break;
     case B.SNOW:   tree = .06 * D; rock = .01; rich = true; break;
     case B.ASH:    tree = .015 * D; rock = .008; break;
     case B.TUNDRA: tree = .012 * D; bush = .006 * D; rock = .01; break;
@@ -383,7 +383,12 @@ function randomObject(i, r, D){
   const p = r();
   if (p < tree) return fromTable(treeTable(i), rollTier(r, false));
   if (p < tree + bush) return fromTable(BUSHES, rollTier(r, false));
-  if (p < tree + bush + rock) { const t = rollTier(r, rich); return t === 0 && r() < .45 ? 'rock:stone' : ROCKS[rich ? t : Math.min(t, 1)]; }
+  if (p < tree + bush + rock) { // en la montaña, muchas vetas (hierro sobre todo, algo de oro y alguna gema); en el llano, pocas
+    const q = r();
+    if (rich) { if (q < .3) return 'ore:iron'; if (q < .39) return 'ore:gold'; if (q < .42) return 'gem:amethyst'; if (q < .43) return 'gem:mana'; }
+    else { if (q < .1) return 'ore:iron'; if (q < .13) return 'ore:gold'; }
+    const t = rollTier(r, rich); return t === 0 && r() < .45 ? 'rock:stone' : ROCKS[rich ? t : Math.min(t, 1)];
+  }
   return null;
 }
 // Separación mínima (en casillas) para dejar huecos por donde vean y caminen los aldeanos

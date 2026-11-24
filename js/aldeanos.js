@@ -294,7 +294,7 @@ function drawPersonIcons(){
 }
 
 function spawnVillagers(){
-  villagers = []; setFollow(null); nameIdx = 0; villages = []; rels = new Map(); travelers = []; diploT = 5; farmMap = new Map(); vidSeq = 0; pathMap = new Set(); bridgeSet = new Set(); bridges = []; plazaSet = new Set(); holySet = new Map(); usedFlags = new Set(); wear = new Float32Array(N); wornSet = new Set(); desireSet = new Set(); arrows = []; chips = []; floats = []; zoneCv = null; zoneT = 0; wallSet = new Set(); gateSet = new Set(); alliances = []; moneyFlows = []; worldHist = { t:[], n:{} }; olymp = { next:yearT + SEASON_LEN * 2, cur:null, past:[] }; epidemics = []; ballGames = []; sieges = []; stones = []; wallStone = new Set(); gateOwner = new Map();
+  villagers = []; setFollow(null); nameIdx = 0; villages = []; rels = new Map(); travelers = []; diploT = 5; farmMap = new Map(); vidSeq = 0; pathMap = new Set(); bridgeSet = new Set(); bridges = []; plazaSet = new Set(); holySet = new Map(); usedFlags = new Set(); wear = new Float32Array(N); wornSet = new Set(); desireSet = new Set(); arrows = []; slashes = []; cannonballs = []; ashClouds = []; chips = []; floats = []; zoneCv = null; zoneT = 0; wallSet = new Set(); gateSet = new Set(); alliances = []; moneyFlows = []; worldHist = { t:[], n:{} }; olymp = { next:yearT + SEASON_LEN * 2, cur:null, past:[] }; epidemics = []; ballGames = []; sieges = []; stones = []; wallStone = new Set(); gateOwner = new Map();
   if (!params.people) { updateVillagePanel(); return; }
   const r = mulberry32(hashStr(params.seed) ^ 0x51ed), bi = world.biome;
   // Tres pueblos en tierra buena cerca de agua dulce, lo bastante lejos para ser distintos y lo bastante cerca
@@ -334,7 +334,8 @@ function drawVillagers(){
     drawAnimals(v.y); // los animales que están más atrás que este aldeano
     if (v.x < vx0 - 40 || v.x > vx1 + 40 || v.y < vy0 - 20 || v.y > vy1 + 60) continue; // fuera de la vista: no se dibuja
     const s = personSprite(v, v.moving ? Math.floor(v.walk * 8) % 2 : 0, v.dir < 0);
-    const x = Math.round(v.x), y = Math.round(v.y), selected = v === follow;
+    const lunge = v.stab > 0 && !isRanged(v.weapon) ? v.dir * Math.round(Math.sin(Math.min(1, v.stab / .25) * Math.PI) * 2.5) : 0; // la estocada: se echa hacia delante y vuelve
+    const x = Math.round(v.x) + lunge, y = Math.round(v.y), selected = v === follow;
     const ringA = .65 + .35 * Math.sin(performance.now() / 250);
     if (selected) { vctx.fillStyle = `rgba(233,185,73,${ringA})`; for (const [dx, dy] of RING) if (dy < 1) vctx.fillRect(x + dx, y + dy, 1, 1); }
     if (v.appear < 0 || v.away) continue;
@@ -362,6 +363,7 @@ function drawVillagers(){
       vctx.fillStyle = `rgba(${ac},${aa * .35})`; vctx.fillRect(x - 3, y, 7, 2);
       vctx.fillStyle = `rgba(${ac},${aa})`; vctx.fillRect(x - 2, y + 2, 5, 1); vctx.fillRect(x - 4, y + 1, 1, 1); vctx.fillRect(x + 4, y + 1, 1, 1); vctx.fillRect(x - 3, y, 1, 1); vctx.fillRect(x + 3, y, 1, 1);
       drawPersonExtras(v, x, y, s, now); // buey al arar, capa de los héroes (ambiente.js)
+      if (v.moving && v.task && v.task.k === 'asalto' && Math.random() < (v.mount ? .5 : .3)) chips.push({ x:x - v.dir * 2 + (Math.random() - .5) * 2, y:y, vx:-v.dir * (6 + Math.random() * 6), vy:-3 - Math.random() * 4, life:0, max:.45 + Math.random() * .3, col:'rgba(160,140,108,.55)' }); // el polvo de la marcha
       // A caballo: primero el caballo (y el carro detrás), y el jinete encima
       let lift = 0;
       if (v.mount) {

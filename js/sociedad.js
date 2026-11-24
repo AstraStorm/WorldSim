@@ -748,8 +748,8 @@ let chips = [], floats = [], chipT = 0;
 const WORK_TOOLS = { escuela:'martillo', taberna:'martillo', tazas:'hacha', teatro:'martillo', coliseo:'martillo', cuartel:'martillo', asedio:'martillo', lonja:'martillo', ampliar:'martillo', cementerio:'azada', hospital:'martillo', equipar:'martillo', minar:'pico', herreria:'martillo', arboleda:'azada', bayal:'azada', encender:'martillo', talar:'hacha', picar:'pico', cantear:'pico', arar:'azada', construir:'martillo', pozo:'martillo', molino:'martillo', cantera:'pico', cercar:'martillo', arma:'martillo', caña:'martillo', plantar:'azada', banco:'martillo', maravilla:'martillo' };
 const CHIP_COL = { minar:['#b8c0cc', '#8a6a3a'],  encender:['#ffd060', '#ff8030'], talar:['#c89858', '#8a5a30'], picar:['#c8c4ba', '#8a867e'], cantear:['#c8c4ba', '#8a867e'], cantera:['#c8c4ba', '#8a867e'], arar:['#6e4a2c', '#8a6038'], plantar:['#6e4a2c', '#8a6038'] };
 function gainText(v){
-  const c = v.carry, name = { madera:'madera', piedra:'piedra', comida:c.t === 'carne' ? 'carne' : 'comida', hierro:'hierro', oro:'oro', gemas:c.n > 1 ? 'gemas' : 'gema' }[c.k] || c.k;
-  floats.push({ x:v.x, y:v.y - 12, txt:`+${c.n} ${name}`, col:c.k === 'hierro' ? '#b8c0cc' : c.k === 'oro' ? '#f8d850' : c.k === 'gemas' ? '#d88af0' : c.k === 'madera' ? '#e0b070' : c.k === 'piedra' ? '#d8d4cc' : c.t === 'carne' ? '#f08070' : '#a8e070', life:0 });
+  const c = v.carry, name = { madera:'madera', piedra:'piedra', comida:c.t === 'carne' ? 'carne' : 'comida', hierro:'hierro', oro:'oro', 'carbón':'carbón', gemas:c.n > 1 ? 'gemas' : 'gema' }[c.k] || c.k;
+  floats.push({ x:v.x, y:v.y - 12, txt:`+${c.n} ${name}`, col:c.k === 'carbón' ? '#9a9ca4' : c.k === 'hierro' ? '#b8c0cc' : c.k === 'oro' ? '#f8d850' : c.k === 'gemas' ? '#d88af0' : c.k === 'madera' ? '#e0b070' : c.k === 'piedra' ? '#d8d4cc' : c.t === 'carne' ? '#f08070' : '#a8e070', life:0 });
 }
 function drawTool(v, x, y, now){
   const job = v.task.job, tool = WORK_TOOLS[job]; if (!tool) return;
@@ -1345,7 +1345,7 @@ function renderVillageCard(force){
         <span>Piedra</span>${bar(g.stone / cap, '#a8a49c', 150)}<span>${Math.floor(g.stone)}</span>
         ${(g.know || {}).manga ? `<span>Tela</span>${bar((g.cloth || 0) / 20, '#d8ccb0', 150)}<span>${g.cloth || 0}${balloonsOf(g).length ? ` · ${balloonsOf(g).length === 1 ? 'globo' : `${balloonsOf(g).length} globos`} (${balloonsOf(g).map(b => b.cap).join(', ')} plazas)` : ''}</span>` : ''}
         <span>Agua</span>${bar((g.jars || 0) / (6 + storesOf(g).length * 8), '#5a9ad8', 150)}<span>${g.jars || 0} cántaros${g.cups ? ` · ${g.cups} tazas` : ''}</span>
-        ${g.iron || g.gold || g.gems || g.hides ? `<span>Materiales</span><span class="muted">hierro ${g.iron || 0} · oro ${g.gold || 0} · gemas ${g.gems || 0} · pieles ${g.hides || 0}</span><span></span>` : ''}</div>
+        ${g.iron || g.gold || g.gems || g.hides || g.coal ? `<span>Materiales</span><span class="muted">hierro ${g.iron || 0} · oro ${g.gold || 0} · gemas ${g.gems || 0} · pieles ${g.hides || 0}${industrial(g) || g.coal ? ` · carbón ${g.coal || 0}` : ''}</span><span></span>` : ''}</div>
       ${langCard(g)}
       <h4>Estado</h4><div class="needs"><span>Descontento</span>${bar(anger / 100, anger > 60 ? '#d8483a' : anger > 35 ? '#e8a838' : '#7ab04a', 150)}<span>${anger} %</span></div>
       ${g.protest ? '<div class="alert">Manifestación en curso</div>' : ''}${g.coup ? '<div class="alert">Golpe de estado en curso</div>' : ''}${wars.length ? `<div class="alert">En guerra con ${wars.map(o => `<button class="lnk" data-vid="${o.id}">${esc(o.name)}</button> (${REASON_TXT[rels.get(relKey(g, o)).war.reason] || 'el territorio'})`).join(', ')}</div>` : ''}
@@ -1791,16 +1791,27 @@ function drawTravelers(now){
     const g = villageById(t.from), s = personSprite(t.v, Math.floor((t.walk || 0) * 8) % 2, t.dir < 0), x = Math.round(t.x), y = Math.round(t.y);
     const wet = inWater(t.x, t.y); // en un cauce seco, sobre el hielo o en tierra no se dibuja la barca: van andando
     if (t.crew && wet) { const crew = t.crew.filter(u => !u.dead); crew.forEach((u, k) => { if (k % 2) return; const ox = -t.dir * Math.floor(k / 2) * 14, oy = (Math.floor(k / 2) % 2 ? 6 : -4); drawBoat(x + ox, y + oy, t.dir, now, true, personSprite(u, 0, t.dir < 0)); }); redrawFront(x - 15 - crew.length * 7, x + 15 + crew.length * 7, y - 20, y + 6); if (crew.length) { vctx.fillStyle = '#c8302a'; vctx.fillRect(x + t.dir * 2, y - 22, 3, 2); vctx.fillStyle = '#5a3a20'; vctx.fillRect(x + t.dir, y - 22, 1, 8); } continue; }
-    if (wet) { drawBoat(x, y, t.dir, now, true, s); redrawFront(x - 15, x + 15, y - s.height - 6, y); continue; } // lo que hay delante (en la orilla) tapa la barca
+    if (wet) { drawBoat(x, y, t.dir, now, true, s); redrawFront(x - 15, x + 15, y - s.height - 6, y); if (t.kind === 'diplomatico') diplomatBadge(x, y - s.height - 9, now); continue; } // lo que hay delante (en la orilla) tapa la barca
     if (t.kind === 'caravana') { drawCart(x - t.dir * 8, y, t.dir, now, '#c8a050'); if (t.cargo) { vctx.fillStyle = '#2a1a10'; vctx.fillRect(x - t.dir * 8 - 3, y - 9, 6, 4); vctx.fillStyle = GOODS[t.cargo.k].col; vctx.fillRect(x - t.dir * 8 - 2, y - 8, 4, 2); } } // con su carga, del color de la mercancía
     vctx.drawImage(s, x - (s.width >> 1), y - s.height + 1);
     redrawFront(x - 14, x + 14, y - s.height - 14, y);
     if (t.kind === 'mensajero') { vctx.fillStyle = '#f4f0e4'; vctx.fillRect(x + t.dir * 3, y - 8, 3, 2); vctx.fillStyle = '#c8302a'; vctx.fillRect(x + t.dir * 3 + 1, y - 8, 1, 1); } // con su carta lacrada
-    if (t.kind === 'diplomatico') { // con la bandera de su pueblo en un palo
+    if (t.kind === 'diplomatico') { // con la bandera de su pueblo en un palo y su insignia flotando encima
+      diplomatBadge(x, y - s.height - 6, now);
       vctx.fillStyle = '#4a2e18'; vctx.fillRect(x + t.dir * 3, y - 14, 1, 12);
       if (g && g.flag) drawFlag(g.flag, x + t.dir * 3 + (t.dir < 0 ? -6 : 1), y - 14, 6, 4, 1); else { const [r0, g0, b0] = g ? villageColor(g) : [200, 200, 200]; vctx.fillStyle = `rgb(${r0},${g0},${b0})`; vctx.fillRect(x + t.dir * 3 + (t.dir < 0 ? -4 : 1), y - 14, 4, 3); }
     }
   }
+}
+// La insignia de los diplomáticos: una paloma blanca sobre un escudo azul con borde dorado, que sube y baja
+function diplomatBadge(x, cy, now){
+  const y = Math.round(cy + Math.sin(now / 300 + x) * 1.2) - 3;
+  vctx.fillStyle = 'rgba(0,0,0,.35)'; vctx.fillRect(x - 3, y + 7, 7, 1);
+  vctx.fillStyle = '#c89a2a'; vctx.fillRect(x - 3, y, 7, 6); vctx.fillRect(x - 2, y + 6, 5, 1); vctx.fillRect(x - 1, y + 7, 3, 1);
+  vctx.fillStyle = '#f4d060'; vctx.fillRect(x - 3, y, 7, 1);
+  vctx.fillStyle = '#2a5aa8'; vctx.fillRect(x - 2, y + 1, 5, 4); vctx.fillRect(x - 1, y + 5, 3, 1);
+  vctx.fillStyle = '#ffffff'; vctx.fillRect(x - 1, y + 2, 3, 1); vctx.fillRect(x, y + 1, 2, 1); vctx.fillRect(x - 2, y + 3, 2, 1); vctx.fillRect(x + 1, y + 3, 1, 1); // la paloma
+  vctx.fillStyle = '#7ac04a'; vctx.fillRect(x + 2, y + 2, 1, 1); // la rama de olivo
 }
 // ---- Guerra: asaltos de un pueblo a otro; los armados luchan, el resto huye; si llegan sin oposición, saquean ----
 // Campamentos de las tropas en marcha (solo de noche): hoguera, tiendas de pieles o esteras
@@ -1841,7 +1852,11 @@ function drawCamps(t){
 }
 function launchRaid(att, def, r){
   if (!att || !def || att === def) return;
-  const ps = villagers.filter(v => !v.dead && !v.away && v.vid === att.id && (yearT - v.born) / YEAR >= ADULT_H && v !== att.leader && (v.hp ?? 1) > .5).sort((a, b) => (b.weapon ? 1 : 0) - (a.weapon ? 1 : 0)).slice(0, Math.min(6, Math.max(2, Math.floor(popOf(att) / 3))));
+  // El ejército sale de todo el país: del pueblo que ataca y de sus ciudades cercanas (los armados primero)
+  const nat = nationOf(att), mine = new Set(villages.filter(o => popOf(o) && nationOf(o) === nat && Math.hypot(o.fx - att.fx, o.fy - att.fy) < 70).map(o => o.id));
+  const natPop = villages.filter(o => mine.has(o.id)).reduce((a, o) => a + popOf(o), 0);
+  const ps = villagers.filter(v => !v.dead && !v.away && !v.boat && mine.has(v.vid) && (yearT - v.born) / YEAR >= ADULT_H && !villages.some(o => o.leader === v) && (v.hp ?? 1) > .5 && !(v.task && ['asalto', 'detenido'].includes(v.task.k)))
+    .sort((a, b) => (b.weapon ? 1 : 0) - (a.weapon ? 1 : 0) || (a.vid === att.id ? -1 : 0) - (b.vid === att.id ? -1 : 0)).slice(0, Math.min(18, Math.max(2, Math.floor(natPop / 2.2))));
   if (ps.length < 2) return;
   // Con experiencia, se reúnen antes en un punto a cierta distancia del pueblo enemigo y atacan todos a la vez
   const grp = { ps, go:!knowsT(att, 'grupo'), until:yearT + 35, loot:false, repelled:false };
@@ -1857,6 +1872,7 @@ function launchRaid(att, def, r){
   const sieged = launchSiege(att, def);
   for (const v of ps) {
     v.sleep = false; releaseTask(v); if (v.actT > 0) { v.actT = 0; v.onDone = null; }
+    v.water = Math.max(v.water, .85); v.food = Math.max(v.food, .75); // salen con provisiones: si no, la sed les hace volver a medio camino
     v.task = { k:'asalto', enemy:def.id, x:def.fx * T + 2, y:def.fy * T + 10, grp }; v.lastD = Infinity; v.route = null; v.routeKey = null;
     if (Math.random() < .4) floats.push({ x:v.x, y:v.y - 14, txt:['¡Al ataque!', '¡A por ellos!', `¡Por ${nationOf(att).name}!`][Math.floor(Math.random() * 3)], col:'#f8d0a0', life:0 });
   }
@@ -1865,7 +1881,7 @@ function launchRaid(att, def, r){
   const cav = ps.filter(v => v.mount).length;
   notify(`Los de ${att.name} marchan a atacar ${def.name}${grp.form ? ` en formación de ${grp.form}` : ''}${grp.go ? '' : ' (se reunirán antes de atacar)'}${cav ? ` con ${cav} jinete${cav > 1 ? 's' : ''}` : ''}${sieged ? ' y una catapulta' : ''}${isNight() ? ' en plena noche' : ''}`, { x:att.fx * T, y:att.fy * T });
 }
-const enemyOf = (v, u) => { const a = villageById(v.vid), b = villageById(u.vid); if (!a || !b || a === b) return false; const r = rels.get(relKey(a, b)); return !!(r && r.war); };
+const enemyOf = (v, u) => { const a = villageById(v.vid), b = villageById(u.vid); if (!a || !b || a === b) return false; const r = warRel(a, b); return !!(r && r.war); }; // entre sus naciones o entre los dos pueblos (globos.js)
 // Pelea entre personas (cuerpo a cuerpo con lanza o puños; con arco, de lejos). Devuelve true si este turno lo ha pasado luchando
 function fightPerson(v, e, dt){
   const gv = villageById(v.vid), ge = villageById(e.vid), d = Math.hypot(e.x - v.x, e.y - v.y), hv = elevAt(v), he = elevAt(e);
@@ -1889,6 +1905,11 @@ function fightPerson(v, e, dt){
     }
   }
   if (d > reach) { vGo(v, e.x, e.y, dt, true); return true; }
+  if (!isRanged(v.weapon) && v.atkT > .3 && !v.stab) { // entre golpe y golpe se mueven: rodean al rival, amagan y recuperan la distancia
+    const ph = yearT * 2.3 + (v.uid || 0) * 1.7;
+    vGo(v, e.x - v.dir * Math.max(3, reach - 1.5) + Math.cos(ph) * 1.5, e.y + Math.sin(ph) * 3.5, dt * .45, false);
+    v.dir = e.x < v.x ? -1 : 1;
+  }
   if (v.atkT <= 0) {
     v.atkT = (v.weapon === 'ballesta' ? 2.2 : v.weapon === 'arco' ? 1.5 : 1) * (cav ? .8 : 1); v.stab = .25;
     let dmg = { lanza:.34, espada:.42, arco:.28, ballesta:.5 }[v.weapon] || .14, hit = v.weapon === 'ballesta' ? .8 : v.weapon === 'arco' ? .7 : .85;
@@ -1904,13 +1925,13 @@ function fightPerson(v, e, dt){
     if (inForest(e) && knowsT(ge, 'bosque')) hit *= .7;          // entre los árboles cuesta acertar
     if (onTower) hit = Math.min(.95, hit + .15);
     if (v.ambush) { dmg *= 1.6; hit = 1; v.ambush = false; if (gv && yearT - (gv.ambushMsgT ?? -1e9) > 40) { gv.ambushMsgT = yearT; notify(`¡Emboscada! Los de ${gv.name} salen del bosque y caen sobre los de ${ge ? ge.name : '?'}`, { x:v.x, y:v.y }); } }
-    const shoot = isRanged(v.weapon); snd(shoot ? 'arrow' : 'clash', v.x, v.y); if (shoot && knowsSci(gv, 'polvora')) gunSmoke(v); // mosquetes (industria.js) if (shoot) arrows.push({ x0:v.x, y0:v.y - 5, a:e, v, t:0, dur:Math.max(.12, d / 150), hit:true, vis:true, bolt:v.weapon === 'ballesta' });
+    const shoot = isRanged(v.weapon); snd(shoot ? 'arrow' : 'clash', v.x, v.y); if (shoot && knowsSci(gv, 'polvora')) gunSmoke(v); if (shoot) arrows.push({ x0:v.x, y0:v.y - 5, a:e, v, t:0, dur:Math.max(.12, d / 150), hit:true, vis:true, bolt:v.weapon === 'ballesta' }); // humo de los mosquetes (industria.js)
     if (Math.random() < hit) {
-      if (!shoot) for (let n = 0; n < 4; n++) chips.push({ x:(v.x + e.x) / 2, y:(v.y + e.y) / 2 - 6, vx:(Math.random() - .5) * 30, vy:-8 - Math.random() * 14, life:0, max:.25 + Math.random() * .2, col:n % 2 ? '#fff3a0' : '#ffd040' }); // chispas del choque
+      if (!shoot) slashes.push({ x:(v.x + e.x) / 2, y:e.y - 6, dir:v.dir, t:0, big:!!v.weapon }); if (!shoot) for (let n = 0; n < 4; n++) chips.push({ x:(v.x + e.x) / 2, y:(v.y + e.y) / 2 - 6, vx:(Math.random() - .5) * 30, vy:-8 - Math.random() * 14, life:0, max:.25 + Math.random() * .2, col:n % 2 ? '#fff3a0' : '#ffd040' }); // chispas del choque
       e.hp = (e.hp ?? 1) - dmg * castleShield(e); hurtFx(e, v.x, v.y, walkable); // (en su castillo aguantan más: fama.js)
       if (gv) milOf(gv).xp += .2;
       if (e.hp <= 0) {
-        const r = ge && gv && rels.get(relKey(ge, gv)); if (r && r.war) { r.war.dead++; warLoss(r, ge); }
+        const r = ge && gv && warRel(ge, gv); if (r && r.war) { r.war.dead++; warLoss(r, ge); }
         notify(`${e.name} de ${ge ? ge.name : '?'} ha muerto en la guerra contra ${gv ? gv.name : '?'}`, { x:e.x, y:e.y });
         if (gv) heroKill(v, gv); // ¿un héroe? (fama.js)
         if (gv) { const m = milOf(gv); m.kills++; m.xp += 1; }
@@ -2046,6 +2067,24 @@ function moreParties(g){
   if (langs.length && !has('region')) { const L = langList()[langs[0]]; ps.push({ ...partyName('region', g, used, L ? capFirst(L.adj) : null), kind:'region', ideo:-.05, laws:partyProgram(-.05, 3, ['plurilinguismo']), col:'#8a5ac8' }); }
   while (ps.length > 6) ps.splice(ps.findIndex((p, k) => k !== g.ruling), 1);
 }
+// Qué forma de gobierno se dan (la primera vez, o al dejar de ser una tribu)
+function pickRegime(g, tribe){
+  const L = g.leader && !g.leader.dead ? g.leader : null, devout = g.faith && ((g.devotion || 0) > 1 || (g.wrath || 0) > 2), danger = (g.danger || 0) > 0;
+  const w = { republica:3, democracia:.6, monarquia:L ? 2.5 : 0, teocracia:devout ? 2 : .3, dictadura:L ? (danger ? 2 : .8) : 0, socialismo:1, tribu:tribe ? 1.2 : 0 };
+  let k = Math.random() * Object.values(w).reduce((a2, b2) => a2 + b2, 0); for (const [reg, x] of Object.entries(w)) if ((k -= x) < 0) return reg;
+  return 'republica';
+}
+// Una tribu que ya es grande (mucha gente, varias ciudades o escritura) deja el consejo de ancianos
+function tribeGrowsUp(g, adults){
+  const pop = villages.filter(o => popOf(o) && nationOf(o) === g).reduce((a, o) => a + popOf(o), 0), cities = villages.filter(o => o !== g && popOf(o) && nationOf(o) === g).length;
+  if (!(pop >= 25 || cities >= 2 || ((g.know || {}).escritura && pop >= 15)) || yearT - (g.regimeT || 0) < DAY_LEN * 2) return;
+  const reg = pickRegime(g, false), at = { x:g.fx * T, y:g.fy * T };
+  let chief = ['monarquia', 'dictadura'].includes(reg) ? g.leader : null;
+  if (reg === 'teocracia') chief = adults.filter(u => u.oficio === 'sacerdote').sort((a, b) => pietyOf(b) - pietyOf(a))[0] || adults.slice().sort((a, b) => pietyOf(b) - pietyOf(a))[0] || null;
+  if (!g.parties) makeParties(g);
+  setRegime(g, reg, chief);
+  notify(`${g.name} ya es demasiado grande para gobernarse con un consejo de ancianos${cities ? ` (${cities + 1} ciudades, ${pop} habitantes)` : ` (${pop} habitantes)`}: ahora es ${REGIME_A[reg]}${chief && !chief.dead ? ` y ${chief.name} es ${leaderTitle(g)}` : ''}`, at);
+}
 function makeParties(g){
   const parties = [], used = new Set();
   for (const side of Math.random() < .5 ? ['izq', 'centro', 'der'] : ['izq', 'der']) {
@@ -2056,10 +2095,8 @@ function makeParties(g){
   }
   g.parties = parties;
   if (!g.regime) { // la primera forma de gobierno depende de cómo les va: quien manda, cuánto temen a sus dioses, si hay peligro...
-    const L = g.leader && !g.leader.dead ? g.leader : null, devout = g.faith && ((g.devotion || 0) > 1 || (g.wrath || 0) > 2), danger = (g.danger || 0) > 0;
-    const w = { republica:3, democracia:.6, monarquia:L ? 2.5 : 0, teocracia:devout ? 2 : .3, dictadura:L ? (danger ? 2 : .8) : 0, socialismo:1, tribu:1.2 };
-    let k = Math.random() * Object.values(w).reduce((a2, b2) => a2 + b2, 0); for (const [reg, x] of Object.entries(w)) if ((k -= x) < 0) { g.regime = reg; break; }
-    g.regime ||= 'republica'; g.regimeT = yearT;
+    g.regime = pickRegime(g, true); g.regimeT = yearT;
+    const danger = (g.danger || 0) > 0;
     if (PARLIAMENT.includes(g.regime)) moreParties(g);
     if (g.regime === 'teocracia' && g.faith) { const pr = villagers.filter(u => !u.dead && u.vid === g.id && (yearT - u.born) / YEAR >= ADULT_H).sort((x, y) => pietyOf(y) - pietyOf(x))[0]; if (pr) g.leader = pr; }
     const at = { x:g.fx * T, y:g.fy * T }, Ln = g.leader && !g.leader.dead ? g.leader.name : 'quien manda';
@@ -2243,6 +2280,7 @@ function politicsTick(g, dt, people){
   colonyTick(g, dt, people, adults); cultureTick(g, dt, people, adults); // colonias.js, cultura.js
   wealthTick(g, dt, people); huntTick(g, dt, people, adults); // riqueza.js, noticias.js (batidas)
   if ((g.goodsT = (g.goodsT || 0) - dt) <= 0) { g.goodsT = 20; goodsTick(g); } // mercancías (comercio.js)
+  if (cap === g && regimeOf(g) === 'tribu' && g.parties && Math.random() < dt * .004) tribeGrowsUp(g, adults);
   if (cap === g && regimeOf(g) === 'republica' && hasSchool(g) && (g.know || {}).escritura && popOf(g) >= 18 && yearT - (g.regimeT || 0) > YEAR && !atWarJ0(g) && Math.random() < dt * .0006) {
     setRegime(g, 'democracia', null); notify(`La república de ${g.name} se convierte en una democracia parlamentaria: más partidos, y si nadie gana por mayoría, gobiernos de coalición`, { x:g.fx * T, y:g.fy * T });
   }
@@ -2684,11 +2722,19 @@ function fightOrFlee(v, g, dt){
   }
   return true;
 }
+// Tajos: un arco blanco que se ve un instante en cada golpe cuerpo a cuerpo
+let slashes = [];
 function updateArrows(dt){
+  for (const q of slashes) q.t += dt; if (slashes.length) slashes = slashes.filter(q => q.t < .2);
   for (const r of arrows) { r.t += dt; if (r.t >= r.dur && !r.done) { r.done = true; if (!r.vis && r.hit && !r.a.dead && !r.v.dead) hitAnimal(r.a, .35, r.v); } } // las de las batallas solo se ven (el daño ya está hecho)
   if (arrows.length) arrows = arrows.filter(r => r.t < r.dur + .4);
 }
 function drawArrows(){
+  for (const q of slashes) { // de arriba abajo, hacia donde golpea
+    const k = q.t / .2, R = q.big ? 6 : 4, sweep = 2.2 * Math.min(1, k * 1.6), a0 = q.dir > 0 ? -1.1 : Math.PI + 1.1 - sweep;
+    vctx.strokeStyle = `rgba(255,250,230,${(1 - k) * .9})`; vctx.lineWidth = q.big ? 1.2 : .8;
+    vctx.beginPath(); vctx.arc(q.x, q.y, R, a0, a0 + sweep); vctx.stroke();
+  }
   for (const r of arrows) {
     const k = Math.min(1, r.t / r.dur), tx = r.a.x + (r.hit ? 0 : 6), ty = r.a.y - 2 + (r.hit ? 0 : 4);
     const x = r.x0 + (tx - r.x0) * k, y = r.y0 + (ty - r.y0) * k - Math.sin(k * Math.PI) * 4;
@@ -2723,6 +2769,7 @@ function deposit(v, g){
   else if (v.carry.k === 'hierro') g.iron = (g.iron || 0) + v.carry.n;
   else if (v.carry.k === 'oro') { g.gold = (g.gold || 0) + v.carry.n; if (g.coin) { const ec = ecOf(g); ec.treas += v.carry.n * 6 * ec.P; ec.infl -= .01 * v.carry.n; } } // el oro respalda la moneda
   else if (v.carry.k === 'gemas') g.gems = (g.gems || 0) + v.carry.n;
+  else if (v.carry.k === 'carbón') g.coal = (g.coal || 0) + v.carry.n; // para las máquinas de vapor (industria.js)
   else g.stone += v.carry.n;
   payWage(v, g, v.carry.n); // el trabajo se paga (más cuanto más suben los precios)
   v.carry = null; clampStore(g);
@@ -2807,7 +2854,7 @@ function updateVillagers(dt){
     }
     // Si el hambre aprieta de verdad y no llega a la hoguera, tira de las provisiones de la aldea
     if (v.food < (hasLaw(g, 'reparto') ? .16 : .08)) eatFrom(v, g, .8); // con reparto, antes se tira de las provisiones
-    v.hp = Math.min(1, (v.hp ?? 1) + dt * .008 * (hasLaw(g, 'sanidad') ? 3 : 1) * (hasHosp(g) ? 2 : 1) * (v.sick ? 0 : 1)); // enfermo no se repone if (v.hurtT > 0) v.hurtT -= dt; if (v.stab > 0) v.stab -= dt;
+    v.hp = Math.min(1, (v.hp ?? 1) + dt * .008 * (hasLaw(g, 'sanidad') ? 3 : 1) * (hasHosp(g) ? 2 : 1) * (v.sick ? 0 : 1)); if (v.hurtT > 0) v.hurtT -= dt; if (v.stab > 0) v.stab -= dt; // (enfermo no se repone)
     // Defensa: con un lobo o un oso encima, quien tiene arma le planta cara; los demás corren a la hoguera
     if (v.boat) { if (!v.task || v.task.k !== 'barca') { v.boat = false; g.boatOut = false; if (g.port) landAt(v, (g.port.end % W) * T + 2, ((g.port.end / W) | 0) * T + 3); } }
     if (!(v.scanA > 0)) { v.scanA = .4; v.foe = v.boat ? null : threatFor(v, g); } else v.scanA -= dt;
@@ -2842,7 +2889,7 @@ function updateVillagers(dt){
     }
     if (v.task && v.task.k === 'asalto' && (v.water < .3 || v.food < .22)) v.task = null; // la sed y el hambre pueden más que la guerra
     if (v.task && v.task.k === 'asalto') {
-      const eg = villageById(v.task.enemy), r = eg && rels.get(relKey(eg, g));
+      const eg = villageById(v.task.enemy), r = eg && warRel(eg, g);
       const G = v.task.grp;
       // De noche y aún lejos del enemigo: campamento improvisado (tiendas de pieles si las tienen) y al amanecer, en marcha
       if (G && G.camp && (!isNight() || !eg || !r || !r.war)) { G.camp.done = true; G.camp = null; G.campedT = yearT; }
@@ -2877,8 +2924,16 @@ function updateVillagers(dt){
         if (!r.war.lootMsgT || yearT - r.war.lootMsgT > 40) { r.war.lootMsgT = yearT; notify(`Los de ${g.name} saquean ${eg.name}`, { x:v.x, y:v.y }); misfortune(eg, 'guerra'); }
         v.task = { k:'volver' };
       } else {
+        // ¡A la carga!: al llegar cerca, rompen la formación y corren todos a la vez, gritando y levantando polvo
+        const near = Math.hypot(v.x / T - eg.fx, v.y / T - eg.fy) < 16;
+        if (G && near && !G.charge) {
+          G.charge = true; snd('horn', v.x, v.y);
+          for (const u of G.ps) if (!u.dead && u.task && u.task.k === 'asalto' && Math.random() < .6) floats.push({ x:u.x, y:u.y - 14, txt:['¡A la carga!', '¡Adelante!', '¡Aaaah!', `¡Por ${nationOf(g).name}!`][Math.floor(Math.random() * 4)], col:'#ffd0a0', life:0 });
+          if (G.ps.length >= 4 && (!r.war.chargeMsg || yearT - r.war.chargeMsg > 60)) { r.war.chargeMsg = yearT; notify(`¡Las tropas de ${g.name} cargan contra ${eg.name}!`, { x:v.x, y:v.y }); }
+        }
+        if (G && G.charge && near) { vGo(v, v.task.x, v.task.y, dt, true); continue; }
         // En formación mientras están lejos: el de cabeza marca el paso y los demás van en su sitio
-        if (G && G.go && G.form && Math.hypot(v.x / T - eg.fx, v.y / T - eg.fy) > 16) {
+        if (G && G.go && G.form && !near) {
           const alive = G.ps.filter(u => !u.dead && u.task && u.task.k === 'asalto'), lead = alive[0], k = alive.indexOf(v);
           if (lead && lead !== v && k > 0) { const dx = eg.fx * T - lead.x, dy = eg.fy * T - lead.y, dl = Math.hypot(dx, dy) || 1, fx = dx / dl, fy = dy / dl, [back, side] = formSlot(G.form, k); vGo(v, lead.x - fx * back * 7 - fy * side * 7, lead.y - fy * back * 7 + fx * side * 7, dt); continue; }
           if (lead === v) { vGo(v, v.task.x, v.task.y, dt * .7); continue; }

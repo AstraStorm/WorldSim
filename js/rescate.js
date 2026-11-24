@@ -15,7 +15,7 @@ const austerity = g => g.austerity > yearT ? .65 : 1;
 // Un país que pueda prestar: rico, amigo y en paz con el que lo pide
 function rescuer(g, need){
   const C = typeof council === 'function' ? council() : null;
-  const cands = villages.filter(o => o !== g && popOf(o) && nationOf(o) === o && o.coin && ecOf(o).treas > 30 * ecOf(o).P && !sanctionedPair(g, o)) // (presta lo que puede, aunque no cubra toda la deuda).filter(o => { const r = rels.get(relKey(g, o)); return r && r.known && !r.war && (r.v > 15 || (C && C.members.includes(o.id) && C.members.includes(nationOf(g).id))); });
+  const cands = villages.filter(o => o !== g && popOf(o) && nationOf(o) === o && o.coin && ecOf(o).treas > 30 * ecOf(o).P && !sanctionedPair(g, o)).filter(o => { const r = rels.get(relKey(g, o)); return r && r.known && !r.war && (r.v > 15 || (C && C.members.includes(o.id) && C.members.includes(nationOf(g).id))); }); // (presta lo que puede, aunque no cubra toda la deuda)
   return cands.sort((a, b) => ecOf(b).treas - ecOf(a).treas)[0] || null;
 }
 // (desde econTick, antes de mirar si hay bancarrota). Devuelve true si ha hecho algo
