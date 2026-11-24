@@ -271,12 +271,12 @@ function drawWarIcons(t){
     if (v.dead || v.away || !v.enemy || v.enemy.dead || Math.hypot(v.enemy.x - v.x, v.enemy.y - v.y) > 40) continue;
     const k = Math.floor(v.x / 60) + ',' + Math.floor(v.y / 60), c = cells.get(k) || { x:0, y:0, n:0 }; c.x += v.x; c.y += v.y; c.n++; cells.set(k, c);
   }
-  const s = Math.max(1.2, Math.min(1.8, zoom / 2.2));
-  for (const c of cells.values()) if (c.n >= 2) { const [x, y] = sc([c.x / c.n, c.y / c.n - 22]); if (x > -30 && y > -30 && x < cw + 30 && y < ch + 30) swordsIcon(x, y, s * (c.n >= 6 ? 1.3 : 1), t, true); }
+  const s = Math.max(2.6, Math.min(3.6, zoom / 1.1)); // grande, que se vea bien dónde se lucha
+  for (const c of cells.values()) if (c.n >= 2) { const [x, y0] = sc([c.x / c.n, c.y / c.n - 22]), y = y0 - 6 * s; if (x > -60 && y > -60 && x < cw + 60 && y < ch + 60) swordsIcon(x, y, s * (c.n >= 6 ? 1.3 : 1), t, true); }
   // Ejércitos en marcha (sin pelea todavía)
   const groups = new Map();
   for (const v of villagers) if (!v.dead && !v.away && v.task && v.task.k === 'asalto' && v.task.grp && !v.enemy) { const G = v.task.grp, c = groups.get(G) || { x:0, y:0, n:0 }; c.x += v.x; c.y += v.y; c.n++; groups.set(G, c); }
-  for (const c of groups.values()) if (c.n >= 3) { const [x, y] = sc([c.x / c.n, c.y / c.n - 24]); if (x > -30 && y > -30 && x < cw + 30 && y < ch + 30) swordsIcon(x, y, s * .8, t, false); }
+  for (const c of groups.values()) if (c.n >= 3) { const [x, y0] = sc([c.x / c.n, c.y / c.n - 24]), y = y0 - 5 * s; if (x > -60 && y > -60 && x < cw + 60 && y < ch + 60) swordsIcon(x, y, s * .8, t, false); }
   // La conquista en marcha: barra con el porcentaje sobre el pueblo
   for (const r of rels.values()) for (const [id, p] of Object.entries((r.war && r.war.siege) || {})) {
     if (p < 1) continue; const eg = villageById(+id); if (!eg) continue;

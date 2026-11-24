@@ -203,9 +203,9 @@ function stepBalloon(g, b, dt){
       b.waitT -= dt;
       if ((b.waitT <= 0 || b.crew.length >= b.cap) && b.inf > .97) {
         b.state = 'despegue'; b.phase = 'ida'; b.flights++; b.hp = b.hp ?? 1;
-        if (m.kind === 'bombardeo') { const n = Math.min(Math.floor((g.stone || 0) / 2), 2 + b.cap * 2); g.stone -= n * 2; b.rocks = n; if (!n) { m.kind = 'explorar'; b.phase = 'vuelta'; } }
+        if (m.kind === 'bombardeo') { const n = Math.min(Math.floor((g.stone || 0) / 2), 2 + b.cap * 2), nf = Math.min(Math.floor((g.wood || 0) / 2), g.cloth || 0, 1 + b.cap * 2); g.stone -= n * 2; g.wood -= nf * 2; g.cloth = (g.cloth || 0) - nf; b.rocks = n; b.fire = nf; if (!n && !nf) { m.kind = 'explorar'; b.phase = 'vuelta'; } } // rocas y teas: madera envuelta en tela que prenden antes de soltarla
         for (const u of villagers) if (u.task && u.task.k === 'embarcar' && u.task.bid === b.id && u.vid === g.id) u.task = null; // los que no llegaron, se quedan
-        if (m.kind === 'bombardeo') notify(`¡El globo de ${g.name} despega cargado con ${b.rocks} rocas para bombardear ${villageById(m.to)?.name || 'al enemigo'}!`, { x:b.x, y:b.y });
+        if (m.kind === 'bombardeo') notify(`¡El globo de ${g.name} despega cargado con ${[b.rocks ? `${b.rocks} rocas` : '', b.fire ? `${b.fire} teas` : ''].filter(Boolean).join(' y ')} para bombardear ${villageById(m.to)?.name || 'al enemigo'}!`, { x:b.x, y:b.y });
         else if (b.flights <= 2 || b.flights % 6 === 0) notify(`El globo de ${g.name} despega con ${b.crew.length} ${b.crew.length === 1 ? 'persona' : 'personas'} ${m.kind === 'explorar' ? 'a cartografiar desde el aire' : m.kind === 'visita' ? `a visitar ${villageById(m.to)?.name || 'otro pueblo'}` : m.kind === 'comercio' ? `a vender ${b.goods ? b.goods.n : ''} de ${m.gname} a ${villageById(m.to)?.name || 'otro pueblo'}` : `a por ${m.res === 'tree' ? 'madera' : 'piedra'}`}`, { x:b.x, y:b.y });
       }
       if (!b.crew.length) { b.state = 'aparcado'; b.mission = null; }
@@ -223,7 +223,7 @@ function stepBalloon(g, b, dt){
     if ((b.burnT = (b.burnT || 0) - dt) <= 0) b.burnT = 2.5 + Math.random() * 2; burn = b.burnT > 2.2; // fogonazos de vez en cuando para no perder altura
     if (d < 10) {
       if (!home && m.kind === 'explorar') { b.phase = 'vuelta'; }
-      else if (!home && m.kind === 'bombardeo') { b.state = 'bombardeo'; b.bombT = .5; b.bombEnd = yearT + 45; b.aim = null; b.kills = 0; }
+      else if (!home && m.kind === 'bombardeo') { b.state = 'bombardeo'; b.bombT = .5; b.bombEnd = yearT + 45; b.aim = null; b.kills = 0; b.fires = 0; }
       else b.state = 'aterrizaje';
     }
   } else if (b.state === 'aterrizaje') {
@@ -237,15 +237,17 @@ function stepBalloon(g, b, dt){
   } else if (b.state === 'bombardeo') {
     // Baja a unos 30 de altura y va de un edificio a otro soltando una roca sobre cada uno
     const o = villageById(m.to);
-    if (!o || !popOf(o) || !atWar(g, o) || b.rocks <= 0 || yearT > b.bombEnd) { b.phase = 'vuelta'; b.state = 'vuelo'; if (b.kills) notify(`El bombardeo desde el globo de ${g.name} deja ${b.kills} ${b.kills === 1 ? 'muerto' : 'muertos'} en ${o ? o.name : 'el pueblo enemigo'}`, { x:b.x, y:b.y }); }
+    if (!o || !popOf(o) || !atWar(g, o) || (b.rocks <= 0 && !(b.fire > 0)) || yearT > b.bombEnd) { b.phase = 'vuelta'; b.state = 'vuelo'; if (b.kills || b.fires) notify(`El bombardeo desde el globo de ${g.name} deja ${[b.kills ? `${b.kills} ${b.kills === 1 ? 'muerto' : 'muertos'}` : '', b.fires ? `${b.fires} ${b.fires === 1 ? 'fuego' : 'fuegos'}` : ''].filter(Boolean).join(' y ')} en ${o ? o.name : 'el pueblo enemigo'}`, { x:b.x, y:b.y }); }
     else {
       if (!b.aim) { const vt = vitalTargets(o), bs = vt.length && Math.random() < .7 ? vt.slice(0, 3) : buildingsOf(o).filter(i => world.objs[i]); const i = bs.length ? bs[Math.floor(Math.random() * bs.length)] : o.fy * W + o.fx; b.aim = [(i % W) * T + 2, ((i / W) | 0) * T - 2]; } // primero, los sitios clave (estrategia.js)
       const d = Math.hypot(b.aim[0] - b.x, b.aim[1] - b.y) || 1, sp = 9;
       b.vx += ((b.aim[0] - b.x) / d * sp + w[0] * .4 - b.vx) * Math.min(1, dt * 1.2); b.vy += ((b.aim[1] - b.y) / d * sp + w[1] * .4 - b.vy) * Math.min(1, dt * 1.2);
       b.x += b.vx * dt; b.y += b.vy * dt; b.alt += (30 - b.alt) * Math.min(1, dt);
       if ((b.bombT -= dt) <= 0 && d < 6) {
-        balloonRocks.push({ x:b.x, y:b.y, alt:b.alt - 2, vz:0, vx:b.vx * .4, vy:b.vy * .4, from:g.id, to:o.id, bid:b.id }); b.rocks--; b.bombT = 1.2; b.aim = null;
-        if (!b.bombMsg || yearT - b.bombMsg > 60) { b.bombMsg = yearT; notify(`¡El globo de ${g.name} suelta rocas sobre ${o.name}!`, { x:b.x, y:b.y }); }
+        // Sobre lo que arde (madera) o si ya no quedan rocas, una tea; sobre la piedra, mejor una roca
+        const ai = Math.floor(b.aim[1] / T + .5) * W + Math.floor(b.aim[0] / T), ao = world.objs[ai], fire = b.fire > 0 && (b.rocks <= 0 || !(isBuilding(ao) && !wooden(ao)) && Math.random() < .7);
+        balloonRocks.push({ x:b.x, y:b.y, alt:b.alt - 2, vz:0, vx:b.vx * .4, vy:b.vy * .4, from:g.id, to:o.id, bid:b.id, fire, spin:Math.random() * 6 }); if (fire) b.fire--; else b.rocks--; b.bombT = 1.2; b.aim = null;
+        if (!b.bombMsg || yearT - b.bombMsg > 60) { b.bombMsg = yearT; notify(fire ? `¡El ${knowsSci(g, 'dirigible') ? 'dirigible' : 'globo'} de ${g.name} lanza teas ardiendo sobre ${o.name} para quemar el pueblo!` : `¡El globo de ${g.name} suelta rocas sobre ${o.name}!`, { x:b.x, y:b.y }); }
       }
     }
   } else if (b.state === 'cayendo') {
@@ -288,7 +290,7 @@ function shootAtBalloon(g, b, dt){
     if (!hit) continue;
     b.hp = (b.hp ?? 1) - (u.weapon === 'ballesta' ? .14 : .07) * (knowsSci(g, 'aeronautica') ? .65 : 1);
     if (b.hp <= 0 && b.state !== 'cayendo') {
-      b.state = 'cayendo'; b.vz = 0; b.rocks = 0;
+      b.state = 'cayendo'; b.vz = 0; b.rocks = 0; b.fire = 0;
       notify(`¡Los arqueros de ${villageById(u.vid).name} derriban a flechazos el globo de ${g.name}!`, { x:b.x, y:b.y });
       return;
     }
@@ -306,9 +308,11 @@ function crashBalloon(g, b){
 // Las rocas que suelta: caen con gravedad y, al llegar al suelo, destrozan edificios y aplastan a quien pillan
 function updateRocks(dt){
   for (const r of balloonRocks) {
-    r.vz += 70 * dt; r.alt -= r.vz * dt; r.x += r.vx * dt; r.y += r.vy * dt;
+    r.vz += (r.fire ? 55 : 70) * dt; r.alt -= r.vz * dt; r.x += r.vx * dt; r.y += r.vy * dt; r.spin = (r.spin || 0) + dt * 9;
+    if (r.fire && smoke.length < 450 && Math.random() < dt * 14) smoke.push({ x:r.x, y:r.y - r.alt - 2, vx:(Math.random() - .5) * 3, vy:-3, r:1, life:0, max:.8 + Math.random() * .6 }); // estela de humo
     if (r.alt > 0) continue;
     r.done = true; const tx = Math.floor(r.x / T), ty = Math.floor(r.y / T), g = villageById(r.from), o = villageById(r.to);
+    if (r.fire) { fireBombLand(r, tx, ty, g, o); continue; }
     for (let y = ty - 1; y <= ty + 3; y++) for (let x = tx - 3; x <= tx + 3; x++) if (x >= 0 && y >= 0 && x < W && y < H) damageBuilding(y * W + x, .4);
     for (const u of villagers) {
       if (u.dead || u.away || Math.hypot(u.x - r.x, u.y - r.y) > 8) continue;
@@ -321,6 +325,29 @@ function updateRocks(dt){
     if (onScreen(r.x, r.y)) { snd('boom', r.x, r.y, .2); shake = Math.max(shake, .6); }
   }
   if (balloonRocks.length) balloonRocks = balloonRocks.filter(r => !r.done);
+}
+// La tea prende la madera aunque el suelo de debajo no arda (arena, roca, nieve pisada…); solo la apagan el agua, la nieve o la lluvia
+function fireBombTile(i, center){
+  if (ignite(i, center ? 4 : .9)) return true;
+  const o = world.objs[i], wood = o && !o.burnt && (isBuilding(o) ? wooden(o) : OBJ[o.key][1] === 'tree');
+  if (!wood || fires.has(i) || fires.size > 260 || WATER[world.biome[i]] || snowA[i] > .15 || floodA[i] > .08 || world.lavaT[i] || raining(i) || Math.random() > (center ? 1 : .35)) return false;
+  const bld = isBuilding(o); fires.set(i, { t:0, life:(bld ? 10 : 7) + Math.random() * 3, tree:true, bld }); return true;
+}
+// La tea al caer: prende la casilla donde da y alguna de al lado (si está mojada o nevada, se apaga sin más) y chamusca a quien pilla debajo
+function fireBombLand(r, tx, ty, g, o){
+  let lit = 0;
+  for (let y = ty - 1; y <= ty + 1; y++) for (let x = tx - 1; x <= tx + 1; x++) if (x >= 0 && y >= 0 && x < W && y < H && fireBombTile(y * W + x, x === tx && y === ty)) lit++;
+  if (!lit) { const i = ty * W + tx; if (tx >= 0 && ty >= 0 && tx < W && ty < H && world.objs[i] && isBuilding(world.objs[i])) damageBuilding(i, .15); } // no prende: solo el golpe
+  if (lit) { const bl = g && balloonsOf(g).find(x => x.id === r.bid); if (bl) bl.fires = (bl.fires || 0) + 1; }
+  for (const u of villagers) {
+    if (u.dead || u.away || Math.hypot(u.x - r.x, u.y - r.y) > 6) continue;
+    u.hp = (u.hp ?? 1) - .35;
+    if (u.hp <= 0) { killVillager(u, 'guerra'); const bl = g && balloonsOf(g).find(x => x.id === r.bid); if (bl) bl.kills = (bl.kills || 0) + 1; const wr = g && o && warRel(g, o); if (wr && wr.war) wr.war.dead = (wr.war.dead || 0) + 1; }
+    else hurtFx(u, r.x, r.y, walkable);
+  }
+  if (o) misfortune(o, 'guerra');
+  for (let k = 0; k < 8; k++) chips.push({ x:r.x, y:r.y - 2, vx:(Math.random() - .5) * 24, vy:-8 - Math.random() * 10, life:0, max:.4 + Math.random() * .4, col:k % 3 ? (k % 2 ? '#ffb030' : '#ff5a18') : '#6a4424' }); // chispas y astillas
+  if (onScreen(r.x, r.y)) snd('boom', r.x, r.y, .12);
 }
 // En el destino: recogen lo que han venido a buscar o hacen la visita
 function missionDone(g, b){
@@ -441,6 +468,14 @@ function drawBalloons(now){
   for (const r of balloonRocks) { // rocas cayendo, con su sombra en el suelo
     if (r.x < x0 - 10 || r.x > x1 + 10) continue;
     vctx.fillStyle = 'rgba(0,0,0,.3)'; vctx.fillRect(Math.round(r.x) - 1, Math.round(r.y), 3, 1);
+    if (r.fire) { // tea: un cacho de madera que da vueltas con la tela ardiendo en una punta
+      const cx = Math.round(r.x), cy = Math.round(r.y - r.alt), dx = Math.round(Math.cos(r.spin) * 2), dy = Math.round(Math.sin(r.spin) * 2), fl = Math.floor(now / 70) % 2;
+      vctx.fillStyle = '#5a3a1c'; vctx.fillRect(cx - dx, cy - dy, 2, 2); vctx.fillRect(cx, cy, 2, 2);
+      vctx.fillStyle = '#c8b890'; vctx.fillRect(cx + dx, cy + dy, 2, 2); // la tela
+      vctx.fillStyle = '#ff6a18'; vctx.fillRect(cx + dx - 1, cy + dy - 2 - fl, 3, 2 + fl);
+      vctx.fillStyle = '#ffd040'; vctx.fillRect(cx + dx, cy + dy - 1 - fl, 1, 1 + fl);
+      continue;
+    }
     vctx.fillStyle = '#2e2a26'; vctx.fillRect(Math.round(r.x) - 2, Math.round(r.y - r.alt) - 2, 4, 4);
     vctx.fillStyle = '#8a8278'; vctx.fillRect(Math.round(r.x) - 1, Math.round(r.y - r.alt) - 1, 2, 2);
   }

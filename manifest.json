@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611240358",
- "fecha": "2026-11-24 03:58",
+ "version": "202611240407",
+ "fecha": "2026-11-24 04:07",
  "novedades": [
   {
    "fecha": "2026-11-24",
-   "texto": "Farolas de vela que hay que ir encendiendo"
+   "texto": "Teas ardiendo desde globos y dirigibles; espadas de combate más grandes"
+  },
+  {
+   "fecha": "2026-11-24",
+   "texto": "Farolas: fuera las farolas que se encendían solas; en los pueblos crecidos (ayuntamiento y 20 habitantes) las antorchas pasan a ser farolas de vela, que se encienden a mano al atardecer como las antorchas"
   },
   {
    "fecha": "2026-11-24",
@@ -46,19 +50,15 @@
   {
    "fecha": "2026-11-24",
    "texto": "Batallas y barcos más épicos"
-  },
-  {
-   "fecha": "2026-11-24",
-   "texto": "Barcos de guerra: ruta por mar sin cortar esquinas (rodean la costa en vez de atascarse), salen desde mar abierto y solo si hay paso por mar hasta el enemigo"
   }
  ],
  "archivos": {
-  "index.html": "e10b881594df8f1cf02421c29236fe1a928c2f57",
+  "index.html": "f60db5cd936a50602f25489d5b9b5c200e1c44ab",
   "css/estilo.css": "5102a249d843e933be3be74f960883ba03efd264",
   "js/aldeanos.js": "778c8c0a7f9579f13ba3cd1ed4c7b8ed792cf688",
   "js/ambiente.js": "f8d97f5873d17eeb0bb6b8250d43233e73ee6e15",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
-  "js/arte.js": "fea0fbc2874c36aafbb0412cd6782b2c3e7f412f",
+  "js/arte.js": "96fa0a4310400fbb917dd94cea28ab7153f86716",
   "js/arte_mapa.js": "98d891de2ac832b6a1d3a74577fd56b460c01af2",
   "js/bandidos.js": "b4aea52710a85f5afb875de7d6d4ae89cb251ed6",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
@@ -84,10 +84,10 @@
   "js/edificios.js": "217476a6fd1617cf12ba3dc9e9918ebec987a85a",
   "js/espionaje.js": "6291557af0a9488f321131fbfb7cdccf50cdbbf1",
   "js/estaciones.js": "e9e2f1194fdb60ca73c007b1cd7e9ae392ce2ad7",
-  "js/estrategia.js": "8ad5ad4470d70ddb83da05ef55c7ff09e0ed86ad",
+  "js/estrategia.js": "d0bfc9b82bf35def9101723898375cf61f5b9fb8",
   "js/fama.js": "1b98918f8d312e237c6f399a43c0a3e278a4604b",
   "js/fauna.js": "ab4d9de4dea1f9f00ee90d76625658f2edd2695c",
-  "js/globos.js": "30ec2bd3b0180e3706f6e31fe9cab1997d6876a5",
+  "js/globos.js": "a8829293851b57da087576ad6fb947ff8eca7c86",
   "js/guerra.js": "e900c85fb00f0b77aa2b5d69d50aa0a709cbc3f9",
   "js/humanos.js": "daaec2a669ae8f91185553a9ec790e1a8b38abab",
   "js/idiomas.js": "a64e7f699431735d8b20a2eb82d317a02f4bd265",
