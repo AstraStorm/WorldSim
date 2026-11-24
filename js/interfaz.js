@@ -7,6 +7,7 @@ const TOOLS = [
 const brushRadius = () => SPAWN_TOOLS.has(params.tool) ? 0 : params.tool === 'river' ? Math.round(params.brush / 3) : params.brush;
 
 function applyBrush(cx, cy){
+  if (['water', 'river', 'plant'].includes(params.tool)) godGift(cx * T, cy * T, params.tool === 'plant' ? 'arbol' : 'agua'); // (devocion.js)
   const R = brushRadius(), tool = params.tool, { e, lake, river, objs, sea } = world;
   let x0 = W, y0 = H, x1 = -1, y1 = -1;
   for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {

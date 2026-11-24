@@ -172,7 +172,7 @@ function drawRailTraffic(now){
   const [vx0, vy0, vx1, vy1] = visibleRect(), onS = (x, y, m = 60) => x > vx0 - m && x < vx1 + m && y > vy0 - m && y < vy1 + m;
   for (const r of rels.values()) {
     const R = r.rail; if (!R || !R.path) continue;
-    for (const [st, g] of [[R.sa, villageById(R.a)], [R.sb, villageById(R.b)]]) { const sx = st[0] * T + 2, sy = st[1] * T + 3; if (g && onS(sx, sy)) drawStation(sx, sy, g, now); }
+    for (const [st, g] of [[R.sa, villageById(R.a)], [R.sb, villageById(R.b)]]) { const sx = st[0] * T + 2, sy = st[1] * T + 3; if (g && onS(sx, sy)) { drawStation(sx, sy, g, now); redrawFront(sx - 26, sx + 26, sy - 30, sy); } } // lo que está delante de la estación, encima
     if (!r.route || R.idle) continue; // sin comercio (guerra, sanciones) o sin carbón no circula
 
     // Va y viene con el tiempo del juego (se para en pausa y corre más a más velocidad), con la locomotora siempre
@@ -239,6 +239,7 @@ function drawTrainOn(path, d, gap, dir, moving, alpha = 1){ // gap > 0: los vago
     let ux = (bx - ax) * fw, uy = (by - ay) * fw; if (!ux && !uy) { ux = dir; uy = 0; }
     const flip = ux < 0 || (!ux && dir < 0), ang = Math.round(Math.atan2(flip ? -uy : uy, flip ? -ux : ux) / (Math.PI / 4)) * (Math.PI / 4);
     if (!ang) artAt(keys[k], x, y, flip); else trainCarRot(keys[k], x, y, ang, flip);
+    vctx.globalAlpha = 1; redrawFront(x - 14, x + 14, y - 18, Math.round(y)); vctx.globalAlpha = alpha; // un árbol delante de la vía tapa el tren
     if (!k) smk = [x, y, flip, ang];
   }
   vctx.globalAlpha = 1;

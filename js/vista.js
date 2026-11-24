@@ -109,6 +109,7 @@ function draw(t){
   }
   drawAshClouds(t); // nubes de ceniza tóxica de los volcanes (volcanes.js)
   drawNight();
+  drawFireworks(); // fuegos artificiales, que brillan en la noche (devocion.js)
   drawNightLife(t); // farolas, sueños y estrellas fugaces (ambiente.js)
   drawEffects();
   drawQuakes(t);

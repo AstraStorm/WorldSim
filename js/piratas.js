@@ -111,16 +111,18 @@ function updatePirates(dt){
     if (p.volleyCd <= 0 && coastFire(p, () => true)) { const o = villages.find(g => popOf(g) && Math.hypot(g.fx * T - p.x, g.fy * T - p.y) < 160); if (o) o.piracyT = yearT; if ((p.volleys = (p.volleys || 0) + 1) >= 4) { p.volleys = 0; p.volleyCd = 60; } } // cañonean la costa (unas andanadas y se van)
     p.cd -= dt; p.raidCd = (p.raidCd ?? 0) - dt;
     const navy = N.filter(n => n.sink == null && n.kind !== 'guerra').map(n => [n, Math.hypot(n.x - p.x, n.y - p.y)]).sort((a, b) => a[1] - b[1])[0];
-    if (navy && navy[1] < SHIP_RANGE) { fireAt(p, navy[0], navy[1]); if (navy[1] > 30) sail(p, navy[0].x, navy[0].y, 10, dt); continue; } // se defienden de la armada
+    if (navy && navy[1] < SHIP_RANGE) { fireAt(p, navy[0], navy[1]); if (navy[1] > 30) navigate(p, navy[0].x, navy[0].y, 10, dt); continue; } // se defienden de la armada
     // Busca una barca que pueda alcanzar por mar abierto (las de ríos y lagos, no)
     let tgt = p.tgt && !p.tgt.done && p.tgt.sea && seaTile(p.tgt.x, p.tgt.y) ? p.tgt : null;
     if (!tgt) { p.tgt = null; let bd = 260; for (const t of travelers) if (t.sea && !t.done && seaTile(t.x, t.y) && t !== p.ignore) { const d = Math.hypot(t.x - p.x, t.y - p.y); if (d < bd) { bd = d; tgt = t; } } if (tgt) { p.tgt = tgt; p.bestD = null; } }
     if (tgt) {
       const d = Math.hypot(tgt.x - p.x, tgt.y - p.y);
-      if (!sail(p, tgt.x, tgt.y, 15, dt) || stuckOn(p, d, dt)) { p.ignore = tgt; p.tgt = null; p.bestD = null; continue; } // no hay forma de llegar: a otra cosa
+      if (!navigate(p, tgt.x, tgt.y, 15, dt) || (!p.route && stuckOn(p, d, dt))) { p.ignore = tgt; p.tgt = null; p.bestD = null; p.route = null; continue; } // no hay forma de llegar por mar: a otra cosa
       if (d < 9 && p.raidCd <= 0) { p.raidCd = 20; raid(p, tgt); p.tgt = null; }
     } else {
-      if (Math.hypot(p.wx - p.x, p.wy - p.y) < 6 || !sail(p, p.wx, p.wy, 9, dt)) { const a = Math.random() * Math.PI * 2; p.wx = p.x + Math.cos(a) * 160; p.wy = p.y + Math.sin(a) * 160; }
+      if (Math.hypot(p.wx - p.x, p.wy - p.y) < 6 || !seaTile(p.wx, p.wy) || !navigate(p, p.wx, p.wy, 9, dt) || ((p.wanderT = (p.wanderT || 0) + dt) > 40)) { // a otro punto de mar abierto (con ruta por agua; si tarda mucho, cambia)
+        p.wanderT = 0; p.route = null; for (let k = 0; k < 30; k++) { const a = Math.random() * Math.PI * 2, r0 = 60 + Math.random() * 140, x = p.x + Math.cos(a) * r0, y = p.y + Math.sin(a) * r0; if (seaTile(x, y)) { p.wx = x; p.wy = y; break; } }
+      }
       // Saqueo de la costa: un pueblo con muelle cercano
       if (p.raidCd <= 0 && Math.random() < dt * .01) { const g = villages.find(o => popOf(o) && o.port && Math.hypot(o.fx * T - p.x, o.fy * T - p.y) < 90); if (g) { p.raidCd = 40; const take = Math.min(g.food, 15); g.food -= take; p.gold += 3; g.piracyT = yearT; misfortune(g, 'guerra'); notify(`¡Los piratas de «${p.name}» saquean la costa de ${g.name} y se llevan ${Math.round(take)} de comida!`, { x:p.x, y:p.y }); } }
     }

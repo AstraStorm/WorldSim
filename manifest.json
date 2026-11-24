@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611240258",
- "fecha": "2026-11-24 02:58",
+ "version": "202611240304",
+ "fecha": "2026-11-24 03:04",
  "novedades": [
   {
    "fecha": "2026-11-24",
-   "texto": "Murallas más grandes, con torres en las esquinas y una puerta fortificada por lado"
+   "texto": "Cultivos nuevos e intercambio de semillas, los pueblos agradecen la ayuda del jugador y le rinden culto, fuegos artificiales, estatuas ordenadas, pueblos capturados y piratas que ya no se atascan"
+  },
+  {
+   "fecha": "2026-11-24",
+   "texto": "Murallas: una puerta por lado (donde pasa el camino principal) en vez de una en cada camino, y dibujo nuevo: muros altos con almenas y adarve, torres en las esquinas y puerta con dos torreones y bandera; las partidas viejas convierten las puertas sobrantes en muro"
   },
   {
    "fecha": "2026-11-24",
@@ -46,19 +50,15 @@
   {
    "fecha": "2026-11-23",
    "texto": "Launcher rediseñado con el logo (fondo animado, novedades con iconos, estado, ajustes de pantalla completa y actualización automática) e instalador de Windows con accesos directos"
-  },
-  {
-   "fecha": "2026-11-23",
-   "texto": "Versión de escritorio (escritorio/): launcher estilo Battle.net que comprueba y descarga las actualizaciones desde GitHub Pages; version.py genera manifest.json con la huella de cada archivo y las novedades"
   }
  ],
  "archivos": {
-  "index.html": "f3f2fbb960ebb51d8d1323237b7e71f04d300f50",
+  "index.html": "dda90ed9edaa11031303f439230beff3e68a214e",
   "css/estilo.css": "5102a249d843e933be3be74f960883ba03efd264",
-  "js/aldeanos.js": "781c9e99e40b253029b0b28b10fd28d4124488f8",
+  "js/aldeanos.js": "e73d76d14422e1d57c10b250ee82a3bdafc89e0c",
   "js/ambiente.js": "cd3541c5cfa9a64de5395f84239009f959216922",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
-  "js/arte.js": "f22771dcc56551e429cc87c554bf62fcf17e2894",
+  "js/arte.js": "d8e051c6e6fa720dec0eb5ce7f3709381ebdd4da",
   "js/arte_mapa.js": "98d891de2ac832b6a1d3a74577fd56b460c01af2",
   "js/bandidos.js": "675a7588d06fb17fe09f9c9ec32caa9e300cb1d9",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
@@ -75,24 +75,26 @@
   "js/consejo.js": "3ed73b3dcc91de9bb3f1c23c7caec240114f61e4",
   "js/convivencia.js": "81be8970d88a47871bd4e45796c00a51f56287f8",
   "js/credos.js": "2c9349a62f485ee953ea7e58c09de270a73b45c0",
-  "js/cultura.js": "4bb7fd0e484610e95f086bebd6d0958639a427ed",
+  "js/cultivos.js": "e0abec05946f771bbc71cd29ff7b744673c79a7a",
+  "js/cultura.js": "47cf34d577fd24ee5efdc7d7df63c0b8d82d099a",
   "js/defensa.js": "50f47277965d8693a629df46db4c7cbf3a84f591",
   "js/deportes.js": "666ed74d4ace8769b21bf1f869f04151ea558e14",
   "js/desastres.js": "1961763b0e85202107f673dabf369449e8c2a600",
+  "js/devocion.js": "533ca809e0dae607f720dbf115deffbfb4a64985",
   "js/edificios.js": "217476a6fd1617cf12ba3dc9e9918ebec987a85a",
   "js/espionaje.js": "6291557af0a9488f321131fbfb7cdccf50cdbbf1",
   "js/estaciones.js": "e9e2f1194fdb60ca73c007b1cd7e9ae392ce2ad7",
-  "js/estrategia.js": "16d14fbf32d3376909772688f823fba942363869",
+  "js/estrategia.js": "20fdceec0d5194dc2d0a53037e90404cbc13979c",
   "js/fama.js": "1b98918f8d312e237c6f399a43c0a3e278a4604b",
   "js/fauna.js": "ab4d9de4dea1f9f00ee90d76625658f2edd2695c",
   "js/globos.js": "a74b432baa6a6b51128f2138f1730ebd0bef599e",
   "js/guerra.js": "3e00349de418e53684d9ea9319847881f3e7f049",
-  "js/humanos.js": "5353a04227ba37b5938dd73cd6650fb2350e3e86",
+  "js/humanos.js": "ccddb36ab6dfa2a5eaafd41e02e237e82a0d89ee",
   "js/idiomas.js": "76785080135c2b980a092929b1d0742a1e15a8f2",
   "js/impuestos.js": "9820acf00db62b3039fb43433ddcc3f522453daa",
-  "js/industria.js": "290e5cedde024e3eb121139284e8ad25d002588a",
+  "js/industria.js": "beb92aac57d833266a64013f2d92b3ee256a6c03",
   "js/instituciones.js": "da41de01f4849b74b1e1afd05542f34d686c4035",
-  "js/interfaz.js": "8705525e5c015889b8877144d32b88d33b4ab334",
+  "js/interfaz.js": "1a17b37ac66041536a92ed463a271717d1ae51ba",
   "js/justicia.js": "100314d7858fe651a4e7b6d0d9530dab4bdaa99e",
   "js/leyes.js": "5fa7cbee568b9324cf95d5443a6999600878cc6f",
   "js/libro.js": "7af640407e7d7b885889ea8669cf05def8c41a1e",
@@ -105,8 +107,8 @@
   "js/nucleo.js": "facf12453d7aef3849fb6094680b0d8dde5d4497",
   "js/okupas.js": "8bf7e443dddd18ca6dca6ccfbe64b9cbb772f040",
   "js/papeles.js": "4613eec891d5d45018f60dfd7bdb6cfa5d55f917",
-  "js/partidas.js": "87f983d0e5b5d0cde3a74da304ce93775a7dfb46",
-  "js/piratas.js": "54d8f992b0ec71a7da42981d4c151056034eb9b5",
+  "js/partidas.js": "27cab94504f194763721d9bfd40541614c4d527c",
+  "js/piratas.js": "415f44deaa9217e724da8ec31801ec1453e6ff9a",
   "js/potencias.js": "92f95b1429ed22221248d46e587f32f7bbcf9e54",
   "js/prensa.js": "61134ccce4b95a026605717fa5ab37600850af2a",
   "js/presupuestos.js": "27743ad6dbf256cc4d124f2bff019d6b0ee1eb75",
@@ -115,7 +117,7 @@
   "js/riqueza.js": "4437665e375d993ccfc2bec62225436b8fd03dce",
   "js/rutas.js": "6e12cafc1992e09fc3c2b5b13ca7d7db6416c364",
   "js/sindicatos.js": "f7cb8bf83ff74322a6fc45cc6ac90550425c6d15",
-  "js/sociedad.js": "2926f1862ae832d8db259d9b176b3fcee0232ce1",
+  "js/sociedad.js": "a28775592dd30ff09eb7a048e7167b7d8e5d0150",
   "js/sonido.js": "25be9d9bda62336aba463c82e31668d0e9b2bc54",
   "js/titulares.js": "0506409e843da939370bb404b894a52cffa68620",
   "js/trabajo.js": "50d504968cee2cd4f5170a8e34cd81f649d6bf04",
@@ -123,7 +125,7 @@
   "js/ui.js": "ba4cbcdaa9bb436822270b090af56ef0e9c8bc2c",
   "js/vegetacion.js": "93f69ea37ed2ba75fb87c037ae6676de3910737a",
   "js/vida.js": "5b036c14fbd1d9fc061f4f98ddd8adcb43134ef0",
-  "js/vista.js": "a8c5a301b9e57c8253f3b0ee1b3c562f1328a33a",
+  "js/vista.js": "8ca118d30bb88e4cfbcb9958f9f48d5af329389c",
   "js/vivienda.js": "0f3091767a41917156ce106447eb0e9659b69271",
   "js/volcanes.js": "f4aea099226dfe1b064fdfbd4779bddb6ed8a250",
   "arte/atlas.png": "e40126efcee4672b64bdcd1dfe22e263ff4b2350",

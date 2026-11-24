@@ -591,6 +591,7 @@ function setupTask(v, g, job){
         : [[g.fx + 3, g.fy + 3], [g.fx - 3, g.fy + 3], [g.fx + 3, g.fy - 2], [g.fx - 3, g.fy - 2]];
       for (const [x, y] of spots) {
         const i = y * W + x; if (world.objs[i] || WATER[world.biome[i]] || buildingClash(x, y, 'altar')) continue;
+        if (job === 'monumento' && statueNear(x, y, 6)) continue; // no pegada a otra estatua (devocion.js)
         return { k:job, i, x:x * T + 2, y:(y + 1) * T + 3 };
       }
       return null;
@@ -797,8 +798,8 @@ function runTask(v, g, dt){
     }; break;
     case 'arar': v.actT = 2.5; v.onDone = () => { const f = t.farm; f.claim = false; if (farmMap.get(f.i) === f && (f.st === 'pradera' || f.st === 'muerta')) { f.st = 'arada'; f.why = null; } }; break;
     case 'sembrar': v.actT = 1.5; v.onDone = () => { const f = t.farm; f.claim = false; if (farmMap.get(f.i) === f && f.st === 'arada') { f.st = 'sembrado'; f.g = 0; f.dry = 0;
-      f.crop = SEASON_CROP[seasonInfo().i]; if ((f.crop === 'maiz' || tempAt(f.i) > 28) && !freshNear(f.i, (g.know || {}).acequias ? 12 : 8) && !wellsOf(g).some(w => Math.hypot((w.i % W) - (f.i % W), ((w.i / W) | 0) - ((f.i / W) | 0)) < 9)) f.crop = 'mijo'; /* sin agua cerca: lo que aguanta la sequía */ const kc = (g.crops ||= {}); if (!kc[f.crop]) { kc[f.crop] = true; if (Object.keys(kc).length > 1) notify(`En ${g.name} empiezan a sembrar ${CROPS[f.crop].n}: es lo que mejor crece en ${['primavera', 'verano', 'otoño', 'invierno'][seasonInfo().i]}`, { x:v.x, y:v.y }); } } }; break;
-    case 'cosechar': v.actT = 2; v.onDone = () => { const f = t.farm; f.claim = false; if (farmMap.get(f.i) === f && f.st === 'madura') { f.st = 'arada'; const C = CROPS[f.crop || 'trigo']; v.carry = { k:'comida', t:'veg', n:C.y + (C.mill && g.mill != null && world.objs[g.mill] ? 3 : 0) + (hasForge(g) ? 2 : 0) }; } }; break;
+      f.crop = bestCrop(g, f.i); /* lo que mejor rinde en este campo ahora, de las semillas que tienen (cultivos.js) */ const kc = (g.crops ||= {}); if (!kc[f.crop]) { kc[f.crop] = true; if (Object.keys(kc).length > 1) notify(`En ${g.name} empiezan a sembrar ${CROPS[f.crop].n}: es lo que mejor crece en ${['primavera', 'verano', 'otoño', 'invierno'][seasonInfo().i]}`, { x:v.x, y:v.y }); } } }; break;
+    case 'cosechar': v.actT = 2; v.onDone = () => { const f = t.farm; f.claim = false; if (farmMap.get(f.i) === f && f.st === 'madura') { f.st = 'arada'; const C = CROPS[f.crop || 'trigo']; v.carry = { k:'comida', t:'veg', n:C.y + (C.mill && g.mill != null && world.objs[g.mill] ? 3 : 0) + (hasForge(g) ? 2 : 0) }; if (C.cash) { const ec = ecOf(g); if (ec) ec.treas += Math.round(C.cash * ec.P); } } }; break; // (la uva: el vino se vende)
     case 'ampliar': v.actT = 7; v.onDone = () => {
       const o = world.objs[t.i]; if (!o || o.key !== 'house:hut' || g.stone < 7 || g.wood < 1) return;
       o.key = 'house:piedra'; o.dmg = 0; g.stone -= 7; g.wood -= 1; const x = t.i % W, y = (t.i / W) | 0;

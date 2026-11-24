@@ -732,7 +732,7 @@ function drawVillageNames(){
     if (!pop && g.gone && g.ruinsLeft) { const x = g.fx * T + 2, y = g.fy * T - 20 - fs * .8, txt = `Ruinas de ${g.name}`, w = vctx.measureText(txt).width + fs, h = fs * 1.4;
       vctx.fillStyle = 'rgba(20,16,12,.55)'; vctx.fillRect(x - w / 2, y - h / 2, w, h); vctx.fillStyle = '#a8a29a'; vctx.fillText(txt, x, y); continue; }
     if (!pop || !world.objs[g.fy * W + g.fx]) continue;
-    const [r, g2, b] = villageColor(g), x = g.fx * T + 2, y = g.fy * T - 26 - fs * .8, txt = `${rankTag(g)}${g.name} · ${pop}${allianceOf(g) ? ' · ' + allianceOf(g).abbr : ''}${g.protest ? ' ✊' : ''}${g.coup || [...rels.values()].some(r => r.war && (r.war.att === g.id || r.war.def === g.id)) ? ' ⚔' : ''}`;
+    const [r, g2, b] = villageColor(g), x = g.fx * T + 2, y = g.fy * T - 26 - fs * .8, txt = `${rankTag(g)}${g.name}${g.capturedFrom && nationOf(g) !== g ? ` (capturada · antes ${g.capturedFrom})` : ''} · ${pop}${allianceOf(g) ? ' · ' + allianceOf(g).abbr : ''}${g.protest ? ' ✊' : ''}${g.coup || [...rels.values()].some(r => r.war && (r.war.att === g.id || r.war.def === g.id)) ? ' ⚔' : ''}`;
     const nf = nationOf(g).flag, fw = nf ? fs * 1.5 : 0, w = vctx.measureText(txt).width + fs * 1.1 + fw, h = fs * 1.45;
     const atWar = [...rels.values()].some(r => r.war && (r.war.att === g.id || r.war.def === g.id));
     vctx.fillStyle = 'rgba(20,16,12,.8)'; vctx.fillRect(x - w / 2, y - h / 2, w, h);
@@ -1288,7 +1288,7 @@ function renderVillageCard(force){
   const moods = ps.map(v => moodOf(v).score), avgMood = moods.length ? Math.round(moods.reduce((a, b) => a + b, 0) / moods.length) : 50;
   const reg = regimeOf(g), al = allianceOf(g), cap = capOf(g), anger = Math.round(g.anger || 0);
   const provinces = villages.filter(o => o !== g && popOf(o) && o.nation === g.id);
-  const status = n !== g ? `Provincia de ${esc(n.name)}` : provinces.length ? `Capital de ${provinces.length} pueblo${provinces.length > 1 ? 's' : ''}` : 'Nación independiente';
+  const status = (n !== g ? `Provincia de ${esc(n.name)}` : provinces.length ? `Capital de ${provinces.length} pueblo${provinces.length > 1 ? 's' : ''}` : 'Nación independiente') + (g.capturedFrom && n !== g ? ` · capturada (antigua nación ${esc(g.capturedFrom)})` : '');
   const wars = villages.filter(o => o !== g && popOf(o) && rels.get(relKey(g, o)) && rels.get(relKey(g, o)).war);
   let body = '';
   if (cardTab === 'resumen') {

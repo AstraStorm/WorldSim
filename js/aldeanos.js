@@ -274,7 +274,7 @@ function godClick(sx, sy){
       const x = wx + (Math.random() - .5) * 10, y = wy + (Math.random() - .5) * 10;
       if (aFree(x, y)) { makeAnimal(sp, x, y, herd, 1 + Math.random()); addEffect(x, y, 'spawn', k * .1); }
     }
-    updateFaunaPanel();
+    updateFaunaPanel(); godGift(wx, wy, 'animal'); // ¿un pueblo que lo necesitaba? (devocion.js)
     return;
   }
   if (params.tool === 'remove' && !villagerAt(sx, sy)) {
@@ -299,7 +299,7 @@ function godClick(sx, sy){
     addEffect(tx * T + 2, ty * T + 3, 'spawn', made * .15);
     made++;
   }
-  if (!made) hud.textContent = 'Aquí no puede vivir nadie: elige tierra libre, sin agua ni árboles.';
+  if (!made) hud.textContent = 'Aquí no puede vivir nadie: elige tierra libre, sin agua ni árboles.'; else godGift(cx * T, cy * T, 'persona');
 }
 function drawPersonIcons(){
   const samples = [{ skin:SKIN[1], shirt:SHIRT[0], hair:HAIR[1], pants:PANTS[0], long:false }, { skin:SKIN[5], shirt:SHIRT[1], hair:HAIR[0], pants:PANTS[1], long:true }, { skin:SKIN[3], shirt:SHIRT[3], hair:HAIR[2], pants:PANTS[2], long:false }];
@@ -310,7 +310,7 @@ function drawPersonIcons(){
 }
 
 function spawnVillagers(){
-  villagers = []; setFollow(null); nameIdx = 0; villages = []; rels = new Map(); travelers = []; diploT = 5; farmMap = new Map(); vidSeq = 0; pathMap = new Set(); bridgeSet = new Set(); bridges = []; plazaSet = new Set(); holySet = new Map(); usedFlags = new Set(); wear = new Float32Array(N); wornSet = new Set(); desireSet = new Set(); arrows = []; slashes = []; cannonballs = []; ashClouds = []; chips = []; floats = []; zoneCv = null; zoneT = 0; wallSet = new Set(); gateSet = new Set(); alliances = []; moneyFlows = []; worldHist = { t:[], n:{} }; olymp = { next:yearT + SEASON_LEN * 2, cur:null, past:[] }; epidemics = []; ballGames = []; sieges = []; stones = []; wallStone = new Set(); gateOwner = new Map();
+  villagers = []; setFollow(null); nameIdx = 0; villages = []; rels = new Map(); travelers = []; diploT = 5; farmMap = new Map(); vidSeq = 0; pathMap = new Set(); bridgeSet = new Set(); bridges = []; plazaSet = new Set(); holySet = new Map(); usedFlags = new Set(); wear = new Float32Array(N); wornSet = new Set(); desireSet = new Set(); arrows = []; slashes = []; cannonballs = []; ashClouds = []; fireworks = []; fwQueue = []; chips = []; floats = []; zoneCv = null; zoneT = 0; wallSet = new Set(); gateSet = new Set(); alliances = []; moneyFlows = []; worldHist = { t:[], n:{} }; olymp = { next:yearT + SEASON_LEN * 2, cur:null, past:[] }; epidemics = []; ballGames = []; sieges = []; stones = []; wallStone = new Set(); gateOwner = new Map();
   if (!params.people) { updateVillagePanel(); return; }
   const r = mulberry32(hashStr(params.seed) ^ 0x51ed), bi = world.biome;
   // Tres pueblos en tierra buena cerca de agua dulce, lo bastante lejos para ser distintos y lo bastante cerca

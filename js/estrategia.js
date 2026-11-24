@@ -141,7 +141,8 @@ function militiaTick(){
 }
 // ---- Tras la conquista: qué hacen con la gente del pueblo conquistado ----
 { const base = conquer; conquer = function(cap, eg, r){
-  base.apply(this, arguments);
+  const was = nationOf(eg); base.apply(this, arguments);
+  eg.capturedFrom = was === eg ? eg.name : was.name; // en su cartel: «capturada · antes …» (la antigua nación)
   const people = villagers.filter(u => !u.dead && !u.away && u.vid === eg.id && ageOf(u) >= ADULT_H && u !== eg.leader);
   if (!people.length) return;
   const cruel = tyranny(cap), w = { adoptar:2 + (votes(cap) ? 2 : 0) + (hasLaw(cap, 'derechos_humanos') ? 4 : 0), esclavos:slaving(cap) ? 3 + (cruel ? 1 : 0) : 0, sacrificio:cap.faith && (cruel || ['volcan', 'sangre'].includes(typeof riteOf === 'function' ? riteOf(cap) : '')) && !hasLaw(cap, 'derechos_humanos') ? 1 : 0 };

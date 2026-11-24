@@ -29,7 +29,7 @@ function workTitle(g, e){
 function addHero(g, u, why){
   if (!g || !u || !popOf(g)) return; (g.heroes ||= []).push({ name:u.name, why, d:Math.floor(yearT / DAY_LEN) + 1 });
   if (g.stone < 8 || !g.plaza) return;
-  const r0 = g.plaza, p = ringFind(Math.round((r0.x0 + r0.x1) / 2), r0.y1 + 2, 8, (x, y) => tileFree(x, y) && !pathMap.has(y * W + x) && !plazaSet.has(y * W + x) && !farmMap.has(y * W + x) && !underBuilding(g, x, y));
+  const p = statueSpot(g); // en una esquina de la plaza, separada de las demás y sin pasarse (devocion.js)
   if (!p) return; const i = p[1] * W + p[0];
   world.objs[i] = { key:'obelisk:monumento', v:0, ox:0, oy:0, vid:g.id, hero:u.name }; g.stone -= 8; composeRegion(p[0] - 8, p[1] - 12, p[0] + 8, p[1] + 12);
   notify(`En ${g.name} levantan una estatua a ${u.name}, que ${why}`, { x:p[0] * T, y:p[1] * T });
