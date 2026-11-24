@@ -459,7 +459,7 @@ function drawBalloons(now){
     // Todo gira con la inclinación alrededor del fondo de la cesta
     const inf = b.inf, mouthY = -bh - BAL_ROPE, zep = knowsSci(g, 'dirigible');
     vctx.save(); vctx.translate(bx, by); vctx.rotate(b.tilt);
-    if (zep) { drawAirship(col, 0, 1, now, (b.face || 1) < 0); vctx.restore(); continue; } // dirigible de vapor: sin cesta, mirando hacia donde va
+    if (zep) { drawAirship(col, 0, .62 + .38 * clamp(b.alt / BAL_CRUISE, 0, 1), now, (b.face || 1) < 0); vctx.restore(); continue; } // dirigible de vapor: sin cesta, mirando hacia donde va; más pequeño aparcado y más grande cuanto más alto (como si se acercara)
     if (inf < .15) { // desinflado: la tela tendida en el suelo junto a la cesta
       if (env) vctx.drawImage(env, -env.width - 2, -4, env.width, 4); else { vctx.fillStyle = `rgb(${cr},${cg},${cb})`; vctx.beginPath(); vctx.ellipse(-8, 1, 7, 1.6, 0, 0, Math.PI * 2); vctx.fill(); }
     } else {
@@ -498,12 +498,19 @@ const AIRSHIP_K = 1.8;
 function drawAirship(col, mouthY, inf, now, flip){
   if (flip) { vctx.save(); vctx.scale(-1, 1); drawAirship(col, mouthY, inf, now, false); vctx.restore(); return; } // el dibujo mira a la derecha
   const art = tintedArt('airship:dirigible', col);
-  if (art) { const w = art.width * inf * AIRSHIP_K, h = art.height * inf * AIRSHIP_K; vctx.drawImage(art, -w / 2, mouthY - h, w, h); const sp = Math.abs(Math.sin(now / 40)); vctx.fillStyle = 'rgba(230,220,200,.9)'; vctx.fillRect(-w / 2 - 1, mouthY - h * .3, 1, 1 + 3 * sp); return; } // (hélice girando)
+  if (art) { const w = art.width * inf * AIRSHIP_K, h = art.height * inf * AIRSHIP_K; vctx.drawImage(art, -w / 2, mouthY - h, w, h); airshipProp(-w / 2 + w * 8.5 / 34, mouthY - h + h * 15.5 / 19, 3.2 * inf * AIRSHIP_K / 1.8, now); return; }
   const L = 26 * inf * AIRSHIP_K, Hh = 9 * inf * AIRSHIP_K, cy = mouthY - Hh / 2 - 1;
   vctx.fillStyle = '#22201e'; vctx.beginPath(); vctx.ellipse(0, cy, L / 2 + 1, Hh / 2 + 1, 0, 0, Math.PI * 2); vctx.fill();
   vctx.fillStyle = `rgb(${col.join(',')})`; vctx.beginPath(); vctx.ellipse(0, cy, L / 2, Hh / 2, 0, 0, Math.PI * 2); vctx.fill();
   vctx.fillStyle = 'rgba(255,255,255,.3)'; vctx.beginPath(); vctx.ellipse(-1, cy - Hh * .2, L * .38, Hh * .18, 0, 0, Math.PI * 2); vctx.fill();
   vctx.fillStyle = 'rgba(0,0,0,.25)'; for (let k = -2; k <= 2; k++) vctx.fillRect(k * L / 6, cy - Hh / 2 + 1, .7, Hh - 2); // costillas
   vctx.fillStyle = '#22201e'; vctx.beginPath(); vctx.moveTo(-L / 2 + 2, cy); vctx.lineTo(-L / 2 - 3, cy - Hh / 2 - 2); vctx.lineTo(-L / 2 - 1, cy); vctx.lineTo(-L / 2 - 3, cy + Hh / 2 + 2); vctx.fill(); // timones
-  const sp = Math.sin(now / 40); vctx.fillStyle = '#c8c0b0'; vctx.fillRect(-L / 2 - 4, cy - 2 * Math.abs(sp), 1, 4 * Math.abs(sp) + .5); // hélice
+  airshipProp(-L / 2 - 3, cy, 3.2 * inf * AIRSHIP_K / 1.8, now);
+}
+// La hélice, girando detrás de la góndola, vista de lado: un disco borroso y las palas, que se alargan y se acortan
+function airshipProp(x, y, r, now){
+  const k = Math.abs(Math.cos(now / 25)) * r;
+  vctx.fillStyle = 'rgba(225,215,195,.22)'; vctx.beginPath(); vctx.ellipse(x, y, r * .35, r, 0, 0, Math.PI * 2); vctx.fill(); // el disco al girar
+  vctx.fillStyle = 'rgba(200,170,120,.95)'; vctx.fillRect(x - .45, y - k, .9, k * 2); // las palas
+  vctx.fillStyle = '#3a2a1c'; vctx.fillRect(x - .6, y - .6, 1.2, 1.2); // el eje
 }

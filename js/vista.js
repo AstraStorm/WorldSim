@@ -61,6 +61,7 @@ function draw(t){
   drawSelBuilding(t); // el edificio elegido, marcado (edificios.js)
   drawCastles(t); // torres de los castillos (fama.js)
   drawMatchBoards(); // marcador con los escudos en los partidos (deportes.js)
+  drawRailTraffic(t); // estaciones y trenes, por encima de árboles y edificios (industria.js)
   drawCamps(t);
   drawFires(t, true);
   drawVillageFx(t);

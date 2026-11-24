@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611240135",
- "fecha": "2026-11-24 01:35",
+ "version": "202611240141",
+ "fecha": "2026-11-24 01:41",
  "novedades": [
   {
    "fecha": "2026-11-24",
-   "texto": "Tren con la locomotora siempre delante (da la vuelta en la estación) y que gira al subir, bajar y en las curvas; dirigible más grande y sin cesta, que amarra solo en plataformas de dirigibles"
+   "texto": "Vía de tren nueva, ancha y con curvas suaves; el tren y las estaciones ya no quedan detrás de los árboles; hélice del dirigible que gira y dirigible que crece al subir"
+  },
+  {
+   "fecha": "2026-11-24",
+   "texto": "Tren y dirigible: la locomotora va siempre delante (da la vuelta en la estación mientras espera) y los coches giran al subir, bajar y en las curvas; el dirigible es más grande, rígido y sin cesta; los dirigibles solo amarran en plataformas de dirigibles y los globos solo en puertos de globos"
   },
   {
    "fecha": "2026-11-24",
@@ -46,19 +50,15 @@
   {
    "fecha": "2026-11-23",
    "texto": "Vía del tren por casillas con los tramos de la hoja 13C (rectas, curvas, desvíos girados y cruces), que rodea los pueblos y cruza ríos con puentes; el tren sigue el trazado"
-  },
-  {
-   "fecha": "2026-11-23",
-   "texto": "Sprites de la hoja 13: estación, fábrica, torre del reloj, observatorio, embajada, ruinas, tren, dirigible, galeón y vapor (medio hundidos, con olas y estela), carreteras de adoquines, puesto de feria y campamento minero; el humo lo pone el juego"
   }
  ],
  "archivos": {
-  "index.html": "b205bdf16dba9325bd1319345e1dc5bae23de874",
+  "index.html": "635629cc4da643627b9284693479a377eb0f4bea",
   "css/estilo.css": "5102a249d843e933be3be74f960883ba03efd264",
   "js/aldeanos.js": "d0ad9b10da1af74f147d51e037f2afd1203c6ff1",
   "js/ambiente.js": "cd3541c5cfa9a64de5395f84239009f959216922",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
-  "js/arte.js": "d0b19be07e6d02b5d33f2d5d31a67fabbcf0fd78",
+  "js/arte.js": "16697fd251a0ec0f9ac7523c299237d0eac59420",
   "js/arte_mapa.js": "98d891de2ac832b6a1d3a74577fd56b460c01af2",
   "js/bandidos.js": "675a7588d06fb17fe09f9c9ec32caa9e300cb1d9",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
@@ -84,12 +84,12 @@
   "js/estaciones.js": "e9e2f1194fdb60ca73c007b1cd7e9ae392ce2ad7",
   "js/fama.js": "1b98918f8d312e237c6f399a43c0a3e278a4604b",
   "js/fauna.js": "ab4d9de4dea1f9f00ee90d76625658f2edd2695c",
-  "js/globos.js": "d7f6594442f406072c90a5ed994dde5b6c49ee5e",
+  "js/globos.js": "6ef9cf04c1d34ba5a2bfb4d511ebbeba5af991c7",
   "js/guerra.js": "c82411435e1c5e0624fe9353a52aa624f4b1759c",
   "js/humanos.js": "664d8ac758d828bba4cd87246ce70cac3e12c399",
   "js/idiomas.js": "76785080135c2b980a092929b1d0742a1e15a8f2",
   "js/impuestos.js": "9820acf00db62b3039fb43433ddcc3f522453daa",
-  "js/industria.js": "57d3abeea0085ea757ce2bdf52533e3c0fe1f04b",
+  "js/industria.js": "920bacaaaf9b6342b7435b1a54a540c39d5a07ef",
   "js/instituciones.js": "da41de01f4849b74b1e1afd05542f34d686c4035",
   "js/interfaz.js": "8705525e5c015889b8877144d32b88d33b4ab334",
   "js/justicia.js": "100314d7858fe651a4e7b6d0d9530dab4bdaa99e",
@@ -122,7 +122,7 @@
   "js/ui.js": "ba4cbcdaa9bb436822270b090af56ef0e9c8bc2c",
   "js/vegetacion.js": "93f69ea37ed2ba75fb87c037ae6676de3910737a",
   "js/vida.js": "5b036c14fbd1d9fc061f4f98ddd8adcb43134ef0",
-  "js/vista.js": "7303d974f5b1dc7ac6143e8355cfd2f6e24dfb3b",
+  "js/vista.js": "01e161b439387343bc4e5236f89de750147cc1f7",
   "js/vivienda.js": "0f3091767a41917156ce106447eb0e9659b69271",
   "js/volcanes.js": "ceccb56e5b3e116893a400cbbac8dcf2646a5d5c",
   "arte/atlas.png": "e40126efcee4672b64bdcd1dfe22e263ff4b2350",
