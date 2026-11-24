@@ -215,7 +215,7 @@ function stepBalloon(g, b, dt){
   } else if (b.state === 'vuelo') {
     // Se dirige hacia su destino, pero el viento lo arrastra: va algo de lado y con cierta inercia
     const home = b.phase === 'vuelta', tx = home ? px : m.tx, ty = home ? py : m.ty, d = Math.hypot(tx - b.x, ty - b.y) || 1;
-    const spd = knowsSci(g, 'aeronautica') ? 18 : 13, dvx = (tx - b.x) / d * spd + w[0] * .7, dvy = (ty - b.y) / d * spd + w[1] * .7; // aeronáutica (ciencia.js)
+    const zep = knowsSci(g, 'dirigible'), spd = zep ? 26 : knowsSci(g, 'aeronautica') ? 18 : 13, drift = zep ? .3 : .7, dvx = (tx - b.x) / d * spd + w[0] * drift, dvy = (ty - b.y) / d * spd + w[1] * drift; // aeronáutica (ciencia.js) y dirigible, con motor (industria.js)
     b.vx += (dvx - b.vx) * Math.min(1, dt * .8); b.vy += (dvy - b.vy) * Math.min(1, dt * .8);
     b.x += b.vx * dt; b.y += b.vy * dt; b.alt = BAL_CRUISE + Math.sin(yearT * .7) * 2;
     if ((b.burnT = (b.burnT || 0) - dt) <= 0) b.burnT = 2.5 + Math.random() * 2; burn = b.burnT > 2.2; // fogonazos de vez en cuando para no perder altura
@@ -260,6 +260,8 @@ function stepBalloon(g, b, dt){
   const target = clamp((w[0] - b.vx) * .02 * (air ? 1 : .6) + w[0] * .015 - ax * .01, -.32, .32) * b.inf;
   b.tw += ((target - b.tilt) * 7 - b.tw * 2.4) * dt + (Math.random() - .5) * ws * .02 * dt * 10;
   b.tilt = clamp(b.tilt + b.tw * dt, -.42, .42);
+  if (knowsSci(g, 'dirigible') && b.inf > .5) b.tilt *= .35; // el dirigible es rígido: apenas cabecea
+  if (Math.abs(b.vx) > 2.5) b.face = Math.sign(b.vx); // hacia dónde mira el dirigible (con margen, para que no tiemble)
   b.flame = burn ? Math.min(1, b.flame + dt * 6) : Math.max(0, b.flame - dt * 4);
   if (burn && b.flame > .9 && Math.random() < dt * 2) snd('burner', b.x, b.y - b.alt);
   for (const u of b.crew) { u.x = b.x; u.y = b.y; }
@@ -462,7 +464,7 @@ function drawBalloons(now){
       // Cuerdas: de las esquinas de la cesta a la boca del globo
       vctx.strokeStyle = 'rgba(200,168,110,.95)'; vctx.lineWidth = .45;
       for (const [ax, mx] of [[-bw / 2 + .5, -2], [bw / 2 - .5, 2], [-bw / 4, -1], [bw / 4, 1]]) { vctx.beginPath(); vctx.moveTo(ax, -bh + 1); vctx.lineTo(mx, mouthY); vctx.stroke(); }
-      if (knowsSci(g, 'dirigible') && inf > .5) drawAirship(col, mouthY, inf, now); // dirigible de vapor (globos.js)
+      if (knowsSci(g, 'dirigible') && inf > .5) drawAirship(col, mouthY, inf, now, (b.face || 1) < 0); // dirigible de vapor, mirando hacia donde va
       else if (env) { // al hincharse crece hacia arriba y se ensancha
         const ew = env.width * (.35 + .65 * inf), eh = env.height * inf;
         vctx.drawImage(env, -ew / 2, mouthY - eh + 1, ew, eh);
@@ -490,7 +492,8 @@ function drawBalloons(now){
   }
 }
 // Dirigible (con el descubrimiento del dirigible): cigarro alargado con costillas, timones, góndola y hélice
-function drawAirship(col, mouthY, inf, now){
+function drawAirship(col, mouthY, inf, now, flip){
+  if (flip) { vctx.save(); vctx.scale(-1, 1); drawAirship(col, mouthY, inf, now, false); vctx.restore(); return; } // el dibujo mira a la derecha
   const art = tintedArt('airship:dirigible', col);
   if (art) { const w = art.width * inf, h = art.height * inf; vctx.drawImage(art, -w / 2, mouthY - h + 6, w, h); const sp = Math.abs(Math.sin(now / 40)); vctx.fillStyle = 'rgba(230,220,200,.9)'; vctx.fillRect(-w / 2 - 1, mouthY - h * .3, 1, 1 + 3 * sp); return; } // (hélice girando)
   const L = 26 * inf, Hh = 9 * inf, cy = mouthY - Hh / 2 - 1;

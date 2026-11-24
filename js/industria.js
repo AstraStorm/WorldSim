@@ -135,7 +135,7 @@ function railPoint(path, d){ const n = path.length - 1, k = clamp(Math.floor(d),
 // Si ya está el dibujo en el atlas (hojas 13 de la carpeta de prompts), se usa; si no, el dibujo hecho a mano de abajo
 function artAt(key, x, y, flip){ const c = artFrame(key); if (!c) return false; const f = ART_MAP[key]; if (flip) { vctx.save(); vctx.translate(Math.round(x), 0); vctx.scale(-1, 1); vctx.drawImage(c, -f[4], Math.round(y) - f[3] + 1); vctx.restore(); } else vctx.drawImage(c, Math.round(x) - f[4], Math.round(y) - f[3] + 1); return true; }
 function drawIndustry(now){
-  const [vx0, vy0, vx1, vy1] = visibleRect(), ts = now / 1000, onS = (x, y, m = 60) => x > vx0 - m && x < vx1 + m && y > vy0 - m && y < vy1 + m;
+  const [vx0, vy0, vx1, vy1] = visibleRect(), onS = (x, y, m = 60) => x > vx0 - m && x < vx1 + m && y > vy0 - m && y < vy1 + m;
   // Vías (por casillas), estaciones y trenes
   const S = railTiles();
   for (const i of S) { const x = (i % W) * T, y = ((i / W) | 0) * T; if (x > vx0 - 10 && x < vx1 + 10 && y > vy0 - 10 && y < vy1 + 10) drawRailTile(i, S, now); }
@@ -145,10 +145,18 @@ function drawIndustry(now){
     if (!R.path) continue;
     for (const [st, g] of [[R.sa, villageById(R.a)], [R.sb, villageById(R.b)]]) { const sx = st[0] * T + 2, sy = st[1] * T + 3; if (g && onS(sx, sy)) drawStation(sx, sy, g, now); }
     if (!r.route) continue; // sin comercio (guerra, sanciones) no circula
-    const n = R.path.length - 1, q = (ts * 4 / Math.max(1, n)) % 2, fwd = q < 1, d = (fwd ? q : 2 - q) * n;
-    const [tx, ty, sx] = railPoint(R.path, d); if (!onS(tx, ty)) continue;
-    R.dir = sx ? sx * (fwd ? 1 : -1) : R.dir || 1;
-    drawTrainOn(R.path, d, fwd ? -1 : 1, R.dir, now);
+    // Va y viene con el tiempo del juego (se para en pausa y corre más a más velocidad): espera un rato en cada
+    // estación y vuelve sin dar la vuelta (la locomotora siempre en el mismo extremo, como un tren lanzadera); así
+    // los vagones nunca saltan de un lado a otro ni se amontonan al final de la vía
+    const n = R.path.length - 1, L = Math.min(9.2, n * .5), run = Math.max(.1, (n - L) / 4), cyc = 2 * (run + TRAIN_DWELL);
+    let t = ((yearT + R.a * 7.3) % cyc + cyc) % cyc, d, fwd, moving = true;
+    if (t < TRAIN_DWELL) { d = L; fwd = true; moving = false; }
+    else if ((t -= TRAIN_DWELL) < run) d = L + (n - L) * t / run, fwd = true;
+    else if ((t -= run) < TRAIN_DWELL) { d = n; fwd = false; moving = false; }
+    else d = n - (n - L) * (t - TRAIN_DWELL) / run, fwd = false;
+    const [tx, ty, sx] = railPoint(R.path, d); if (!onS(tx, ty, 60 + L * T)) continue;
+    if (moving) R.dir = sx ? sx * (fwd ? 1 : -1) : R.dir || 1;
+    drawTrainOn(R.path, d, L / 2, R.dir || 1, moving);
   }
   for (const g of villages) {
     if (!popOf(g)) continue;
@@ -171,11 +179,12 @@ function drawStation(x, y, g, now){
   vctx.fillStyle = '#2a2018'; vctx.fillRect(x - 12, y - 9, 1, 8); vctx.fillRect(x + 13, y - 9, 1, 8); vctx.fillStyle = '#ffd890'; vctx.fillRect(x - 13, y - 10, 3, 2); vctx.fillRect(x + 12, y - 10, 3, 2); // farolas
   if (zoom >= 2) { vctx.font = 'bold 4px sans-serif'; vctx.textAlign = 'center'; vctx.fillStyle = '#22201e'; vctx.fillRect(x - 10, y - 25, 21, 5); vctx.fillStyle = '#f8e080'; vctx.fillText(g.name.slice(0, 12), x + .5, y - 21.3); vctx.textAlign = 'start'; } // letrero
 }
-function drawTrainOn(path, d, back, dir, now){
+const TRAIN_DWELL = 4; // segundos parado en cada estación
+function drawTrainOn(path, d, gap, dir, moving){
   const flip = dir < 0, keys = ['train:locomotora', 'train:vagon_p', 'train:vagon_m'];
-  if (!artFrame(keys[0])) { const [x, y] = railPoint(path, d); drawTrain(x, y, dir, 0, now); return; }
-  for (let k = 2; k >= 0; k--) { const [x, y] = railPoint(path, d + back * k * 4.6); artAt(keys[k], x, y, flip); }
-  const [x, y] = railPoint(path, d); if (Math.random() < .4) chips.push({ x:x + (flip ? -3 : 3), y:y - 15, vx:-dir * 9 + (Math.random() - .5) * 3, vy:-6 - Math.random() * 3, life:0, max:1.2, col:'rgba(215,215,210,.75)' });
+  if (!artFrame(keys[0])) { const [x, y] = railPoint(path, d); drawTrain(x, y, dir, 0, performance.now()); return; }
+  for (let k = 2; k >= 0; k--) { const [x, y] = railPoint(path, d - k * gap); artAt(keys[k], x, y, flip); }
+  const [x, y] = railPoint(path, d); if (Math.random() < (moving ? .4 : .08)) chips.push({ x:x + (flip ? -3 : 3), y:y - 15, vx:-dir * 9 + (Math.random() - .5) * 3, vy:-6 - Math.random() * 3, life:0, max:1.2, col:'rgba(215,215,210,.75)' });
 }
 function drawTrain(x, y, ux, uy, now){
   if (artFrame('train:locomotora')) { const flip = ux < 0; for (let k = 2; k >= 0; k--) artAt(k ? (k === 1 ? 'train:vagon_p' : 'train:vagon_m') : 'train:locomotora', x - ux * k * 23, y - uy * k * 23, flip); if (Math.random() < .4) chips.push({ x:x + (flip ? -3 : 3), y:y - 15, vx:-ux * 9 + (Math.random() - .5) * 3, vy:-6 - Math.random() * 3, life:0, max:1.2, col:'rgba(215,215,210,.75)' }); return; } // (humo: lo pone el juego)
