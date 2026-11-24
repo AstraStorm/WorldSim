@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611240315",
- "fecha": "2026-11-24 03:15",
+ "version": "202611240320",
+ "fecha": "2026-11-24 03:20",
  "novedades": [
   {
    "fecha": "2026-11-24",
-   "texto": "Los ejércitos marchan en bloque, varios de frente, hasta el campo de batalla"
+   "texto": "Los edificios importantes buscan sitio en el centro del pueblo y, si está lleno, derriban una cabaña para levantarlos allí"
+  },
+  {
+   "fecha": "2026-11-24",
+   "texto": "Ejércitos en bloque: nueva formación (filas anchas, la más habitual en ejércitos grandes); la formación se mantiene hasta llegar cerca del campo de batalla y los demás corren a su sitio detrás del de cabeza"
   },
   {
    "fecha": "2026-11-24",
@@ -46,19 +50,15 @@
   {
    "fecha": "2026-11-24",
    "texto": "Tren y dirigible: la locomotora va siempre delante (da la vuelta en la estación mientras espera) y los coches giran al subir, bajar y en las curvas; el dirigible es más grande, rígido y sin cesta; los dirigibles solo amarran en plataformas de dirigibles y los globos solo en puertos de globos"
-  },
-  {
-   "fecha": "2026-11-24",
-   "texto": "Dirigible y tren: el dirigible mira hacia donde va, apenas cabecea y va más rápido (motor: el viento lo desvía menos); el tren va con el tiempo del juego (se para en pausa), espera en cada estación y vuelve como lanzadera sin que los vagones salten ni se amontonen"
   }
  ],
  "archivos": {
-  "index.html": "657d263bddd4d3f762f96b59586d6e2e7624b1f2",
+  "index.html": "23c3b7ecf66861837b47526f8bd997bc475d45c7",
   "css/estilo.css": "5102a249d843e933be3be74f960883ba03efd264",
   "js/aldeanos.js": "e73d76d14422e1d57c10b250ee82a3bdafc89e0c",
   "js/ambiente.js": "cd3541c5cfa9a64de5395f84239009f959216922",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
-  "js/arte.js": "f297025e61b02e384485b0d9c048e161b3ffc70f",
+  "js/arte.js": "70b4263a6185fe9a0dd221a2fb5369e50d625e97",
   "js/arte_mapa.js": "98d891de2ac832b6a1d3a74577fd56b460c01af2",
   "js/bandidos.js": "675a7588d06fb17fe09f9c9ec32caa9e300cb1d9",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
@@ -84,7 +84,7 @@
   "js/edificios.js": "217476a6fd1617cf12ba3dc9e9918ebec987a85a",
   "js/espionaje.js": "6291557af0a9488f321131fbfb7cdccf50cdbbf1",
   "js/estaciones.js": "e9e2f1194fdb60ca73c007b1cd7e9ae392ce2ad7",
-  "js/estrategia.js": "20fdceec0d5194dc2d0a53037e90404cbc13979c",
+  "js/estrategia.js": "b540c50208c380a8c5b90f295ef5775d8fd30c50",
   "js/fama.js": "1b98918f8d312e237c6f399a43c0a3e278a4604b",
   "js/fauna.js": "ab4d9de4dea1f9f00ee90d76625658f2edd2695c",
   "js/globos.js": "30ec2bd3b0180e3706f6e31fe9cab1997d6876a5",

@@ -204,3 +204,27 @@ function spyRob(from, to){
   else if ((to.gold || 0) > 0) { const n = Math.ceil(to.gold * .3); to.gold -= n; from.gold = (from.gold || 0) + n; notify(`Roban ${n} de oro de los almacenes de ${to.name}`, at); }
   else notify(`Un ladrón entra en el tesoro de ${to.name}, pero está vacío`, at);
 }
+// ---- Lo importante, en el centro: tribunal, parlamento, universidad, banco, hospital… ----
+// Buscan el solar libre más cerca del centro (donde la muralla los protege). Si el centro está lleno, derriban la
+// cabaña más céntrica (sus vecinos se mudan y se hacen otra casa más afuera) y lo levantan allí; como mucho una al día
+const CENTRAL = new Set(['tribunal', 'parlamento', 'academia', 'universidad', 'consejo', 'banco', 'hospital', 'escuela', 'imprenta', 'almacen', 'granero']);
+function centralFits(g, kind, x, y){
+  const [hw, hh] = KIND_DIMS[kind] || [4, 6];
+  return x > hw && y > hh + 1 && x < W - hw - 1 && y < H - 3 && !buildingClash(x, y, kind) && !penOverlap(g, x - hw, y - hh, x + hw, y + 1) && !plazaIn(x - hw, y - hh, x + hw, y) && !farmIn(x - hw, y - hh, x + hw, y + 1) && !pathIn(x - hw, y - hh, x + hw, y) && clearable(x - hw, y - hh, x + hw, y + 1) && !hallIn(g, x - hw, y - hh, x + hw, y + 1);
+}
+{ const base = planSite; planSite = function(g, kind){
+  if (!CENTRAL.has(kind)) return base.apply(this, arguments);
+  const ring = (r0, r1) => { for (let r = r0; r <= r1; r++) for (let k = 0; k < r * 6; k++) { const a = k / (r * 6) * Math.PI * 2, x = Math.round(g.fx + Math.cos(a) * r), y = Math.round(g.fy + 3 + Math.sin(a) * r * .8); if (centralFits(g, kind, x, y)) return [x, y]; } return null; };
+  const c = ring(4, 14); if (c) return c;
+  // Lleno: se derriba la cabaña más céntrica para hacer sitio (si sobran casas o es un edificio de mucho peso)
+  const huts = housesOf(g).filter(h => world.objs[h].key === 'house:hut').sort((a, b) => Math.hypot(a % W - g.fx, ((a / W) | 0) - g.fy) - Math.hypot(b % W - g.fx, ((b / W) | 0) - g.fy));
+  const h = huts[0], spare = housesOf(g).length * 4 > popOf(g) + 4;
+  if (h != null && Math.hypot(h % W - g.fx, ((h / W) | 0) - g.fy) < 14 && (spare || popOf(g) >= 15) && !(g.demolishT > yearT)) { // (la familia se hará otra casa más afuera)
+    const x = h % W, y = (h / W) | 0; g.demolishT = yearT + DAY_LEN;
+    world.objs[h] = null; g.houses = g.houses.filter(i => i !== h); for (const u of villagers) if (u.home === h) u.home = null;
+    g.wood += 3; composeRegion(x - 8, y - 12, x + 8, y + 12); addEffect(x * T + 2, y * T + 3, 'poof');
+    notify(`En ${g.name} derriban una cabaña del centro para hacer sitio a ${kind === 'almacen' ? 'un almacén nuevo' : `el ${kind}`}: lo importante, protegido en el centro`, { x:x * T, y:y * T });
+    if (centralFits(g, kind, x, y)) return [x, y];
+  }
+  return ring(15, 24) || base.apply(this, arguments); // si no, el solar libre más cercano al centro
+}; }
