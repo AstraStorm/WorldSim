@@ -5,7 +5,7 @@
 // · Bajas de cada bando, días de guerra y quién va ganando, en el mapa (sobre la línea del frente) y arriba
 // · Las guerras duran más: se acaba cuando han muerto muchos para el tamaño de los dos pueblos, o tras varios días si
 //   nadie gana; las treguas y los tratados de paz, también más largos
-const warCap = (a, b) => Math.max(14, Math.round((popOf(a) + popOf(b)) * .15));
+const warCap = (a, b) => Math.max(24, Math.round((popOf(a) + popOf(b)) * .3)); // (una gran batalla no acaba la guerra de golpe)
 // Campamento del atacante: a un tercio del camino, en tierra libre
 function warCamp(att, def, r){
   const dd = Math.hypot(def.fx - att.fx, def.fy - att.fy) || 1, k = Math.min(dd * .45, 40);
@@ -37,7 +37,7 @@ function drawWarCamps(now){
       }
     }
     if (zoom > 4) continue;
-    const mx = (S.a.fx + S.d.fx) / 2 * T, my = (S.a.fy + S.d.fy) / 2 * T - 14 / zoom * 2;
+    const mx = (S.a.fx + S.d.fx) / 2 * T, my = (S.a.fy + S.d.fy) / 2 * T - 14 / zoom * 2 - (r.war.battle ? 34 : 0); // (con una batalla en marcha, más arriba: no la tapa)
     if (mx < vx0 - 60 || mx > vx1 + 60 || my < vy0 - 30 || my > vy1 + 30) continue;
     const k = 1 / zoom * 2, w = 64 * k, h = 11 * k;
     vctx.fillStyle = 'rgba(20,10,10,.82)'; vctx.fillRect(mx - w / 2, my - h, w, h);
@@ -95,7 +95,8 @@ const FIELD_NAME = { [B.PLAINS]:'el llano', [B.GRASS]:'la pradera', [B.FOREST]:'
 const deName = n => n.startsWith('el ') ? 'del ' + n.slice(3) : 'de ' + n; // «del llano», «de la pradera»
 let battlefields = []; // cruces que quedan en el campo (se ven unos días)
 function armyOf(g, max){
-  return villagers.filter(v => !v.dead && !v.away && !v.boat && v.vid === g.id && ageOf(v) >= ADULT_H && ageOf(v) < (v.life || 20) * .7 && v !== g.leader && (v.hp ?? 1) > .5 && !(v.task && ['asalto', 'detenido'].includes(v.task.k)))
+  const nat = nationOf(g), mine = new Set(villages.filter(o => popOf(o) && nationOf(o) === nat).map(o => o.id)); // (de todo el país)
+  return villagers.filter(v => !v.dead && !v.away && !v.boat && mine.has(v.vid) && ageOf(v) >= ADULT_H && ageOf(v) < (v.life || 20) * .7 && !villages.some(o => o.leader === v) && (v.hp ?? 1) > .5 && !(v.task && ['asalto', 'detenido'].includes(v.task.k)))
     .sort((a, b) => (b.weapon ? 1 : 0) - (a.weapon ? 1 : 0)).slice(0, max);
 }
 function fieldBattleTick(att, def, r){
@@ -115,16 +116,22 @@ function fieldBattleTick(att, def, r){
     return;
   }
   const dt0 = dayT(); if (yearT - (W0.battleT ?? W0.start) < DAY_LEN * 1.1 || !(dt0 > .97 || dt0 < .25) || Math.random() > .3) return; // al amanecer o por la mañana: les da tiempo a llegar y luchar de día
-  const sa = armyOf(att, Math.min(10, Math.max(3, Math.floor(popOf(att) / 4)))), sd = armyOf(def, Math.min(10, Math.max(3, Math.floor(popOf(def) / 4))));
-  if (sa.length < 3 || sd.length < 3) return;
+  startFieldBattle(att, def, r);
+}
+// Los dos ejércitos (de todo el país) salen a un campo abierto entre los dos pueblos
+function startFieldBattle(att, def, r){
+  const W0 = r.war, size = g => Math.min(36, Math.max(3, Math.floor(villages.filter(o => popOf(o) && nationOf(o) === nationOf(g)).reduce((a, o) => a + popOf(o), 0) / 2.2)));
+  const sa = armyOf(att, size(att)), sd = armyOf(def, size(def));
+  if (sa.length < 3 || sd.length < 3) return false;
   const dd = Math.hypot(def.fx - att.fx, def.fy - att.fy) || 1; if (dd < 20 || lineWater(att.fx, att.fy, def.fx, def.fy) > .4) return; // separados por el mar: no hay campo
   // Campo abierto: lejos de casas y murallas; si entre los dos no lo hay, al menos sin edificios, campos ni calles
   const base = (x, y) => tileFree(x, y) && !WATER[world.biome[y * W + x]] && !pathMap.has(y * W + x) && !farmMap.has(y * W + x) && !villages.some(o => popOf(o) && underBuilding(o, x, y));
+  const open = (x, y) => { let n = 0; for (let yy = y - 4; yy <= y + 4; yy++) for (let xx = x - 6; xx <= x + 6; xx++) { if (xx < 0 || yy < 0 || xx >= W || yy >= H) return false; const i = yy * W + xx; if (WATER[world.biome[i]] || (world.objs[i] && OBJ[world.objs[i].key][1] === 'tree')) n++; } return n <= 6; }; // un claro: sin bosque ni agua alrededor
   const inWalls = (x, y) => villages.some(o => popOf(o) && o.wallRect && x >= o.wallRect.x0 && x <= o.wallRect.x1 && y >= o.wallRect.y0 && y <= o.wallRect.y1);
   const mx0 = Math.round((att.fx + def.fx) / 2), my0 = Math.round((att.fy + def.fy) / 2);
-  const p = ringFind(mx0, my0, 22, (x, y) => base(x, y) && !inWalls(x, y) && !villages.some(o => popOf(o) && Math.hypot(o.fx - x, o.fy - y) < 20))
+  const p = ringFind(mx0, my0, 26, (x, y) => base(x, y) && open(x, y) && !inWalls(x, y) && !villages.some(o => popOf(o) && Math.hypot(o.fx - x, o.fy - y) < 16)) || ringFind(mx0, my0, 22, (x, y) => base(x, y) && !inWalls(x, y) && !villages.some(o => popOf(o) && Math.hypot(o.fx - x, o.fy - y) < 20))
     || ringFind(mx0, my0, 22, (x, y) => base(x, y) && !villages.some(o => popOf(o) && Math.hypot(o.fx - x, o.fy - y) < 14)) || ringFind(mx0, my0, 12, base);
-  if (!p) return;
+  if (!p) return false;
   const x = p[0] * T + 2, y = p[1] * T + 3, ux = (def.fx - att.fx) / dd, uy = (def.fy - att.fy) / dd, name = FIELD_NAME[world.biome[p[1] * W + p[0]]] || 'el campo';
   const form = ['línea', 'cuña', 'columna'][Math.floor(Math.random() * 3)], until = yearT + 70 + dd / 2 * T / 7; // la marcha hasta el campo, y luego la lucha
   const go = (ps, side, g, foe) => {
@@ -136,6 +143,7 @@ function fieldBattleTick(att, def, r){
   go(sa, 1, att, def); go(sd, -1, def, att);
   W0.battle = { x, y, name:`${name} de ${def.name}`, until, a:sa.map(refOf), d:sd.map(refOf), la0:W0.lossA || 0, ld0:W0.lossD || 0 };
   notify(`¡Batalla en ${name} de ${def.name}! ${sa.length} de ${att.name} contra ${sd.length} de ${def.name} en campo abierto`, { x, y }); snd('horn', x, y);
+  return true;
 }
 // Cruces en el campo de batalla y, mientras dura, polvo y un estandarte en medio
 function drawBattlefields(now){

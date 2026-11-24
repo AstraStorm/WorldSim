@@ -453,7 +453,7 @@ function drawSandstorms(t){
 // Animales y árboles muertos: caen de lado (girando sobre su base) y se desvanecen en unas décimas de segundo.
 // Los árboles caen más despacio
 let corpses = [];
-function addCorpse(spr, x, y, slow){ corpses.push({ spr, x, y, side:Math.random() < .5 ? -1 : 1, born:performance.now(), k:slow ? 2.2 : 1 }); }
+function addCorpse(spr, x, y, slow, stay = 0){ corpses.push({ spr, x, y, side:Math.random() < .5 ? -1 : 1, born:performance.now(), k:slow ? 2.2 : 1, stay }); } // stay: segundos que queda en el suelo (los caídos en la guerra)
 function fallObj(i, burnt){
   const o = world.objs[i]; if (!o || OBJ[o.key][1] !== 'tree') return false;
   const os = objSprite(o), spr = burnt ? Object.assign(charred(os), { ax:os.ax }) : os;
@@ -542,7 +542,8 @@ function drawCorpses(){
   for (const c of corpses) {
     c.t = (now - c.born) / 1000 / c.k;
     if (c.x < vx0 - 16 || c.x > vx1 + 16 || c.y < vy0 - 16 || c.y > vy1 + 16) continue;
-    const e = Math.min(1, c.t / .22), fall = e * e, ang = fall * Math.PI / 2 * c.side, a = c.t < .45 ? 1 : Math.max(0, 1 - (c.t - .45) / .45);
+    const e = Math.min(1, c.t / .22), fall = e * e, ang = fall * Math.PI / 2 * c.side, hold = .45 + (c.stay || 0), a = c.t < hold ? 1 : Math.max(0, 1 - (c.t - hold) / .45);
+    if (c.stay && c.t > .2) { vctx.fillStyle = `rgba(120,10,10,${.55 * a})`; vctx.beginPath(); vctx.ellipse(c.x + c.side * 3, c.y, 3 + Math.min(2, c.t * .6), 1.4 + Math.min(1, c.t * .3), 0, 0, Math.PI * 2); vctx.fill(); } // el charco de sangre
     vctx.save();
     vctx.globalAlpha = a;
     vctx.translate(Math.round(c.x), Math.round(c.y));
@@ -551,9 +552,9 @@ function drawCorpses(){
     vctx.restore();
     // Lo que tiene delante (árboles y rocas con la base más abajo) se repinta encima: cae por detrás de ellos
     const D = Math.max(c.spr.width, c.spr.height);
-    if (zoom > 1.6) redrawFront(c.x - D, c.x + D, c.y - D, Math.round(c.y));
+    if (zoom > 1.6 && c.t < .6) redrawFront(c.x - D, c.x + D, c.y - D, Math.round(c.y)); // (solo mientras cae)
   }
-  if (corpses.length) corpses = corpses.filter(c => c.t < .9);
+  if (corpses.length) corpses = corpses.filter(c => c.t < .9 + (c.stay || 0));
 }
 
 // ================= Meteoritos =================

@@ -125,6 +125,15 @@ function railTiles(){
 }
 // Dónde está el tren: un punto a lo largo del trazado (de casilla en casilla)
 function railPoint(path, d){ const n = path.length - 1, k = clamp(Math.floor(d), 0, n - 1), f = clamp(d - k, 0, 1), a = path[k], b = path[k + 1] ?? a; return [((a % W) + ((b % W) - (a % W)) * f) * T + T / 2, (((a / W) | 0) + (((b / W) | 0) - ((a / W) | 0)) * f) * T + T / 2 + 1, Math.sign((b % W) - (a % W))]; }
+// Espuma en la proa, estela y (en los de vapor) humo espeso: partículas que salen del barco al navegar
+function shipSpray(x, y, dir, steam, scale, moving){
+  const s = dir >= 0 ? 1 : -1, half = 11 * scale;
+  if (moving) {
+    if (Math.random() < .55) chips.push({ x:x + s * half, y:y + 1, vx:s * (4 + Math.random() * 8), vy:-5 - Math.random() * 6, life:0, max:.35 + Math.random() * .25, col:'rgba(235,248,255,.9)' }); // salpicón en la proa
+    if (Math.random() < .5) chips.push({ x:x - s * half, y:y + 2 + (Math.random() - .5) * 3, vx:-s * (5 + Math.random() * 5), vy:(Math.random() - .5) * 2, life:0, max:.8 + Math.random() * .5, col:'rgba(225,242,255,.6)' }); // la estela
+  }
+  if (steam && Math.random() < .45) smoke.push({ x:x - s * 2 * scale, y:y - 14 * scale, vx:-s * (3 + Math.random() * 3), vy:-6 - Math.random() * 3, r:1.5 + Math.random() * 1.5, life:0, max:2 + Math.random() }); // humo de la chimenea
+}
 // ---- Dibujo ----
 // Si ya está el dibujo en el atlas (hojas 13 de la carpeta de prompts), se usa; si no, el dibujo hecho a mano de abajo
 function artAt(key, x, y, flip){ const c = artFrame(key); if (!c) return false; const f = ART_MAP[key]; if (flip) { vctx.save(); vctx.translate(Math.round(x), 0); vctx.scale(-1, 1); vctx.drawImage(c, -f[4], Math.round(y) - f[3] + 1); vctx.restore(); } else vctx.drawImage(c, Math.round(x) - f[4], Math.round(y) - f[3] + 1); return true; }
@@ -283,7 +292,8 @@ function drawObservatory(x, y, now){
   vctx.fillStyle = '#22201e'; vctx.fillRect(x, y - 14, 2, 6); vctx.fillStyle = '#a8a090'; vctx.save(); vctx.translate(x + 1, y - 12); vctx.rotate(-.6 + Math.sin(now / 4000) * .2); vctx.fillRect(0, -1, 7, 2); vctx.restore(); // telescopio
 }
 // Barcos en las rutas por mar: galeón (o vapor) con las velas del color del país
-function drawShip(x, y, dir, steam, col, now){
+function drawShip(x, y, dir, steam, col, now, scale = 1, moving = true){
+  if (scale !== 1) { vctx.save(); vctx.translate(x, y); vctx.scale(scale, scale); vctx.translate(-x, -y); drawShip(x, y, dir, steam, col, now, 1, moving); vctx.restore(); shipSpray(x, y, dir, steam, scale, moving); return; }
   const sk = steam ? 'ship:vapor' : 'ship:galeon', sc = artFrame(sk);
   if (sc) { // el casco, medio metido en el agua: se pinta solo lo que asoma y una línea de olas encima
     const f = ART_MAP[sk], w = f[2], h = f[3], vis = Math.round(h * .8), bx = Math.round(x) - f[4], by = Math.round(y) + 2 - vis, bob = Math.round(Math.sin(now / 500 + x) * .6);

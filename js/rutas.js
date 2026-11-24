@@ -48,7 +48,7 @@ function drawTradeRoutes(now){
     const L = Math.hypot(bx - ax, by - ay) || 1, s = Math.max(1, 1.6 / zoom * 2);
     for (let k = 0; k < (r.route.sea ? 2 : 3); k++) { // tres carros (dos de ida y uno de vuelta); por mar, dos barcos
       const back = k === 2 || (r.route.sea && k === 1), q = ((now / (L * 60) + k / 3) % 1), t = back ? 1 - q : q, x = ax + (bx - ax) * t, y = ay + (by - ay) * t;
-      if (r.route.sea) { if (WATER[world.biome[Math.floor(y / T) * W + Math.floor(x / T)]]) drawShip(x, y, (bx - ax) * (back ? -1 : 1), knowsSci(a, 'vapor') || knowsSci(b, 'vapor'), villageColor(nationOf(back ? b : a)), now); continue; } // galeón o vapor (industria.js)
+      if (r.route.sea) { if (WATER[world.biome[Math.floor(y / T) * W + Math.floor(x / T)]]) drawShip(x, y, (bx - ax) * (back ? -1 : 1), knowsSci(a, 'vapor') || knowsSci(b, 'vapor'), villageColor(nationOf(back ? b : a)), now, 1.35); continue; } // galeón o vapor (industria.js)
       vctx.fillStyle = '#8a5a30'; vctx.fillRect(x - 2 * s, y - s, 4 * s, 2 * s);
       vctx.fillStyle = '#f0c840'; vctx.fillRect(x - s, y - 2 * s, 2 * s, s); // la carga
     }

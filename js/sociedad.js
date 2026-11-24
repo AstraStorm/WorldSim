@@ -1094,23 +1094,25 @@ function econLine(g){
   return g.coin ? `<br>Moneda: el ${g.coin} · ${money} ${coinPl(g)} en manos de la gente · ${g.trades || 0} tratos` : `<br>Economía de trueque · ${g.trades || 0} intercambios`;
 }
 // ---- Daño: el que recibe un golpe parpadea en rojo, recula un poco y saltan unas gotas ----
-const redCache = new WeakMap();
-function redOf(s){
-  let c = redCache.get(s); if (c) return c;
+const redCache = new WeakMap(), whiteCache = new WeakMap();
+function tintOf(s, cache, col){
+  let c = cache.get(s); if (c) return c;
   c = document.createElement('canvas'); c.width = s.width; c.height = s.height; const x = c.getContext('2d');
-  x.drawImage(s, 0, 0); x.globalCompositeOperation = 'source-atop'; x.fillStyle = '#ff2a20'; x.fillRect(0, 0, c.width, c.height);
-  redCache.set(s, c); return c;
+  x.drawImage(s, 0, 0); x.globalCompositeOperation = 'source-atop'; x.fillStyle = col; x.fillRect(0, 0, c.width, c.height);
+  cache.set(s, c); return c;
 }
+const redOf = s => tintOf(s, redCache, '#ff2a20'), whiteOf = s => tintOf(s, whiteCache, '#ffffff');
 function hurtFx(e, fromX, fromY, walk){
   e.hurtAt = performance.now();
-  const d = Math.hypot(e.x - fromX, e.y - fromY) || 1, nx = e.x + (e.x - fromX) / d * 3, ny = e.y + (e.y - fromY) / d * 3;
+  const d = Math.hypot(e.x - fromX, e.y - fromY) || 1, nx = e.x + (e.x - fromX) / d * 4.5, ny = e.y + (e.y - fromY) / d * 4.5;
   if (walk(nx, ny)) { e.x = nx; e.y = ny; } // el empujón del golpe
-  for (let n = 0; n < 5; n++) chips.push({ x:e.x, y:e.y - 5, vx:(Math.random() - .5) * 22 + (e.x - fromX) / d * 10, vy:-6 - Math.random() * 10, life:0, max:.35 + Math.random() * .3, col:n % 2 ? '#c81818' : '#8a0e0e' });
+  slashes.push({ x:e.x - (e.x - fromX) / d * 2, y:e.y - 6, t:0, impact:true }); // el destello del impacto
+  for (let n = 0; n < 9; n++) chips.push({ x:e.x, y:e.y - 5, vx:(Math.random() - .5) * 22 + (e.x - fromX) / d * 10, vy:-6 - Math.random() * 10, life:0, max:.35 + Math.random() * .3, col:n % 2 ? '#c81818' : '#8a0e0e' });
 }
-// Capa roja que se apaga en un tercio de segundo
+// El golpe se nota: un destello blanco y después una capa roja que se apaga en un tercio de segundo
 function drawHurt(e, s, x, y, w, h){
-  const k = 1 - (performance.now() - (e.hurtAt || -1e9)) / 330; if (k <= 0) return;
-  vctx.globalAlpha = .75 * k; vctx.drawImage(redOf(s), x, y, w ?? s.width, h ?? s.height); vctx.globalAlpha = 1;
+  const ms = performance.now() - (e.hurtAt || -1e9), k = 1 - ms / 330; if (k <= 0) return;
+  vctx.globalAlpha = ms < 90 ? .95 : .75 * k; vctx.drawImage(ms < 90 ? whiteOf(s) : redOf(s), x, y, w ?? s.width, h ?? s.height); vctx.globalAlpha = 1;
 }
 // ---- Antorchas: a oscuras no ven, así que ponen antorchas junto a caminos y plaza; al atardecer alguien las va
 // encendiendo, de día se apagan y la lluvia también las apaga (luego las vuelven a encender) ----
@@ -2731,6 +2733,7 @@ function updateArrows(dt){
 }
 function drawArrows(){
   for (const q of slashes) { // de arriba abajo, hacia donde golpea
+    if (q.impact) { const k = q.t / .2, r = 2 + k * 4; vctx.fillStyle = `rgba(255,248,210,${1 - k})`; vctx.fillRect(Math.round(q.x - r), Math.round(q.y), Math.round(r * 2) + 1, 1); vctx.fillRect(Math.round(q.x), Math.round(q.y - r), 1, Math.round(r * 2) + 1); vctx.fillStyle = `rgba(255,220,120,${(1 - k) * .8})`; vctx.fillRect(Math.round(q.x - r * .6), Math.round(q.y - r * .6), 1, 1); vctx.fillRect(Math.round(q.x + r * .6), Math.round(q.y - r * .6), 1, 1); vctx.fillRect(Math.round(q.x - r * .6), Math.round(q.y + r * .6), 1, 1); vctx.fillRect(Math.round(q.x + r * .6), Math.round(q.y + r * .6), 1, 1); continue; }
     const k = q.t / .2, R = q.big ? 6 : 4, sweep = 2.2 * Math.min(1, k * 1.6), a0 = q.dir > 0 ? -1.1 : Math.PI + 1.1 - sweep;
     vctx.strokeStyle = `rgba(255,250,230,${(1 - k) * .9})`; vctx.lineWidth = q.big ? 1.2 : .8;
     vctx.beginPath(); vctx.arc(q.x, q.y, R, a0, a0 + sweep); vctx.stroke();
@@ -2796,7 +2799,7 @@ function killVillager(v, cause){
   funeral(v, villageById(v.vid)); // el entierro (civilizacion.js)
   if (v.boat) { const g = villageById(v.vid); if (g) g.boatOut = false; }
   const s = personSprite(v, 0, v.dir < 0); s.ax ??= s.width >> 1;
-  addCorpse(s, v.x, v.y, false);
+  addCorpse(s, v.x, v.y, false, cause === 'guerra' ? 25 : 0); // los caídos en la guerra se quedan un rato en el campo de batalla
   if (follow === v) setFollow(null);
 }
 function updateVillagers(dt){
@@ -2938,7 +2941,7 @@ function updateVillagers(dt){
           if (lead && lead !== v && k > 0) { const dx = eg.fx * T - lead.x, dy = eg.fy * T - lead.y, dl = Math.hypot(dx, dy) || 1, fx = dx / dl, fy = dy / dl, [back, side] = formSlot(G.form, k); vGo(v, lead.x - fx * back * 7 - fy * side * 7, lead.y - fy * back * 7 + fx * side * 7, dt); continue; }
           if (lead === v) { vGo(v, v.task.x, v.task.y, dt * .7); continue; }
         }
-        vGo(v, v.task.x, v.task.y, dt); continue;
+        vGo(v, v.task.x, v.task.y, dt, !!(G && G.field)); continue; // a la batalla campal, corriendo
       }
     }
     // Miedo al fuego: si arde algo a su lado, huyen (los que van a apagarlo, no)

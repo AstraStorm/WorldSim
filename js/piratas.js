@@ -106,6 +106,9 @@ function updatePirates(dt){
   // Piratas
   for (const p of P) {
     if (p.sink != null) continue;
+    shoreFire(p, dt, () => true); // desde la costa, cualquiera les dispara
+    p.volleyCd = (p.volleyCd || 0) - dt;
+    if (p.volleyCd <= 0 && coastFire(p, () => true)) { const o = villages.find(g => popOf(g) && Math.hypot(g.fx * T - p.x, g.fy * T - p.y) < 160); if (o) o.piracyT = yearT; if ((p.volleys = (p.volleys || 0) + 1) >= 4) { p.volleys = 0; p.volleyCd = 60; } } // cañonean la costa (unas andanadas y se van)
     p.cd -= dt; p.raidCd = (p.raidCd ?? 0) - dt;
     const navy = N.filter(n => n.sink == null && n.kind !== 'guerra').map(n => [n, Math.hypot(n.x - p.x, n.y - p.y)]).sort((a, b) => a[1] - b[1])[0];
     if (navy && navy[1] < SHIP_RANGE) { fireAt(p, navy[0], navy[1]); if (navy[1] > 30) sail(p, navy[0].x, navy[0].y, 10, dt); continue; } // se defienden de la armada
@@ -125,6 +128,7 @@ function updatePirates(dt){
   // Armadas y buques de guerra
   for (const n of N) {
     if (n.sink != null) continue;
+    { const g0 = villageById(n.nation), foe = o => { if (!g0 || o === g0) return false; const r = warRel(g0, o); return !!(r && r.war); }; shoreFire(n, dt, foe); if (n.kind === 'guerra' && ![...P, ...N].some(o => o !== n && o.sink == null && Math.hypot(o.x - n.x, o.y - n.y) < SHIP_RANGE && (o.name || (o.kind === 'guerra' && o.nation !== n.nation)))) coastFire(n, foe); } // a tiro de la costa enemiga: cruzan disparos con sus arqueros y sus edificios
     const g = villageById(n.nation); n.t += dt; n.cd -= dt;
     if (!g || !popOf(g)) { n.done = true; continue; }
     const sp = n.steam ? 20 : 15;
@@ -155,20 +159,20 @@ function updatePirates(dt){
 function fireAt(s, tgt, d, warn){
   if (s.cd > 0) return;
   s.cd = 1.6 + Math.random() * 1.2; s.dir = tgt.x < s.x ? -1 : 1;
-  const hit = !warn && Math.random() < (d < 30 ? .65 : .45), mx = s.x + s.dir * 7, my = s.y - 5;
+  const hit = !warn && Math.random() < (d < 30 ? .65 : .45), mx = s.x + s.dir * 11 * SHIP_K, my = s.y - 7 * SHIP_K;
   cannonballs.push({ x0:mx, y0:my, tx:tgt.x + (hit ? 0 : (Math.random() - .5) * 24), ty:tgt.y - 2 + (hit ? 0 : (Math.random() - .5) * 10), t:0, dur:.35 + d / 160, hit, tgt, from:s });
-  for (let k = 0; k < 5; k++) smoke.push({ x:mx + s.dir * k, y:my, vx:s.dir * (4 + Math.random() * 6), vy:-2 - Math.random() * 3, r:1.5 + Math.random(), life:0, max:1 + Math.random() });
-  chips.push({ x:mx + s.dir * 2, y:my, vx:s.dir * 20, vy:0, life:0, max:.12, col:'#ffe080' }); snd('boom', mx, my, .25);
+  for (let k = 0; k < 9; k++) smoke.push({ x:mx + s.dir * k, y:my + (Math.random() - .5) * 3, vx:s.dir * (4 + Math.random() * 8), vy:-2 - Math.random() * 3, r:1.5 + Math.random() * 1.5, life:0, max:1.2 + Math.random() * 1.2 });
+  for (let k = 0; k < 6; k++) chips.push({ x:mx + s.dir * 2, y:my, vx:s.dir * (14 + Math.random() * 16), vy:(Math.random() - .5) * 10, life:0, max:.12 + Math.random() * .1, col:k % 2 ? '#ffe080' : '#ff9a30' }); snd('boom', mx, my, .25); // el fogonazo
 }
 function cannonHit(b){
   if (b.land) return portHit(b);
   const s = b.tgt;
   if (b.hit && s && s.sink == null && !s.gone && !s.done) {
-    s.hp--; for (let k = 0; k < 8; k++) chips.push({ x:s.x, y:s.y - 4, vx:(Math.random() - .5) * 30, vy:-8 - Math.random() * 12, life:0, max:.5 + Math.random() * .4, col:k % 2 ? '#8a5a30' : '#5a3a20' }); // astillas
+    s.hp--; for (let k = 0; k < 16; k++) chips.push({ x:s.x, y:s.y - 4, vx:(Math.random() - .5) * 30, vy:-8 - Math.random() * 12, life:0, max:.5 + Math.random() * .4, col:k % 2 ? '#8a5a30' : '#5a3a20' }); // astillas
     if (Math.random() < .5) smoke.push({ x:s.x, y:s.y - 6, vx:0, vy:-5, r:2, life:0, max:2 });
     if (s.hp <= 0) shipSunk(s, b.from);
   } else { // al agua: salpicón
-    for (let k = 0; k < 6; k++) chips.push({ x:b.tx, y:b.ty, vx:(Math.random() - .5) * 14, vy:-10 - Math.random() * 10, life:0, max:.4 + Math.random() * .2, col:'rgba(220,240,255,.85)' });
+    for (let k = 0; k < 14; k++) chips.push({ x:b.tx + (Math.random() - .5) * 3, y:b.ty, vx:(Math.random() - .5) * 18, vy:-12 - Math.random() * 16, life:0, max:.45 + Math.random() * .3, col:k % 3 ? 'rgba(220,240,255,.9)' : 'rgba(170,210,240,.8)' }); // columna de agua
   }
 }
 // Hundido: se escora, se va al fondo y deja restos; en los buques de una nación mueren algunos marineros
@@ -183,6 +187,38 @@ function shipSunk(s, by){
   else notify(`¡${bg ? `El buque de ${bg.name}` : 'El enemigo'} hunde el buque de guerra de ${g ? g.name : '?'}!`, { x:s.x, y:s.y });
 }
 // Desde el mar, contra el puerto enemigo: edificios de la orilla y quien ande cerca
+// Desde tierra: los arqueros y ballesteros que tienen el barco a tiro le disparan (las flechas se ven y le hacen daño)
+function shoreFire(s, dt, isFoe){
+  if ((s.shoreT = (s.shoreT || 0) - dt) > 0) return; s.shoreT = .4;
+  for (const u of villagers) {
+    if (u.dead || u.away || u.boat || !isRanged(u.weapon) || ageOf(u) < ADULT_H || (u.shipCd || 0) > yearT) continue;
+    const d = Math.hypot(u.x - s.x, u.y - s.y); if (d > (u.weapon === 'ballesta' ? 46 : 38)) continue;
+    const g = villageById(u.vid); if (!g || !isFoe(g)) continue;
+    u.shipCd = yearT + (u.weapon === 'ballesta' ? 2.2 : 1.5); u.dir = s.x < u.x ? -1 : 1; u.stab = .25;
+    const hit = Math.random() < .55;
+    arrows.push({ x0:u.x, y0:u.y - 5, a:s, v:u, t:0, dur:Math.max(.15, d / 150), hit, vis:true, bolt:u.weapon === 'ballesta' }); snd('arrow', u.x, u.y);
+    if (knowsSci(g, 'polvora')) gunSmoke(u);
+    if (hit) { s.hp -= u.weapon === 'ballesta' ? .35 : .2; if (s.hp <= 0 && s.sink == null) { shipSunk(s, null); notify(`¡Los ${u.weapon === 'ballesta' ? 'ballesteros' : 'arqueros'} de ${g.name} hunden ${s.name ? `al barco pirata «${s.name}»` : 'un buque enemigo'} desde la orilla!`, { x:s.x, y:s.y }); } }
+  }
+}
+// Cañonazo contra un edificio enemigo que el barco tenga a tiro (si no hay un barco enemigo al que disparar)
+function coastFire(s, isFoe){
+  if (s.cd > 0) return false;
+  let best = null, bd = SHIP_RANGE;
+  for (const g of villages) {
+    if (!popOf(g) || Math.hypot(g.fx * T - s.x, g.fy * T - s.y) > SHIP_RANGE + 90 || !isFoe(g)) continue;
+    for (const i of buildingsOf(g)) { if (!world.objs[i]) continue; const d = Math.hypot((i % W) * T + 2 - s.x, ((i / W) | 0) * T - s.y); if (d < bd) { bd = d; best = [i, g]; } }
+  }
+  if (!best) return false;
+  const [i, g] = best, tx = (i % W) * T + 2, ty = ((i / W) | 0) * T;
+  s.cd = 2.2 + Math.random(); s.dir = tx < s.x ? -1 : 1;
+  const mx = s.x + s.dir * 11 * SHIP_K, my = s.y - 7 * SHIP_K;
+  cannonballs.push({ x0:mx, y0:my, tx, ty, t:0, dur:.4 + Math.hypot(tx - mx, ty - my) / 160, hit:false, land:{ i, foe:g.id, nat:s.nation ?? null } });
+  for (let k = 0; k < 9; k++) smoke.push({ x:mx + s.dir * k, y:my + (Math.random() - .5) * 3, vx:s.dir * (4 + Math.random() * 8), vy:-2 - Math.random() * 3, r:1.5 + Math.random() * 1.5, life:0, max:1.2 + Math.random() * 1.2 });
+  snd('boom', mx, my, .25);
+  if (!s.coastMsg || yearT - s.coastMsg > 90) { s.coastMsg = yearT; notify(s.name ? `¡Los piratas de «${s.name}» cañonean ${g.name} desde el mar!` : `¡El buque de ${villageById(s.nation)?.name || '?'} cañonea ${g.name} desde el mar!`, { x:tx, y:ty }); }
+  return true;
+}
 function bombardPort(n, foe){
   if (n.cd > 0) return;
   const [px, py] = portXY(foe), bs = buildingsOf(foe).filter(i => world.objs[i] && Math.hypot((i % W) * T - px, ((i / W) | 0) * T - py) < 70);
@@ -219,22 +255,33 @@ function raid(p, t){
 }
 // Dibujo: galeones (oscuros los piratas, con la bandera de su nación las armadas), con barra de vida al recibir daño,
 // y escorándose al hundirse
+const SHIP_K = 1.6; // los barcos de guerra, bastante más grandes que una barca
 function drawWarShip(s, now, pirate){
-  const x = Math.round(s.x), y = Math.round(s.y), k = s.sink != null ? Math.min(1, s.sink / SINK_T) : 0;
+  const x = Math.round(s.x), y = Math.round(s.y), k = s.sink != null ? Math.min(1, s.sink / SINK_T) : 0, K = SHIP_K;
+  const moving = Math.hypot(s.x - (s.lx ?? s.x), s.y - (s.ly ?? s.y)) > .01; s.lx = s.x; s.ly = s.y;
   vctx.save();
   if (k) { vctx.globalAlpha = 1 - k * .85; vctx.translate(x, y); vctx.rotate(s.dir * k * .6); vctx.translate(-x, -y + k * 9); }
   if (pirate) vctx.filter = 'brightness(.42) saturate(.6)';
-  drawShip(x, y, s.dir, !!s.steam, [40, 40, 40], now);
+  drawShip(x, y, s.dir, !!s.steam, [40, 40, 40], now, K, moving && !k);
   vctx.filter = 'none';
   // Mástil con su bandera: la negra con calavera o la de su nación
-  const mx = x - s.dir * 1, my = y - 22;
+  const mx = x - s.dir * 1, my = y - Math.round(22 * K);
   vctx.fillStyle = '#3a2a1a'; vctx.fillRect(mx, my, 1, 6);
   if (pirate) { vctx.fillStyle = '#141414'; vctx.fillRect(mx + 1, my, 7, 5); vctx.fillStyle = '#f0f0e8'; vctx.fillRect(mx + 3, my + 1, 3, 2); vctx.fillRect(mx + 3, my + 3, 1, 1); vctx.fillRect(mx + 5, my + 3, 1, 1); }
   else { const g = villageById(s.nation), f = g && (nationOf(g).flag || g.flag); if (f) drawFlag(f, mx + 1, my, 7, 5, 1, now); else { const [r0, g0, b0] = g ? villageColor(g) : [200, 200, 200]; vctx.fillStyle = `rgb(${r0},${g0},${b0})`; vctx.fillRect(mx + 1, my, 7, 5); } }
   vctx.restore();
-  if (k) { if (Math.random() < .4) chips.push({ x:x + (Math.random() - .5) * 10, y:y + 1, vx:0, vy:-6, life:0, max:.5, col:'rgba(220,240,255,.8)' }); return; } // burbujas
-  if (s.hp < s.max) { const w = 16; vctx.fillStyle = 'rgba(0,0,0,.6)'; vctx.fillRect(x - w / 2 - 1, y - 27, w + 2, 3); vctx.fillStyle = s.hp / s.max > .5 ? '#6ad06a' : s.hp / s.max > .25 ? '#e8c040' : '#e05040'; vctx.fillRect(x - w / 2, y - 26, Math.max(1, w * s.hp / s.max), 1); }
-  redrawFront(x - 18, x + 18, y - 24, y);
+  if (k) { // hundiéndose: burbujas, tablas que flotan y humo
+    if (Math.random() < .7) chips.push({ x:x + (Math.random() - .5) * 18, y:y + 1, vx:0, vy:-6 - Math.random() * 4, life:0, max:.5, col:'rgba(220,240,255,.8)' });
+    if (Math.random() < .25) chips.push({ x:x + (Math.random() - .5) * 20, y:y, vx:(Math.random() - .5) * 10, vy:-3, life:0, max:1.5, col:'#7a5230' });
+    if (Math.random() < .3) smoke.push({ x:x + (Math.random() - .5) * 10, y:y - 8, vx:0, vy:-5, r:2, life:0, max:2 });
+    return;
+  }
+  // Tocado: humo y llamas en cubierta (más cuanto peor está)
+  const dmg = 1 - s.hp / s.max;
+  if (dmg > .3 && Math.random() < dmg * .6) smoke.push({ x:x + (Math.random() - .5) * 14, y:y - 10, vx:(Math.random() - .5) * 3, vy:-6 - Math.random() * 3, r:1.5 + dmg * 2, life:0, max:1.5 + dmg });
+  if (dmg > .55) for (let f = 0; f < 2; f++) { const fx = x + (f ? 5 : -6) * s.dir, fl = 2 + Math.round(Math.abs(Math.sin(now / 90 + f * 2)) * 3); vctx.fillStyle = '#f08030'; vctx.fillRect(fx - 1, y - 6 - fl, 3, fl); vctx.fillStyle = '#ffd860'; vctx.fillRect(fx, y - 5 - Math.ceil(fl / 2), 1, Math.ceil(fl / 2)); }
+  if (s.hp < s.max) { const w = 22, hy = y - Math.round(27 * K); vctx.fillStyle = 'rgba(0,0,0,.6)'; vctx.fillRect(x - w / 2 - 1, hy, w + 2, 3); vctx.fillStyle = s.hp / s.max > .5 ? '#6ad06a' : s.hp / s.max > .25 ? '#e8c040' : '#e05040'; vctx.fillRect(x - w / 2, hy + 1, Math.max(1, w * s.hp / s.max), 1); }
+  redrawFront(x - 26, x + 26, y - 38, y);
 }
 function drawPirates(now){
   const [x0, y0, x1, y1] = visibleRect(), on = s => s.x > x0 - 40 && s.x < x1 + 40 && s.y > y0 - 40 && s.y < y1 + 40;
