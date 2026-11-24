@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611240320",
- "fecha": "2026-11-24 03:20",
+ "version": "202611240330",
+ "fecha": "2026-11-24 03:30",
  "novedades": [
   {
    "fecha": "2026-11-24",
-   "texto": "Los edificios importantes buscan sitio en el centro del pueblo y, si está lleno, derriban una cabaña para levantarlos allí"
+   "texto": "Los pueblos de islas pobres se mudan en barcas a una tierra mejor"
+  },
+  {
+   "fecha": "2026-11-24",
+   "texto": "Edificios importantes en el centro (tribunal, parlamento, universidad, banco, hospital, escuela, imprenta, almacén…): el solar libre más cercano al centro y, si está lleno y el pueblo tiene 15 o más habitantes, derriban la cabaña más céntrica (como mucho una al día; la familia se hace otra casa más afuera)"
   },
   {
    "fecha": "2026-11-24",
@@ -46,19 +50,15 @@
   {
    "fecha": "2026-11-24",
    "texto": "Vía nueva a la escala del tren (balasto, traviesas, dos raíles separados y curvas redondeadas, dibujada una vez en su propio lienzo); estaciones y trenes por encima de árboles y edificios; hélice del dirigible animada; el dirigible es más pequeño aparcado y crece al ganar altura"
-  },
-  {
-   "fecha": "2026-11-24",
-   "texto": "Tren y dirigible: la locomotora va siempre delante (da la vuelta en la estación mientras espera) y los coches giran al subir, bajar y en las curvas; el dirigible es más grande, rígido y sin cesta; los dirigibles solo amarran en plataformas de dirigibles y los globos solo en puertos de globos"
   }
  ],
  "archivos": {
-  "index.html": "23c3b7ecf66861837b47526f8bd997bc475d45c7",
+  "index.html": "13004fb5598700706952f58ed9d282cf84997fb8",
   "css/estilo.css": "5102a249d843e933be3be74f960883ba03efd264",
   "js/aldeanos.js": "e73d76d14422e1d57c10b250ee82a3bdafc89e0c",
   "js/ambiente.js": "cd3541c5cfa9a64de5395f84239009f959216922",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
-  "js/arte.js": "70b4263a6185fe9a0dd221a2fb5369e50d625e97",
+  "js/arte.js": "bc9387e48ecbeb94c748585f682f95075ccce27a",
   "js/arte_mapa.js": "98d891de2ac832b6a1d3a74577fd56b460c01af2",
   "js/bandidos.js": "675a7588d06fb17fe09f9c9ec32caa9e300cb1d9",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
@@ -95,6 +95,7 @@
   "js/industria.js": "beb92aac57d833266a64013f2d92b3ee256a6c03",
   "js/instituciones.js": "da41de01f4849b74b1e1afd05542f34d686c4035",
   "js/interfaz.js": "1a17b37ac66041536a92ed463a271717d1ae51ba",
+  "js/islas.js": "d65159562d188788176b02cca6001d0abcb20629",
   "js/justicia.js": "100314d7858fe651a4e7b6d0d9530dab4bdaa99e",
   "js/leyes.js": "5fa7cbee568b9324cf95d5443a6999600878cc6f",
   "js/libro.js": "7af640407e7d7b885889ea8669cf05def8c41a1e",
@@ -117,7 +118,7 @@
   "js/riqueza.js": "4437665e375d993ccfc2bec62225436b8fd03dce",
   "js/rutas.js": "6e12cafc1992e09fc3c2b5b13ca7d7db6416c364",
   "js/sindicatos.js": "f7cb8bf83ff74322a6fc45cc6ac90550425c6d15",
-  "js/sociedad.js": "a38acd385ffdd88a0e965c16093a5823e9cd9da4",
+  "js/sociedad.js": "debb595a3566c0ed9b84d90ce4ba8ee83ecc45f5",
   "js/sonido.js": "25be9d9bda62336aba463c82e31668d0e9b2bc54",
   "js/titulares.js": "0506409e843da939370bb404b894a52cffa68620",
   "js/trabajo.js": "50d504968cee2cd4f5170a8e34cd81f649d6bf04",

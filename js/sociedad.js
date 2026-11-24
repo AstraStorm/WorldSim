@@ -1713,6 +1713,7 @@ function updateTravelers(dt){
     if (t.kind === 'flota' && t.phase === 'ida') { if (to) arriveFleet(t, from, to); if (t.crewOff) { t.done = true; continue; } t.phase = 'vuelta'; t.path = t.back.slice(); const nx = t.path.shift(); t.tx = nx[0]; t.ty = nx[1]; continue; }
     if (t.kind === 'flota') { t.done = true; for (const u of t.crew) if (!u.dead) { u.away = false; u.task = null; u.x = t.x; u.y = t.y; } continue; }
     if (t.kind === 'colonos') { foundColony(t, from); t.done = true; continue; } // colonias.js
+    if (t.kind === 'mudanza') { islandArrive(t, from); t.done = true; continue; } // dejan la isla (islas.js)
     if (t.kind === 'visita' && t.phase === 'ida') { if (to) stateVisitArrive(t.v, t.crew, from, to); t.phase = 'vuelta'; t.tx = t.hx; t.ty = t.hy; continue; } // visita oficial (visitas.js)
     if (t.kind === 'mensajero' && t.phase === 'ida') { newsArrive(t, from, to); t.phase = 'vuelta'; t.tx = t.hx; t.ty = t.hy; continue; } // noticias.js
     if (t.kind === 'batida' && t.phase === 'ida') { huntArrive(t, from); t.phase = 'vuelta'; t.tx = t.hx; t.ty = t.hy; continue; }
