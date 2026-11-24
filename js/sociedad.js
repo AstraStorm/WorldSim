@@ -854,56 +854,7 @@ function wallPlan(g){
   return plan;
 }
 const wallLeft = g => { const pl = wallPlan(g); return pl.length - (g.wallIdx || 0); };
-function drawWalls(){
-  if (!wallSet.size && !gateSet.size) return;
-  const [x0, y0, x1, y1] = visibleRect();
-  for (const i of wallSet) {
-    const px = (i % W) * T, py = ((i / W) | 0) * T;
-    if (px + T < x0 || px > x1 || py + T < y0 - 8 || py > y1) continue;
-    const vert = (wallSet.has(i - W) || wallSet.has(i + W) || gateSet.has(i - W) || gateSet.has(i + W)) && !wallSet.has(i - 1) && !wallSet.has(i + 1);
-    if (ART.ready) { // el dibujo: tramo horizontal o vertical, de piedra o de madera
-      const stn = wallStone.has(i), k = stn ? (vert ? 'tex:piedra_v' : 'tex:piedra_h') : (vert ? 'tex:empalizada_v' : 'tex:empalizada_h'), p = artPattern(k);
-      if (p) {
-        vctx.fillStyle = 'rgba(0,0,0,.25)'; vctx.fillRect(px - (vert ? 1 : 0), py + T - 1, T + (vert ? 2 : 0), 2);
-        if (vert) { const w = p.w, top = wallSet.has(i - W) || gateSet.has(i - W) ? py : py - 4; artFill(vctx, k, px + (T >> 1) - (w >> 1), top, w, py + T - top, px + (T >> 1) - (w >> 1), 0); }
-        else artFill(vctx, k, px, py + T - p.h, T, p.h, 0, py + T - p.h);
-        continue;
-      }
-    }
-    if (vert && !wallStone.has(i)) { // tramo que va de arriba abajo: se ve de lado, más ancho (dos filas de estacas y el adarve)
-      vctx.fillStyle = 'rgba(0,0,0,.25)'; vctx.fillRect(px - 1, py + T - 1, T + 3, 2);
-      for (let k = -1; k <= T; k++) {
-        const back = k < 2; vctx.fillStyle = back ? (k % 2 ? '#6a4428' : '#84583a') : (k % 2 ? '#7a5030' : '#9a6a3e');
-        vctx.fillRect(px + k, py - (back ? 4 : 3), 1, T + (back ? 3 : 3)); vctx.fillStyle = '#4a3018'; vctx.fillRect(px + k, py - (back ? 5 : 4) + ((k + 2) % 2), 1, 1);
-      }
-      vctx.fillStyle = '#5a3a20'; vctx.fillRect(px - 1, py + 1, T + 2, 1); vctx.fillStyle = '#3a2614'; vctx.fillRect(px + T, py - 3, 1, T + 3);
-      continue;
-    }
-    if (wallStone.has(i)) { // muro de piedra: sillares grises y almenas
-      vctx.fillStyle = 'rgba(0,0,0,.25)'; vctx.fillRect(px - (vert ? 1 : 0), py + T - 1, T + (vert ? 2 : 0), 2);
-      vctx.fillStyle = '#8a867e'; vctx.fillRect(px - (vert ? 1 : 0), py - 3, T + (vert ? 2 : 0), T + 3);
-      vctx.fillStyle = '#a8a49c'; vctx.fillRect(px - (vert ? 1 : 0), py - 3, T + (vert ? 2 : 0), 1);
-      vctx.fillStyle = '#6a6660'; vctx.fillRect(px, py, T, 1); vctx.fillRect(px + ((i % 2) ? 2 : 0), py - 2, 1, 2); vctx.fillRect(px + ((i % 2) ? 0 : 3), py + 1, 1, 2);
-      vctx.fillStyle = '#8a867e'; for (let k = 0; k < T; k += 2) vctx.fillRect(px + k, py - 5, 1, 2);
-      continue;
-    }
-    vctx.fillStyle = 'rgba(0,0,0,.25)'; vctx.fillRect(px, py + T - 1, T, 2);
-    for (let k = 0; k < T; k++) { // estacas puntiagudas
-      vctx.fillStyle = k % 2 ? '#7a5030' : '#9a6a3e'; vctx.fillRect(px + k, py - 3, 1, T + 3);
-      vctx.fillStyle = '#4a3018'; vctx.fillRect(px + k, py - 4 + (k % 2), 1, 1);
-    }
-    vctx.fillStyle = '#5a3a20'; vctx.fillRect(px, py, T, 1); vctx.fillRect(px, py + 3, T, 1);
-  }
-  for (const i of gateSet) { // puerta: dos postes más altos a los lados
-    const px = (i % W) * T, py = ((i / W) | 0) * T;
-    if (px + T < x0 || px > x1 || py + T < y0 - 8 || py > y1) continue;
-    const go = villageById(gateOwner.get(i)), shut = gateShut(go), // de noche, con alarma o en guerra (defensa.js)
-      stn = [i - 1, i + 1, i - W, i + W].some(j => wallStone.has(j));
-    const gs = artFrame(`gate:${stn ? 'piedra' : 'madera'}${shut ? '' : '_abierta'}`);
-    if (gs) { vctx.drawImage(gs, px + (T >> 1) - (gs.width >> 1), py + T - gs.height); continue; } // el dibujo: cerrada si la frontera está cerrada
-    vctx.fillStyle = '#5a3a20'; vctx.fillRect(px, py - 5, 1, T + 5); vctx.fillRect(px + T - 1, py - 5, 1, T + 5); vctx.fillRect(px, py - 5, T, 1); if (shut) { vctx.fillStyle = '#6a4426'; vctx.fillRect(px + 1, py - 2, T - 2, 4); vctx.fillStyle = '#3a2614'; vctx.fillRect(px + 1, py, T - 2, 1); } // frontera cerrada: puerta atrancada
-  }
-}
+// (las murallas se dibujan en defensa.js)
 // ---- Religión: cada aldea venera a su dios; las desgracias se las atribuyen a algo y actúan en consecuencia ----
 const DOMAINS = ['las tormentas', 'el trueno', 'el cielo', 'las estrellas', 'las montañas', 'el inframundo', 'el desierto', 'el frío', 'la caza', 'la lluvia', 'el sol', 'las cosechas', 'el mar', 'los bosques', 'la guerra', 'la luna', 'el fuego', 'la tierra', 'el viento', 'los animales', 'los muertos'];
 const SYL = ['ka', 'lo', 'mi', 'ra', 'to', 'ul', 'an', 'sha', 've', 'dor', 'is', 'ne', 'gu', 'ri', 'ba', 'el', 'or', 'zu', 'ta', 'mo'];

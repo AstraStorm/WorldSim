@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611240255",
- "fecha": "2026-11-24 02:55",
+ "version": "202611240258",
+ "fecha": "2026-11-24 02:58",
  "novedades": [
   {
    "fecha": "2026-11-24",
-   "texto": "Guerras con objetivos, milicia que defiende el pueblo, ataques a sitios clave, conquistas con esclavos o adopción, ruinas, espías con informes y robos, golpes animados y caídos con armadura"
+   "texto": "Murallas más grandes, con torres en las esquinas y una puerta fortificada por lado"
+  },
+  {
+   "fecha": "2026-11-24",
+   "texto": "Estrategia de guerra (estrategia.js) y combate más vivo"
   },
   {
    "fecha": "2026-11-24",
@@ -46,19 +50,15 @@
   {
    "fecha": "2026-11-23",
    "texto": "Versión de escritorio (escritorio/): launcher estilo Battle.net que comprueba y descarga las actualizaciones desde GitHub Pages; version.py genera manifest.json con la huella de cada archivo y las novedades"
-  },
-  {
-   "fecha": "2026-11-23",
-   "texto": "Casino (tragaperras, ruleta, blackjack, bingo y póquer) con ganancias por juego en su ficha, jugadores que se arruinan o se hacen ricos y dueño que se enriquece; clases sociales según el régimen con pirámide y desigualdad; las capitales fundan ciudades nuevas por tierra (naciones de varias ciudades) y las de 150 habitantes son metrópolis"
   }
  ],
  "archivos": {
-  "index.html": "570526d5de2f40812b1624a3d319f9fa60441f66",
+  "index.html": "f3f2fbb960ebb51d8d1323237b7e71f04d300f50",
   "css/estilo.css": "5102a249d843e933be3be74f960883ba03efd264",
   "js/aldeanos.js": "781c9e99e40b253029b0b28b10fd28d4124488f8",
   "js/ambiente.js": "cd3541c5cfa9a64de5395f84239009f959216922",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
-  "js/arte.js": "7cbbb679d109d21433f7210ecd2a4524a2e7b045",
+  "js/arte.js": "f22771dcc56551e429cc87c554bf62fcf17e2894",
   "js/arte_mapa.js": "98d891de2ac832b6a1d3a74577fd56b460c01af2",
   "js/bandidos.js": "675a7588d06fb17fe09f9c9ec32caa9e300cb1d9",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
@@ -76,7 +76,7 @@
   "js/convivencia.js": "81be8970d88a47871bd4e45796c00a51f56287f8",
   "js/credos.js": "2c9349a62f485ee953ea7e58c09de270a73b45c0",
   "js/cultura.js": "4bb7fd0e484610e95f086bebd6d0958639a427ed",
-  "js/defensa.js": "9fb6777ebf059cbf7ec591145127c794da13dd7e",
+  "js/defensa.js": "50f47277965d8693a629df46db4c7cbf3a84f591",
   "js/deportes.js": "666ed74d4ace8769b21bf1f869f04151ea558e14",
   "js/desastres.js": "1961763b0e85202107f673dabf369449e8c2a600",
   "js/edificios.js": "217476a6fd1617cf12ba3dc9e9918ebec987a85a",
@@ -87,7 +87,7 @@
   "js/fauna.js": "ab4d9de4dea1f9f00ee90d76625658f2edd2695c",
   "js/globos.js": "a74b432baa6a6b51128f2138f1730ebd0bef599e",
   "js/guerra.js": "3e00349de418e53684d9ea9319847881f3e7f049",
-  "js/humanos.js": "a1f6cbf7bfdab24ffe91919f50c562595b200f50",
+  "js/humanos.js": "5353a04227ba37b5938dd73cd6650fb2350e3e86",
   "js/idiomas.js": "76785080135c2b980a092929b1d0742a1e15a8f2",
   "js/impuestos.js": "9820acf00db62b3039fb43433ddcc3f522453daa",
   "js/industria.js": "290e5cedde024e3eb121139284e8ad25d002588a",
@@ -115,7 +115,7 @@
   "js/riqueza.js": "4437665e375d993ccfc2bec62225436b8fd03dce",
   "js/rutas.js": "6e12cafc1992e09fc3c2b5b13ca7d7db6416c364",
   "js/sindicatos.js": "f7cb8bf83ff74322a6fc45cc6ac90550425c6d15",
-  "js/sociedad.js": "c8a63a119646a53e3f17025cc642ed881ed1afda",
+  "js/sociedad.js": "2926f1862ae832d8db259d9b176b3fcee0232ce1",
   "js/sonido.js": "25be9d9bda62336aba463c82e31668d0e9b2bc54",
   "js/titulares.js": "0506409e843da939370bb404b894a52cffa68620",
   "js/trabajo.js": "50d504968cee2cd4f5170a8e34cd81f649d6bf04",

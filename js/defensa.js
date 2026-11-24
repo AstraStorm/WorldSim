@@ -23,6 +23,7 @@ function wallGrow(g){
   // Piezas sueltas de planes viejos (o de pueblos que ya no están) que no forman parte de ninguna muralla: fuera
   const ring = new Set(villages.filter(o => popOf(o)).flatMap(o => [...(o.wallPlan || []), ...(o.wallPlan1 || [])]));
   for (const i of [...wallSet, ...gateSet]) if (!ring.has(i)) { wallSet.delete(i); wallStone.delete(i); gateSet.delete(i); gateOwner.delete(i); }
+  for (const i of [...gateSet]) if (gateOwner.get(i) === g.id && !wallGates(g).has(i)) { gateSet.delete(i); gateOwner.delete(i); wallSet.add(i); } // (partidas de antes: una puerta en cada camino) → muro
   // ¿El pueblo se ha salido de la muralla, o la muralla es mucho más grande de lo que hace falta?
   const R = g.wallRect, m = g.wallRing === 2 ? 8 : 3; let x0 = g.fx - 4, y0 = g.fy - 3, x1 = g.fx + 4, y1 = g.fy + 4;
   for (const h of coreBuildings(g)) { const x = h % W, y = (h / W) | 0; x0 = Math.min(x0, x - 5); x1 = Math.max(x1, x + 5); y0 = Math.min(y0, y - 7); y1 = Math.max(y1, y + 2); }
@@ -51,9 +52,76 @@ function onAttacked(g){
 }
 // ¿Está cerrada la puerta de este pueblo?
 const gateShut = g => !!g && (hasLaw(g, 'fronteras_cerradas') || isNight() || !!(g.alarm && g.alarm.until > yearT) || [...rels.values()].some(r => r.war && [r.war.att, r.war.def].includes(nationOf(g).id)));
-// ¿Esta casilla de la muralla es el centro de un lado? (ahí va una puerta)
-function midGate(g, i){
-  const R = g.wallRect; if (!R) return false;
-  const x = i % W, y = (i / W) | 0, mx = Math.round((R.x0 + R.x1) / 2), my = Math.round((R.y0 + R.y1) / 2);
-  return ((y === R.y0 || y === R.y1) && x === mx) || ((x === R.x0 || x === R.x1) && y === my);
+// ¿Va una puerta en esta casilla de la muralla? (una por lado: ver wallGates)
+function midGate(g, i){ return wallGates(g).has(i); }
+// ---- Puertas con lógica: una por lado, donde pasa el camino principal (o en el centro si no pasa ninguno) ----
+function wallGates(g){
+  const R = g.wallRect; if (!R) return new Set();
+  if (g.gateTiles && g.gateKey === `${R.x0},${R.y0},${R.x1},${R.y1}`) return g.gateTiles;
+  const out = new Set(), mx = Math.round((R.x0 + R.x1) / 2), my = Math.round((R.y0 + R.y1) / 2);
+  const sides = [[...Array(R.x1 - R.x0 - 1)].map((_, k) => [R.x0 + 1 + k, R.y0]), [...Array(R.x1 - R.x0 - 1)].map((_, k) => [R.x0 + 1 + k, R.y1]),
+    [...Array(R.y1 - R.y0 - 1)].map((_, k) => [R.x0, R.y0 + 1 + k]), [...Array(R.y1 - R.y0 - 1)].map((_, k) => [R.x1, R.y0 + 1 + k])];
+  for (const S of sides) {
+    const land = S.filter(([x, y]) => !WATER[world.biome[y * W + x]]); if (!land.length) continue;
+    const d = ([x, y]) => Math.abs(x - mx) + Math.abs(y - my), paths = land.filter(([x, y]) => pathMap.has(y * W + x));
+    const [x, y] = (paths.length ? paths : land).sort((a, b) => d(a) - d(b))[0]; out.add(y * W + x);
+  }
+  g.gateTiles = out; g.gateKey = `${R.x0},${R.y0},${R.x1},${R.y1}`; return out;
+}
+// ---- Murallas grandes: almenas, adarve, torres en las esquinas y una puerta fortificada con dos torreones ----
+function wallTower(px, py, stone){ // torre de esquina (o torreón de la puerta), más alta que el muro
+  if (stone) {
+    vctx.fillStyle = 'rgba(0,0,0,.3)'; vctx.fillRect(px - 2, py + T, T + 5, 2);
+    vctx.fillStyle = '#7a766e'; vctx.fillRect(px - 2, py - 11, T + 4, T + 11);
+    vctx.fillStyle = '#9a968c'; vctx.fillRect(px - 2, py - 11, T + 4, 2); vctx.fillStyle = '#5e5a54'; vctx.fillRect(px + T + 1, py - 9, 1, T + 9);
+    vctx.fillStyle = '#7a766e'; for (let k = -2; k < T + 2; k += 2) vctx.fillRect(px + k, py - 13, 1, 2); // almenas
+    vctx.fillStyle = '#2a2622'; vctx.fillRect(px + 1, py - 6, 1, 2); vctx.fillRect(px + T - 2, py - 6, 1, 2); // aspilleras
+    vctx.fillStyle = '#6a6660'; for (let r = py - 8; r < py + T; r += 3) vctx.fillRect(px - 2, r, T + 4, 1);
+  } else {
+    vctx.fillStyle = 'rgba(0,0,0,.3)'; vctx.fillRect(px - 2, py + T, T + 5, 2);
+    vctx.fillStyle = '#5a3a20'; vctx.fillRect(px - 2, py - 10, 1, T + 10); vctx.fillRect(px + T + 1, py - 10, 1, T + 10); // los postes
+    vctx.fillStyle = '#9a6a3e'; vctx.fillRect(px - 2, py - 11, T + 4, 4); vctx.fillStyle = '#7a5030'; vctx.fillRect(px - 2, py - 8, T + 4, 1); // la plataforma
+    vctx.fillStyle = '#6a4428'; vctx.beginPath(); vctx.moveTo(px - 3, py - 11); vctx.lineTo(px + T / 2, py - 16); vctx.lineTo(px + T + 3, py - 11); vctx.fill(); // el tejadillo
+  }
+}
+function drawWalls(){
+  if (!wallSet.size && !gateSet.size) return;
+  const [x0, y0, x1, y1] = visibleRect(), on = i => wallSet.has(i) || gateSet.has(i);
+  const towers = [];
+  for (const i of wallSet) {
+    const px = (i % W) * T, py = ((i / W) | 0) * T;
+    if (px + T + 4 < x0 || px - 4 > x1 || py + T < y0 - 16 || py > y1) continue;
+    const L = on(i - 1), Rt = on(i + 1), U = on(i - W), D = on(i + W), stn = wallStone.has(i);
+    if ((L || Rt) && (U || D)) { towers.push([px, py, stn]); continue; } // esquina: torre
+    const Hh = stn ? 8 : 7;
+    if ((U || D) && !L && !Rt) { // tramo de arriba abajo: se ve el adarve desde arriba y un costado
+      vctx.fillStyle = 'rgba(0,0,0,.25)'; vctx.fillRect(px + T, py - 2, 2, T + 2);
+      if (stn) { vctx.fillStyle = '#8a867e'; vctx.fillRect(px, py - (U ? 0 : Hh), T, T + (U ? 0 : Hh)); vctx.fillStyle = '#a8a49c'; vctx.fillRect(px + 1, py - (U ? 0 : Hh), T - 2, T + (U ? 0 : Hh) - 1); vctx.fillStyle = '#6a6660'; vctx.fillRect(px, py + (i % 2 ? 1 : 3), T, 1); vctx.fillStyle = '#8a867e'; vctx.fillRect(px, py + 1, 1, 2); vctx.fillRect(px + T - 1, py + 3, 1, 2); }
+      else { for (let k = 0; k < T; k++) { vctx.fillStyle = k % 2 ? '#7a5030' : '#9a6a3e'; vctx.fillRect(px + k, py - (U ? 0 : Hh), 1, T + (U ? 0 : Hh)); } vctx.fillStyle = '#5a3a20'; vctx.fillRect(px + 1, py, 3, T); vctx.fillStyle = '#4a3018'; vctx.fillRect(px, py + 2, T, 1); }
+      continue;
+    }
+    // Tramo de lado a lado: el frente del muro, alto, con almenas arriba
+    vctx.fillStyle = 'rgba(0,0,0,.28)'; vctx.fillRect(px, py + T, T, 2);
+    if (stn) {
+      vctx.fillStyle = '#8a867e'; vctx.fillRect(px, py - Hh + 2, T, Hh + T - 2);
+      vctx.fillStyle = '#a8a49c'; vctx.fillRect(px, py - Hh + 2, T, 2); // el adarve
+      vctx.fillStyle = '#8a867e'; for (let k = (i % 2); k < T; k += 2) vctx.fillRect(px + k, py - Hh, 1, 2); // almenas
+      vctx.fillStyle = '#6a6660'; for (let r = py - Hh + 5; r < py + T; r += 3) vctx.fillRect(px, r, T, 1); vctx.fillRect(px + ((i % 3) + 1), py - Hh + 5, 1, 3); vctx.fillRect(px + ((i % 3) + 2) % T, py - Hh + 8, 1, 3);
+    } else {
+      for (let k = 0; k < T; k++) { vctx.fillStyle = k % 2 ? '#7a5030' : '#9a6a3e'; vctx.fillRect(px + k, py - Hh + 1, 1, Hh + T - 1); vctx.fillStyle = '#4a3018'; vctx.fillRect(px + k, py - Hh + (k % 2), 1, 1); } // estacas afiladas
+      vctx.fillStyle = '#5a3a20'; vctx.fillRect(px, py - 2, T, 1); vctx.fillRect(px, py + 2, T, 1); // travesaños
+    }
+  }
+  for (const [px, py, stn] of towers) wallTower(px, py, stn);
+  for (const i of gateSet) { // la puerta: dos torreones y el arco, con las hojas cerradas (noche, alarma o guerra) o abiertas
+    const px = (i % W) * T, py = ((i / W) | 0) * T;
+    if (px + T + 8 < x0 || px - 8 > x1 || py + T < y0 - 18 || py > y1) continue;
+    const go = villageById(gateOwner.get(i)), shut = gateShut(go), stn = [i - 1, i + 1, i - W, i + W].some(j => wallStone.has(j));
+    wallTower(px - T, py, stn); wallTower(px + T, py, stn);
+    vctx.fillStyle = stn ? '#7a766e' : '#6a4428'; vctx.fillRect(px - 1, py - 9, T + 2, 4); // el dintel
+    vctx.fillStyle = stn ? '#9a968c' : '#9a6a3e'; vctx.fillRect(px - 1, py - 9, T + 2, 1);
+    if (shut) { vctx.fillStyle = '#6a4426'; vctx.fillRect(px, py - 5, T, T + 5); vctx.fillStyle = '#3a2614'; vctx.fillRect(px + (T >> 1), py - 5, 1, T + 5); vctx.fillStyle = '#9aa0a8'; vctx.fillRect(px + 1, py - 1, T - 2, 1); }
+    else { vctx.fillStyle = 'rgba(20,14,10,.55)'; vctx.fillRect(px, py - 5, T, 3); }
+    const go2 = go && nationOf(go); if (go2 && go2.flag) drawFlag(go2.flag, px + 1, py - 17, 5, 3, 1, performance.now()); // su bandera encima
+  }
 }

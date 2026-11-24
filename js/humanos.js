@@ -875,12 +875,12 @@ function runTask(v, g, dt){
       while (k < pl.length && built < stretch && (g.wood >= 1 || g.stone >= 10)) { // (lo que se gasta abajo: piedra solo con 10 o más; si no, madera)
         const i = pl[k], o = world.objs[i]; k++;
         if (WATER[world.biome[i]] || bridgeSet.has(i) || plazaSet.has(i)) continue;
-        if (pathMap.has(i) || midGate(g, i)) { gateSet.add(i); gateOwner.set(i, g.id); continue; } // puerta donde cruza un camino y en el centro de cada lado
+        if (midGate(g, i)) { gateSet.add(i); gateOwner.set(i, g.id); continue; } // una puerta por lado, donde pasa el camino principal (defensa.js); los demás caminos los corta la muralla
         if (o && (isBuilding(o) || o.key.startsWith('fire') || o.vid != null)) continue; // rocas, flores y matas se quitan; los edificios no
         if (underBuilding(g, i % W, (i / W) | 0) || plotIn(i % W, (i / W) | 0, i % W, (i / W) | 0) || villages.some(o => inPen(o, i % W, (i / W) | 0, 1))) continue; // ni a través de un edificio, una parcela o un cercado
         if (o) { if (OBJ[o.key][1] === 'tree') fallObj(i); world.objs[i] = null; composeRegion((i % W) - 7, ((i / W) | 0) - 11, (i % W) + 7, ((i / W) | 0) + 12); }
         if (villagers.some(u => !u.dead && Math.floor(u.x / T) === i % W && Math.floor(u.y / T) === ((i / W) | 0))) { k--; break; } // alguien encima: luego
-        farmMap.delete(i); wallSet.add(i); built++; // (si pasa por el borde de un campo, se come esa casilla)
+        farmMap.delete(i); pathMap.delete(i); wallSet.add(i); built++; // (si pasa por el borde de un campo, se come esa casilla)
         if (g.stone >= 10) { if ((half += cost) >= 1) { half -= 1; g.stone -= 1; } wallStone.add(i); } else if ((half += .5 * cost) >= 1) { half = 0; g.wood -= 1; }
       }
       g.wallIdx = k;
