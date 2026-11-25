@@ -1794,12 +1794,28 @@ function updateTravelers(dt){
   }
   if (travelers.some(t => t.done)) travelers = travelers.filter(t => !t.done);
 }
+// Por mar, quien sabe hacer barcas y tiene puerto (o es de una nación que lo tiene) va en carabela: una por cada
+// 10 personas, más grande cuanta más gente lleva; los demás, en barcas
+const seaShip = (g, t) => !!g && !!t.sea && ((g.know || {}).barca || !!g.port || !!nationOf(g).port);
+function drawCarabelas(t, x, y, g, now, people){
+  const n = Math.max(1, people.length), ships = Math.ceil(n / 10), steam = knowsSci(g, 'vapor'), col = villageColor(nationOf(g)), f = ART_MAP[steam ? 'ship:vapor' : 'ship:galeon'];
+  for (let k = 0; k < ships; k++) {
+    const crew = people.slice(k * 10, k * 10 + 10), K = crew.length >= 6 ? 1.3 : crew.length >= 3 ? 1.1 : .9;
+    const sx = x - t.dir * k * 30, sy = y + (k % 2 ? 7 : 0);
+    drawShip(sx, sy, t.dir, steam, col, now, K, true);
+    // La gente en cubierta: cabeza y hombros asomando por la borda
+    const w = f ? f[2] * K * .55 : 12, deck = sy - (f ? Math.round(f[3] * .8 * K * .42) : 5);
+    crew.forEach((u, j) => { const ps = personSprite(u, 0, t.dir < 0), px = Math.round(sx - w / 2 + (j + .5) * w / crew.length) - (ps.width >> 1); vctx.drawImage(ps, 0, 0, ps.width, 5, px, deck - 5 + (j % 2), ps.width, 5); });
+    redrawFront(sx - 22 * K, sx + 22 * K, sy - 26 * K, sy + 2);
+  }
+}
 function drawTravelers(now){
   const [x0, y0, x1, y1] = visibleRect();
   for (const t of travelers) {
     if (t.x < x0 - 20 || t.x > x1 + 20 || t.y < y0 - 20 || t.y > y1 + 20) continue;
     const g = villageById(t.from), s = personSprite(t.v, Math.floor((t.walk || 0) * 8) % 2, t.dir < 0), x = Math.round(t.x), y = Math.round(t.y);
     const wet = inWater(t.x, t.y); // en un cauce seco, sobre el hielo o en tierra no se dibuja la barca: van andando
+    if (wet && seaShip(g, t)) { drawCarabelas(t, x, y, g, now, t.crew ? t.crew.filter(u => !u.dead) : [t.v]); if (t.kind === 'diplomatico') diplomatBadge(x, y - 24, now); continue; } // en carabela, con la gente en cubierta
     if (t.crew && wet) { const crew = t.crew.filter(u => !u.dead); crew.forEach((u, k) => { if (k % 2) return; const ox = -t.dir * Math.floor(k / 2) * 14, oy = (Math.floor(k / 2) % 2 ? 6 : -4); drawBoat(x + ox, y + oy, t.dir, now, true, personSprite(u, 0, t.dir < 0)); }); redrawFront(x - 15 - crew.length * 7, x + 15 + crew.length * 7, y - 20, y + 6); if (crew.length) { vctx.fillStyle = '#c8302a'; vctx.fillRect(x + t.dir * 2, y - 22, 3, 2); vctx.fillStyle = '#5a3a20'; vctx.fillRect(x + t.dir, y - 22, 1, 8); } continue; }
     if (wet) { drawBoat(x, y, t.dir, now, true, s); redrawFront(x - 15, x + 15, y - s.height - 6, y); if (t.kind === 'diplomatico') diplomatBadge(x, y - s.height - 9, now); continue; } // lo que hay delante (en la orilla) tapa la barca
     if (t.kind === 'caravana') { drawCart(x - t.dir * 8, y, t.dir, now, '#c8a050'); if (t.cargo) { vctx.fillStyle = '#2a1a10'; vctx.fillRect(x - t.dir * 8 - 3, y - 9, 6, 4); vctx.fillStyle = GOODS[t.cargo.k].col; vctx.fillRect(x - t.dir * 8 - 2, y - 8, 4, 2); } } // con su carga, del color de la mercancía

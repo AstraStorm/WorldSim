@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611251411",
- "fecha": "2026-11-25 14:11",
+ "version": "202611251413",
+ "fecha": "2026-11-25 14:13",
  "novedades": [
   {
    "fecha": "2026-11-25",
-   "texto": "Pueblos ordenados: murallas a la medida, calles a todo"
+   "texto": "Carabelas para viajar por mar"
+  },
+  {
+   "fecha": "2026-11-25",
+   "texto": "Urbanismo: murallas que siguen la forma del pueblo (y una sola por ciudad de la misma nación), pintadas en orden con los edificios; casas y pozos junto a las calles; todo edificio unido a la plaza"
   },
   {
    "fecha": "2026-11-25",
@@ -46,19 +50,15 @@
   {
    "fecha": "2026-11-25",
    "texto": "Castillos: arqueros con más puntería y piedras desde las almenas; el juego usa la tarjeta gráfica"
-  },
-  {
-   "fecha": "2026-11-25",
-   "texto": "Castillos, jefes de fábrica y huelgas, extractora prioritaria"
   }
  ],
  "archivos": {
-  "index.html": "1cf3b75779b6033c70084238d915390f02b4ea73",
+  "index.html": "40fe2b1245287345cf5c3560628d1092a4fdee43",
   "css/estilo.css": "9ee4d9a478d7311dc4a9fa7ccd7a3abfb25afd84",
   "js/aldeanos.js": "d9920d364407645d80f1cdfbdcc1baf7fd203032",
   "js/ambiente.js": "6c96bf777f6cdfc55b648f495836521ee28aeb8f",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
-  "js/arte.js": "e8daae539ae1e42329d9cf275c12ebd14124a298",
+  "js/arte.js": "c54b62e3570f86c03269d43c70c86289ff25e264",
   "js/arte_mapa.js": "373de74c89b7418c4a040aaea0ee2fd64b367b53",
   "js/bandidos.js": "a41a64350dfb0cadc79876bf166b9e56ee1a9962",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
@@ -121,7 +121,7 @@
   "js/riqueza.js": "4437665e375d993ccfc2bec62225436b8fd03dce",
   "js/rutas.js": "6e12cafc1992e09fc3c2b5b13ca7d7db6416c364",
   "js/sindicatos.js": "f7cb8bf83ff74322a6fc45cc6ac90550425c6d15",
-  "js/sociedad.js": "e2680684f24b19e9b5f6bfdad5e6a3b16d73847c",
+  "js/sociedad.js": "ef356db1e2997f196a68fb803be1acc231c0e419",
   "js/sonido.js": "25be9d9bda62336aba463c82e31668d0e9b2bc54",
   "js/titulares.js": "0506409e843da939370bb404b894a52cffa68620",
   "js/trabajo.js": "6337df3b06ff54f44790b7a744c363a098833c07",
