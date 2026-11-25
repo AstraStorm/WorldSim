@@ -201,21 +201,23 @@ const TOAST_KIND = [
   ['dis', /tormenta|tornado|huracán|terremoto|volcán|meteorito|incendio|fuego|inunda|tsunami|sequía|helada|tromba|torbellino|erupción|derrumbado|derruid/],
   ['death', /muere|Murió|ha muerto|extinguido|ejecutados/]
 ];
-const TOAST_TITLE = { war:'Guerra', pol:'Política', eco:'Economía', dip:'Diplomacia', rel:'Religión', dis:'Catástrofe', death:'Muerte', misc:'Noticia' };
+const TOAST_TITLE = { war:'Guerra', pol:'Política', eco:'Economía', dip:'Diplomacia', rel:'Religión', dis:'Catástrofe', death:'Muerte', misc:'Noticia', sys:'Partidas' };
 const TOAST_BIG = /declara la guerra|conquista|Triunfa|Golpe de estado|Revolución|extinguido|arrasada|Bancarrota|firman|teocracia|República Socialista|imperio|independiza|entra en la guerra|rechazan el ataque|se corona/;
 let chronicle = [], toastSeq = 0, chronUnread = 0, lastToastT = -1e9;
 const kindOf = t => (TOAST_KIND.find(([, re]) => re.test(t)) || ['misc'])[0];
-function pushToast(text, target){
-  const kind = kindOf(text), big = TOAST_BIG.test(text), box = $('toasts');
+// Avisos del propio juego (guardar, cargar…): se ven siempre, pero no son historia del mundo (ni crónica ni diario de los pueblos)
+function sysToast(text){ pushToast(text, null, 'sys'); }
+function pushToast(text, target, sys){
+  const kind = sys || kindOf(text), big = TOAST_BIG.test(text), box = $('toasts');
   if (big) snd(/guerra|Golpe|Revolución|conquista/.test(text) ? 'horn' : 'bell');
-  chronicle.push({ d:Math.floor(yearT / DAY_LEN) + 1, text, kind, target }); if (chronicle.length > 150) chronicle.shift();
+  if (!sys) chronicle.push({ d:Math.floor(yearT / DAY_LEN) + 1, text, kind, target }); if (chronicle.length > 150) chronicle.shift();
   if ($('chron') && !$('chron').hidden) renderChronicle();
   if (!box) return;
-  const btn = $('chronBtn'); if (btn && $('chron').hidden) { chronUnread++; btn.dataset.n = chronUnread > 99 ? '99+' : chronUnread; }
+  const btn = $('chronBtn'); if (btn && $('chron').hidden && !sys) { chronUnread++; btn.dataset.n = chronUnread > 99 ? '99+' : chronUnread; }
   // Solo salen arriba los importantes y, de los demás, uno cada pocos segundos (todo queda en la crónica)
   const now = performance.now();
-  if (!big && !['war', 'dis', 'pol', 'dip'].includes(kind)) return;
-  if (!big) { if (now - lastToastT < 6000) return; lastToastT = now; }
+  if (!big && !['war', 'dis', 'pol', 'dip', 'sys'].includes(kind)) return;
+  if (!big && !sys) { if (now - lastToastT < 6000) return; lastToastT = now; }
   for (const el of box.children) if (el.dataset.txt === text) { el.remove(); break; } // el mismo aviso repetido: solo una vez
   const el = document.createElement('div'); el.className = `toast ${kind}${big ? ' big' : ''}`; el.dataset.txt = text; el.dataset.id = ++toastSeq;
   el.innerHTML = `<div class="tk"><span class="tt">${TOAST_TITLE[kind]}</span><span class="td">día ${Math.floor(yearT / DAY_LEN) + 1}</span></div><div class="tx"></div>

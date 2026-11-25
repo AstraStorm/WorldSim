@@ -527,15 +527,31 @@ $('followStop').onclick = () => setFollow(null);
 $('histBtn').onclick = () => { const h = $('histPanel'); h.hidden = !h.hidden; if (!h.hidden) { $('chron').hidden = $('savePanel').hidden = $('sndPanel').hidden = true; recordHistory(); renderHistory(); } };
 $('histPanel').addEventListener('click', e => { if (e.target.closest('.x')) { $('histPanel').hidden = true; return; } const b = e.target.closest('[data-h]'); if (b) { histTab = b.dataset.h; for (const q of $('histPanel').querySelectorAll('[data-h]')) q.classList.toggle('on', q === b); renderHistory(); } });
 $('saveBtn').onclick = () => { const h = $('savePanel'); h.hidden = !h.hidden; if (!h.hidden) { $('chron').hidden = $('histPanel').hidden = $('sndPanel').hidden = true; renderSlots(); } };
+// Cargar pisa la partida en marcha: si hay algo sin guardar, primero se pregunta (segundo clic)
+const unsavedMin = () => Math.floor((Date.now() - lastSaveAt) / 60000);
+const arm = (b, txt) => { if (b.dataset.armed) return true; b.dataset.armed = '1'; b.textContent = txt; b.classList.add('warn'); setTimeout(() => { if (b.isConnected) renderSlots(); }, 4000); return false; };
 $('savePanel').addEventListener('click', async e => {
   if (e.target.closest('.x')) { $('savePanel').hidden = true; return; }
   const b = e.target.closest('button'); if (!b) return;
-  if (b.dataset.sv) { b.disabled = true; b.textContent = 'Guardando…'; await saveGame(b.dataset.sv); }
-  else if (b.dataset.ld) { $('savePanel').hidden = true; await loadGame(b.dataset.ld); }
-  else if (b.dataset.del) { if (b.dataset.armed) { await idbDo('readwrite', st => st.delete(b.dataset.del)); renderSlots(); } else { b.dataset.armed = '1'; b.textContent = '¿Seguro?'; } } // dos clics para borrar
+  if (b.id === 'svNew') { b.disabled = true; b.textContent = 'Guardando…'; const n = $('svName').value.trim(); await saveGame('p' + Date.now(), false, n || null); }
+  else if (b.dataset.sv) { if (!arm(b, '¿La sustituyo?')) return; b.disabled = true; b.textContent = 'Guardando…'; await saveGame(b.dataset.sv); }
+  else if (b.dataset.ld) { const m = unsavedMin(); if (world && m >= 1 && !arm(b, `¿Seguro? Pierdes ${m} min sin guardar`)) return; $('savePanel').hidden = true; await loadGame(b.dataset.ld); }
+  else if (b.dataset.rn0) { renamingSlot = b.dataset.rn0; renderSlots(); }
+  else if (b.dataset.dl) { b.disabled = true; b.textContent = 'Preparando…'; try { await downloadSave(b.dataset.dl); } finally { renderSlots(); } }
+  else if (b.dataset.del) { if (!arm(b, '¿Borrar?')) return; const k = b.dataset.del; await idbDo('readwrite', st => { st.delete(metaKey(k)); return st.delete(k); }); if (lastSlot === k) lastSlot = null; renderSlots(); }
   else if (b.id === 'dlSave') { b.disabled = true; b.textContent = 'Preparando…'; try { await downloadSave(); } finally { b.disabled = false; b.textContent = 'Descargar partida actual'; } }
   else if (b.id === 'upSave') $('upFile').click();
 });
+$('savePanel').addEventListener('keydown', e => {
+  if (e.target.id === 'svName' && e.key === 'Enter') $('svNew').click();
+  if (e.target.dataset && e.target.dataset.rn) { if (e.key === 'Enter') renameSave(e.target.dataset.rn, e.target.value); else if (e.key === 'Escape') { e.stopPropagation(); renamingSlot = null; renderSlots(); } }
+});
+$('savePanel').addEventListener('focusout', e => { if (e.target.dataset && e.target.dataset.rn && renamingSlot === e.target.dataset.rn) renameSave(e.target.dataset.rn, e.target.value); });
+window.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 's') { e.preventDefault(); quickSave(); } }); // Ctrl+S: guardado rápido
+// Soltar un archivo .forja encima de la ventana lo abre
+window.addEventListener('dragover', e => { if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) { e.preventDefault(); document.body.classList.add('drop-save'); } });
+window.addEventListener('dragleave', e => { if (!e.relatedTarget) document.body.classList.remove('drop-save'); });
+window.addEventListener('drop', e => { document.body.classList.remove('drop-save'); const f = e.dataTransfer && e.dataTransfer.files[0]; if (!f) return; e.preventDefault(); if (/\.(forja|json|gz)$/i.test(f.name)) openSaveFile(f); else notify('Solo se pueden abrir partidas .forja'); });
 $('upFile').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) openSaveFile(f); };
 addEventListener('pointerdown', () => { if (SND.on) sndInit(); }); // el navegador solo deja sonar tras un clic
 

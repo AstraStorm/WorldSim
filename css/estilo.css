@@ -579,3 +579,21 @@ select{border-radius:7px !important}
 .sci-rc{min-width:44px;text-align:right}.sci-rr{min-width:64px;text-align:right;color:#8a6a3a;font-size:12px}
 .sci-open{margin-top:6px;font:inherit;font-size:12px;cursor:pointer;border-radius:6px;padding:4px 9px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:inherit}.sci-open:hover{background:rgba(255,255,255,.16)}
 @media (max-width:760px){.sci-body{padding:10px 12px 24px}.sci-st{min-width:60px}.sci-rn{min-width:90px}.sci-rr{display:none}.sci .bk-h .sci-nat{max-width:45%}}
+
+/* World Sim · Partidas: lista con nombre, miniatura y guardados automáticos */
+#savePanel{width:min(560px,calc(100vw - 24px))}
+.sv-new{display:flex;gap:6px;margin:0 0 4px}.sv-new input,.sv-rename{flex:1;min-width:0;font:inherit;font-size:13px;padding:6px 9px;border-radius:6px;border:1px solid var(--line);background:rgba(0,0,0,.25);color:var(--fg)}
+.sv-new button,.sv-act button{font:inherit;font-size:12px;padding:5px 10px;border-radius:5px;border:1px solid var(--line);background:rgba(255,255,255,.07);color:var(--fg);cursor:pointer;min-height:30px}
+.sv-new button.pri,.sv-act button.pri{background:#e9b949;color:#1a1408;border-color:#e9b949;font-weight:700}
+.sv-act button.warn{background:#b8452f;border-color:#b8452f;color:#fff}.sv-act button.del:hover{border-color:#b8452f;color:#ffb0a0}
+.sv-hint{font-size:11.5px;margin:2px 0 10px}.sv-hint kbd{font:inherit;font-size:10.5px;padding:0 4px;border:1px solid var(--line);border-radius:3px;background:rgba(255,255,255,.06)}
+.sv-h{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;margin:12px 0 6px;color:var(--fg)}.sv-h .muted{text-transform:none;letter-spacing:0;font-weight:400}
+.sv-empty{font-size:12px;margin:0 0 4px}
+.sv-card{display:grid;grid-template-columns:96px minmax(0,1fr);gap:4px 10px;padding:8px;margin-bottom:6px;border:1px solid var(--line);border-radius:9px;background:rgba(255,255,255,.03)}
+.sv-card.cur{border-color:#e9b949}
+.sv-card img,.sv-noimg{grid-row:1 / span 2;width:96px;height:54px;object-fit:cover;border-radius:5px;image-rendering:pixelated;background:rgba(255,255,255,.06);display:block}
+.sv-txt{display:flex;flex-direction:column;min-width:0}.sv-txt b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sv-txt .meta{color:var(--muted);font-size:11.5px}
+.sv-act{grid-column:2;display:flex;gap:4px;flex-wrap:wrap}
+#saveBtn.saving{animation:svPulse .6s ease-in-out infinite alternate}@keyframes svPulse{to{opacity:.35}}
+body.drop-save::after{content:'Suelta aquí la partida .forja para abrirla';position:fixed;inset:12px;display:flex;align-items:center;justify-content:center;border:3px dashed #e9b949;border-radius:14px;background:rgba(10,12,18,.7);color:#f2e6c4;font-size:20px;z-index:9999;pointer-events:none}
+.toast.sys{border-left-color:#e9b949}.toast.sys .tt{color:#f2d27a}

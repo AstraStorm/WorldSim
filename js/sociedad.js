@@ -3106,7 +3106,7 @@ function updateVillages(dt){
   for (const g of villages) if (g.gone) { decayRuins(g, dt); if (g.pitch || g.pool || g.track || g.club) sportsOrphan(g); } // (partidas de antes: deportes.js)
   if ((diploT -= dt) <= 0) { diploT = 10; diploTick(); allianceTick(); }
   if ((histT -= dt) <= 0) { histT = DAY_LEN / 2; recordHistory(); if ($('histPanel') && !$('histPanel').hidden) renderHistory(); }
-  if ((autoSaveT += dt) > DAY_LEN * 2) { autoSaveT = 0; saveGame('auto', true); } // cada dos días, guardado automático
+  if ((autoSaveT += dt) > DAY_LEN) { autoSaveT = 0; saveGame('auto', true); } // cada día, guardado automático (rota entre tres: partidas.js)
   if (cardVid) renderVillageCard();
   // La hierba pisada se recupera poco a poco; un camino de pisadas que ya nadie usa desaparece
   for (const i of wornSet) {

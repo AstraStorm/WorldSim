@@ -2,16 +2,28 @@
 // ================= Guardar y cargar la partida (en el navegador, con IndexedDB) =================
 const SAVE_VARS = ['yearT', 'climT', 'vidSeq', 'nameIdx', 'uidSeq', 'herdSeq', 'aid', 'animals', 'fishes', 'villages', 'villagers', 'rels', 'travelers', 'alliances', 'farmMap', 'pathMap', 'bridgeSet', 'bridges', 'plazaSet', 'holySet',
   'wallSet', 'gateSet', 'wallStone', 'gateOwner', 'wear', 'wornSet', 'desireSet', 'fires', 'burnt', 'chronicle', 'sieges', 'usedFlags', 'snowSet', 'snowA', 'floodSet', 'floodA', 'iceSet', 'drySet', 'snowDepth', 'soil', 'soilNorm', 'soilRain', 'drought', 'wetT', 'worldHist', 'olymp', 'epidemics', 'market'];
-function idb(){ return new Promise((ok, ko) => { const r = indexedDB.open('forja-de-mundos', 1); r.onupgradeneeded = () => r.result.createObjectStore('saves'); r.onsuccess = () => ok(r.result); r.onerror = () => ko(r.error); }); }
+let idbP = null; // una sola conexión abierta (antes se abría una por consulta)
+function idb(){ return idbP ||= new Promise((ok, ko) => { const r = indexedDB.open('forja-de-mundos', 1); r.onupgradeneeded = () => r.result.createObjectStore('saves'); r.onsuccess = () => { r.result.onclose = () => { idbP = null; }; ok(r.result); }; r.onerror = () => { idbP = null; ko(r.error); }; }); }
 async function idbDo(mode, fn){ const db = await idb(); return new Promise((ok, ko) => { const tx = db.transaction('saves', mode), st = tx.objectStore('saves'), req = fn(st); tx.oncomplete = () => ok(req && req.result); tx.onerror = () => ko(tx.error); }); }
 // Resumen que se ve en la lista de ranuras
 const snapMeta = () => { const live = villages.filter(g => popOf(g)); return { day:Math.floor(yearT / DAY_LEN) + 1, year:seasonInfo().year, season:seasonInfo().s.n, pop:villagers.filter(v => !v.dead).length, towns:live.length, top:live.slice().sort((a, b) => popOf(b) - popOf(a)).slice(0, 3).map(g => g.name), seed:params.seed }; };
-async function saveGame(slot = 'partida', quiet){
-  const snap = takeSnap(); if (!snap) return false;
+// Guarda en una ranura la partida y, aparte, su ficha (nombre, resumen y miniatura): así la lista se abre sin leer partidas enteras
+// 'auto' va rotando entre tres guardados automáticos (se pisa el más antiguo)
+async function saveGame(slot = 'partida', quiet, name){
+  if (slot === 'auto') slot = await oldestAuto();
+  const btn = $('saveBtn'); if (btn) btn.classList.add('saving');
+  if (!quiet) await new Promise(r => requestAnimationFrame(() => setTimeout(r, 0))); // que se vea que está guardando antes del parón
+  const t0 = performance.now(), snap = takeSnap(); if (!snap) { if (btn) btn.classList.remove('saving'); return false; }
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (err) {} // que el navegador no la borre al hacer limpieza
-  try { await idbDo('readwrite', st => st.put(snap.data, slot)); if (!quiet) notify(slot === 'auto' ? 'Partida guardada automáticamente' : `Partida guardada (${slotName(slot)})`); return true; }
-  catch (err) { notify('No se ha podido guardar la partida (' + (err && err.name || 'error') + ')'); return false; }
-  finally { snap.restore(); if (!$('savePanel').hidden) renderSlots(); }
+  try {
+    const old = await getMeta(slot), meta = { ...snap.data.meta, when:snap.data.when, name:(name || (old && old.name) || defaultSaveName()).slice(0, 48), thumb:saveThumb(), auto:AUTO_SLOTS.includes(slot) };
+    await idbDo('readwrite', st => { st.put(snap.data, slot); return st.put(meta, metaKey(slot)); });
+    lastSaveAt = Date.now(); if (!meta.auto) lastSlot = slot;
+    if (!quiet) sysToast(`Partida guardada: «${meta.name}» (${((performance.now() - t0) / 1000).toFixed(1).replace('.', ',')} s)`);
+    return true;
+  }
+  catch (err) { sysToast('No se ha podido guardar la partida (' + (err && err.name === 'QuotaExceededError' ? 'no queda espacio: borra alguna partida o descárgala a un archivo' : (err && err.name || 'error')) + ')'); return false; }
+  finally { snap.restore(); if (btn) btn.classList.remove('saving'); if (!$('savePanel').hidden) renderSlots(); }
 }
 // Instantánea de toda la partida; las funciones pendientes se quitan un momento (restore las devuelve)
 function takeSnap(){
@@ -30,8 +42,8 @@ function takeSnap(){
 }
 async function loadGame(slot = 'partida'){
   let snap; try { snap = await idbDo('readonly', st => st.get(slot)); } catch (err) { snap = null; }
-  if (!snap) { notify('No hay ninguna partida guardada'); return; }
-  await applySnap(snap);
+  if (!snap) { sysToast('No hay ninguna partida guardada'); return; }
+  await applySnap(snap); if (!AUTO_SLOTS.includes(slot)) lastSlot = slot;
 }
 async function applySnap(snap){
   Object.assign(params, snap.params); await regenerate(true, true); // el mismo mundo de base, con su tamaño
@@ -45,7 +57,8 @@ async function applySnap(snap){
   for (const v of villagers) { if (v.task && v.task.k === 'trabajando') { v.task = null; v.actT = 0; } } // lo que estaban haciendo se retoma de cero
   groundSig = ''; stones = []; arrows = []; slashes = []; cannonballs = []; ashClouds = []; fireworks = []; fwQueue = []; fwFlash = []; moneyFlows = []; chips = []; floats = []; smoke = []; ubCache = null; burntDirty = true; zoneCv = null; zoneT = 0; setFollow(null); cardVid = 0;
   spriteSeason = prevSeason = seasonInfo().i; repaintAll(); waveImg = null; buildWaves(); buildZones(); renderStats();
-  notify(`Partida cargada: día ${Math.floor(yearT / DAY_LEN) + 1}`);
+  lastSaveAt = Date.now(); lastSlot = null;
+  sysToast(`Partida cargada: día ${Math.floor(yearT / DAY_LEN) + 1}`);
 }
 let autoSaveT = 0;
 const TYPED = { Float32Array, Float64Array, Int32Array, Uint32Array, Int16Array, Uint16Array, Int8Array, Uint8Array, Uint8ClampedArray };
@@ -75,15 +88,18 @@ function graphDecode(pk){
     if (e.A) for (const x of e.A) o.push(dec(x)); else if (e.M) for (const [a, b] of e.M) o.set(dec(a), dec(b)); else if (e.S) for (const x of e.S) o.add(dec(x)); else if (e.O) for (const key in e.O) o[key] = dec(e.O[key]); });
   return dec(pk.root);
 }
-async function downloadSave(){
-  const snap = takeSnap(); if (!snap) return;
-  let txt; try { txt = JSON.stringify(graphEncode(snap.data)); } finally { snap.restore(); }
+// Descarga la partida actual (o la de una ranura) en un archivo .forja comprimido
+async function downloadSave(slot){
+  let data, restore = () => {};
+  if (slot) { data = await idbDo('readonly', st => st.get(slot)); if (!data) return; const m = await getMeta(slot); if (m) data.meta = { ...data.meta, name:m.name }; }
+  else { const snap = takeSnap(); if (!snap) return; data = snap.data; restore = snap.restore; }
+  let txt; try { txt = JSON.stringify(graphEncode(data)); } finally { restore(); }
   let blob = new Blob([txt], { type:'application/json' });
   if (typeof CompressionStream === 'function') blob = await new Response(blob.stream().pipeThrough(new CompressionStream('gzip'))).blob();
-  const m = snap.data.meta, a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = `forja-${(m.top[0] || params.seed || 'mundo').replace(/[^\wÀ-ÿ-]+/g, '_')}-dia${m.day}.forja`;
+  const m = data.meta || {}, a = document.createElement('a'), base = m.name || `${(m.top || [])[0] || params.seed || 'mundo'}-dia${m.day}`;
+  a.href = URL.createObjectURL(blob); a.download = `${base.replace(/[^\wÀ-ÿ-]+/g, '_').replace(/_+/g, '_')}.forja`;
   document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
-  notify(`Partida descargada (${(blob.size / 1048576).toFixed(1)} MB)`);
+  sysToast(`Partida descargada (${(blob.size / 1048576).toFixed(1).replace('.', ',')} MB)`);
 }
 async function openSaveFile(file){
   try {
@@ -91,18 +107,57 @@ async function openSaveFile(file){
     const txt = gz ? await new Response(file.stream().pipeThrough(new DecompressionStream('gzip'))).text() : await file.text();
     const pk = JSON.parse(txt); if (!pk.forja) throw new Error('formato');
     await applySnap(graphDecode(pk)); $('savePanel').hidden = true;
-  } catch (err) { notify('Ese archivo no es una partida de World Sim (o está dañado)'); }
+  } catch (err) { sysToast('Ese archivo no es una partida de World Sim (o está dañado)'); }
 }
-// Ranuras: la automática y cinco a mano
-const SLOTS = ['auto', 's1', 's2', 's3', 's4', 's5'];
-const slotName = k => k === 'auto' ? 'Automática' : k === 'partida' ? 'Partida anterior' : 'Ranura ' + k.slice(1);
+// ---- La lista de partidas ----
+// Partidas con nombre (tantas como se quiera) y tres guardados automáticos que se turnan; las ranuras de antes (s1…s5,
+// 'auto', 'partida') siguen ahí: la primera vez se les saca la ficha leyendo la partida entera
+const AUTO_SLOTS = ['auto', 'auto2', 'auto3'];
+let lastSlot = null, lastSaveAt = Date.now(), renamingSlot = null, renderSeq = 0;
+const metaKey = k => 'meta:' + k;
+const legacyName = k => k.startsWith('auto') ? 'Guardado automático' : k === 'partida' ? 'Partida anterior' : /^s\d$/.test(k) ? 'Ranura ' + k.slice(1) : 'Partida';
+const defaultSaveName = () => { const live = villages.filter(g => popOf(g)).sort((a, b) => popOf(b) - popOf(a)); return `${live[0] ? live[0].name : 'Mundo ' + params.seed} · día ${Math.floor(yearT / DAY_LEN) + 1}`; };
+async function getMeta(k){ try { return await idbDo('readonly', st => st.get(metaKey(k))); } catch (err) { return null; } }
+async function oldestAuto(){ let best = AUTO_SLOTS[0], bw = Infinity; for (const k of AUTO_SLOTS) { const m = await getMeta(k), w = m ? m.when : -1; if (w < bw) { bw = w; best = k; } } return best; }
+// Miniatura: lo que se ve ahora en pantalla, recortado a 16:9
+function saveThumb(){
+  try { const v = $('view'), c = document.createElement('canvas'); c.width = 192; c.height = 108; const x = c.getContext('2d'), s = Math.max(c.width / v.width, c.height / v.height), sw = c.width / s, sh = c.height / s;
+    x.drawImage(v, (v.width - sw) / 2, (v.height - sh) / 2, sw, sh, 0, 0, c.width, c.height); return c.toDataURL('image/jpeg', .7); } catch (err) { return null; }
+}
+async function listSaves(){
+  let keys = []; try { keys = await idbDo('readonly', st => st.getAllKeys()); } catch (err) { return []; }
+  const out = [];
+  for (const k of keys.filter(k => typeof k === 'string' && !k.startsWith('meta:'))) {
+    let m = await getMeta(k);
+    if (!m) { try { const sn = await idbDo('readonly', st => st.get(k)); if (sn) { m = { ...(sn.meta || {}), when:sn.when, name:legacyName(k), auto:AUTO_SLOTS.includes(k) }; await idbDo('readwrite', st => st.put(m, metaKey(k))); } } catch (err) {} }
+    if (m) out.push({ k, m });
+  }
+  return out.sort((a, b) => b.m.when - a.m.when);
+}
+const agoTxt = t => { const d = (Date.now() - t) / 60000; return d < 1 ? 'hace un momento' : d < 60 ? `hace ${Math.round(d)} min` : d < 1440 ? `hace ${Math.round(d / 60)} h` : d < 2880 ? 'ayer' : new Date(t).toLocaleDateString(); };
 async function renderSlots(){
-  const el = $('slotList'); if (!el) return;
-  let keys = []; try { keys = await idbDo('readonly', st => st.getAllKeys()); } catch (err) {}
-  const list = SLOTS.concat(keys.includes('partida') ? ['partida'] : []), metas = {};
-  for (const k of list) if (keys.includes(k)) { try { const sn = await idbDo('readonly', st => st.get(k)); metas[k] = sn && { when:sn.when, m:sn.meta }; } catch (err) {} }
-  const ago = t => { const d = (Date.now() - t) / 60000; return d < 1 ? 'hace un momento' : d < 60 ? `hace ${Math.round(d)} min` : d < 1440 ? `hace ${Math.round(d / 60)} h` : new Date(t).toLocaleDateString(); };
-  el.innerHTML = list.map(k => { const s0 = metas[k];
-    const meta = s0 ? (s0.m ? `Día ${s0.m.day} · ${s0.m.pop} habitantes · ${s0.m.towns} pueblos${s0.m.top.length ? ' · ' + esc(s0.m.top.join(', ')) : ''} · ${ago(s0.when)}` : `Guardada ${ago(s0.when)}`) : 'Vacía';
-    return `<div class="slot"><b>${slotName(k)}</b><span class="meta">${meta}</span><span class="act">${k === 'auto' || k === 'partida' ? '' : `<button data-sv="${k}">Guardar aquí</button>`}<button class="pri" data-ld="${k}"${s0 ? '' : ' disabled'}>Cargar</button>${s0 && k !== 'auto' ? `<button data-del="${k}" title="Borrar esta ranura">Borrar</button>` : ''}</span></div>`; }).join('');
+  const el = $('slotList'); if (!el) return; const my = ++renderSeq; // (si se piden dos repasos seguidos, solo pinta el último)
+  const all = await listSaves(), mine = all.filter(s0 => !s0.m.auto), autos = all.filter(s0 => s0.m.auto);
+  const card = ({ k, m }) => {
+    const info = `Día ${m.day}${m.season ? ` · ${m.season}, año ${m.year}` : ''} · ${m.pop} hab. · ${m.towns} pueblo${m.towns === 1 ? '' : 's'}`;
+    const name = renamingSlot === k ? `<input class="sv-rename" data-rn="${k}" maxlength="48" value="${esc(m.name || '')}" aria-label="Nuevo nombre">` : `<b title="${esc(m.name || '')}">${esc(m.name || legacyName(k))}</b>`;
+    return `<div class="sv-card${k === lastSlot ? ' cur' : ''}">${m.thumb ? `<img src="${m.thumb}" alt="">` : '<span class="sv-noimg"></span>'}
+      <div class="sv-txt">${name}<span class="meta">${info}</span><span class="meta">${m.top && m.top.length ? esc(m.top.join(', ')) + ' · ' : ''}${agoTxt(m.when)}</span></div>
+      <div class="sv-act"><button class="pri" data-ld="${k}">Cargar</button>${m.auto ? '' : `<button data-sv="${k}" title="Guardar la partida actual encima de esta">Guardar encima</button><button data-rn0="${k}">Renombrar</button>`}<button data-dl="${k}" title="Descargar en un archivo .forja">Descargar</button>${m.auto ? '' : `<button data-del="${k}" class="del">Borrar</button>`}</div></div>`; };
+  let usage = '';
+  try { if (navigator.storage && navigator.storage.estimate) { const e = await navigator.storage.estimate(); usage = `Ocupan ${Math.round((e.usage || 0) / 1048576)} MB de los ${(Math.round((e.quota || 0) / 1073741824 * 10) / 10).toString().replace('.', ',')} GB que deja el navegador. `; } } catch (err) {}
+  if (my !== renderSeq) return;
+  el.innerHTML = `<div class="sv-new"><input id="svName" maxlength="48" value="${esc(defaultSaveName())}" aria-label="Nombre de la partida nueva"><button class="pri" id="svNew">Guardar partida</button></div>
+    <p class="muted sv-hint"><kbd>Ctrl</kbd>+<kbd>S</kbd> guarda al momento${lastSlot ? ' encima de la partida que tienes abierta' : ' como partida nueva'}.</p>
+    <h4 class="sv-h">Tus partidas</h4>${mine.length ? mine.map(card).join('') : '<p class="muted sv-empty">Aún no has guardado ninguna.</p>'}
+    ${autos.length ? `<h4 class="sv-h">Guardados automáticos <span class="muted">(uno por día de juego; se guardan los tres últimos)</span></h4>${autos.map(card).join('')}` : ''}
+    <p class="muted sv-note">${usage}Se guardan en este navegador: para no perder una o llevarla a otro ordenador, descárgala en un archivo <b>.forja</b>. Para abrir uno, arrástralo a la ventana.</p>`;
+  const rn = el.querySelector('.sv-rename'); if (rn) { rn.focus(); rn.select(); }
 }
+async function renameSave(k, name){
+  renamingSlot = null; const m = await getMeta(k); name = (name || '').trim();
+  if (m && name) { m.name = name.slice(0, 48); await idbDo('readwrite', st => st.put(m, metaKey(k))); }
+  renderSlots();
+}
+// Guardado rápido (Ctrl+S): encima de la partida abierta o, si no hay, como una nueva
+function quickSave(){ if (busy || !world) return; saveGame(lastSlot || 'p' + Date.now(), false); }

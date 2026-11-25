@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611251745",
- "fecha": "2026-11-25 17:45",
+ "version": "202611251756",
+ "fecha": "2026-11-25 17:56",
  "novedades": [
   {
    "fecha": "2026-11-25",
-   "texto": "Calor, sed, revoluciones y natalidad realistas"
+   "texto": "Partidas con nombre"
+  },
+  {
+   "fecha": "2026-11-25",
+   "texto": "Realismo: golpe de calor según hidratación y sombra (la sombra de las casas no depende de la leña), la sed tarda más en matar y se deja el trabajo antes para beber; revoluciones solo en ciudades de 25+ con gobierno asentado y, fuera de las tiranías, destierro en vez de fusilamientos; cada madre un hijo cada año y pico; sin muralla bajo los edificios"
   },
   {
    "fecha": "2026-11-25",
@@ -46,20 +50,16 @@
   {
    "fecha": "2026-11-25",
    "texto": "Escuelas, fondo de obras y efectos de las leyes que no se aplicaban"
-  },
-  {
-   "fecha": "2026-11-25",
-   "texto": "Pensar por turnos y caminos guardados"
   }
  ],
  "archivos": {
-  "index.html": "ca2218c547efe427abdd4b3188f93fee342e950e",
-  "css/estilo.css": "db803bce2ea700f3c9e6d10156fe8c165192deeb",
+  "index.html": "971a9278432f43b4b390f26004590d5a5a87dc8e",
+  "css/estilo.css": "3404df583ba0abb42e900a09f41cf266ca250528",
   "js/aldeanos.js": "d9920d364407645d80f1cdfbdcc1baf7fd203032",
   "js/ambiente.js": "6c96bf777f6cdfc55b648f495836521ee28aeb8f",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "793f9933d7892b751a2de3017d536eb71172bb63",
-  "js/arte.js": "3713157e4275cc1aad51087e7582b476f8435d60",
+  "js/arte.js": "9273790eebc4e385d2360cddbc6722ca0df3b558",
   "js/arte_mapa.js": "373de74c89b7418c4a040aaea0ee2fd64b367b53",
   "js/bandidos.js": "bc804375208c5f300e33435e76d16001e8c4daae",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
@@ -98,7 +98,7 @@
   "js/impuestos.js": "9820acf00db62b3039fb43433ddcc3f522453daa",
   "js/industria.js": "45344548ba566b198096e11e73952483dfb1b864",
   "js/instituciones.js": "0efca47be64b6fd263864fb8b5c3f0c732d457d3",
-  "js/interfaz.js": "1a17b37ac66041536a92ed463a271717d1ae51ba",
+  "js/interfaz.js": "4299237e6a9db7550875760cf5c56ed9972f099b",
   "js/islas.js": "d65159562d188788176b02cca6001d0abcb20629",
   "js/justicia.js": "100314d7858fe651a4e7b6d0d9530dab4bdaa99e",
   "js/leyes.js": "ef8a179ecd2f195493f87d8b2124de0e3e644084",
@@ -112,7 +112,7 @@
   "js/nucleo.js": "facf12453d7aef3849fb6094680b0d8dde5d4497",
   "js/okupas.js": "8bf7e443dddd18ca6dca6ccfbe64b9cbb772f040",
   "js/papeles.js": "659a0c8c296ebc6139916e3f4227b1e4b846a3dc",
-  "js/partidas.js": "3522370350213ec55fd82429658b73b84e303b43",
+  "js/partidas.js": "553141f6090a43484d8a82d8a025a6f21ada8bd9",
   "js/piratas.js": "e82abcb0065c363154694db08d0bd292f5e10941",
   "js/potencias.js": "92f95b1429ed22221248d46e587f32f7bbcf9e54",
   "js/prensa.js": "61134ccce4b95a026605717fa5ab37600850af2a",
@@ -122,7 +122,7 @@
   "js/riqueza.js": "4437665e375d993ccfc2bec62225436b8fd03dce",
   "js/rutas.js": "6e12cafc1992e09fc3c2b5b13ca7d7db6416c364",
   "js/sindicatos.js": "f7cb8bf83ff74322a6fc45cc6ac90550425c6d15",
-  "js/sociedad.js": "5f9d2d1739cf2c9c2bb2517fdcb7a85fb51c9515",
+  "js/sociedad.js": "db0576fb1e771293a8dbda674c5421dc7ca5cbd6",
   "js/sonido.js": "25be9d9bda62336aba463c82e31668d0e9b2bc54",
   "js/titulares.js": "0506409e843da939370bb404b894a52cffa68620",
   "js/trabajo.js": "6337df3b06ff54f44790b7a744c363a098833c07",
@@ -132,7 +132,7 @@
   "js/vegetacion.js": "440be3b609ce5146ed024c3c0ea0ec694344c592",
   "js/vida.js": "e70bc2e79a09c6b46317c8aec7fc5c6bf476264a",
   "js/visitas.js": "5cafd3070fdf9de08e0a6eebf6644ad13c46bc1d",
-  "js/vista.js": "8930eaf6afccc322460c1951e08a9eef3cbe2276",
+  "js/vista.js": "7b844535f4eefeb3f2a7da05f13f657de285ebfb",
   "js/vivienda.js": "0f3091767a41917156ce106447eb0e9659b69271",
   "js/volcanes.js": "f4aea099226dfe1b064fdfbd4779bddb6ed8a250",
   "arte/atlas.png": "b88705b0ce0855b2988bfcdf32dad28c75d17719",
