@@ -20,6 +20,12 @@ app.commandLine.appendSwitch('ignore-gpu-blocklist');
 app.commandLine.appendSwitch('enable-gpu-rasterization');
 app.commandLine.appendSwitch('enable-zero-copy');
 app.commandLine.appendSwitch('force_high_performance_gpu');
+// Y que el procesador vaya a tope: sin frenar el juego cuando la ventana no tiene el foco, y más memoria para JavaScript
+// (menos pausas de limpieza); los procesos del juego, con prioridad por encima de lo normal (ver cpuBoost)
+app.commandLine.appendSwitch('disable-renderer-backgrounding');
+app.commandLine.appendSwitch('disable-background-timer-throttling');
+app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
+app.commandLine.appendSwitch('js-flags', '--max-old-space-size=4096');
 if (process.platform === 'win32') { try { require('child_process').execFile('reg', ['add', 'HKCU\\Software\\Microsoft\\DirectX\\UserGpuPreferences', '/v', process.execPath, '/t', 'REG_SZ', '/d', 'GpuPreference=2;', '/f'], () => {}); } catch (e) {} } // (vale desde el siguiente arranque)
 protocol.registerSchemesAsPrivileged([{ scheme:'forja', privileges:{ standard:true, secure:true, supportFetchAPI:true, corsEnabled:true, stream:true } }]);
 let launcher = null, game = null;
@@ -68,6 +74,11 @@ async function update(full, send){
   fs.writeFileSync(path.join(GAME(), 'manifest.json'), JSON.stringify(remote, null, 1));
   return { version:remote.version, files:todo.length, bytes };
 }
+// Prioridad «por encima de lo normal» para todos los procesos del juego (en Windows 11 también los saca del modo de
+// ahorro EcoQoS); se repite cada poco porque Chromium abre procesos nuevos
+const os = require('os');
+function cpuBoost(){ for (const m of app.getAppMetrics()) { try { os.setPriority(m.pid, os.constants.priority.PRIORITY_ABOVE_NORMAL); } catch (e) {} } }
+setInterval(() => { if (app.isReady()) cpuBoost(); }, 15000);
 // ---- Ventanas ----
 function openLauncher(){
   launcher = new BrowserWindow({ width:1200, height:740, minWidth:960, minHeight:600, frame:false, backgroundColor:'#0d1117', show:false, title:'World Sim',
@@ -78,7 +89,8 @@ function openLauncher(){
 }
 function openGame(opts = {}){
   if (game) { game.focus(); return; }
-  game = new BrowserWindow({ width:1440, height:900, backgroundColor:'#11151a', title:'World Sim', autoHideMenuBar:true, icon:path.join(__dirname, 'launcher', 'icono.png') });
+  game = new BrowserWindow({ width:1440, height:900, backgroundColor:'#11151a', title:'World Sim', autoHideMenuBar:true, icon:path.join(__dirname, 'launcher', 'icono.png'), webPreferences:{ backgroundThrottling:false } });
+  game.webContents.once('did-finish-load', cpuBoost);
   game.setMenu(null); if (opts.full) game.setFullScreen(true);
   game.loadURL('forja://juego/index.html');
   game.webContents.on('before-input-event', (e, i) => { if (i.type === 'keyDown' && i.key === 'F11') { game.setFullScreen(!game.isFullScreen()); e.preventDefault(); } if (i.type === 'keyDown' && i.key === 'F12' && !app.isPackaged) game.webContents.toggleDevTools(); });
