@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611251933",
- "fecha": "2026-11-25 19:33",
+ "version": "202611251937",
+ "fecha": "2026-11-25 19:37",
  "novedades": [
   {
    "fecha": "2026-11-25",
-   "texto": "Armas de fuego y bloques de pisos"
+   "texto": "Bloques de pisos de 2 a 6 plantas"
+  },
+  {
+   "fecha": "2026-11-25",
+   "texto": "Armas de fuego: nuevo descubrimiento «la combustión» (pólvora + metalurgia) con mosquetes y pistolas (alcance, daño, recarga lenta, fogonazo, humo y bala); arqueros y ballesteros se pasan al mosquete. Bloques de pisos en la era industrial (14 vecinos donde antes cabían 6) cuando no queda sitio para más casas"
   },
   {
    "fecha": "2026-11-25",
@@ -46,22 +50,18 @@
   {
    "fecha": "2026-11-25",
    "texto": "Las tropas destrozan y queman edificios según el objetivo de la guerra; ciencia por ramas según lo que vive cada nación (y el jugador puede elegir en el árbol), menos contagio; menos piratas, bandidos y diplomáticos; carteles de pueblos sin pisarse y fronteras suaves dentro de las ciudades; murallas largas con más cuadrillas; carabelas a la vista y del tamaño de los barcos de guerra; campamentos, plazas y caminos que ya no se montan sobre edificios, parcelas ni cercados"
-  },
-  {
-   "fecha": "2026-11-25",
-   "texto": "Guerra: los soldados en campaña llevan víveres (3 raciones cada uno), beben del río sin dejar la marcha, aguantan más el hambre y atacan aunque sea de noche si ya están cerca; casas: solares en el borde del pueblo y sobre caminos secundarios (el repaso de calles reabre el paso)"
   }
  ],
  "archivos": {
-  "index.html": "08858eaa9dc1ffda90f1d693da21c78aadc905f5",
+  "index.html": "304a5caaa084001d5931942fd065f2afa0305e3c",
   "css/estilo.css": "86812acfbb924fad43a3c902badb4761868990b5",
   "js/aldeanos.js": "9893e512bc3f1e72538dfc1df5b08e979bf06532",
   "js/ambiente.js": "6c96bf777f6cdfc55b648f495836521ee28aeb8f",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "a94b46896cfd10fd688954a3c5b9297e9b693872",
   "js/armas.js": "d4710aa65550aceb06fbdd1d2d290c8085f58e96",
-  "js/arte.js": "38c982e7425337d40f4c574ef0594b9e302e6498",
-  "js/arte_mapa.js": "373de74c89b7418c4a040aaea0ee2fd64b367b53",
+  "js/arte.js": "2921649d85133bd5f4f2557d07252bb0c33e7bfe",
+  "js/arte_mapa.js": "968b54ad2d349f4db213c79bdf459ffd7423f2aa",
   "js/bandidos.js": "bc804375208c5f300e33435e76d16001e8c4daae",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
   "js/calendario.js": "03559b1ef711175c3f112ecaa0243a06a44b4b9c",
@@ -95,7 +95,7 @@
   "js/globos.js": "955b67ce3b9dd8c36b7ee965f9f05f4fb8bd9d39",
   "js/grafica.js": "d548461632882f80f4077d9e5754c70c5319331e",
   "js/guerra.js": "0d922c7dec10df8302532c3f3ae65587845edbbd",
-  "js/humanos.js": "5f11e611a2706ff08067e6b75fa8a00fd4b9a6d1",
+  "js/humanos.js": "5b7f40f78da5d56b93b36689d35167814311fe3a",
   "js/idiomas.js": "a64e7f699431735d8b20a2eb82d317a02f4bd265",
   "js/impuestos.js": "9820acf00db62b3039fb43433ddcc3f522453daa",
   "js/industria.js": "45344548ba566b198096e11e73952483dfb1b864",
@@ -131,14 +131,14 @@
   "js/trabajo.js": "6337df3b06ff54f44790b7a744c363a098833c07",
   "js/tratados.js": "c7221ac52158a928a77489448ca7f1ce45ade8e2",
   "js/ui.js": "87256f0f01b8aa2a5b9d282c0a2a538dce73cf85",
-  "js/urbanismo.js": "a5b14e99e394402b3ad5cafe127ae2977f4c926d",
+  "js/urbanismo.js": "613e888f822df00c7238a74b8f64354f5203094f",
   "js/vegetacion.js": "440be3b609ce5146ed024c3c0ea0ec694344c592",
   "js/vida.js": "e70bc2e79a09c6b46317c8aec7fc5c6bf476264a",
   "js/visitas.js": "5cafd3070fdf9de08e0a6eebf6644ad13c46bc1d",
   "js/vista.js": "7b844535f4eefeb3f2a7da05f13f657de285ebfb",
   "js/vivienda.js": "0f3091767a41917156ce106447eb0e9659b69271",
   "js/volcanes.js": "f4aea099226dfe1b064fdfbd4779bddb6ed8a250",
-  "arte/atlas.png": "b88705b0ce0855b2988bfcdf32dad28c75d17719",
+  "arte/atlas.png": "67ae6778c2f82110e083cf906c17ec9d79395d61",
   "arte/logo.png": "d18c1e289f646312aeb3ec4087060e60088f0ccd",
   "arte/papeles/contrato.png": "e1625cf1f7bb7b9b5b142d12899265fab2ce7cf0",
   "arte/papeles/dni.png": "6dcfc114b88e629bfed1b2ac368acbfcd1474f34",

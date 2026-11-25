@@ -248,6 +248,10 @@ if os.path.exists(os.path.join(SRC, '14B.png')):  # iconos para la ficha (no van
 if os.path.exists(os.path.join(SRC, 'plataforma, diriglbes.png')):  # plataforma elevada de los dirigibles (sustituye a la pista de los globos)
     add('aero:plataforma', shrink(box_parts('plataforma, diriglbes.png', (200, 150, 1340, 900)), 47, 40))
 
+if os.path.exists(os.path.join(SRC, 'pisos.png')):  # bloques de pisos (era industrial): de 2 a 6 plantas, de izquierda a derecha
+    for k, (box, w) in enumerate([((60, 300, 345, 724), 28), ((380, 260, 680, 724), 30), ((740, 200, 1095, 724), 34), ((1170, 120, 1540, 724), 36), ((1620, 40, 2070, 724), 40)]):
+        add(f'house:bloque{k + 1}', shrink(box_parts('pisos.png', box), w, 40))
+
 if os.path.exists(os.path.join(SRC, 'casino.png')):
     add('casino:casino', shrink(box_parts('casino.png', (380, 190, 1150, 830)), 40, 48))
 

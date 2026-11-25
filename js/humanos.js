@@ -33,10 +33,15 @@ const fireSpot = (v, g) => { v.slotA ??= Math.random() * Math.PI * 2; return [g.
 let popC = null, popCT = -1, popCN = -1;
 const popOf = g => { if (popCT !== yearT || popCN !== villagers.length) { popCT = yearT; popCN = villagers.length; popC = new Map(); for (const v of villagers) if (!v.dead) popC.set(v.vid, (popC.get(v.vid) || 0) + 1); } return popC.get(g.id) || 0; };
 const housesOf = g => g.houses.filter(i => world.objs[i] && world.objs[i].key.startsWith('house') && !world.objs[i].burnt);
-const houseRoom = i => { const k = world.objs[i] && world.objs[i].key; return k === 'house:bloque' ? 14 : k === 'house:piedra' || k === 'house:mansion' ? 6 : k === 'house:chabola' ? 3 : 4; }; // el bloque de pisos (era industrial), tres plantas de vecinos // la de piedra (y la mansión), un piso más; la chabola, menos
+const houseRoom = i => { const k = world.objs[i] && world.objs[i].key; return k && k.startsWith('house:bloque') ? BLOQUE_ROOM[k] || 14 : k === 'house:piedra' || k === 'house:mansion' ? 6 : k === 'house:chabola' ? 3 : 4; }; // el bloque de pisos (era industrial), tres plantas de vecinos // la de piedra (y la mansión), un piso más; la chabola, menos
 const houseCap = g => housesOf(g).reduce((a, i) => a + houseRoom(i), 0);
 // Casas de piedra que pueden pasar a bloque de pisos: las más cercanas a la plaza primero
-const pisoCands = g => housesOf(g).filter(i => world.objs[i].key === 'house:piedra' && !villagers.some(u => u.task && u.task.k === 'pisos' && u.task.i === i)).sort((a, b) => Math.hypot(a % W - g.fx, ((a / W) | 0) - g.fy) - Math.hypot(b % W - g.fx, ((b / W) | 0) - g.fy));
+// Bloques de pisos: de 2 a 6 plantas (house:bloque1..5); cuánto se puede subir depende de la técnica
+const BLOQUE_ROOM = { 'house:bloque1':10, 'house:bloque2':14, 'house:bloque3':18, 'house:bloque4':22, 'house:bloque5':26, 'house:bloque':14 };
+const bloqueTier = k => k === 'house:piedra' ? 0 : k && k.startsWith('house:bloque') ? +(k.slice(12) || 2) : -1;
+const bloqueMax = g => knowsSci(g, 'dirigible') ? 5 : knowsSci(g, 'ferrocarril') ? 4 : 3;
+// Casas que pueden ganar una planta (de piedra a bloque, o un bloque que sube): las más cercanas a la plaza primero
+const pisoCands = g => { const mx = bloqueMax(g); return housesOf(g).filter(i => { const t = bloqueTier(world.objs[i].key); return t >= 0 && t < mx && !villagers.some(u => u.task && u.task.k === 'pisos' && u.task.i === i); }).sort((a, b) => Math.hypot(a % W - g.fx, ((a / W) | 0) - g.fy) - Math.hypot(b % W - g.fx, ((b / W) | 0) - g.fy)); };
 const penAnimals = g => animals.filter(a => !a.dead && a.dom === g.id);
 const MALE_ONLY = new Set(['barba', 'calvo', 'coronilla', 'calvoBarba', 'cresta']), FEMALE_ONLY = new Set(['largo', 'melena', 'coleta', 'mono']);
 function pickStyleSex(r, sex){
@@ -840,10 +845,11 @@ function runTask(v, g, dt){
       f.crop = bestCrop(g, f.i); /* lo que mejor rinde en este campo ahora, de las semillas que tienen (cultivos.js) */ const kc = (g.crops ||= {}); if (!kc[f.crop]) { kc[f.crop] = true; if (Object.keys(kc).length > 1) notify(`En ${g.name} empiezan a sembrar ${CROPS[f.crop].n}: es lo que mejor crece en ${['primavera', 'verano', 'otoño', 'invierno'][seasonInfo().i]}`, { x:v.x, y:v.y }); } } }; break;
     case 'cosechar': v.actT = 2; v.onDone = () => { const f = t.farm; f.claim = false; if (farmMap.get(f.i) === f && f.st === 'madura') { f.st = 'arada'; const C = CROPS[f.crop || 'trigo']; v.carry = { k:'comida', t:'veg', n:C.y + (C.mill && g.mill != null && world.objs[g.mill] ? 3 : 0) + (hasForge(g) ? 2 : 0) }; if (C.cash) { const ec = ecOf(g); if (ec) ec.treas += Math.round(C.cash * ec.P); } } }; break; // (la uva: el vino se vende)
     case 'pisos': v.actT = 14; v.onDone = () => {
-      const o = world.objs[t.i]; if (!o || o.key !== 'house:piedra' || g.stone < 16 || g.wood < 4 || (g.iron || 0) < 1) return;
-      o.key = 'house:bloque'; o.dmg = 0; g.stone -= 16; g.wood -= 4; g.iron -= 1; const x = t.i % W, y = (t.i / W) | 0;
-      composeRegion(x - 7, y - 12, x + 7, y + 12); addEffect(x * T + 2, y * T + 3, 'poof');
-      if (!g.pisoMsg) { g.pisoMsg = true; notify(`En ${g.name} ya no cabe nada más: levantan el primer bloque de pisos, tres plantas de vecinos donde antes vivía una familia`, { x:x * T, y:y * T }); }
+      const o = world.objs[t.i], tier = o ? bloqueTier(o.key) : -1; if (tier < 0 || tier >= bloqueMax(g) || g.stone < 16 || g.wood < 4 || (g.iron || 0) < 1) return;
+      o.key = `house:bloque${tier + 1}`; o.dmg = 0; g.stone -= 16; g.wood -= 4; g.iron -= 1; const x = t.i % W, y = (t.i / W) | 0;
+      composeRegion(x - 8, y - 16, x + 8, y + 12); addEffect(x * T + 2, y * T + 3, 'poof');
+      if (!g.pisoMsg) { g.pisoMsg = true; notify(`En ${g.name} ya no cabe nada más: levantan el primer bloque de pisos, dos plantas de vecinos donde antes vivía una familia`, { x:x * T, y:y * T }); }
+      else if (tier + 1 === bloqueMax(g) && !(g.pisoTop >= tier + 1)) { g.pisoTop = tier + 1; notify(`En ${g.name} levantan un bloque de ${tier + 2} plantas: la ciudad crece hacia arriba`, { x:x * T, y:y * T }); }
     }; break;
     case 'ampliar': v.actT = 7; v.onDone = () => {
       const o = world.objs[t.i]; if (!o || o.key !== 'house:hut' || g.stone < 7 || g.wood < 1) return;
