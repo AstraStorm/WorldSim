@@ -496,6 +496,7 @@ function paintBridges(part){
     b.tiles.forEach((i, k) => {
       const px = (i % W) * T, py = ((i / W) | 0) * T;
       if (px + T < x0 - 4 || px > x1 + 4 || py + T < y0 - 4 || py > y1 + 4) return;
+      if (b.pont) { paintPontTile(b, k, px, py); return; } // de troncos, el de las tropas (pontones.js)
       const a0 = k === 0 ? -2 : 0, a1 = k === n - 1 ? 2 : 0; // los extremos se apoyan en la orilla
       if (ART.ready && artPattern(b.h ? 'tex:puente_h' : 'tex:puente_v')) { // el dibujo: tablero con barandillas
         vctx.fillStyle = 'rgba(0,0,0,.25)';
@@ -2896,7 +2897,7 @@ function updateVillagers(dt){
     // Lejos de cualquier refugio y helándose: se paran y encienden una fogata donde están (si no llueve)
     if (v.fogata && (yearT > v.fogata.t || Math.hypot(v.fogata.x - v.x, v.fogata.y - v.y) > 10)) v.fogata = null;
     if (g && v.chill > .55 && !v.fogata && !v.boat && !inWater(v.x, v.y) && (!raining(ri) || tHere < -4) && warmthAt(v, g) === 0 && Math.hypot(g.fx - v.x / T, g.fy - v.y / T) > 14) {
-      v.fogata = { x:v.x + v.dir * 4, y:v.y + 1, t:yearT + 14 }; releaseTask(v); v.task = null; v.actT = 12; v.onDone = null;
+      v.fogata = { x:v.x + v.dir * 4, y:v.y + 1, t:yearT + 14 }; if (!(v.task && v.task.k === 'asalto')) { releaseTask(v); v.task = null; } v.actT = 12; v.onDone = null; // (el soldado en campaña se calienta y sigue la marcha: antes dejaba la guerra)
       floats.push({ x:v.x, y:v.y - 12, txt:'¡qué frío! una fogata', col:'#ffb060', life:0 });
     }
     const out = tHere, roof = out >= 18 && underRoof(v), shelter = out < 18 ? warmthAt(v, g) > 0 || !!v.fogata : roof, shade = out > 24 && inForest(v), temp = shelter ? (out < 18 ? Math.min(18, out + WARMTH) : out - 8) : shade ? out - 5 : out; // con calor, la sombra de una casa no depende de la leña ni la da la hoguera // la casa (gruesa) y la sombra refrescan // los árboles también dan sombra
@@ -2983,7 +2984,8 @@ function updateVillagers(dt){
       }
       if (eg && r && r.war && G && !G.go) {
         const alive = G.ps.filter(u => !u.dead && u.task && u.task.k === 'asalto');
-        if (yearT > G.until || alive.every(u => Math.hypot(u.x - G.rx, u.y - G.ry) < 20)) { G.go = true; if (alive.length > 1) notify(`Las tropas de ${g.name} se han reunido: atacan ${eg.name} todas a la vez`, { x:G.rx, y:G.ry }); }
+        if ((yearT > G.until || alive.every(u => Math.hypot(u.x - G.rx, u.y - G.ry) < 20)) && (!G.pont || pontWork(G, g, alive))) { G.go = true; // (si hay que tender un puente de troncos, antes lo hacen: pontones.js)
+          if (alive.length > 1) notify(`Las tropas de ${g.name} se han reunido: atacan ${eg.name} todas a la vez`, { x:G.rx, y:G.ry }); }
         else { vGo(v, G.rx + (G.ps.indexOf(v) % 3 - 1) * 5, G.ry + Math.floor(G.ps.indexOf(v) / 3) * 4, dt); continue; }
       }
       if (!eg || !r || !r.war) { v.task = { k:'volver' }; }

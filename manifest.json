@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611251756",
- "fecha": "2026-11-25 17:56",
+ "version": "202611251814",
+ "fecha": "2026-11-25 18:14",
  "novedades": [
   {
    "fecha": "2026-11-25",
-   "texto": "Partidas con nombre"
+   "texto": "Puentes de troncos para la guerra"
+  },
+  {
+   "fecha": "2026-11-25",
+   "texto": "Partidas: guardados con nombre y miniatura (sin límite), tres automáticos que se turnan cada día, Ctrl+S, renombrar, guardar encima y descargar cualquiera, aviso antes de cargar si hay algo sin guardar, arrastrar un .forja para abrirlo; el panel abre al instante (ficha aparte, una sola conexión a la base de datos); los avisos de guardado ya no entran en la crónica"
   },
   {
    "fecha": "2026-11-25",
@@ -46,20 +50,16 @@
   {
    "fecha": "2026-11-25",
    "texto": "Nubes que se pintan de golpe (antes un fillRect por píxel) y como mucho dos regeneradas por paso; el solar de las afueras se guarda unos segundos"
-  },
-  {
-   "fecha": "2026-11-25",
-   "texto": "Escuelas, fondo de obras y efectos de las leyes que no se aplicaban"
   }
  ],
  "archivos": {
-  "index.html": "971a9278432f43b4b390f26004590d5a5a87dc8e",
+  "index.html": "32e6a6366953d343159c7bb409c4c5b162412356",
   "css/estilo.css": "3404df583ba0abb42e900a09f41cf266ca250528",
   "js/aldeanos.js": "d9920d364407645d80f1cdfbdcc1baf7fd203032",
   "js/ambiente.js": "6c96bf777f6cdfc55b648f495836521ee28aeb8f",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "793f9933d7892b751a2de3017d536eb71172bb63",
-  "js/arte.js": "9273790eebc4e385d2360cddbc6722ca0df3b558",
+  "js/arte.js": "1eb8ac879fa479a79daa58631ab65c584e853054",
   "js/arte_mapa.js": "373de74c89b7418c4a040aaea0ee2fd64b367b53",
   "js/bandidos.js": "bc804375208c5f300e33435e76d16001e8c4daae",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
@@ -93,7 +93,7 @@
   "js/globos.js": "a8829293851b57da087576ad6fb947ff8eca7c86",
   "js/grafica.js": "d548461632882f80f4077d9e5754c70c5319331e",
   "js/guerra.js": "0d922c7dec10df8302532c3f3ae65587845edbbd",
-  "js/humanos.js": "e7939649884fec06b78afca71455d4d76f9accac",
+  "js/humanos.js": "87e5a64635b59bcdb761a5296c08be00dfb2d134",
   "js/idiomas.js": "a64e7f699431735d8b20a2eb82d317a02f4bd265",
   "js/impuestos.js": "9820acf00db62b3039fb43433ddcc3f522453daa",
   "js/industria.js": "45344548ba566b198096e11e73952483dfb1b864",
@@ -114,6 +114,7 @@
   "js/papeles.js": "659a0c8c296ebc6139916e3f4227b1e4b846a3dc",
   "js/partidas.js": "553141f6090a43484d8a82d8a025a6f21ada8bd9",
   "js/piratas.js": "e82abcb0065c363154694db08d0bd292f5e10941",
+  "js/pontones.js": "8de37aa4831746fa922e201c5dbbc75704c2a7b8",
   "js/potencias.js": "92f95b1429ed22221248d46e587f32f7bbcf9e54",
   "js/prensa.js": "61134ccce4b95a026605717fa5ab37600850af2a",
   "js/presupuestos.js": "27743ad6dbf256cc4d124f2bff019d6b0ee1eb75",
@@ -122,7 +123,7 @@
   "js/riqueza.js": "4437665e375d993ccfc2bec62225436b8fd03dce",
   "js/rutas.js": "6e12cafc1992e09fc3c2b5b13ca7d7db6416c364",
   "js/sindicatos.js": "f7cb8bf83ff74322a6fc45cc6ac90550425c6d15",
-  "js/sociedad.js": "db0576fb1e771293a8dbda674c5421dc7ca5cbd6",
+  "js/sociedad.js": "db5dbe1f72eef601b1b798845e913d8322e53a90",
   "js/sonido.js": "25be9d9bda62336aba463c82e31668d0e9b2bc54",
   "js/titulares.js": "0506409e843da939370bb404b894a52cffa68620",
   "js/trabajo.js": "6337df3b06ff54f44790b7a744c363a098833c07",

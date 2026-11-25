@@ -345,6 +345,7 @@ function chooseJob(v, g){
   add('talar', noTala ? (g.wood < 8 ? 2.5 : .2) : g.wood < 6 ? 7 : wantHall && g.wood < 10 ? 5 : needHouse && g.wood < 4 + busyWith(g, 'construir') * 4 + 4 ? 6 : g.wood < 12 + Math.max(0, pop / 4 + 1 - houses) * 6 ? 3 : .4);
   const hungry = g.food < pop * 4, share = g.food > 0 ? (g.meat || 0) / g.food : 0, want = g.diet ?? .5;
   const needMeat = share < want - .1, needVeg = share > want + .1;
+  add('talar', g.pontWant > yearT - DAY_LEN && g.wood < 40 ? 4 : 0); // madera para el puente de troncos de la guerra (pontones.js)
   add('bayas', (hungry ? 3 : .5) * (needVeg ? 2 : needMeat ? .5 : 1));
   add('pescar', (hungry ? 2.5 : .3) * (needMeat ? 2 : needVeg ? .5 : 1)); add('cazar', (hungry ? 2 : .2) * (needMeat ? 2 : needVeg ? .5 : 1));
   if (g.port && openWater(g.port.launch)) add('barca', g.boatOut || busyWith(g, 'barca') ? 0 : (hungry || needMeat ? 3.5 : 1));
