@@ -749,16 +749,17 @@ function drawVillageNames(){
   // Los carteles no se pisan: primero los de los pueblos más grandes; los demás se apartan un poco hacia arriba o abajo
   // y, si aun así chocan, se quedan en el nombre solo (o, las ruinas y los pueblos diminutos, no salen)
   const placed = [], hit = (x, y, w, h) => placed.some(q => Math.abs(q[0] - x) < (q[2] + w) / 2 + 1 && Math.abs(q[1] - y) < (q[3] + h) / 2 + .5);
-  const spot = (x, y, w, h) => { for (const dy of [0, -1.15, 1.15, -2.3, 2.3]) { const yy = y + dy * h; if (!hit(x, yy, w, h)) return yy; } return null; };
+  const spot = (x, y, w, h) => { for (const dy of [0, -1.15, 1.15, -2.3, 2.3, -3.45, 3.45]) { const yy = y + dy * h; if (!hit(x, yy, w, h)) return yy; } return null; };
   const order = villages.slice().sort((a, b) => popOf(b) - popOf(a));
   for (const g of order) {
     const pop = popOf(g);
     if (!pop && g.gone && g.ruinsLeft) { const x = g.fx * T + 2, txt = `Ruinas de ${g.name}`, w = vctx.measureText(txt).width + fs, h = fs * 1.4, y = spot(x, g.fy * T - 20 - fs * .8, w, h); if (y == null) continue; placed.push([x, y, w, h]);
       vctx.fillStyle = 'rgba(20,16,12,.55)'; vctx.fillRect(x - w / 2, y - h / 2, w, h); vctx.fillStyle = '#a8a29a'; vctx.fillText(txt, x, y); continue; }
     if (!pop || !world.objs[g.fy * W + g.fx]) continue;
-    const [r, g2, b] = villageColor(g), x = g.fx * T + 2, y0 = g.fy * T - 26 - fs * .8, txt0 = `${rankTag(g)}${g.name}${g.capturedFrom && nationOf(g) !== g ? ` (capturada · antes ${g.capturedFrom})` : ''} · ${pop}${allianceOf(g) ? ' · ' + allianceOf(g).abbr : ''}${g.protest ? ' ✊' : ''}${g.coup || [...rels.values()].some(r => r.war && (r.war.att === g.id || r.war.def === g.id)) ? ' ⚔' : ''}`;
+    if (zoom < 1.1 && pop < 6) continue; // (con todo el mundo a la vista, las aldeas diminutas no llevan cartel)
+    const [r, g2, b] = villageColor(g), x = g.fx * T + 2, y0 = g.fy * T - 26 - fs * .8, txt0 = `${rankTag(g)}${g.name}${g.capturedFrom && nationOf(g) !== g ? ` (capturada · antes ${g.capturedFrom})` : ''} · ${pop}${allianceOf(g) && zoom >= 1.6 ? ' · ' + allianceOf(g).abbr : ''}${g.protest ? ' ✊' : ''}${g.coup || [...rels.values()].some(r => r.war && (r.war.att === g.id || r.war.def === g.id)) ? ' ⚔' : ''}`;
     const nf = nationOf(g).flag, fw = nf ? fs * 1.5 : 0, h = fs * 1.45; let txt = txt0, w = vctx.measureText(txt).width + fs * 1.1 + fw;
-    let y = spot(x, y0, w, h); if (y == null) { txt = g.name; w = vctx.measureText(txt).width + fs * 1.1 + fw; y = spot(x, y0, w, h); } if (y == null && pop >= 10) y = y0; if (y == null) continue; placed.push([x, y, w, h]);
+    let y = spot(x, y0, w, h); if (y == null) { txt = g.name; w = vctx.measureText(txt).width + fs * 1.1 + fw; y = spot(x, y0, w, h); } if (y == null && pop >= 60) y = y0; if (y == null) continue; // (solo las ciudades grandes salen aunque se pisen) placed.push([x, y, w, h]);
     const atWar = [...rels.values()].some(r => r.war && (r.war.att === g.id || r.war.def === g.id));
     vctx.fillStyle = 'rgba(20,16,12,.8)'; vctx.fillRect(x - w / 2, y - h / 2, w, h);
     if (atWar) { vctx.strokeStyle = `rgba(230,60,50,${.7 + .3 * Math.sin(performance.now() / 250)})`; vctx.lineWidth = Math.max(1, fs * .12); vctx.strokeRect(x - w / 2, y - h / 2, w, h); }

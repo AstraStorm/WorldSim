@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611251957",
- "fecha": "2026-11-25 19:57",
+ "version": "202611252000",
+ "fecha": "2026-11-25 20:00",
  "novedades": [
   {
    "fecha": "2026-11-25",
-   "texto": "Leyes, tratados, idiomas, sed y guerras"
+   "texto": "Menús y carteles"
+  },
+  {
+   "fecha": "2026-11-25",
+   "texto": "Leyes nuevas (vacunación, patentes, escolarización obligatoria, edificación en altura, puerto franco, protección de la infancia) y tratados (unión aduanera, intercambio de estudiantes, aguas compartidas, patrulla naval); cuatro tipos de lengua más (vocálica, eslava, semítica, aglutinante) con sus nombres; en invierno rompen el hielo o derriten nieve para beber; en las batallas muchos caen heridos y se retiran; las naciones se rinden al perder un 25 % (antes 45 %) y atacan algo menos a menudo; más nacimientos; casco del pueblo más pequeño (había pueblos sin sitio para campos)"
   },
   {
    "fecha": "2026-11-25",
@@ -46,21 +50,17 @@
   {
    "fecha": "2026-11-25",
    "texto": "Realismo: golpe de calor según hidratación y sombra (la sombra de las casas no depende de la leña), la sed tarda más en matar y se deja el trabajo antes para beber; revoluciones solo en ciudades de 25+ con gobierno asentado y, fuera de las tiranías, destierro en vez de fusilamientos; cada madre un hijo cada año y pico; sin muralla bajo los edificios"
-  },
-  {
-   "fecha": "2026-11-25",
-   "texto": "Urbanismo: vuelve el repaso que une cada puerta con la calle (había quedado detrás de un comentario)"
   }
  ],
  "archivos": {
-  "index.html": "9225e3b7a89b8de384300b8957b43a9805297cf6",
-  "css/estilo.css": "86812acfbb924fad43a3c902badb4761868990b5",
+  "index.html": "8959a01370a2261fd9016930bf11b1cefb6f38c9",
+  "css/estilo.css": "a644b9fd24e235d50e6b68b872db18b62516414e",
   "js/aldeanos.js": "9893e512bc3f1e72538dfc1df5b08e979bf06532",
   "js/ambiente.js": "6c96bf777f6cdfc55b648f495836521ee28aeb8f",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "a94b46896cfd10fd688954a3c5b9297e9b693872",
   "js/armas.js": "d4710aa65550aceb06fbdd1d2d290c8085f58e96",
-  "js/arte.js": "71b02f38c29e31d83fafc020bbd5c825ada5575b",
+  "js/arte.js": "d3911b5ebef78b75367f2134788ff3246c26801e",
   "js/arte_mapa.js": "22ccbbd05a98d45479551ef68e7535a9e3ec2519",
   "js/bandidos.js": "bc804375208c5f300e33435e76d16001e8c4daae",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
@@ -127,7 +127,7 @@
   "js/riqueza.js": "4437665e375d993ccfc2bec62225436b8fd03dce",
   "js/rutas.js": "6e12cafc1992e09fc3c2b5b13ca7d7db6416c364",
   "js/sindicatos.js": "f7cb8bf83ff74322a6fc45cc6ac90550425c6d15",
-  "js/sociedad.js": "700868796a160ed4a174b4c4f31f77b7372f0c18",
+  "js/sociedad.js": "41c536ede617cf119311cf9c2ba1aa0d1459fac4",
   "js/sonido.js": "25be9d9bda62336aba463c82e31668d0e9b2bc54",
   "js/titulares.js": "0506409e843da939370bb404b894a52cffa68620",
   "js/trabajo.js": "6337df3b06ff54f44790b7a744c363a098833c07",
