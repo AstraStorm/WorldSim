@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611251734",
- "fecha": "2026-11-25 17:34",
+ "version": "202611251745",
+ "fecha": "2026-11-25 17:45",
  "novedades": [
   {
    "fecha": "2026-11-25",
-   "texto": "Calles unidas a la plaza otra vez"
+   "texto": "Calor, sed, revoluciones y natalidad realistas"
+  },
+  {
+   "fecha": "2026-11-25",
+   "texto": "Urbanismo: vuelve el repaso que une cada puerta con la calle (había quedado detrás de un comentario)"
   },
   {
    "fecha": "2026-11-25",
@@ -46,20 +50,16 @@
   {
    "fecha": "2026-11-25",
    "texto": "Pensar por turnos y caminos guardados"
-  },
-  {
-   "fecha": "2026-11-25",
-   "texto": "Dibujo más ligero: banderas guardadas y pintadas por columnas, nubes que se regeneran menos y simulación limitada a 30 ms por fotograma"
   }
  ],
  "archivos": {
-  "index.html": "7bc4d646c03f0133037d5c768a81c06971e9b112",
+  "index.html": "ca2218c547efe427abdd4b3188f93fee342e950e",
   "css/estilo.css": "db803bce2ea700f3c9e6d10156fe8c165192deeb",
   "js/aldeanos.js": "d9920d364407645d80f1cdfbdcc1baf7fd203032",
   "js/ambiente.js": "6c96bf777f6cdfc55b648f495836521ee28aeb8f",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "793f9933d7892b751a2de3017d536eb71172bb63",
-  "js/arte.js": "a34a2fefc98ce8dbb032ce88475d9d237be4a785",
+  "js/arte.js": "3713157e4275cc1aad51087e7582b476f8435d60",
   "js/arte_mapa.js": "373de74c89b7418c4a040aaea0ee2fd64b367b53",
   "js/bandidos.js": "bc804375208c5f300e33435e76d16001e8c4daae",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
@@ -79,7 +79,7 @@
   "js/credos.js": "2c9349a62f485ee953ea7e58c09de270a73b45c0",
   "js/cultivos.js": "e0abec05946f771bbc71cd29ff7b744673c79a7a",
   "js/cultura.js": "47cf34d577fd24ee5efdc7d7df63c0b8d82d099a",
-  "js/defensa.js": "b60e0aab28de4e4bfb5640fb301824f232aa13f6",
+  "js/defensa.js": "6eb44512ad9225edc587ea78d2bd3fab351568c9",
   "js/deportes.js": "f66d2ff28df83a1e0699d8aa37c6677e89abf810",
   "js/desastres.js": "d3e703f394b38f456594d7301e04feaca87061f7",
   "js/devocion.js": "a6f03eb4dd2ee3d7c9d322bb0fd427e84cf9df90",
@@ -122,13 +122,13 @@
   "js/riqueza.js": "4437665e375d993ccfc2bec62225436b8fd03dce",
   "js/rutas.js": "6e12cafc1992e09fc3c2b5b13ca7d7db6416c364",
   "js/sindicatos.js": "f7cb8bf83ff74322a6fc45cc6ac90550425c6d15",
-  "js/sociedad.js": "9ab27ba7294d0a584a8e34da9cb23f3f5dbf701f",
+  "js/sociedad.js": "5f9d2d1739cf2c9c2bb2517fdcb7a85fb51c9515",
   "js/sonido.js": "25be9d9bda62336aba463c82e31668d0e9b2bc54",
   "js/titulares.js": "0506409e843da939370bb404b894a52cffa68620",
   "js/trabajo.js": "6337df3b06ff54f44790b7a744c363a098833c07",
   "js/tratados.js": "c7221ac52158a928a77489448ca7f1ce45ade8e2",
   "js/ui.js": "87256f0f01b8aa2a5b9d282c0a2a538dce73cf85",
-  "js/urbanismo.js": "d02be5b3fe8373c3b1e5d3495a377022b61247e7",
+  "js/urbanismo.js": "a6d05c3b20889c28ea3cd2b7dfc1777c0c743903",
   "js/vegetacion.js": "440be3b609ce5146ed024c3c0ea0ec694344c592",
   "js/vida.js": "e70bc2e79a09c6b46317c8aec7fc5c6bf476264a",
   "js/visitas.js": "5cafd3070fdf9de08e0a6eebf6644ad13c46bc1d",

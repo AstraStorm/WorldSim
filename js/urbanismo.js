@@ -127,7 +127,7 @@ function wallMigrate(g){
   if (!g.wallV2) { wallMigrate(g); return; }
   const ring = new Set(villages.filter(o => popOf(o)).flatMap(o => [...(o.wallPlan || []), ...(o.wallPlan1 || [])]));
   for (const i of [...wallSet, ...gateSet]) if (!ring.has(i)) { wallSet.delete(i); wallStone.delete(i); gateSet.delete(i); gateOwner.delete(i); }
-  for (const i of [...gateSet]) if (gateOwner.get(i) === g.id && !wallGates(g).has(i)) { gateSet.delete(i); gateOwner.delete(i); wallSet.add(i); }
+  for (const i of [...gateSet]) if (gateOwner.get(i) === g.id && !wallGates(g).has(i)) { gateSet.delete(i); gateOwner.delete(i); if (!underBuilding(g, i % W, (i / W) | 0)) wallSet.add(i); }
   const R = g.wallRect, towns = liveTowns(), core = coreBuildings(g).filter(h => !otherTown(g, h % W, (h / W) | 0, towns)); // (lo que cae en terreno del vecino no cuenta)
   const out = core.some(h => { const x = h % W, y = (h / W) | 0; return x - 2 <= R.x0 || x + 2 >= R.x1 || y - 4 <= R.y0 || y + 1 >= R.y1; });
   if (!out && core.length < (g.wallCoreN || 0) + 8) return;
@@ -286,6 +286,7 @@ SYSTEMS.push(dt => {
   const g = towns[urbIdx++ % towns.length]; clearTrails(g);
   g.houses = [...new Set(g.houses.filter(i => !world.objs[i] || world.objs[i].key.startsWith('house')))]; // (una casa en cuyo solar ya se levantó otra cosa deja de contar como casa)
   if (g.hall != null || popOf(g) >= 6) linkTick(g);
+  if (wallSet.size) wallUnderFix(g);
 });
 
 // ---- Trama en cuadrícula: manzanas y calles rectas ----
@@ -363,3 +364,13 @@ function paveLine(g, tiles, net){
   composeRegion(Math.min(x, g.fx) - 8, Math.min(s, g.fy) - 12, Math.max(x, g.fx) + 8, Math.max(s, g.fy) + 2);
   if (r !== 'red') return base.apply(this, arguments); // algo en medio: el camino de siempre (A*) cierra el hueco
 }; }
+
+// Ningún tramo de muralla debajo de un edificio (partidas de antes o puertas que vuelven a ser muro): se quita
+function wallUnderFix(g){
+  let n = 0;
+  for (const b of townDoors(g)) {
+    const o = world.objs[b]; if (!o) continue; const [hw, hh] = BUILD_DIMS[o.key.split(':')[0]] || [4, 5], x = b % W, y = (b / W) | 0;
+    for (let yy = y - hh; yy <= y; yy++) for (let xx = x - hw; xx <= x + hw; xx++) { const i = yy * W + xx; if (wallSet.has(i)) { wallSet.delete(i); wallStone.delete(i); n++; composeRegion(xx - 2, yy - 3, xx + 2, yy + 3); } }
+  }
+  return n;
+}

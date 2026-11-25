@@ -2342,7 +2342,8 @@ function politicsTick(g, dt, people){
   if (cap === g && votes(g) && g.parties && g.ruling != null && !g.election && !isNight() && yearT - (g.lawT ?? yearT) > DAY_LEN * 1.5) { g.lawT = yearT; proposeLaw(g, adults); }
   g.lawT ??= yearT;
   // Golpe de estado: en la capital, con mucho descontento, con mucha represión acumulada o con militares hartos de un gobierno pacifista
-  if (cap === g && regimeOf(g) !== 'tribu' && !isNight()) {
+  // (un golpe o una revolución necesita una ciudad de verdad y un gobierno que lleve un tiempo: en una aldea se protesta, no se asalta el poder)
+  if (cap === g && regimeOf(g) !== 'tribu' && !isNight() && popOf(g) >= 25 && yearT - (g.regimeT || 0) > DAY_LEN * 3) {
     const armed = adults.filter(u => u.weapon).length, mil = regimeOf(g) === 'republica' && hasLaw(g, 'paz') && armed >= 4 ? .0006 : 0;
     if (Math.random() < (Math.max(0, (g.anger - 60) / 2500) + mil + ((g.repressed || 0) > 5 ? .0008 : 0)) * dt) startCoup(g, adults);
   }
@@ -2487,7 +2488,12 @@ function resolveCoup(g){
   if (plot.length < 2 || str(plot) * (.7 + Math.random() * .7) < str(loyal.filter(u => u.weapon)) + loyal.length * .15 + 1) {
     const tried = coupTrial(g, plot); // justicia.js
     if (tried) { g.anger = Math.max(0, g.anger - 20); notify(`${c.military ? 'El golpe de estado' : 'La revolución'} en ${g.name} fracasa: ${tried} ${c.military ? 'golpistas' : 'revolucionarios'} irán a juicio`, at); return; }
-    const n = Math.ceil(plot.length / 2); plot.slice(0, n).forEach(u => killVillager(u, 'ejecución'));
+    const n = Math.ceil(plot.length / 2), dest = villages.filter(o => o !== g && popOf(o) && !sameNation(o, g));
+    if (!tyranny(g) && dest.length) { // fuera de las tiranías no se fusila a nadie: los cabecillas, desterrados
+      plot.slice(0, n).forEach(u => exile(u, g, dest[Math.floor(Math.random() * dest.length)])); g.anger = Math.max(0, g.anger - 20);
+      notify(`${c.military ? 'El golpe de estado' : 'La revolución'} en ${g.name} fracasa: ${n} ${c.military ? 'golpistas' : 'revolucionarios'} son desterrados`, at); return;
+    }
+    plot.slice(0, n).forEach(u => killVillager(u, 'ejecución'));
     g.anger = Math.max(0, g.anger - 20); g.repressed = (g.repressed || 0) + 2;
     notify(`${c.military ? 'El golpe de estado' : 'La revolución'} en ${g.name} fracasa: ${n} ${c.military ? 'golpistas' : 'revolucionarios'} son ejecutados`, at); return;
   }
@@ -2820,6 +2826,11 @@ function deposit(v, g){
   v.carry = null; clampStore(g);
 }
 // ---- Necesidades y muerte ----
+function underRoof(v){ // junto a una casa o edificio (su sombra), haga frío o calor
+  const tx = Math.floor(v.x / T), ty = Math.floor(v.y / T);
+  for (let dy = -2; dy <= 1; dy++) for (let dx = -2; dx <= 2; dx++) { const o = world.objs[(ty + dy) * W + tx + dx]; if (o && o.key && (o.key.startsWith('house') || (o.vid != null && isBuilding(o)))) return true; }
+  return false;
+}
 function warmthAt(v, g){
   if (g && g.noFirewood) return 0; // sin leña, ni la hoguera ni las casas calientan (estaciones.js)
   if (g && !g.fireOut && Math.hypot(v.x / T - g.fx, v.y / T - g.fy) < 6) return WARMTH;
@@ -2880,7 +2891,7 @@ function updateVillagers(dt){
     const tough = v.task && v.task.k === 'asalto' ? .6 : 1; // los soldados en campaña aguantan más el hambre y la sed
     v.food = Math.max(0, v.food - dt * (v.mal ? 1.4 : nut < .15 ? .9 : 1) * (v.sleep ? .5 : 1) * tough / (child ? 190 : 160)); v.water = Math.max(0, v.water - dt * (v.sleep ? .5 : 1) * (tHere > 28 ? 1.3 : 1) * tough / (child ? 130 : 120));
     if (v.food <= 0) { v.starve += dt; if (v.starve > 25) { killVillager(v, 'hambre'); continue; } } else v.starve = 0;
-    if (v.water <= 0) { v.thirst += dt; if (v.thirst > 20) { killVillager(v, 'sed'); continue; } } else v.thirst = 0;
+    if (v.water <= 0) { v.thirst += dt; if (v.thirst > 50) { killVillager(v, 'sed'); continue; } } else v.thirst = 0; // (sin beber nada, un buen rato: no al primer momento de sed)
     // El abrigo (hoguera, casa) solo calienta cuando hace frío, hasta unos 18 °C; con calor, la casa da algo de sombra
     // Lejos de cualquier refugio y helándose: se paran y encienden una fogata donde están (si no llueve)
     if (v.fogata && (yearT > v.fogata.t || Math.hypot(v.fogata.x - v.x, v.fogata.y - v.y) > 10)) v.fogata = null;
@@ -2888,15 +2899,20 @@ function updateVillagers(dt){
       v.fogata = { x:v.x + v.dir * 4, y:v.y + 1, t:yearT + 14 }; releaseTask(v); v.task = null; v.actT = 12; v.onDone = null;
       floats.push({ x:v.x, y:v.y - 12, txt:'¡qué frío! una fogata', col:'#ffb060', life:0 });
     }
-    const out = tHere, shelter = warmthAt(v, g) > 0 || !!v.fogata, shade = out > 24 && inForest(v), temp = shelter ? (out < 18 ? Math.min(18, out + WARMTH) : out - 8) : shade ? out - 5 : out; // la casa (gruesa) y la sombra refrescan // los árboles también dan sombra
+    const out = tHere, roof = out >= 18 && underRoof(v), shelter = out < 18 ? warmthAt(v, g) > 0 || !!v.fogata : roof, shade = out > 24 && inForest(v), temp = shelter ? (out < 18 ? Math.min(18, out + WARMTH) : out - 8) : shade ? out - 5 : out; // con calor, la sombra de una casa no depende de la leña ni la da la hoguera // la casa (gruesa) y la sombra refrescan // los árboles también dan sombra
     const cold = H_COLD + v.ad + (child ? 4 : 0), hot = H_HEAT + v.ad;
     v.chill = temp < cold ? v.chill + dt * (cold - temp) / (300 * (1 + (v.fit || 0) * .4) * (v.coat ? 1.8 : 1)) : Math.max(0, v.chill - dt * .1);
-    v.hot = temp > hot ? v.hot + dt * (temp - hot) / (90 * (1 + (v.fit || 0) * .4)) : Math.max(0, v.hot - dt * .1);
+    // El golpe de calor llega sobre todo a quien está sediento y trabajando al sol: bien bebido y a la sombra se aguanta mucho más
+    const hydr = v.water > .6 ? .35 : v.water > .3 ? .6 : 1, still = shelter || shade || v.sleep ? .5 : 1;
+    v.hot = temp > hot ? v.hot + dt * (temp - hot) * hydr * still / (90 * (1 + (v.fit || 0) * .4)) : Math.max(0, v.hot - dt * (shelter || shade ? .15 : .1));
     if (v.chill >= 1) { killVillager(v, 'frío'); continue; }
     // Quien se está helando deja lo que hace y corre a una casa o edificio caliente (lluvia.js); los niños, antes
     if (g && v.chill > (child ? .15 : .3) && !shelter && !v.boat && !(v.task && ['refugio', 'asalto'].includes(v.task.k))) { const p = shelterTarget(v, g, true); if (p) { releaseTask(v); v.task = p; v.lastD = Infinity; } }
     if (v.hot >= 1) { killVillager(v, 'calor'); continue; }
-    if (g && v.hot > .4 && v.task && !['beber', 'asalto', 'trabajando'].includes(v.task.k) && !v.boat) { const p = drinkSpot(v, g); if (p) { releaseTask(v); v.task = { k:'beber', ...p }; v.lastD = Infinity; } } // acalorados: a beber y refrescarse
+    if (g && v.hot > .4 && v.task && !['beber', 'asalto', 'trabajando', 'refugio'].includes(v.task.k) && !v.boat) { // acalorados: a beber y, si ya han bebido, a la sombra de una casa hasta que baje el sol
+      const p = v.water < .7 ? drinkSpot(v, g) : null, s = !p && !shelter ? shelterTarget(v, g, false) : null;
+      if (p) { releaseTask(v); v.task = { k:'beber', ...p }; v.lastD = Infinity; } else if (s) { releaseTask(v); v.task = s; v.lastD = Infinity; }
+    }
     // Sin aldea: se une a la más cercana o funda una nueva donde está
     if (!g) {
       const tx = Math.floor(v.x / T), ty = Math.floor(v.y / T);
@@ -3043,7 +3059,7 @@ function updateVillagers(dt){
     }
     // El hambre y la sed mandan: si aprietan, deja lo que esté haciendo
     if (((v.hp ?? 1) < .45 || (v.sick && v.sick.t > 8)) && hasHosp(g) && !v.enemy && !v.foe && !['curarse', 'asalto', 'beber', 'comer', 'trabajando'].includes(v.task.k)) { const sb = standBy(g.hospital); if (sb) { releaseTask(v); v.task = { k:'curarse', x:sb[0], y:sb[1] }; v.lastD = Infinity; } }
-    if (v.water < .12 && v.task.k === 'trabajando' && v.task.job !== 'beber' && !v.boat) { const p = drinkSpot(v, g); if (p) { v.actT = 0; v.onDone = null; releaseTask(v); v.task = { k:'beber', ...p }; v.lastD = Infinity; } }
+    if (v.water < .25 && v.task.k === 'trabajando' && v.task.job !== 'beber' && !v.boat) { const p = drinkSpot(v, g); if (p) { v.actT = 0; v.onDone = null; releaseTask(v); v.task = { k:'beber', ...p }; v.lastD = Infinity; } }
     if (v.task.k !== 'beber' && v.task.k !== 'comer' && v.task.k !== 'trabajando' && !v.boat) {
       if (v.water < .3 && !(v.drinkFail > yearT)) { const p = drinkSpot(v, g); if (p) { releaseTask(v); v.task = { k:'beber', ...p }; v.lastD = Infinity; } else v.drinkFail = yearT + 2; } // (si no hay dónde, no se busca en cada paso)
       else if (v.food < .28 && canEat(v, g)) { releaseTask(v); const [fx, fy] = fireXY(g); v.task = { k:'comer', ...eatSpot(v, g) }; v.lastD = Infinity; }
@@ -3260,9 +3276,10 @@ function updateVillages(dt){
     clampStore(g);
     const cap = houseCap(g) + 4 + (g.hall != null && world.objs[g.hall] ? 8 : 0), adults = people.filter(v => { const a = (yearT - v.born) / YEAR; return a >= ADULT_H && a < 12; });
     // Cuantas más parejas, más nacimientos (antes solo podía tener hijos la primera: los pueblos se estancaban en unos 30)
-    const moms = adults.filter(v => v.sex === 'm' && partnerOf(v) && partnerOf(v).sex === 'h' && adults.includes(partnerOf(v)));
+    // Cada madre, como mucho un hijo cada año y pico (embarazo y crianza): unos cinco o seis en toda su vida, no uno cada poco
+    const moms = adults.filter(v => v.sex === 'm' && partnerOf(v) && partnerOf(v).sex === 'h' && adults.includes(partnerOf(v)) && yearT - (v.lastBirth ?? -1e9) > YEAR * .9);
     const mom = moms[Math.floor(Math.random() * moms.length)], dad = mom && partnerOf(mom); // de una pareja
-    if (mom && dad && pop < cap && g.food >= pop * 1.5 + 3 && Math.random() < dt * Math.min(.1, .03 + moms.length * .006) * (hasLaw(g, 'natalidad') ? 1.6 : 1) * (g.fort && g.fort.built && !g.fort.ruined && pop < 45 ? 1.25 : 1)) { // con castillo hacen falta más manos
+    if (mom && dad && pop < cap && g.food >= pop * 1.5 + 3 && Math.random() < dt * Math.min(.12, moms.length / (YEAR * .7)) * (hasLaw(g, 'natalidad') ? 1.6 : 1) * (g.fort && g.fort.built && !g.fort.ruined && pop < 45 ? 1.25 : 1)) { // con castillo hacen falta más manos
       const kid = lifeFields({ name:NAMES[nameIdx++ % NAMES.length], x:mom.x, y:mom.y, path:null, wait:1, walk:0, moving:false, dir:1, appear:1,
         pants:pick(PANTS, Math.random), hat:pick(HATS, Math.random), shirt:pick(SHIRT, Math.random), hair:Math.random() < .5 ? mom.hair : dad.hair },
         Math.floor(mom.x / T), Math.floor(mom.y / T), 0, Math.random);
@@ -3274,7 +3291,7 @@ function updateVillages(dt){
       (mom.kids ||= []).push(kid); (dad.kids ||= []).push(kid); if (!(mom.partners ||= []).includes(dad)) mom.partners.push(dad); if (!(dad.partners ||= []).includes(mom)) dad.partners.push(mom);
       kid.ideo = clamp(((mom.ideo || 0) + (dad.ideo || 0)) / 2 + (Math.random() - .5) * .4, -1, 1);
       kid.diet = clamp(((mom.diet ?? .5) + (dad.diet ?? .5)) / 2 + (Math.random() - .5) * .1, 0, 1); kid.ate = kid.diet;
-      villagers.push(kid); g.food -= 3;
+      villagers.push(kid); g.food -= 3; mom.lastBirth = yearT;
     }
     // Ganado: produce comida (leche, huevos…), come del almacén y cría dentro del cercado
     const herd = penAnimals(g);

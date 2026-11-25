@@ -23,7 +23,7 @@ function wallGrow(g){
   // Piezas sueltas de planes viejos (o de pueblos que ya no están) que no forman parte de ninguna muralla: fuera
   const ring = new Set(villages.filter(o => popOf(o)).flatMap(o => [...(o.wallPlan || []), ...(o.wallPlan1 || [])]));
   for (const i of [...wallSet, ...gateSet]) if (!ring.has(i)) { wallSet.delete(i); wallStone.delete(i); gateSet.delete(i); gateOwner.delete(i); }
-  for (const i of [...gateSet]) if (gateOwner.get(i) === g.id && !wallGates(g).has(i)) { gateSet.delete(i); gateOwner.delete(i); wallSet.add(i); } // (partidas de antes: una puerta en cada camino) → muro
+  for (const i of [...gateSet]) if (gateOwner.get(i) === g.id && !wallGates(g).has(i)) { gateSet.delete(i); gateOwner.delete(i); if (!underBuilding(g, i % W, (i / W) | 0)) wallSet.add(i); } // (partidas de antes: una puerta en cada camino) → muro
   // ¿El pueblo se ha salido de la muralla, o la muralla es mucho más grande de lo que hace falta?
   const R = g.wallRect, m = g.wallRing === 2 ? 8 : 3; let x0 = g.fx - 4, y0 = g.fy - 3, x1 = g.fx + 4, y1 = g.fy + 4;
   for (const h of coreBuildings(g)) { const x = h % W, y = (h / W) | 0; x0 = Math.min(x0, x - 5); x1 = Math.max(x1, x + 5); y0 = Math.min(y0, y - 7); y1 = Math.max(y1, y + 2); }
