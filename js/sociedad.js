@@ -2347,6 +2347,7 @@ function runProtest(g){
 }
 // Cartel sobre la plaza mientras hay manifestación o acampada (unos 12 px en pantalla a cualquier zoom), con el motivo y si hay disturbios
 function drawProtestBanners(){
+  if (!villages.some(g => (g.protest || g.camp) && g.plaza)) return; // (sin protestas, nada: poner la letra en cada fotograma cuesta)
   const [x0, y0, x1, y1] = visibleRect(), fs = Math.max(3, 12 / zoom), now = performance.now();
   vctx.font = `bold ${fs}px system-ui, sans-serif`; vctx.textAlign = 'center'; vctx.textBaseline = 'middle';
   for (const g of villages) {
