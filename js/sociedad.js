@@ -287,6 +287,7 @@ function pathTiles(g, sx, sy){
     if (bridgeSet.has(i)) return 1; if (WATER[world.biome[i]] || world.biome[i] === B.LAVA || wallSet.has(i)) return Infinity;
     const o = world.objs[i]; if (o && !['tree', 'berry'].includes(OBJ[o.key][1]) && o.key !== 'fire:camp') return Infinity;
     if (villages.some(vg => underBuilding(vg, x, y) && !buildingDoor(vg, i))) return Infinity; // por debajo de un edificio, no
+    if (villages.some(vg => inPen(vg, x, y))) return Infinity; // ni a través de un cercado
     return (o ? 4 : 1) + (farmMap.has(i) ? 6 : 0) + h2(x >> 1, y >> 1, 77) * .7; // algo de ruido: el camino serpentea
   };
   const gs = new Map([[s0, 0]]), par = new Map(), heap = [[0, s0]], hx = g.fx, hy = g.fy;
@@ -692,13 +693,15 @@ function buildZones(){
   for (let it = 0; it < 3; it++) { const nx = own.slice(); for (let i = W + 1; i < N - W - 1; i++) { if (!own[i] || orig[i]) continue; if (!own[i - 1] || !own[i + 1] || !own[i - W] || !own[i + W]) nx[i] = 0; } own.set(nx); }
   zoneOwn = own; zoneLive = live;
   if (!zoneCv || zoneCv.width !== W || zoneCv.height !== H) { zoneCv = document.createElement('canvas'); zoneCv.width = W; zoneCv.height = H; }
-  const zc = zoneCv.getContext('2d'), img = zc.createImageData(W, H), D = img.data;
+  const zc = zoneCv.getContext('2d'), img = zc.createImageData(W, H), D = img.data, nat = [0, ...live.map(g => nationOf(g).id)];
   for (let i = 0; i < N; i++) {
     const k = own[i]; if (!k) continue;
-    const x = i % W, y = (i / W) | 0, [r, g2, b] = villageColor(live[k - 1]);
-    // Borde fino (una casilla) y relleno bien visible
-    const edge = x === 0 || y === 0 || x === W - 1 || y === H - 1 || own[i - 1] !== k || own[i + 1] !== k || own[i - W] !== k || own[i + W] !== k;
-    const o = i * 4; D[o] = r; D[o + 1] = g2; D[o + 2] = b; D[o + 3] = edge ? 210 : 70;
+    const x = i % W, y = (i / W) | 0, [r, g2, b] = villageColor(live[k - 1]), n = nat[k];
+    // Borde fino (una casilla) solo donde cambia la nación (entre pueblos de la misma, no) y relleno suave; dentro de lo
+    // construido (calles, campos), más suave aún para que no ensucie el pueblo
+    const edge = x === 0 || y === 0 || x === W - 1 || y === H - 1 || nat[own[i - 1]] !== n || nat[own[i + 1]] !== n || nat[own[i - W]] !== n || nat[own[i + W]] !== n;
+    const built = pathMap.has(i) || farmMap.has(i) || plazaSet.has(i);
+    const o = i * 4; D[o] = r; D[o + 1] = g2; D[o + 2] = b; D[o + 3] = edge ? (built ? 120 : 200) : built ? 22 : 50;
   }
   zc.putImageData(img, 0, 0);
 }
@@ -730,13 +733,19 @@ function drawVillageNames(){
   if (fade <= 0) return;
   vctx.globalAlpha = fade;
   vctx.font = `bold ${fs}px system-ui, sans-serif`; vctx.textAlign = 'center'; vctx.textBaseline = 'middle';
-  for (const g of villages) {
+  // Los carteles no se pisan: primero los de los pueblos más grandes; los demás se apartan un poco hacia arriba o abajo
+  // y, si aun así chocan, se quedan en el nombre solo (o, las ruinas y los pueblos diminutos, no salen)
+  const placed = [], hit = (x, y, w, h) => placed.some(q => Math.abs(q[0] - x) < (q[2] + w) / 2 + 1 && Math.abs(q[1] - y) < (q[3] + h) / 2 + .5);
+  const spot = (x, y, w, h) => { for (const dy of [0, -1.15, 1.15, -2.3, 2.3]) { const yy = y + dy * h; if (!hit(x, yy, w, h)) return yy; } return null; };
+  const order = villages.slice().sort((a, b) => popOf(b) - popOf(a));
+  for (const g of order) {
     const pop = popOf(g);
-    if (!pop && g.gone && g.ruinsLeft) { const x = g.fx * T + 2, y = g.fy * T - 20 - fs * .8, txt = `Ruinas de ${g.name}`, w = vctx.measureText(txt).width + fs, h = fs * 1.4;
+    if (!pop && g.gone && g.ruinsLeft) { const x = g.fx * T + 2, txt = `Ruinas de ${g.name}`, w = vctx.measureText(txt).width + fs, h = fs * 1.4, y = spot(x, g.fy * T - 20 - fs * .8, w, h); if (y == null) continue; placed.push([x, y, w, h]);
       vctx.fillStyle = 'rgba(20,16,12,.55)'; vctx.fillRect(x - w / 2, y - h / 2, w, h); vctx.fillStyle = '#a8a29a'; vctx.fillText(txt, x, y); continue; }
     if (!pop || !world.objs[g.fy * W + g.fx]) continue;
-    const [r, g2, b] = villageColor(g), x = g.fx * T + 2, y = g.fy * T - 26 - fs * .8, txt = `${rankTag(g)}${g.name}${g.capturedFrom && nationOf(g) !== g ? ` (capturada · antes ${g.capturedFrom})` : ''} · ${pop}${allianceOf(g) ? ' · ' + allianceOf(g).abbr : ''}${g.protest ? ' ✊' : ''}${g.coup || [...rels.values()].some(r => r.war && (r.war.att === g.id || r.war.def === g.id)) ? ' ⚔' : ''}`;
-    const nf = nationOf(g).flag, fw = nf ? fs * 1.5 : 0, w = vctx.measureText(txt).width + fs * 1.1 + fw, h = fs * 1.45;
+    const [r, g2, b] = villageColor(g), x = g.fx * T + 2, y0 = g.fy * T - 26 - fs * .8, txt0 = `${rankTag(g)}${g.name}${g.capturedFrom && nationOf(g) !== g ? ` (capturada · antes ${g.capturedFrom})` : ''} · ${pop}${allianceOf(g) ? ' · ' + allianceOf(g).abbr : ''}${g.protest ? ' ✊' : ''}${g.coup || [...rels.values()].some(r => r.war && (r.war.att === g.id || r.war.def === g.id)) ? ' ⚔' : ''}`;
+    const nf = nationOf(g).flag, fw = nf ? fs * 1.5 : 0, h = fs * 1.45; let txt = txt0, w = vctx.measureText(txt).width + fs * 1.1 + fw;
+    let y = spot(x, y0, w, h); if (y == null) { txt = g.name; w = vctx.measureText(txt).width + fs * 1.1 + fw; y = spot(x, y0, w, h); } if (y == null && pop >= 10) y = y0; if (y == null) continue; placed.push([x, y, w, h]);
     const atWar = [...rels.values()].some(r => r.war && (r.war.att === g.id || r.war.def === g.id));
     vctx.fillStyle = 'rgba(20,16,12,.8)'; vctx.fillRect(x - w / 2, y - h / 2, w, h);
     if (atWar) { vctx.strokeStyle = `rgba(230,60,50,${.7 + .3 * Math.sin(performance.now() / 250)})`; vctx.lineWidth = Math.max(1, fs * .12); vctx.strokeRect(x - w / 2, y - h / 2, w, h); }
@@ -1590,7 +1599,7 @@ function diploTick(){
     if (hasLaw(a, 'fronteras_abiertas') && hasLaw(b, 'fronteras_abiertas')) r.v = Math.min(100, r.v + .3);
     const closed = (hasLaw(a, 'fronteras_cerradas') || hasLaw(b, 'fronteras_cerradas')) && !(a.port && b.port && (hasLonja(a) || hasLonja(b)));
     if (!closed && !sanctionedPair(a, b) && r.v > -15 && (a.market != null || b.market != null) && yearT - (r.tradeT ?? -1e9) > DAY_LEN * (hasLaw(a, 'comercio') || hasLaw(b, 'comercio') ? .3 : .6) * (hasLonja(a) || hasLonja(b) ? .5 : 1) * (hasTreaty(r, 'comercio') ? .5 : 1) * (hasLaw(a, 'fronteras_abiertas') || hasLaw(b, 'fronteras_abiertas') ? .7 : 1)) { r.tradeT = yearT; const from = a.market != null && Math.random() < .5 ? a : b.market != null ? b : a; sendTraveler('caravana', from, from === a ? b : a); }
-    if (r.v < 30 && yearT - (r.dipT ?? -1e9) > DAY_LEN * (hasLaw(a, 'paz') || hasLaw(b, 'paz') ? .6 : 1.2) && Math.random() < .5) { r.dipT = yearT; const from = (a.hall != null) !== (b.hall != null) ? (a.hall != null ? a : b) : Math.random() < .5 ? a : b; sendTraveler('diplomatico', from, from === a ? b : a); }
+    if (r.v < 30 && yearT - (r.dipT ?? -1e9) > DAY_LEN * (hasLaw(a, 'paz') || hasLaw(b, 'paz') ? 1 : 2) && Math.random() < .5 && !travelers.some(t => t.kind === 'diplomatico' && !t.done && (t.from === a.id || t.from === b.id))) { /* (un diplomático por pueblo a la vez) */ r.dipT = yearT; const from = (a.hall != null) !== (b.hall != null) ? (a.hall != null ? a : b) : Math.random() < .5 ? a : b; sendTraveler('diplomatico', from, from === a ? b : a); }
   }
 }
 // Un pueblo que se queda por su cuenta: su propia bandera, su gobierno y alguien al mando (y se rehacen las fronteras)
@@ -1800,22 +1809,23 @@ const seaShip = (g, t) => !!g && !!t.sea && ((g.know || {}).barca || !!g.port ||
 function drawCarabelas(t, x, y, g, now, people){
   const n = Math.max(1, people.length), ships = Math.ceil(n / 10), steam = knowsSci(g, 'vapor'), col = villageColor(nationOf(g)), f = ART_MAP[steam ? 'ship:vapor' : 'ship:galeon'];
   for (let k = 0; k < ships; k++) {
-    const crew = people.slice(k * 10, k * 10 + 10), K = crew.length >= 6 ? 1.3 : crew.length >= 3 ? 1.1 : .9;
+    const crew = people.slice(k * 10, k * 10 + 10), K = crew.length >= 6 ? 1.6 : crew.length >= 3 ? 1.45 : 1.3; // como los barcos de guerra (1,6) cuando va llena
     const sx = x - t.dir * k * 30, sy = y + (k % 2 ? 7 : 0);
     drawShip(sx, sy, t.dir, steam, col, now, K, true);
     // La gente en cubierta: cabeza y hombros asomando por la borda
-    const w = f ? f[2] * K * .55 : 12, deck = sy - (f ? Math.round(f[3] * .8 * K * .42) : 5);
+    const w = f ? f[2] * K * .55 : 12, deck = sy - (f ? Math.round(f[3] * .93 * K * .42) : 5);
     crew.forEach((u, j) => { const ps = personSprite(u, 0, t.dir < 0), px = Math.round(sx - w / 2 + (j + .5) * w / crew.length) - (ps.width >> 1); vctx.drawImage(ps, 0, 0, ps.width, 5, px, deck - 5 + (j % 2), ps.width, 5); });
     redrawFront(sx - 22 * K, sx + 22 * K, sy - 26 * K, sy + 2);
   }
 }
 function drawTravelers(now){
-  const [x0, y0, x1, y1] = visibleRect();
+  const [x0, y0, x1, y1] = visibleRect(), shipsSeen = [];
   for (const t of travelers) {
     if (t.x < x0 - 20 || t.x > x1 + 20 || t.y < y0 - 20 || t.y > y1 + 20) continue;
     const g = villageById(t.from), s = personSprite(t.v, Math.floor((t.walk || 0) * 8) % 2, t.dir < 0), x = Math.round(t.x), y = Math.round(t.y);
     const wet = inWater(t.x, t.y); // en un cauce seco, sobre el hielo o en tierra no se dibuja la barca: van andando
-    if (wet && seaShip(g, t)) { drawCarabelas(t, x, y, g, now, t.crew ? t.crew.filter(u => !u.dead) : [t.v]); if (t.kind === 'diplomatico') diplomatBadge(x, y - 24, now); continue; } // en carabela, con la gente en cubierta
+    if (wet && seaShip(g, t)) { const nid = g ? nationOf(g).id : -1, mate = !t.crew && shipsSeen.find(q => q[2] === nid && Math.abs(q[0] - x) < 26 && Math.abs(q[1] - y) < 14); if (mate) continue; shipsSeen.push([x, y, nid]); // los de la misma nación que navegan juntos, en el mismo barco
+      drawCarabelas(t, x, y, g, now, t.crew ? t.crew.filter(u => !u.dead) : [t.v]); if (t.kind === 'diplomatico') diplomatBadge(x, y - 24, now); continue; } // en carabela, con la gente en cubierta
     if (t.crew && wet) { const crew = t.crew.filter(u => !u.dead); crew.forEach((u, k) => { if (k % 2) return; const ox = -t.dir * Math.floor(k / 2) * 14, oy = (Math.floor(k / 2) % 2 ? 6 : -4); drawBoat(x + ox, y + oy, t.dir, now, true, personSprite(u, 0, t.dir < 0)); }); redrawFront(x - 15 - crew.length * 7, x + 15 + crew.length * 7, y - 20, y + 6); if (crew.length) { vctx.fillStyle = '#c8302a'; vctx.fillRect(x + t.dir * 2, y - 22, 3, 2); vctx.fillStyle = '#5a3a20'; vctx.fillRect(x + t.dir, y - 22, 1, 8); } continue; }
     if (wet) { drawBoat(x, y, t.dir, now, true, s); redrawFront(x - 15, x + 15, y - s.height - 6, y); if (t.kind === 'diplomatico') diplomatBadge(x, y - s.height - 9, now); continue; } // lo que hay delante (en la orilla) tapa la barca
     if (t.kind === 'caravana') { drawCart(x - t.dir * 8, y, t.dir, now, '#c8a050'); if (t.cargo) { vctx.fillStyle = '#2a1a10'; vctx.fillRect(x - t.dir * 8 - 3, y - 9, 6, 4); vctx.fillStyle = GOODS[t.cargo.k].col; vctx.fillRect(x - t.dir * 8 - 2, y - 8, 4, 2); } } // con su carga, del color de la mercancía

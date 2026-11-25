@@ -146,8 +146,11 @@ const streetIn = (x0, y0, x1, y1) => { let n = 0; for (let y = y0; y <= y1; y++)
 // Lo que no se puede ocupar: puentes y puertas de la muralla (las calles secundarias sí: el pueblo se densifica y el
 // repaso de calles abre otro paso si alguien queda sin salida)
 const hardIn = (x0, y0, x1, y1) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const i = y * W + x; if (bridgeSet.has(i) || gateSet.has(i)) return true; } return false; };
-function clearTrails(g){ // los caminos que han quedado debajo de un edificio, fuera (menos las plazas)
+function clearTrails(g){ // los caminos que han quedado debajo de un edificio o dentro de un cercado, fuera (menos las plazas)
   let n = 0;
+  for (const p of pensOf(g)) for (let y = p.y0; y <= p.y1; y++) for (let x = p.x0; x <= p.x1; x++) { const i = y * W + x; if (pathMap.has(i) && !plazaSet.has(i) && !bridgeSet.has(i)) { desireSet.delete(i); pathMap.delete(i); if (wear) wear[i] = 0; n++; } }
+  // El último cercado, si lleva días vacío, se desmonta (los demás animales caben en los otros)
+  const ps = pensOf(g); if (ps.length > 1) { const last = ps[ps.length - 1], k = ps.length - 1; if (penAnimals(g).some(a => a.penK === k)) last.emptyT = null; else if ((last.emptyT ??= yearT) < yearT - DAY_LEN * 2) { ps.pop(); g.pen = ps[0]; } }
   for (const h of buildingsOf(g)) { const x = h % W, y = (h / W) | 0; for (let yy = y - 5; yy <= y; yy++) for (let xx = x - 3; xx <= x + 3; xx++) { const i = yy * W + xx; if (pathMap.has(i) && !plazaSet.has(i) && !bridgeSet.has(i)) { desireSet.delete(i); pathMap.delete(i); if (wear) wear[i] = 0; n++; } } }
   if (n) streetCache.delete(g.id);
 }
@@ -237,7 +240,7 @@ function linkRoute(g, start, net){
     if (URB_NET(i)) return wallSet.has(i) ? Infinity : .3;
     if (WATER[world.biome[i]] || world.biome[i] === B.LAVA || wallSet.has(i)) return Infinity;
     const o = world.objs[i]; if (o && !['tree', 'berry'].includes(OBJ[o.key][1])) return Infinity;
-    if (underBuilding(g, x, y)) return Infinity;
+    if (underBuilding(g, x, y) || villages.some(q => inPen(q, x, y))) return Infinity; // ni por debajo de un edificio ni cruzando un cercado
     return (o ? 4 : 1) + (farmMap.has(i) ? 6 : 0) + (plotIn(x, y, x, y) ? 20 : 0);
   };
   const push = (f, i) => { heap.push([f, i]); let k = heap.length - 1; while (k) { const p = (k - 1) >> 1; if (heap[p][0] <= heap[k][0]) break; [heap[p], heap[k]] = [heap[k], heap[p]]; k = p; } };

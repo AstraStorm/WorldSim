@@ -565,7 +565,7 @@ select{border-radius:7px !important}
 .sci-who{display:block;margin-top:3px;font-size:11px;color:#9a845a;font-style:italic}
 .sci-node.got{background:#e6f0d4;border-color:#6a9a4a}.sci-node.got .sci-tag{background:#4a8a3a;color:#f4fbe8}
 .sci-node.now{background:#fdf0c8;border-color:#d0a030;box-shadow:0 0 0 3px rgba(224,176,48,.25)}.sci-node.now .sci-tag{background:#d0a030;color:#3a2a08}
-.sci-node.open{border-style:dashed;border-color:#8a6a3a}
+.sci-node.open{border-style:dashed;border-color:#8a6a3a;cursor:pointer}.sci-node.open:hover{background:#fbf3dc;border-style:solid}
 .sci-node.lock{opacity:.55;filter:grayscale(.7)}
 .sci-tw{overflow-x:auto}
 .sci-t{border-collapse:collapse;font-size:13px;min-width:100%}.sci-t th{font-size:15px;padding:4px 3px;font-weight:normal;border-bottom:1px solid #b89a68}.sci-t th:first-child{text-align:left;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8a6a3a}

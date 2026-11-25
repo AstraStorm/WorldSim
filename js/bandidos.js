@@ -20,7 +20,7 @@ function updateBandits(dt){
   const Bs = bandits();
   if ((banditClock += dt) > 10) { banditClock = 0;
     const roads = travelers.some(t => !t.sea && t.kind === 'caravana') || villages.some(g => popOf(g) >= 15 && g.coin);
-    if (roads && Bs.length < 2 && yearT > DAY_LEN * 2 && Math.random() < .06) { const s = banditSite(); if (s) { const names = ['los Lobos del Camino', 'la Banda del Tuerto', 'los Hijos de la Niebla', 'los Sin Tierra', 'la Banda de la Cicatriz']; const used = new Set(Bs.map(b => b.name)); const name = names.find(n => !used.has(n)) || 'una banda'; Bs.push({ name, cx:s[0] * T + 2, cy:s[1] * T + 3, x:s[0] * T + 2, y:s[1] * T + 3, men:3 + Math.floor(Math.random() * 3), loot:0, cd:0, faces:[banditFace(), banditFace(), banditFace()], dir:1 }); notify(`En el bosque se esconde una banda de salteadores: ${name}`, { x:s[0] * T, y:s[1] * T }); } }
+    if (roads && Bs.length < 1 && yearT > DAY_LEN * 3 && Math.random() < .02) { const s = banditSite(); if (s) { const names = ['los Lobos del Camino', 'la Banda del Tuerto', 'los Hijos de la Niebla', 'los Sin Tierra', 'la Banda de la Cicatriz']; const used = new Set(Bs.map(b => b.name)); const name = names.find(n => !used.has(n)) || 'una banda'; Bs.push({ name, cx:s[0] * T + 2, cy:s[1] * T + 3, x:s[0] * T + 2, y:s[1] * T + 3, men:3 + Math.floor(Math.random() * 3), loot:0, cd:0, faces:[banditFace(), banditFace(), banditFace()], dir:1 }); notify(`En el bosque se esconde una banda de salteadores: ${name}`, { x:s[0] * T, y:s[1] * T }); } }
     // Patrullas contra los campamentos que han hecho daño
     // (tras una emboscada el pueblo tarda en volver a intentarlo, y solo va si tiene gente suficiente para la banda)
     for (const b of Bs) if (!b.patrol) { const g = villages.find(o => popOf(o) && (o.banditT ?? -1e9) > yearT - DAY_LEN * 2 && (o.patrolCd ?? -1e9) < yearT && Math.hypot(o.fx * T - b.cx, o.fy * T - b.cy) < 90 * T);
@@ -54,7 +54,7 @@ function updateBandits(dt){
     }
     if (tgt && d < 6 && b.cd <= 0) { b.cd = 25; ambush(b, tgt); }
     // De vez en cuando, roban en un pueblo pequeño
-    if (!tgt && b.cd <= 0 && Math.random() < dt * .006) { const g = villages.find(o => popOf(o) && popOf(o) < 14 && Math.hypot(o.fx * T - b.cx, o.fy * T - b.cy) < 60 * T); if (g) { b.cd = 60; const take = Math.min(g.food, 10); g.food -= take; b.loot += take; g.banditT = yearT; notify(`${b.name} entra de noche en ${g.name} y se lleva ${Math.round(take)} de comida`, { x:g.fx * T, y:g.fy * T }); } }
+    if (!tgt && b.cd <= 0 && Math.random() < dt * .0025) { const g = villages.find(o => popOf(o) && popOf(o) < 14 && Math.hypot(o.fx * T - b.cx, o.fy * T - b.cy) < 60 * T); if (g) { b.cd = 160; const take = Math.min(g.food, 10); g.food -= take; b.loot += take; g.banditT = yearT; notify(`${b.name} entra de noche en ${g.name} y se lleva ${Math.round(take)} de comida`, { x:g.fx * T, y:g.fy * T }); } }
   }
   if (Bs.some(b => b.dead)) world.bandits = Bs.filter(b => !b.dead);
 }

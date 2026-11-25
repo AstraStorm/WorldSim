@@ -297,7 +297,7 @@ function drawShip(x, y, dir, steam, col, now, scale = 1, moving = true){
   if (scale !== 1) { vctx.save(); vctx.translate(x, y); vctx.scale(scale, scale); vctx.translate(-x, -y); drawShip(x, y, dir, steam, col, now, 1, moving); vctx.restore(); shipSpray(x, y, dir, steam, scale, moving); return; }
   const sk = steam ? 'ship:vapor' : 'ship:galeon', sc = artFrame(sk);
   if (sc) { // el casco, medio metido en el agua: se pinta solo lo que asoma y una línea de olas encima
-    const f = ART_MAP[sk], w = f[2], h = f[3], vis = Math.round(h * .8), bx = Math.round(x) - f[4], by = Math.round(y) + 2 - vis, bob = Math.round(Math.sin(now / 500 + x) * .6);
+    const f = ART_MAP[sk], w = f[2], h = f[3], vis = Math.round(h * .93), bx = Math.round(x) - f[4], by = Math.round(y) + 2 - vis, bob = Math.round(Math.sin(now / 500 + x) * .6);
     if (dir < 0) { vctx.save(); vctx.translate(Math.round(x), 0); vctx.scale(-1, 1); vctx.drawImage(sc, 0, 0, w, vis, -f[4], by + bob, w, vis); vctx.restore(); } else vctx.drawImage(sc, 0, 0, w, vis, bx, by + bob, w, vis);
     const wl = Math.round(y) + 2 + bob; vctx.fillStyle = 'rgba(225,242,255,.8)'; for (let k = 0; k < w; k += 2) vctx.fillRect(bx + k, wl - ((k / 2 + Math.floor(now / 250)) % 2), 2, 1); // olas contra el casco
     vctx.fillStyle = 'rgba(225,242,255,.45)'; for (let k = 1; k < 4; k++) vctx.fillRect(Math.round(x) - (dir >= 0 ? 1 : -1) * (f[4] + k * 4), wl + (k % 2), 3, 1); // estela

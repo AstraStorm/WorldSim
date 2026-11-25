@@ -919,7 +919,7 @@ function runTask(v, g, dt){
       if (kk === 'templo') { const [hw, hh] = KIND_DIMS[kk]; if (clearable(x - hw, y - hh, x + hw, y + 1)) clearSite(g, x - hw, y - hh, x + hw, y + 1); if (!tileFree(x, y) || buildingClash(x, y, kk, t.i)) return; }
       if (kk === 'mercado') { // se despeja y se empiedra su plaza
         clearSite(g, x - 5, y - 4, x + 5, y + 2); if (!tileFree(x, y)) return;
-        for (let yy = y - 4; yy <= y + 2; yy++) for (let xx = x - 5; xx <= x + 5; xx++) { const i = yy * W + xx; if (!WATER[world.biome[i]]) { plazaSet.add(i); if (i !== t.i) pathMap.add(i); farmMap.delete(i); } }
+        for (let yy = y - 4; yy <= y + 2; yy++) for (let xx = x - 5; xx <= x + 5; xx++) { const i = yy * W + xx; if (!WATER[world.biome[i]] && !plotIn(xx, yy, xx, yy)) { plazaSet.add(i); if (i !== t.i) pathMap.add(i); farmMap.delete(i); } }
         g.marketRect = { x0:x - 5, y0:y - 4, x1:x + 5, y1:y + 2 };
       }
       world.objs[t.i] = { key:{ altar:'altar:altar', monumento:'obelisk:monumento', templo:'temple:templo', mercado:'market:mercado' }[kk], v:0, ox:0, oy:0, vid:g.id };
@@ -962,7 +962,7 @@ function runTask(v, g, dt){
       if (g.holy) return;
       const x = t.hx, y = t.hy; if (villages.some(o => penOverlap(o, x - 6, y - 4, x + 6, y + 4)) || plotIn(x - 7, y - 5, x + 7, y + 5)) return; // se ha hecho un cercado o un cementerio ahí entretanto
       clearSite(g, x - 6, y - 4, x + 6, y + 4);
-      for (let yy = y - 4; yy <= y + 4; yy++) for (let xx = x - 6; xx <= x + 6; xx++) { const i = yy * W + xx; if (!WATER[world.biome[i]]) { plazaSet.add(i); holySet.set(i, g.id); pathMap.add(i); farmMap.delete(i); } }
+      for (let yy = y - 4; yy <= y + 4; yy++) for (let xx = x - 6; xx <= x + 6; xx++) { const i = yy * W + xx; if (!WATER[world.biome[i]] && !plotIn(xx, yy, xx, yy)) { plazaSet.add(i); holySet.set(i, g.id); pathMap.add(i); farmMap.delete(i); } }
       g.holy = { x0:x - 6, y0:y - 4, x1:x + 6, y1:y + 4, cx:x, cy:y, style:holyStyle(g) };
       g.marketRect ||= null; connect(g, x, y + 4);
       notify(`En ${g.name} han hecho una plaza sagrada para ${g.faith.god}`, { x:x * T, y:y * T });

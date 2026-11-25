@@ -2,6 +2,7 @@
 // ================= Árbol de la ciencia =================
 // · Los descubrimientos dejan de ir en fila: cada uno pide antes otros (la vacuna, la medicina; el vapor, la metalurgia
 //   y el reloj…). La nación investiga el más barato de los que ya puede (sciGoal)
+// · Cada nación elige qué investigar según lo que vive (sciWant); el jugador puede elegirlo pulsando en el árbol
 // · Ventana «Ciencia» (botón de arriba o desde la ficha del pueblo): el árbol de la nación elegida (descubierto,
 //   investigando, disponible, bloqueado), su ritmo de investigación, los saberes de cada uno de sus pueblos
 //   (pozos, barcas, escritura…) y la comparación con las demás naciones
@@ -10,17 +11,41 @@ const SCI_REQ = { medicina:[], agronomia:[], registro_civil:['agronomia'], metal
 const SCI_ICON = { medicina:'⚕️', agronomia:'🌾', registro_civil:'🪪', metalurgia:'⚒️', astronomia:'🔭', empedrado:'🛣️', economia:'💰', aeronautica:'🎈', reloj:'🕰️', polvora:'💥', vacunas:'💉', vapor:'🏭', ferrocarril:'🚂', dirigible:'🛩️' };
 for (const d of DISCOVERIES) d.req ||= (SCI_REQ[d.k] || []).filter(k => DISCOVERIES.some(x => x.k === k));
 const sciReady = (g, d) => d.req.every(k => knowsSci(g, k));
+// Qué conviene investigar según lo que vive la nación (y un poco de gusto propio): en guerra, pólvora y metal; con hambre,
+// el campo; con puerto, mirar las estrellas; con epidemias, la medicina… Si el jugador ha elegido uno, ese
+function sciWant(n, d){
+  const towns = liveTowns().filter(o => nationOf(o) === n), pop = towns.reduce((a, o) => a + popOf(o), 0), food = towns.reduce((a, o) => a + (o.food || 0), 0);
+  const war = [...rels.values()].some(r => r.war && (r.war.att === n.id || r.war.def === n.id)), sick = villagers.some(u => !u.dead && u.sick && towns.some(o => o.id === u.vid));
+  let w = 1 + (hashStr(n.name + d.k) % 100) / 100; // el gusto de cada nación
+  if (war && ['polvora', 'metalurgia', 'aeronautica', 'dirigible'].includes(d.k)) w *= 3;
+  if (food < pop * 1.5 && ['agronomia', 'empedrado'].includes(d.k)) w *= 3;
+  if (towns.some(o => o.port) && ['astronomia', 'vapor'].includes(d.k)) w *= 2;
+  if (sick && ['medicina', 'vacunas'].includes(d.k)) w *= 3;
+  if (towns.some(o => o.coin) && ['economia', 'registro_civil'].includes(d.k)) w *= 1.6;
+  if (towns.some(o => hasMine(o)) && ['metalurgia', 'vapor', 'ferrocarril'].includes(d.k)) w *= 1.6;
+  return w / d.cost;
+}
 function sciGoal(g){
-  const n = nationOf(g), S = sciOf(g); let d = n.sciGoal && DISCOVERIES.find(x => x.k === n.sciGoal);
-  if (!d || S[d.k] || !sciReady(g, d)) { d = DISCOVERIES.filter(x => !S[x.k] && sciReady(g, x)).sort((a, b) => a.cost - b.cost)[0] || null; n.sciGoal = d ? d.k : null; }
+  const n = nationOf(g), S = sciOf(g), ok = d => d && !S[d.k] && sciReady(g, d);
+  const pick = n.sciPick && DISCOVERIES.find(x => x.k === n.sciPick); if (ok(pick)) return pick; n.sciPick = null;
+  let d = n.sciGoal && DISCOVERIES.find(x => x.k === n.sciGoal);
+  if (!ok(d)) { d = DISCOVERIES.filter(ok).sort((a, b) => sciWant(n, b) - sciWant(n, a))[0] || null; n.sciGoal = d ? d.k : null; }
   return d;
 }
+// Los descubrimientos se contagian menos al comerciar (antes acababan todas las naciones con lo mismo)
+spreadScience = function(a, b){
+  for (const [x, y] of [[a, b], [b, a]]) {
+    const miss = DISCOVERIES.filter(d => knowsSci(x, d.k) && !knowsSci(y, d.k) && sciReady(y, d)); if (!miss.length || Math.random() > .04) continue;
+    const d = miss[0]; sciOf(y)[d.k] = Math.floor(yearT / DAY_LEN) + 1; if (nationOf(y).sciGoal === d.k) nationOf(y).sciGoal = null;
+    notify(`Los de ${nationOf(y).name} aprenden ${d.txt} de ${nationOf(x).name}`, { x:y.fx * T, y:y.fy * T });
+  }
+};
 // Investigar: como antes, pero hacia el objetivo del árbol; y se apunta cuánto se ha investigado en total (para el ritmo)
 research = function(g, pts){
   const n = nationOf(g), S = sciOf(g); n.research = (n.research || 0) + pts; n.sciTotal = (n.sciTotal || 0) + pts;
   const day = Math.floor(yearT / DAY_LEN), H = n.sciHist ||= []; if (!H.length || H[H.length - 1][0] !== day) { H.push([day, n.sciTotal]); if (H.length > 8) H.shift(); }
   const next = sciGoal(g); if (!next || n.research < next.cost) return;
-  n.research -= next.cost; S[next.k] = day + 1; n.sciGoal = null;
+  n.research -= next.cost; S[next.k] = day + 1; n.sciGoal = null; if (n.sciPick === next.k) n.sciPick = null;
   const first = !(world.sciFirst ||= {})[next.k]; if (first) world.sciFirst[next.k] = n.id;
   notify(`${first ? '¡Por primera vez en el mundo! ' : ''}Los sabios de ${n.name} descubren ${next.txt}: ${next.eff}`, { x:n.fx * T, y:n.fy * T });
   sendNews(n, `los sabios de ${n.name} han descubierto ${next.txt}`);
@@ -56,6 +81,7 @@ function sciPanel(){
   el.addEventListener('click', e => {
     if (e.target.closest('.x') || e.target === el) { el.hidden = true; return; }
     const r = e.target.closest('[data-scinat]'); if (r) { sciUI.nat = +r.dataset.scinat; renderSciTree(); el.querySelector('.sci-body').scrollTo({ top:0, behavior:'smooth' }); return; }
+    const pk = e.target.closest('.sci-node.open, .sci-node.now'); if (pk) { const n = villageById(sciUI.nat); if (n) { n.sciPick = pk.dataset.k; n.sciGoal = null; renderSciTree(); } return; }
     const g = e.target.closest('[data-scigo]'); if (g) { const o = villageById(+g.dataset.scigo); if (o) { el.hidden = true; centerOn(o.fx * T, o.fy * T, Math.max(zoom, 3)); } }
   });
   el.querySelector('.sci-nat').onchange = e => { sciUI.nat = +e.target.value; renderSciTree(); };
@@ -88,7 +114,7 @@ function renderSciTree(){
     const has = S[d.k], st = has ? 'got' : d === goal ? 'now' : sciReady(n, d) ? 'open' : 'lock', firstN = world.sciFirst && world.sciFirst[d.k] != null && villageById(world.sciFirst[d.k]);
     const who = sciNations().filter(o => knowsSci(o, d.k)).length;
     return `<div class="sci-node ${st}" data-k="${d.k}" data-req="${d.req.join(',')}"><div class="sci-ic">${SCI_ICON[d.k] || '📘'}</div><div><b>${esc(capFirst(d.txt))}</b><p>${esc(d.eff)}</p>
-      <span class="sci-tag">${has ? `✓ día ${has}` : st === 'now' ? `investigando · ${Math.round((n.research || 0) / d.cost * 100)} %` : st === 'open' ? `disponible · ${d.cost} puntos` : `necesita ${d.req.filter(k => !S[k]).map(k => esc(DISCOVERIES.find(x => x.k === k).txt)).join(' y ')}`}</span>
+      <span class="sci-tag">${has ? `✓ día ${has}` : st === 'now' ? `investigando · ${Math.round((n.research || 0) / d.cost * 100)} %${n.sciPick === d.k ? ' · elegido por ti' : ''}` : st === 'open' ? `disponible · ${d.cost} puntos · pulsa para investigarlo` : `necesita ${d.req.filter(k => !S[k]).map(k => esc(DISCOVERIES.find(x => x.k === k).txt)).join(' y ')}`}</span>
       <span class="sci-who">${who ? `${who} ${who === 1 ? 'nación lo sabe' : 'naciones lo saben'}` : 'nadie lo sabe aún'}${firstN ? ` · los primeros: ${sciName(firstN)}` : ''}</span></div></div>`; }).join('')}</div>`).join('')}</div>`;
   // Saberes de los pueblos
   h += `<h3 class="sci-h">Saberes de sus pueblos</h3><div class="sci-tw"><table class="sci-t"><thead><tr><th>Pueblo</th>${SABERES.map(([, ic, t]) => `<th title="${t}">${ic}</th>`).join('')}<th>Total</th></tr></thead><tbody>${towns.sort((a, b) => popOf(b) - popOf(a)).map(o => { const kn = o.know || {}, c = SABERES.filter(([k]) => kn[k]).length;

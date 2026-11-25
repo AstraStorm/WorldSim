@@ -93,6 +93,7 @@ function fortTarget(v, g, job){
       if (f && f.ruined) { const i0 = f.i; world.objs[i0] = null; composeRegion(i0 % W - 10, ((i0 / W) | 0) - 16, i0 % W + 10, ((i0 / W) | 0) + 12); g.fort = null; } // se desescombra
       let type = fortType(g), p = fortSite(g, type); if (!p && (type === 'roca' || type === 'foso')) p = fortSite(g, type = 'torre'); if (!p) { g.fortNoSite = yearT + DAY_LEN * 3; return null; }
       f = g.fort = { i:p[1] * W + p[0], type, prog:0, built:false, food:0, water:0, fuel:0 };
+      clearSite(g, p[0] - 6, p[1] - 10, p[0] + 6, p[1] + 1); // se tala el solar: la obra se ve desde el principio
       notify(`${g.name} empieza a levantar ${/^(Empalizada|Torre)/.test(FORTS[type].name) ? 'una' : 'un'} ${FORTS[type].name.toLowerCase()}: ${FORTS[type].desc}`, { x:p[0] * T, y:p[1] * T });
     }
     const sb = standBy(f.i) || [(f.i % W) * T + 2, ((f.i / W) | 0) * T + 9];

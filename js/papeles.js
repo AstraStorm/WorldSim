@@ -95,7 +95,7 @@ function buildCamp(g, k, at){
     const x0 = x - (C.w >> 1), y0 = y - (C.h >> 1), x1 = x0 + C.w - 1, y1 = y0 + C.h - 1;
     if (!clearable(x0, y0, x1, y1) || plotIn(x0 - 1, y0 - 1, x1 + 1, y1 + 1) || volcDanger(x, y, 2)) return false;
     for (let yy = y0 - 1; yy <= y1 + 7; yy++) for (let xx = x0 - 2; xx <= x1 + 2; xx++) { if (xx < 0 || yy < 0 || xx >= W || yy >= H) return false; const i = yy * W + xx, o = world.objs[i]; if (o && !['tree', 'berry'].includes(OBJ[o.key][1])) return false; }
-    for (let yy = y0; yy <= y1; yy++) for (let xx = x0; xx <= x1; xx++) { const i = yy * W + xx; if (farmMap.has(i) || pathMap.has(i) || wallSet.has(i) || isRoad(i)) return false; }
+    for (let yy = y0; yy <= y1; yy++) for (let xx = x0; xx <= x1; xx++) { const i = yy * W + xx; if (farmMap.has(i) || pathMap.has(i) || wallSet.has(i) || isRoad(i) || plazaSet.has(i) || holySet.has(i) || underBuilding(g, xx, yy)) return false; }
     return true;
   });
   if (!p) { g.campFail = yearT; return null; }

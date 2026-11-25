@@ -87,8 +87,8 @@ function updatePirates(dt){
   for (const s of [...P, ...N]) { s.max ??= s.hp; s.cd ??= 0; }
   if ((pirateClock += dt) > 10) { pirateClock = 0;
     const traffic = travelers.some(t => t.sea) || villages.filter(g => g.port && popOf(g)).length >= 2;
-    const ports = villages.filter(g => g.port && popOf(g)).length, maxP = Math.min(3, 1 + Math.floor(ports / 3)); // más puertos, más piratas (como mucho tres)
-    if (traffic && P.filter(p => !p.leave).length < maxP && yearT > DAY_LEN * 2 && Math.random() < .04) { const s = seaSpawnFar(); if (s) { const used = new Set(P.map(p => p.name)); const name = PIRATE_NAMES.find(n => !used.has(n)) || 'Los Sin Nombre', hp = 3 + Math.floor(Math.random() * 3); P.push({ name, x:s[0], y:s[1], dir:1, hp, max:hp, gold:0, cd:0, raidCd:0, wx:s[0], wy:s[1] }); notify(`Aparecen piratas en alta mar: el barco «${name}», con bandera negra`, { x:s[0], y:s[1] }); } }
+    const ports = villages.filter(g => g.port && popOf(g)).length, maxP = Math.min(2, 1 + Math.floor(ports / 5)); // más puertos, más piratas (como mucho dos)
+    if (traffic && P.filter(p => !p.leave).length < maxP && yearT > DAY_LEN * 2 && Math.random() < .012) { const s = seaSpawnFar(); if (s) { const used = new Set(P.map(p => p.name)); const name = PIRATE_NAMES.find(n => !used.has(n)) || 'Los Sin Nombre', hp = 3 + Math.floor(Math.random() * 3); P.push({ name, x:s[0], y:s[1], dir:1, hp, max:hp, gold:0, cd:0, raidCd:0, wx:s[0], wy:s[1] }); notify(`Aparecen piratas en alta mar: el barco «${name}», con bandera negra`, { x:s[0], y:s[1] }); } }
     for (const g of villages) {
       if (!popOf(g) || nationOf(g) !== g || !g.port || !hasBarracks(g) || sailorsOf(g).length < 3) continue;
       // Contra los piratas, si les han atacado hace poco
@@ -129,7 +129,7 @@ function updatePirates(dt){
         p.wanderT = 0; p.route = null; for (let k = 0; k < 30; k++) { const a = Math.random() * Math.PI * 2, r0 = 60 + Math.random() * 140, x = p.x + Math.cos(a) * r0, y = p.y + Math.sin(a) * r0; if (seaTile(x, y)) { p.wx = x; p.wy = y; break; } }
       }
       // Saqueo de la costa: un pueblo con muelle cercano
-      if (p.raidCd <= 0 && Math.random() < dt * .01) { const g = villages.find(o => popOf(o) && o.port && Math.hypot(o.fx * T - p.x, o.fy * T - p.y) < 90); if (g) { p.raidCd = 40; const take = Math.min(g.food, 15); g.food -= take; p.gold += 3; g.piracyT = yearT; misfortune(g, 'guerra'); notify(`¡Los piratas de «${p.name}» saquean la costa de ${g.name} y se llevan ${Math.round(take)} de comida!`, { x:p.x, y:p.y }); } }
+      if (p.raidCd <= 0 && Math.random() < dt * .004) { const g = villages.find(o => popOf(o) && o.port && Math.hypot(o.fx * T - p.x, o.fy * T - p.y) < 90); if (g) { p.raidCd = 140; const take = Math.min(g.food, 15); g.food -= take; p.gold += 3; g.piracyT = yearT; misfortune(g, 'guerra'); notify(`¡Los piratas de «${p.name}» saquean la costa de ${g.name} y se llevan ${Math.round(take)} de comida!`, { x:p.x, y:p.y }); } }
     }
   }
   // Armadas y buques de guerra

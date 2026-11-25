@@ -36,7 +36,7 @@ function wallGrow(g){
   if (n > 6) notify(out ? `${g.name} ha crecido más allá de su muralla: la derriban y empiezan otra más grande` : `En ${g.name} rehacen la muralla, más ceñida al pueblo`, { x:g.fx * T, y:g.fy * T });
 }
 // Lo que levanta cada tramo y lo que cuesta
-const wallStretch = g => fortified(g) ? 20 : underThreat(g) ? 14 : 10;
+const wallStretch = g => Math.round((fortified(g) ? 20 : underThreat(g) ? 14 : 10) * Math.max(1, wallPlan(g).length / 220)); // las murallas de las ciudades grandes, con más cuadrillas (cada tramo se paga igual)
 const wallCost = g => fortified(g) ? .5 : 1;
 // Tras un ataque (desde misfortune): prisa por amurallarse y, donde se vota, ley de fortificación
 function onAttacked(g){

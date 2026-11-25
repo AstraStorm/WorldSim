@@ -10,7 +10,8 @@ const warCap = (a, b) => Math.max(24, Math.round((popOf(a) + popOf(b)) * .3)); /
 // campos, murallas ni edificios, y lejos de los pueblos y de los volcanes
 function campOk(x, y){
   if (x < 6 || y < 5 || x >= W - 6 || y >= H - 4 || volcDanger(x, y, 4)) return false;
-  if (villages.some(o => popOf(o) && (Math.hypot(o.fx - x, o.fy - y) < 10 || underBuilding(o, x, y)))) return false;
+  if (villages.some(o => popOf(o) && Math.hypot(o.fx - x, o.fy - y) < Math.max(10, townRadius(o) * .6))) return false; // nunca dentro de un pueblo
+  for (let yy = y - 4; yy <= y + 3; yy++) for (let xx = x - 5; xx <= x + 5; xx++) if (underBuilding(null, xx, yy) || plotIn(xx, yy, xx, yy) || holySet.has(yy * W + xx)) return false; // ni pegadas a un edificio
   for (let yy = y - 3; yy <= y + 2; yy++) for (let xx = x - 4; xx <= x + 4; xx++) {
     const i = yy * W + xx, o = world.objs[i];
     if (WATER[world.biome[i]] || world.biome[i] === B.LAVA || pathMap.has(i) || farmMap.has(i) || plazaSet.has(i) || wallSet.has(i) || bridgeSet.has(i) || (o && OBJ[o.key][1] !== 'stone' && OBJ[o.key][1] !== 'berry')) return false;
@@ -167,3 +168,28 @@ function drawBattlefields(now){
     vctx.fillStyle = '#c83a2a'; vctx.beginPath(); vctx.moveTo(Bt.x + 1, Bt.y - 20); vctx.lineTo(Bt.x + 9, Bt.y - 17); vctx.lineTo(Bt.x + 1, Bt.y - 14); vctx.fill(); // estandarte de batalla
   }
 }
+// ---- Destrozos: de camino al centro, las tropas que vienen a castigar o a saquear rompen y queman lo que pillan ----
+// · Castigo: todo (también el ayuntamiento); saqueo, esclavos o conversión: casas, almacenes y demás, menos el ayuntamiento;
+//   conquista: solo las torres y el cuartel (el pueblo lo quieren entero, para quedárselo)
+let razeT = 0;
+SYSTEMS.push(dt => {
+  if (!world || (razeT -= dt) > 0) return; razeT = 1;
+  for (const v of villagers) {
+    if (v.dead || v.away || !v.task || v.task.k !== 'asalto' || v.enemy) continue;
+    const g = villageById(v.vid), eg = villageById(v.task.enemy), r = eg && g && warRel(eg, g); if (!r || !r.war) continue;
+    const goal = r.war.goal || 'saqueo', tx = v.x / T, ty = v.y / T;
+    if (Math.hypot(tx - eg.fx, ty - eg.fy) > townRadius(eg) + 4) continue;
+    let best = null, bd = 3.5;
+    for (const b of buildingsOf(eg)) {
+      const o = world.objs[b]; if (!o || o.burnt) continue;
+      if (goal === 'conquista' ? !/^(tower|barracks)/.test(o.key) : b === eg.hall && goal !== 'castigo') continue;
+      const d = Math.hypot(b % W - tx, ((b / W) | 0) + 1 - ty); if (d < bd) { bd = d; best = b; }
+    }
+    if (best == null) continue;
+    const o = world.objs[best], hard = goal === 'castigo' ? 1.6 : 1;
+    v.dir = (best % W) * T + 2 < v.x ? -1 : 1; v.stab = .25; // el golpe
+    damageBuilding(best, .03 * hard * (v.ironW ? 1.4 : 1));
+    if (world.objs[best] && wooden(o) && !fires.has(best) && Math.random() < .04 * hard) fires.set(best, { t:0, life:10, tree:true, bld:true }); // y la tea
+    if (!r.war.razeMsg || yearT - r.war.razeMsg > DAY_LEN * .5) { r.war.razeMsg = yearT; notify(`Las tropas de ${g.name} destrozan lo que encuentran en ${eg.name}`, { x:v.x, y:v.y }); }
+  }
+});
