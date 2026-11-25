@@ -294,6 +294,22 @@ if os.path.exists(os.path.join(SRC, 'antenasComunicacion.png')):  # antena de te
     add('tele:antena', shrink(box_parts('antenasComunicacion.png', (270, 20, 660, 830)), 11, 40))
     add('tele:parabolica', shrink(box_parts('antenasComunicacion.png', (1060, 140, 1570, 820)), 15, 40))
 
+if os.path.exists(os.path.join(SRC, 'lanzadoras.png')):  # lanzaderas: base, mejorada y puerto espacial
+    for k, box, w in [(1, (70, 230, 500, 700), 34), (2, (600, 180, 1190, 700), 46), (3, (1290, 60, 2075, 700), 60)]:
+        add(f'space:lanzadera{k}', shrink(box_parts('lanzadoras.png', box), w, 40))
+if os.path.exists(os.path.join(SRC, 'cohetes.png')):  # cohetes (a la misma escala, ~0,07) y sus piezas sueltas para separar las fases
+    R = [('a', (45, 240, 250, 640), 13), ('b', (255, 170, 480, 640), 14), ('c', (530, 145, 715, 640), 12), ('c_sup', (750, 115, 870, 295), 7), ('c_inf', (715, 335, 905, 640), 12),
+         ('d', (1000, 130, 1205, 645), 13), ('d_sup', (1262, 100, 1372, 272), 6), ('d_int', (1278, 282, 1362, 368), 5), ('d_low', (1215, 375, 1425, 645), 13),
+         ('e', (1500, 100, 1740, 645), 15), ('e_sup', (1880, 45, 2005, 230), 7), ('e_int', (1885, 232, 2000, 315), 6), ('e_low', (1795, 320, 2090, 645), 19)]
+    for k, box, w in R: add(f'rocket:{k}', shrink(box_parts('cohetes.png', box), w, 40))
+if os.path.exists(os.path.join(SRC, 'siloMisiles.png')):  # silo de misiles: 12 fotogramas (se abre y se cierra)
+    xs = [(15, 280), (310, 575), (605, 870), (900, 1165), (1195, 1460), (1490, 1760)]
+    for r, (y0, y1) in enumerate([(125, 425), (495, 795)]):
+        for c, (x0, x1) in enumerate(xs): add(f'silo:{r * 6 + c}', shrink(box_parts('siloMisiles.png', (x0, y0, x1, y1)), 24, 40))
+if os.path.exists(os.path.join(SRC, 'misiles.png')):  # 6 misiles
+    for k, (box, w) in enumerate([((170, 40, 345, 495), 8), ((705, 70, 830, 495), 5), ((1195, 15, 1365, 495), 8), ((175, 565, 340, 1005), 8), ((715, 560, 820, 1005), 4), ((1195, 545, 1370, 1005), 8)]):
+        add(f'missile:{k}', shrink(box_parts('misiles.png', box), w, 40))
+
 if os.path.exists(os.path.join(SRC, 'casino.png')):
     add('casino:casino', shrink(box_parts('casino.png', (380, 190, 1150, 830)), 40, 48))
 

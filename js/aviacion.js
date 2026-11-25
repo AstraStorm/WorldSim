@@ -40,10 +40,14 @@ SYSTEMS.push(dt => {
   }
 });
 // Un sitio lejos de la ciudad (como la central): reutiliza la búsqueda de la electricidad con otra medida
-function farSite(g, hw, hh){
-  const towns = liveTowns().filter(q => q !== g), cx = Math.round(g.fx), cy = Math.round(g.fy);
-  for (let r = 16; r <= 120; r += 5) for (let k = 0; k < 40; k++) {
-    const a2 = k / 40 * Math.PI * 2, x = Math.round(cx + Math.cos(a2) * r), y = Math.round(cy + Math.sin(a2) * r * .85);
+function farSite(g, hw, hh){ // (alrededor de la ciudad y, si no cabe, de las demás ciudades de su nación)
+  for (const o of [g, ...liveTowns().filter(q => q !== g && nationOf(q) === nationOf(g))]) { const s0 = farSite1(o, g, hw, hh); if (s0) return s0; }
+  return null;
+}
+function farSite1(c, g, hw, hh){
+  const towns = liveTowns().filter(q => q !== g), cx = Math.round(c.fx), cy = Math.round(c.fy);
+  for (let r = 16; r <= 150; r += 5) for (let k = 0; k < 48; k++) {
+    const a2 = k / 48 * Math.PI * 2, x = Math.round(cx + Math.cos(a2) * r), y = Math.round(cy + Math.sin(a2) * r * .85);
     if (x < hw + 4 || y < hh + 4 || x >= W - hw - 4 || y >= H - 4 || towns.some(o => nationOf(o) !== nationOf(g) && Math.hypot(o.fx - x, o.fy - y) < 25)) continue;
     if (!clearable(x - hw, y - hh, x + hw, y + 1) || pathIn(x - hw, y - hh, x + hw, y) || plazaIn(x - hw, y - hh, x + hw, y) || penOverlap(null, x - hw, y - hh, x + hw, y + 1) || buildingClash(x, y, 'aerodromo')) continue;
     return [x, y];
