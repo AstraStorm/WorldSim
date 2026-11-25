@@ -221,11 +221,14 @@ const BUILD_DIMS = { altar:[1, 2], temple:[4, 7], obelisk:[1, 4], market:[4, 4],
 const KIND_DIMS = { altar:[1, 2], templo:[4, 7], mercado:[4, 4], casa:[4, 6], ayuntamiento:[5, 7], molino:[3, 8], pozo:[2, 4], almacen:[4, 5], torre:[2, 7], cantera:[4, 4], banco:[4, 5], maravilla:[6, 10], herreria:[3, 5], hospital:[4, 5], cuartel:[5, 6], lonja:[5, 6], teatro:[6, 6], coliseo:[6, 6], taberna:[5, 5], catedral:[6, 13], escuela:[5, 9], tribunal:[4, 7], carcel:[4, 6], imprenta:[4, 6], sindicato:[4, 6], parlamento:[6, 8], academia:[4, 8], mina:[4, 5], universidad:[5, 9], consejo:[6, 9], espias:[4, 6], granero:[4, 6], ahumadero:[3, 5], lenera:[3, 4], postas:[4, 6], chabola:[2, 4] };
 const TASK_KIND = { templo:'templo', mercado:'mercado', construir:'casa', ayuntamiento:'ayuntamiento', molino:'molino', pozo:'pozo', almacen:'almacen', torre:'torre', cantera:'cantera', banco:'banco', maravilla:'maravilla', herreria:'herreria', hospital:'hospital', cuartel:'cuartel', lonja:'lonja', teatro:'teatro', coliseo:'coliseo', taberna:'taberna', catedral:'catedral', escuela:'escuela', tribunal:'tribunal', carcel:'carcel', imprenta:'imprenta', sindicato:'sindicato', parlamento:'parlamento', academia:'academia', mina:'mina', universidad:'universidad', consejo:'consejo', espias:'espias', granero:'granero', ahumadero:'ahumadero', lenera:'lenera', postas:'postas', chabola:'chabola' };
 // ¿Choca con un edificio ya hecho o con uno que alguien está a punto de levantar? (skip: el propio solar)
+// Todos los edificios (y las hogueras) de todos los pueblos, una vez por paso: buildingClash se pregunta muchísimo
+let abC = null, abT = -1;
+function allBuildings(){ if (abT !== yearT || !abC) { abT = yearT; abC = []; for (const g of villages) { for (const b of buildingsOf(g)) abC.push(b); abC.push(Math.round(g.fy) * W + Math.round(g.fx)); } } return abC; }
 function buildingClash(x, y, kind, skip){
   if (volcDanger(x, y)) return true; // ni en las faldas de un volcán ni sobre la lava (volcanes.js)
   const [hw, hh] = KIND_DIMS[kind] || [4, 5];
   const hit = (bx, by, d) => !(x + hw < bx - d[0] || x - hw > bx + d[0] || y + 1 < by - d[1] || y - hh > by + 1);
-  for (const g of villages) for (const b of [...buildingsOf(g), g.fy * W + g.fx]) {
+  for (const b of allBuildings()) {
     if (b === skip) continue; const o = world.objs[b]; if (!o) continue;
     const d = BUILD_DIMS[o.key.split(':')[0]]; if (d && hit(b % W, (b / W) | 0, d)) return true;
   }
@@ -3049,7 +3052,7 @@ function updateVillages(dt){
     if (desireSet.has(i) && wear[i] < 12) { desireSet.delete(i); pathMap.delete(i); }
     if (wear[i] <= 0) { wear[i] = 0; wornSet.delete(i); }
   }
-  if ((zoneT -= dt) <= 0) { zoneT = 5; buildZones(); } // el territorio cambia despacio
+  if ((zoneT -= dt) <= 0) { zoneT = 15; buildZones(); } // el territorio cambia despacio
   const si = seasonInfo().i, grow = [1, 1.2, .6, .2][si];
   for (const [i, f] of farmMap) {
     const g = villageById(f.vid); if (!g) { farmMap.delete(i); continue; }

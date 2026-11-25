@@ -214,6 +214,11 @@ function centralFits(g, kind, x, y){
 }
 { const base = planSite; planSite = function(g, kind){
   if (!CENTRAL.has(kind)) return base.apply(this, arguments);
+  const C = g.centralC; if (C && C.kind === kind && C.t === yearT) return C.p; // (bestSite pregunta varias veces seguidas)
+  if ((g.centralFull || {})[kind] > yearT) return base.apply(this, arguments); // el centro estaba lleno hace poco: ni se busca
+  const p = centralPlan(g, kind); g.centralC = { kind, t:yearT, p }; if (!p) (g.centralFull ||= {})[kind] = yearT + DAY_LEN; return p || base.apply(this, arguments);
+}; }
+function centralPlan(g, kind){ {
   const ring = (r0, r1) => { for (let r = r0; r <= r1; r++) for (let k = 0; k < r * 6; k++) { const a = k / (r * 6) * Math.PI * 2, x = Math.round(g.fx + Math.cos(a) * r), y = Math.round(g.fy + 3 + Math.sin(a) * r * .8); if (centralFits(g, kind, x, y)) return [x, y]; } return null; };
   const c = ring(4, 14); if (c) return c;
   // Lleno: se derriba la cabaña más céntrica para hacer sitio (si sobran casas o es un edificio de mucho peso)
@@ -226,8 +231,8 @@ function centralFits(g, kind, x, y){
     notify(`En ${g.name} derriban una cabaña del centro para hacer sitio a ${kind === 'almacen' ? 'un almacén nuevo' : `el ${kind}`}: lo importante, protegido en el centro`, { x:x * T, y:y * T });
     if (centralFits(g, kind, x, y)) return [x, y];
   }
-  return ring(15, 24) || base.apply(this, arguments); // si no, el solar libre más cercano al centro
-}; }
+  return ring(15, 24); // si no, el solar libre más cercano al centro (y si tampoco, el sitio de siempre)
+} }
 // ---- Como en WorldBox: espadas cruzadas sobre cada pelea y la conquista en porcentaje ----
 // · Donde hay soldados luchando sale un icono de espadas que chocan (late y se balancea); sobre los ejércitos que van
 //   hacia el enemigo, uno más pequeño

@@ -68,6 +68,7 @@ function updateLife(dt){
 let lastT = 0, gameSpeed = 1;
 const SYSTEMS = [dt => { updateBallGames(dt); olympicsTick(dt); }, dt => updateSieges(dt), dt => updateVillagers(dt), dt => updateAnimals(dt), dt => updateFires(dt), dt => updateClimate(dt), dt => updateLife(dt), (dt, t) => updateVolcanoes(dt, t),
   dt => updateWeather(dt), dt => { updateStorms(dt); updateWhirls(dt); }, dt => updateSandstorms(dt), dt => updateMeteors(dt), dt => updateBalloons(dt), dt => updateLanguages(dt), dt => clearWallsOverPens(dt), dt => updateCouncil(dt), dt => updatePirates(dt), dt => updateBandits(dt), dt => updateQuakes(dt), (dt, t) => updateWaves(t)];
+let simLag = 0; // pasos que no cupieron en el último fotograma
 const WAVES_SYS = SYSTEMS[SYSTEMS.length - 1];
 // Sistemas lentos y suaves (clima, tiempo, idiomas, consejo, islas...): a velocidad x2-x5 se calculan una sola vez por
 // fotograma con todo el tiempo junto, en vez de repetirlos en cada paso (dan lo mismo y cuestan mucho menos)
@@ -79,7 +80,9 @@ function loop(t){
   if (!busy) {
     // A 2×, 3× o 4× la simulación da varios pasos por fotograma (el oleaje, que es solo dibujo, uno);
     // cada sistema por separado: si uno falla en un fotograma, el resto sigue y el juego no se congela
+    const simT0 = performance.now();
     for (let k = 0; k < gameSpeed; k++) {
+      if (k && performance.now() - simT0 > 40) { simLag = gameSpeed - k; break; } // no da para tanto: el resto, otro fotograma (más lento, pero sin tirones)
       yearT += dt;
       for (let n = 0; n < SYSTEMS.length; n++) { const S = SYSTEMS[n]; if (k && (S === WAVES_SYS || isSlowSys(S))) continue; if (!k && isSlowSys(S)) { try { S(dt * gameSpeed, t); } catch (err) { console.error(err); } continue; } try { SYSTEMS[n](dt, t); } catch (err) { console.error(err); } }
     }

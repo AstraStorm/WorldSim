@@ -29,7 +29,9 @@ const villageById = id => villages.find(g => g.id === id);
 const fireXY = g => [g.fx * T + 2, g.fy * T + 2];
 // Cada uno tiene su sitio alrededor de la hoguera: si no, se amontonan todos en el mismo punto
 const fireSpot = (v, g) => { v.slotA ??= Math.random() * Math.PI * 2; return [g.fx * T + 2 + Math.cos(v.slotA) * 9, g.fy * T + 4 + Math.sin(v.slotA) * 6]; };
-const popOf = g => villagers.filter(v => !v.dead && v.vid === g.id).length;
+// Habitantes de cada pueblo: se cuentan una vez por paso (antes se recorría a toda la gente en cada pregunta, miles por fotograma)
+let popC = null, popCT = -1, popCN = -1;
+const popOf = g => { if (popCT !== yearT || popCN !== villagers.length) { popCT = yearT; popCN = villagers.length; popC = new Map(); for (const v of villagers) if (!v.dead) popC.set(v.vid, (popC.get(v.vid) || 0) + 1); } return popC.get(g.id) || 0; };
 const housesOf = g => g.houses.filter(i => world.objs[i] && world.objs[i].key.startsWith('house') && !world.objs[i].burnt);
 const houseRoom = i => { const k = world.objs[i] && world.objs[i].key; return k === 'house:piedra' || k === 'house:mansion' ? 6 : k === 'house:chabola' ? 3 : 4; }; // la de piedra (y la mansión), un piso más; la chabola, menos
 const houseCap = g => housesOf(g).reduce((a, i) => a + houseRoom(i), 0);
