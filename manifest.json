@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611251419",
- "fecha": "2026-11-25 14:19",
+ "version": "202611251443",
+ "fecha": "2026-11-25 14:43",
  "novedades": [
   {
    "fecha": "2026-11-25",
-   "texto": "Árbol de la ciencia"
+   "texto": "Ejércitos con víveres; casas en el borde"
+  },
+  {
+   "fecha": "2026-11-25",
+   "texto": "Ciencia en árbol: requisitos entre descubrimientos y ventana «Ciencia» con el árbol, el progreso de la nación, los saberes de sus pueblos y la comparación entre naciones; imperios sin nombre ya no salen como «undefined»"
   },
   {
    "fecha": "2026-11-25",
@@ -46,20 +50,16 @@
   {
    "fecha": "2026-11-25",
    "texto": "Escritorio: procesador a tope (prioridad por encima de lo normal, sin frenar en segundo plano, más memoria para JavaScript)"
-  },
-  {
-   "fecha": "2026-11-25",
-   "texto": "Rendimiento, libro de historia nuevo, leyes con sentido, fuegos con pólvora, tormentas de arena y rayos"
   }
  ],
  "archivos": {
-  "index.html": "c176dfcdc6b4cda28b2e519b46913177e3ac05e0",
+  "index.html": "7c7aa3ac86bc2a68b77b97e831f40525f68939a1",
   "css/estilo.css": "b76e48333f423b51f0662ed487cea21e92f3f46d",
   "js/aldeanos.js": "d9920d364407645d80f1cdfbdcc1baf7fd203032",
   "js/ambiente.js": "6c96bf777f6cdfc55b648f495836521ee28aeb8f",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "49b41bffcc75de50763842e1cad1eb0daa4e6c68",
-  "js/arte.js": "374e0e206f048ad8da5f253f3def1479c0ae683f",
+  "js/arte.js": "8605ae19fd841b87e3458e29a840af61760191e6",
   "js/arte_mapa.js": "373de74c89b7418c4a040aaea0ee2fd64b367b53",
   "js/bandidos.js": "a41a64350dfb0cadc79876bf166b9e56ee1a9962",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
@@ -122,13 +122,13 @@
   "js/riqueza.js": "4437665e375d993ccfc2bec62225436b8fd03dce",
   "js/rutas.js": "6e12cafc1992e09fc3c2b5b13ca7d7db6416c364",
   "js/sindicatos.js": "f7cb8bf83ff74322a6fc45cc6ac90550425c6d15",
-  "js/sociedad.js": "ef356db1e2997f196a68fb803be1acc231c0e419",
+  "js/sociedad.js": "13f3afbd1e0562b7e0997a9cee679354c9bba81e",
   "js/sonido.js": "25be9d9bda62336aba463c82e31668d0e9b2bc54",
   "js/titulares.js": "0506409e843da939370bb404b894a52cffa68620",
   "js/trabajo.js": "6337df3b06ff54f44790b7a744c363a098833c07",
   "js/tratados.js": "c7221ac52158a928a77489448ca7f1ce45ade8e2",
   "js/ui.js": "87256f0f01b8aa2a5b9d282c0a2a538dce73cf85",
-  "js/urbanismo.js": "f3201c99969af99f76a39559ea8579c12a52349a",
+  "js/urbanismo.js": "d5f15c6310221b0b41cd973f642eeaccd021883a",
   "js/vegetacion.js": "440be3b609ce5146ed024c3c0ea0ec694344c592",
   "js/vida.js": "5b036c14fbd1d9fc061f4f98ddd8adcb43134ef0",
   "js/visitas.js": "5cafd3070fdf9de08e0a6eebf6644ad13c46bc1d",

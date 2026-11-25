@@ -11,10 +11,12 @@
 const sedNow = g => g.sedAlarm != null && yearT - g.sedAlarm < DAY_LEN; // sed de verdad (fabricas.js), no el aviso de casi siempre
 const URB_NET = i => pathMap.has(i) || plazaSet.has(i) || bridgeSet.has(i) || gateSet.has(i);
 const liveTowns = () => villages.filter(o => !o.dead && popOf(o) > 0);
-// ¿Esta casilla está más cerca del centro de otro pueblo? (el terreno de cada uno llega hasta medio camino)
+// ¿Esta casilla está más cerca del centro de un pueblo de otra nación? (el terreno de cada uno llega hasta medio camino;
+// entre pueblos de la misma nación no hay linde)
 function otherTown(g, x, y, towns){
   const d = Math.hypot(x - g.fx, y - g.fy);
-  for (const o of towns) if (o !== g && Math.abs(o.fx - x) < d && Math.abs(o.fy - y) < d && Math.hypot(x - o.fx, y - o.fy) < d) return true;
+  const n = nationOf(g);
+  for (const o of towns) if (o !== g && nationOf(o) !== n && Math.abs(o.fx - x) < d && Math.abs(o.fy - y) < d && Math.hypot(x - o.fx, y - o.fy) < d) return true;
   return false;
 }
 const wallIn = (x0, y0, x1, y1) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const i = y * W + x; if (wallSet.has(i) || gateSet.has(i)) return true; } return false; };
@@ -138,6 +140,17 @@ function wallMigrate(g){
 }; }
 
 // ---- Casas en fila a lo largo de las calles ----
+// Los senderos que abre la gente al pisar (desireSet) no son calles: se puede construir encima (y se borran)
+const streetAt = i => (pathMap.has(i) && !desireSet.has(i)) || bridgeSet.has(i);
+const streetIn = (x0, y0, x1, y1) => { let n = 0; for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (streetAt(y * W + x)) n++; return n; };
+// Lo que no se puede ocupar: puentes y puertas de la muralla (las calles secundarias sí: el pueblo se densifica y el
+// repaso de calles abre otro paso si alguien queda sin salida)
+const hardIn = (x0, y0, x1, y1) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const i = y * W + x; if (bridgeSet.has(i) || gateSet.has(i)) return true; } return false; };
+function clearTrails(g){ // los caminos que han quedado debajo de un edificio, fuera (menos las plazas)
+  let n = 0;
+  for (const h of buildingsOf(g)) { const x = h % W, y = (h / W) | 0; for (let yy = y - 5; yy <= y; yy++) for (let xx = x - 3; xx <= x + 3; xx++) { const i = yy * W + xx; if (pathMap.has(i) && !plazaSet.has(i) && !bridgeSet.has(i)) { desireSet.delete(i); pathMap.delete(i); if (wear) wear[i] = 0; n++; } } }
+  if (n) streetCache.delete(g.id);
+}
 const FRONT_KINDS = new Set(['casa', 'taberna', 'herreria']);
 const streetCache = new Map();
 function streetsNear(g){
@@ -151,11 +164,11 @@ function streetsNear(g){
 }
 function frontOk(g, kind, x, y, towns){
   const [hw, hh] = KIND_DIMS[kind] || [4, 6], i = y * W + x;
-  if (x <= hw || y <= hh + 1 || x >= W - hw - 1 || y >= H - 3 || farmMap.has(i) || pathMap.has(i)) return false;
+  if (x <= hw || y <= hh + 1 || x >= W - hw - 1 || y >= H - 3 || farmMap.has(i) || bridgeSet.has(i)) return false;
   if (x - hw <= g.fx + 1 && x + hw >= g.fx - 1 && Math.abs(y - g.fy) <= 50) return false; // la calle mayor norte-sur queda libre
   if (otherTown(g, x, y, towns)) return false;
   return !penOverlap(g, x - hw, y - hh, x + hw, y + 1) && !plazaIn(x - hw, y - hh, x + hw, y) && !hallIn(g, x - hw, y - hh, x + hw, y + 1) && !farmIn(x - hw, y - hh, x + hw, y + 1)
-    && !pathIn(x - hw, y - hh, x + hw, y) && !wallIn(x - hw, y - hh, x + hw, y + 1) && !plotIn(x - hw, y - hh, x + hw, y + 1) && clearable(x - hw, y - hh, x + hw, y + 1) && !buildingClash(x, y, kind);
+    && !hardIn(x - hw, y - hh, x + hw, y) && !wallIn(x - hw, y - hh, x + hw, y + 1) && !plotIn(x - hw, y - hh, x + hw, y + 1) && clearable(x - hw, y - hh, x + hw, y + 1) && !buildingClash(x, y, kind);
 }
 // El mejor solar con la puerta a una calle: cerca de la plaza, en fila con los vecinos y, si hay muralla, dentro
 function frontSite(g, kind){
@@ -163,14 +176,29 @@ function frontSite(g, kind){
   const row = new Map(); for (const b of buildingsOf(g)) { const y = (b / W) | 0; (row.get(y) || row.set(y, []).get(y)).push(b % W); }
   for (const [sx, sy, d] of streetsNear(g)) {
     const x = sx, y = sy - 1; // la casa al norte de la calle: su puerta da a ella
-    let s = d;
+    let s = d + streetIn(x - 4, y - 6, x + 4, y) * 1.5; // mejor un solar libre que uno encima de un camino
     const xs = row.get(y); if (xs && xs.some(bx => Math.abs(bx - x) <= 13)) s -= 6; // sigue la fila de las casas vecinas
     if (R && (x < R.x0 + 4 || x > R.x1 - 4 || y < R.y0 + 7 || y > R.y1 - 2)) s += 12;
     cand.push([s, x, y]);
   }
   cand.sort((a, b) => a[0] - b[0]);
   let tests = 0;
-  for (const [, x, y] of cand) { if (++tests > 140) break; if (frontOk(g, kind, x, y, towns)) return [x, y]; }
+  for (const [, x, y] of cand) { if (++tests > 220) break; if (frontOk(g, kind, x, y, towns)) return [x, y]; }
+  return edgeSite(g, kind, towns);
+}
+// Dentro ya no cabe: un solar en el borde, pegado a lo construido (luego el repaso de calles le abre camino)
+function edgeSite(g, kind, towns){
+  const r0 = townRadius(g), R = Math.min(50, r0 + 16), cx = Math.round(g.fx), cy = Math.round(g.fy), cand = [];
+  const own = buildingsOf(g).map(b => [b % W, (b / W) | 0]);
+  for (let dy = -R; dy <= R; dy += 2) for (let dx = -R; dx <= R; dx += 2) {
+    const d = Math.hypot(dx, dy * 1.2); if (d < 6 || d > R) continue;
+    const x = cx + dx, y = cy + dy, near = own.reduce((m, [bx, by]) => Math.min(m, Math.hypot(bx - x, by - y)), 1e9);
+    if (near > 22) continue; // pegado al pueblo (también al otro lado de la muralla), no suelto en el campo
+    cand.push([d * .6 + near, x, y]);
+  }
+  cand.sort((a, b) => a[0] - b[0]);
+  let tests = 0;
+  for (const [, x, y] of cand) { if (++tests > 700) break; if (frontOk(g, kind, x, y, towns)) return [x, y]; }
   return null;
 }
 // Pozos: junto a una calle, a unos pasos de las casas y lejos de los otros pozos
@@ -252,5 +280,5 @@ SYSTEMS.push(dt => {
   urbT = 1.5;
   const towns = liveTowns(); if (!towns.length) return;
   for (const g of towns) if (!g.wallV2 && (g.wallPlan || g.wallPlan1)) wallMigrate(g);
-  const g = towns[urbIdx++ % towns.length]; if (g.hall != null || popOf(g) >= 6) linkTick(g);
+  const g = towns[urbIdx++ % towns.length]; clearTrails(g); if (g.hall != null || popOf(g) >= 6) linkTick(g);
 });

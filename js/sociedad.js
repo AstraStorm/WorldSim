@@ -2867,7 +2867,8 @@ function updateVillagers(dt){
     let g = villageById(v.vid);
     if (age > v.life * (hasHosp(g) ? 1.12 : 1)) { killVillager(v, 'vejez'); continue; }
     const nut = Math.abs((v.ate ?? .5) - (v.diet ?? .5)); v.mal = nut > .3; const tHere = tempAt(ri); // (la temperatura de su casilla, una sola vez)
-    v.food = Math.max(0, v.food - dt * (v.mal ? 1.4 : nut < .15 ? .9 : 1) * (v.sleep ? .5 : 1) / (child ? 190 : 160)); v.water = Math.max(0, v.water - dt * (v.sleep ? .5 : 1) * (tHere > 28 ? 1.3 : 1) / (child ? 130 : 120));
+    const tough = v.task && v.task.k === 'asalto' ? .6 : 1; // los soldados en campaña aguantan más el hambre y la sed
+    v.food = Math.max(0, v.food - dt * (v.mal ? 1.4 : nut < .15 ? .9 : 1) * (v.sleep ? .5 : 1) * tough / (child ? 190 : 160)); v.water = Math.max(0, v.water - dt * (v.sleep ? .5 : 1) * (tHere > 28 ? 1.3 : 1) * tough / (child ? 130 : 120));
     if (v.food <= 0) { v.starve += dt; if (v.starve > 25) { killVillager(v, 'hambre'); continue; } } else v.starve = 0;
     if (v.water <= 0) { v.thirst += dt; if (v.thirst > 20) { killVillager(v, 'sed'); continue; } } else v.thirst = 0;
     // El abrigo (hoguera, casa) solo calienta cuando hace frío, hasta unos 18 °C; con calor, la casa da algo de sombra
@@ -2929,13 +2930,18 @@ function updateVillagers(dt){
         if (route) { const path = route.slice(), f = path.shift() || h; v.away = true; v.task = { k:'viaje' }; travelers.push({ kind:'regreso', v, from:hg.id, to:hg.id, x:L[0], y:L[1], tx:f[0], ty:f[1], path, hx:h[0], hy:h[1], sea:true, phase:'ida', dir:1 }); } else v.task = { k:'volver' }; }
       continue;
     }
-    if (v.task && v.task.k === 'asalto' && (v.water < .3 || v.food < .22)) v.task = null; // la sed y el hambre pueden más que la guerra
+    if (v.task && v.task.k === 'asalto' && (v.water < .3 || v.food < .22)) { // en campaña tiran de los víveres que llevan encima (3 raciones por soldado); sin víveres, la sed y el hambre pueden más que la guerra
+      const G = v.task.grp, wi = Math.floor(v.y / T) * W + Math.floor(v.x / T), fresh = nb4i(wi).some(n => FRESH(world.biome[n]) && !dried(n));
+      if (fresh) v.water = 1; // junto a un río o un lago beben ahí mismo, sin dejar la marcha
+      if (G && (G.ration ?? (G.ration = 3 * G.ps.length)) >= 1 && (v.water < .3 || v.food < .22)) { G.ration -= 1; v.water = Math.max(v.water, .8); v.food = Math.max(v.food, .75); }
+      else if (v.water < .12 || v.food < .08) v.task = null;
+    }
     if (v.task && v.task.k === 'asalto') {
       const eg = villageById(v.task.enemy), r = eg && warRel(eg, g);
       const G = v.task.grp;
       // De noche y aún lejos del enemigo: campamento improvisado (tiendas de pieles si las tienen) y al amanecer, en marcha
       if (G && G.camp && (!isNight() || !eg || !r || !r.war)) { G.camp.done = true; G.camp = null; G.campedT = yearT; }
-      if (G && !G.field && eg && r && r.war && isNight() && !knowsT(g, 'noche') && yearT - (G.campedT ?? -1e9) > DAY_LEN * .3 && Math.hypot(v.x / T - eg.fx, v.y / T - eg.fy) > 18 && (G.camp || Math.hypot(v.x / T - g.fx, v.y / T - g.fy) > 15)) { // (cerca de casa, no: siguen)
+      if (G && !G.field && eg && r && r.war && isNight() && !knowsT(g, 'noche') && yearT - (G.campedT ?? -1e9) > DAY_LEN * .3 && Math.hypot(v.x / T - eg.fx, v.y / T - eg.fy) > 40 && (G.camp || Math.hypot(v.x / T - g.fx, v.y / T - g.fy) > 15)) { // (cerca de casa, no: siguen)
         const alive = G.ps.filter(u => !u.dead && u.task && u.task.k === 'asalto');
         if (!G.camp && alive.length && !(G.campFail > yearT)) { // (si no encontraron sitio, no lo buscan otra vez cada soldado en cada paso)
           const cx = alive.reduce((a, u) => a + u.x, 0) / alive.length, cy = alive.reduce((a, u) => a + u.y, 0) / alive.length;
