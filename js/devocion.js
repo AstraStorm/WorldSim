@@ -131,8 +131,8 @@ function drawFireworks(){
   vctx.save(); vctx.globalCompositeOperation = 'lighter';
   for (const l of fwFlash) { // el destello: un halo que se abre y se apaga, y su reflejo en el suelo
     const k = 1 - l.t / .5, g = vctx.createRadialGradient(l.x, l.y, 0, l.x, l.y, l.r * (.6 + l.t * 1.4));
-    g.addColorStop(0, l.col); g.addColorStop(1, 'rgba(0,0,0,0)'); const nt = isNight(); vctx.globalAlpha = (nt ? .75 : .28) * k; vctx.fillStyle = g; vctx.beginPath(); vctx.arc(l.x, l.y, l.r * (.6 + l.t * 1.4), 0, Math.PI * 2); vctx.fill();
-    if (nt) { vctx.globalAlpha = .16 * k; vctx.fillStyle = l.col; vctx.beginPath(); vctx.ellipse(l.x, l.y + 90, l.r * 1.6, l.r * .45, 0, 0, Math.PI * 2); vctx.fill(); } // el reflejo en el suelo (de noche)
+    g.addColorStop(0, l.col); g.addColorStop(1, 'rgba(0,0,0,0)'); const nt = isNight(); vctx.globalAlpha = (nt ? .38 : .14) * k; // (destello más suave: antes deslumbraba) vctx.fillStyle = g; vctx.beginPath(); vctx.arc(l.x, l.y, l.r * (.6 + l.t * 1.4), 0, Math.PI * 2); vctx.fill();
+    if (nt) { vctx.globalAlpha = .08 * k; vctx.fillStyle = l.col; vctx.beginPath(); vctx.ellipse(l.x, l.y + 90, l.r * 1.6, l.r * .45, 0, 0, Math.PI * 2); vctx.fill(); } // el reflejo en el suelo (de noche)
   }
   for (const f of fireworks) {
     if (f.x < x0 - 30 || f.x > x1 + 30 || f.y < y0 - 60 || f.y > y1 + 30) continue;
@@ -149,8 +149,8 @@ SYSTEMS.push(dt => updateFireworks(dt));
 const fwRGB = c => { if (c[0] === '#') { const n = parseInt(c.slice(1), 16); return `${n >> 16},${(n >> 8) & 255},${n & 255}`; } return c.replace(/[^\d,]/g, ''); };
 { const base = nightLights; nightLights = function(glow, k){
   base(glow, k);
-  for (const l of fwFlash) glow(l.x, l.y + 30, l.r * 2.4 * (1 + l.t), (1 - l.t / .5) * 1.1 * k, fwRGB(l.col));
-  let n = 0; for (const f of fireworks) { if (f.rocket || f.ember || f.t > f.life * .7 || (n++ & 3)) continue; glow(f.x, f.y, 10, .25 * k, fwRGB(f.col)); }
+  for (const l of fwFlash) glow(l.x, l.y + 30, l.r * 1.8 * (1 + l.t), (1 - l.t / .5) * .5 * k, fwRGB(l.col));
+  let n = 0; for (const f of fireworks) { if (f.rocket || f.ember || f.t > f.life * .7 || (n++ & 3)) continue; glow(f.x, f.y, 8, .12 * k, fwRGB(f.col)); }
 }; }
 // Celebraciones con cohetes: ganar una guerra y firmar la paz
 { const base = conquer; conquer = function(cap, eg, r){ base.apply(this, arguments); fireworksShow(cap, 15, `por la conquista de ${eg.name}`); }; }

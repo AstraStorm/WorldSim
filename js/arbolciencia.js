@@ -150,3 +150,20 @@ document.addEventListener('click', e => {
   const b = e.target.closest('[data-scitree]'); if (b) openSciTree(+b.dataset.scitree);
 });
 setInterval(() => { const el = $('sciTree'); if (el && !el.hidden && !el.matches(':hover') && world) renderSciTree(); }, 3000);
+
+// ---- Pestaña «Ciencia» en la ficha de cada pueblo: lo que sabe este pueblo y lo que investiga su nación ----
+function scienceTab(g){
+  const n = nationOf(g), S = sciOf(g), got = DISCOVERIES.filter(d => S[d.k]).sort((a, b) => S[a.k] - S[b.k]), next = sciGoal(g), kn = g.know || {};
+  const towns = liveTowns().filter(o => nationOf(o) === n), unis = towns.filter(o => hasInst(o, 'universidad')).length;
+  const sages = villagers.filter(u => !u.dead && u.vid === g.id && u.oficio === 'sabio').length, rate = sciRate(n);
+  const rank = sciNations().indexOf(n) + 1, avail = DISCOVERIES.filter(d => !S[d.k] && d.req.every(k => S[k]));
+  const inst = [['Escuela', hasSchool(g)], ['Universidad', hasInst(g, 'universidad')], ['Academia', hasInst(g, 'academia')], ['Imprenta', hasInst(g, 'imprenta')]];
+  let h = `<div class="tiles">${tile('Descubrimientos', `${got.length}/${DISCOVERIES.length}`, n === g ? 'de la nación' : `de ${esc(n.name)}`)}${tile('Puesto', rank ? `${rank}.º` : '—', 'entre las naciones')}${tile('Ritmo', rate ? `${Math.round(rate)}` : '—', 'puntos por día')}${tile('Sabios', sages, unis ? `${unis} universidad${unis > 1 ? 'es' : ''} en la nación` : 'sin universidad en la nación')}</div>`;
+  h += `<h4>Investigando</h4>` + (next ? `<div class="needs"><span>${esc(capFirst(next.txt))}</span>${bar((n.research || 0) / next.cost, '#8ab4d8', 150)}<span>${Math.round((n.research || 0) / next.cost * 100)} %</span></div><div class="muted">${esc(next.eff)}${n.sciPick === next.k ? ' · elegido por ti' : ''}</div>` : `<div class="muted">${unis ? 'Nada más que investigar por ahora' : 'Sin universidad no se investiga: lo que sepan, lo aprenden de otros'}</div>`);
+  h += `<h4>Centros del pueblo</h4><div class="chips">${inst.map(([t, ok]) => `<span class="${ok ? '' : 'off'}">${ok ? '✓' : '✗'} ${t}</span>`).join('')}</div>`;
+  h += `<h4>Saberes de ${esc(g.name)}</h4><div class="chips">${SABERES.map(([k, ic, t]) => `<span class="${kn[k] ? '' : 'off'}" title="${kn[k] ? 'lo saben' : 'aún no'}">${ic} ${t}</span>`).join('')}</div>`;
+  h += `<h4>Descubierto</h4>${got.length ? `<ul class="log">${got.slice().reverse().map(d => `<li><span class="d">día ${S[d.k]}</span>${esc(capFirst(d.txt))}: ${esc(d.eff)}</li>`).join('')}</ul>` : '<div class="muted">Nada todavía</div>'}`;
+  if (avail.length) h += `<h4>Se puede investigar</h4><div class="chips">${avail.map(d => `<span title="${esc(d.eff)}">${esc(d.txt)}</span>`).join('')}</div>`;
+  return h + `<button class="sci-open" data-scitree="${n.id}">🔬 Ver el árbol de la ciencia</button>`;
+}
+{ const i = CARD_TABS.findIndex(t => t[0] === 'politica'); if (!CARD_TABS.some(t => t[0] === 'ciencia')) CARD_TABS.splice(i + 1, 0, ['ciencia', 'Ciencia']); }

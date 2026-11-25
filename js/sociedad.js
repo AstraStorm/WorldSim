@@ -1290,7 +1290,7 @@ function renderPersonCard(force){
       <div class="kv"><span>Dieta</span><b>${dietName(v)}</b></div>
       ${g && ageOf(v) >= ADULT_H ? (g.coin ? `<div class="kv"><span>Sueldo</span><b>${v.wage != null || v.dayPay ? `${wageDay(v)} ${coinPl(g)} al día <span class="muted">(vivir cuesta ${costOfLiving(g)})</span>${wageDay(v) < costOfLiving(g) ? ' · <span style="color:#f08a7a">no le llega</span>' : ''}` : '<span class="muted">aún no ha cobrado</span>'}</b></div><div class="kv"><span>Dinero</span><b>${v.money || 0} ${coinPl(g)} · ha ganado ${v.earned || 0} · impuestos ${Math.round(taxRateOf(g) * 100)} %</b></div>` : `<div class="kv"><span>Sueldo</span><b class="muted">en especie: su pueblo aún no tiene moneda</b></div>`) : ''}
       ${stockLine(v, g)}
-      ${classKv(v, g)}${papersKv(v, g)}<div class="kv"><span>Equipo</span><b>${[v.weapon && (v.weapon === 'lanza' && v.ironW ? 'lanza de hierro' : v.weapon), v.shield && 'escudo', v.armor && GEAR_TXT[v.armor], v.rod && 'caña', v.mount && 'caballo', v.cart && 'carro', v.swims === false && 'no sabe nadar'].filter(Boolean).join(', ') || 'nada'}</b></div></div>
+      ${classKv(v, g)}${papersKv(v, g)}${typeof docCards === 'function' ? docCards(v) : ''}<div class="kv"><span>Equipo</span><b>${[v.weapon && (v.weapon === 'lanza' && v.ironW ? 'lanza de hierro' : v.weapon), v.shield && 'escudo', v.armor && GEAR_TXT[v.armor], v.rod && 'caña', v.mount && 'caballo', v.cart && 'carro', v.swims === false && 'no sabe nadar'].filter(Boolean).join(', ') || 'nada'}</b></div></div>
     <h4>Ánimo</h4><div class="mood"><span class="mw" style="color:${moodCol(mood.score)}">${mood.word}</span>${bar(mood.score / 100, moodCol(mood.score), 120)} <span class="muted">${mood.score}/100</span></div>
     ${mood.good.length ? `<div class="why good">+ ${mood.good.join(' · ')}</div>` : ''}${mood.bad.length ? `<div class="why bad">− ${mood.bad.join(' · ')}</div>` : ''}
     <h4>Necesidades</h4><div class="needs">
@@ -1359,6 +1359,8 @@ function renderVillageCard(force){
       <h4>Nación</h4><div>${status}${provinces.length ? `: ${provinces.map(o => `<button class="lnk" data-vid="${o.id}">${esc(o.name)}</button>`).join(', ')}` : ''}${n !== g ? ` · descontento con la capital ${Math.round(g.unrest || 0)} %` : ''}</div>
       ${allyCard(g)}${warCard(g)}${treatyCard(g)}
       <h4>Relaciones</h4><div class="chips rel">${villages.filter(o => o !== g && popOf(o) && rels.get(relKey(g, o)) && rels.get(relKey(g, o)).known).map(o => { const r = rels.get(relKey(g, o)), w = relWord(r), c = r.war ? '#d8483a' : r.v > 40 ? '#7ab04a' : r.v > 0 ? '#a8c060' : r.v > -30 ? '#d8b848' : '#e08a3a'; return `<button class="relb" data-vid="${o.id}" style="border-color:${c}" title="Ver la ficha de ${esc(o.name)}">${o.flagUrl ? `<img src="${o.flagUrl}" alt="">` : ''}${esc(o.name)} · <b style="color:${c}">${r.war ? 'en guerra' : w}</b></button>`; }).join('') || 'Aún no conocen a nadie'}</div>`;
+  } else if (cardTab === 'ciencia') {
+    body = scienceTab(g);
   } else if (cardTab === 'deportes') {
     body = sportsTab(g);
   } else if (cardTab === 'calendario') {

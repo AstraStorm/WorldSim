@@ -597,3 +597,12 @@ select{border-radius:7px !important}
 #saveBtn.saving{animation:svPulse .6s ease-in-out infinite alternate}@keyframes svPulse{to{opacity:.35}}
 body.drop-save::after{content:'Suelta aquí la partida .forja para abrirla';position:fixed;inset:12px;display:flex;align-items:center;justify-content:center;border:3px dashed #e9b949;border-radius:14px;background:rgba(10,12,18,.7);color:#f2e6c4;font-size:20px;z-index:9999;pointer-events:none}
 .toast.sys{border-left-color:#e9b949}.toast.sys .tt{color:#f2d27a}
+
+/* World Sim · DNI y pasaporte dibujados en la ficha */
+.doc-cards{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 4px}.doc-card{width:150px;height:auto;image-rendering:auto;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.4)}.doc-card[alt^=Pasaporte]{width:172px}
+.chips span.off{opacity:.38;text-decoration:none}
+/* Ficha del pueblo: pestañas en pastillas compactas (caben en dos filas aunque haya muchas) */
+.vcard .tabs{display:flex;flex-wrap:wrap;gap:4px;padding:8px 12px;border-bottom:1px solid var(--line)}
+.vcard .tabs button{flex:0 1 auto;padding:4px 10px;font-size:12px;border:1px solid var(--line);border-radius:20px;background:rgba(255,255,255,.04);color:var(--muted)}
+.vcard .tabs button:hover{color:var(--fg);background:rgba(255,255,255,.09)}
+.vcard .tabs button.on{color:#1a1408;background:var(--accent);border-color:var(--accent);font-weight:700}

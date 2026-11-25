@@ -68,7 +68,7 @@ function pressureAt(x, y){
 // (evaporación). Al subir el aire (ladera de una montaña a barlovento, borrasca) se enfría y se satura antes:
 // llueve y pierde agua. Bajo un anticiclón o sobre un desierto caluroso el aire baja, se seca y la nube se
 // deshace. Con mucha agua, calor y aire inestable crece hasta tormenta. Su tamaño y color dependen del agua
-const cloudW = q => 50 + Math.min(1.4, q) * 150;
+const cloudW = q => 85 + Math.min(1.4, q) * 230; // (más grandes: antes se veían pequeñas)
 function evapAt(x, y){
   const i = clamp(Math.floor(y / T), 0, H - 1) * W + clamp(Math.floor(x / T), 0, W - 1), b = world.biome[i];
   let m = WATER[b] ? (b <= B.SHALLOW ? 1 : .8) : (soil ? soil[soilCell(i)] * .7 : .3) + (floodA ? floodA[i] * .5 : 0);
