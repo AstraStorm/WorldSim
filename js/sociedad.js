@@ -1938,7 +1938,7 @@ function fightPerson(v, e, dt){
   const tv = Math.floor(v.x / T), ty = Math.floor(v.y / T);
   const onTower = knowsT(gv, 'torres') && towersOf(gv || {}).some(i => Math.hypot((i % W) - tv, ((i / W) | 0) - ty) < 3);
   const cav = v.mount && knowsT(gv, 'caballeria');
-  const reach = isRanged(v.weapon) ? (v.weapon === 'ballesta' ? 38 : 30) + (onTower ? 14 : 0) + (hv - he > .02 ? 8 : 0) : cav ? 7 : 5;
+  const reach = isRanged(v.weapon) ? (v.weapon === 'mosquete' ? 50 : v.weapon === 'pistola' ? 22 : v.weapon === 'ballesta' ? 38 : 30) + (onTower ? 14 : 0) + (hv - he > .02 ? 8 : 0) : cav ? 7 : 5;
   v.dir = e.x < v.x ? -1 : 1; v.dirT = .4; v.atkT = (v.atkT || 0) - dt;
   if (isRanged(v.weapon) && !onTower) {
     // Arqueros que saben: si se les echan encima, retroceden; si hay una loma cerca desde la que llegan, suben a ella
@@ -1961,13 +1961,13 @@ function fightPerson(v, e, dt){
     v.dir = e.x < v.x ? -1 : 1;
   }
   if (v.atkT <= 0) {
-    v.atkT = (v.weapon === 'ballesta' ? 2.2 : v.weapon === 'arco' ? 1.5 : 1) * (cav ? .8 : 1); v.stab = .25;
+    v.atkT = (v.weapon === 'mosquete' ? 3.4 : v.weapon === 'pistola' ? 2.4 : v.weapon === 'ballesta' ? 2.2 : v.weapon === 'arco' ? 1.5 : 1) * (cav ? .8 : 1); v.stab = .25; // (el mosquete se recarga despacio)
     if (v.stunT > 0) return true; // aturdido por el golpe que acaba de recibir
-    let dmg = { lanza:.34, espada:.42, arco:.28, ballesta:.5, horca:.22 }[v.weapon] || .14, hit = v.weapon === 'ballesta' ? .8 : v.weapon === 'arco' ? .7 : .85;
+    let dmg = { lanza:.34, espada:.42, arco:.28, ballesta:.5, horca:.22, mosquete:.85, pistola:.55 }[v.weapon] || .14, hit = v.weapon === 'mosquete' ? .7 : v.weapon === 'pistola' ? .72 : v.weapon === 'ballesta' ? .8 : v.weapon === 'arco' ? .7 : .85;
     dmg *= guardOf(e, isRanged(v.weapon));
     if (v.weapon && knowsT(gv, 'puntas')) dmg *= 1.25;          // punta de piedra
     if (v.ironW) dmg *= 1.3;
-    if (knowsSci(gv, 'polvora')) dmg *= 1.35; // pólvora (ciencia.js)
+    if (knowsSci(gv, 'polvora') && !isGun(v.weapon)) dmg *= 1.35; // pólvora (ciencia.js; en las armas de fuego ya va incluida)
     if (v.vet) { dmg *= 1 + .12 * v.vet; hit = Math.min(.97, hit + .03 * v.vet); } // instruidos en el cuartel                                     // forjada en hierro
     if (hv - he > .02) dmg *= 1.25;                              // desde arriba se golpea mejor
     if (cav) dmg += .12;                                         // la carga a caballo
@@ -1976,7 +1976,7 @@ function fightPerson(v, e, dt){
     if (inForest(e) && knowsT(ge, 'bosque')) hit *= .7;          // entre los árboles cuesta acertar
     if (onTower) hit = Math.min(.95, hit + .15);
     if (v.ambush) { dmg *= 1.6; hit = 1; v.ambush = false; if (gv && yearT - (gv.ambushMsgT ?? -1e9) > 40) { gv.ambushMsgT = yearT; notify(`¡Emboscada! Los de ${gv.name} salen del bosque y caen sobre los de ${ge ? ge.name : '?'}`, { x:v.x, y:v.y }); } }
-    const shoot = isRanged(v.weapon); snd(shoot ? 'arrow' : 'clash', v.x, v.y); if (shoot && knowsSci(gv, 'polvora')) gunSmoke(v); if (shoot) arrows.push({ x0:v.x, y0:v.y - 5, a:e, v, t:0, dur:Math.max(.12, d / 150), hit:true, vis:true, bolt:v.weapon === 'ballesta' }); // humo de los mosquetes (industria.js)
+    const shoot = isRanged(v.weapon), gun = isGun(v.weapon); snd(gun ? 'boom' : shoot ? 'arrow' : 'clash', v.x, v.y, gun ? .22 : undefined); if (gun || (shoot && knowsSci(gv, 'polvora'))) gunSmoke(v); if (shoot) arrows.push({ x0:v.x, y0:v.y - 5, a:e, v, t:0, dur:gun ? Math.max(.05, d / 500) : Math.max(.12, d / 150), hit:true, vis:true, bolt:v.weapon === 'ballesta' , shot:gun}); // humo de los mosquetes (industria.js)
     if (Math.random() < hit) {
       if (!shoot) slashes.push({ x:(v.x + e.x) / 2, y:e.y - 6, dir:v.dir, t:0, big:!!v.weapon }); if (!shoot) for (let n = 0; n < 4; n++) chips.push({ x:(v.x + e.x) / 2, y:(v.y + e.y) / 2 - 6, vx:(Math.random() - .5) * 30, vy:-8 - Math.random() * 14, life:0, max:.25 + Math.random() * .2, col:n % 2 ? '#fff3a0' : '#ffd040' }); // chispas del choque
       e.hp = (e.hp ?? 1) - dmg * castleShield(e); hurtFx(e, v.x, v.y, walkable); // (en su castillo aguantan más: fama.js)
@@ -2002,9 +2002,10 @@ function fightPerson(v, e, dt){
   return true;
 }
 // ---- Equipo de guerra ----
-const isRanged = w => w === 'arco' || w === 'ballesta';
-const GEAR_TXT = { espada:'espada', ballesta:'ballesta', escudo:'escudo', hierro:'armadura de hierro', cuero:'armadura de cuero' };
-const GEAR_MSG = { espada:'forjan sus primeras espadas de hierro', ballesta:'fabrican ballestas: disparan más lejos y más fuerte que los arcos', escudo:'hacen escudos de madera para sus soldados',
+const isRanged = w => w === 'arco' || w === 'ballesta' || w === 'mosquete' || w === 'pistola';
+const isGun = w => w === 'mosquete' || w === 'pistola'; // armas de fuego (armas.js)
+const GEAR_TXT = { mosquete:'mosquete', pistola:'pistola', espada:'espada', ballesta:'ballesta', escudo:'escudo', hierro:'armadura de hierro', cuero:'armadura de cuero' };
+const GEAR_MSG = { mosquete:'forjan mosquetes: sus soldados disparan con pólvora desde lejos', pistola:'forjan pistolas para sus jinetes', espada:'forjan sus primeras espadas de hierro', ballesta:'fabrican ballestas: disparan más lejos y más fuerte que los arcos', escudo:'hacen escudos de madera para sus soldados',
   hierro:'forjan armaduras de hierro', cuero:'cosen armaduras de cuero con las pieles de la caza' };
 function gearMsg(g, what){ const k = g.gearMsg ||= {}; if (k[what]) return; k[what] = true; notify(`En ${g.name} ${GEAR_MSG[what]}`, { x:g.fx * T, y:g.fy * T }); }
 // El siguiente soldado al que equipar, y con qué (lo que se pueda pagar con lo que hay en el almacén)
@@ -2801,6 +2802,7 @@ function drawArrows(){
     const x = r.x0 + (tx - r.x0) * k, y = r.y0 + (ty - r.y0) * k - Math.sin(k * Math.PI) * 4;
     if (r.done && r.hit) continue; // clavada: ya no se ve
     const ang = Math.atan2(ty - r.y0, tx - r.x0), cx = Math.cos(ang), cy = Math.sin(ang);
+    if (r.shot) { vctx.fillStyle = 'rgba(255,230,160,.9)'; vctx.fillRect(Math.round(x), Math.round(y), 1, 1); vctx.fillStyle = 'rgba(255,240,200,.35)'; vctx.fillRect(Math.round(x - cx * 2), Math.round(y - cy * 2), 1, 1); continue; } // la bala: una chispa rápida
     vctx.fillStyle = r.bolt ? '#6a5a48' : '#d8c8a0'; for (let q = 0; q < (r.bolt ? 3 : 4); q++) vctx.fillRect(Math.round(x - cx * q), Math.round(y - cy * q), 1, 1);
     vctx.fillStyle = '#e8e8e8'; vctx.fillRect(Math.round(x + cx), Math.round(y + cy), 1, 1);
   }

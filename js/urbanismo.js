@@ -474,3 +474,26 @@ SYSTEMS.push(dt => {
     if (best) { v.x = best[0] * T + 2; v.y = best[1] * T + 3; v.route = null; v.routeKey = null; }
   }
 });
+
+// ---- Bloque de pisos (era industrial): tres plantas de ladrillo con ventanas, cornisa y portal; dibujado aquí ----
+OBJ['house:bloque'] = ['Bloque de pisos', 'house', 0];
+const bloqueCache = new Map();
+function bloqueSprite(v){
+  const k = (v || 0) % 4; if (bloqueCache.has(k)) return bloqueCache.get(k);
+  const Wd = 28, Hd = 36, c = document.createElement('canvas'); c.width = Wd; c.height = Hd; const x = c.getContext('2d');
+  const brick = [['#9a4a32', '#7e3a26', '#b45c40'], ['#a8825a', '#8a6844', '#c09868'], ['#8c8a86', '#6e6c68', '#a8a6a0'], ['#9c5a44', '#7c4434', '#b87058']][k];
+  const px = (a, b, w, h, col) => { x.fillStyle = col; x.fillRect(a, b, w, h); };
+  px(3, 6, 22, 29, brick[0]); // fachada
+  for (let yy = 7; yy < 35; yy += 3) for (let xx = 3 + ((yy / 3) & 1) * 2; xx < 25; xx += 4) px(xx, yy, 3, 1, brick[1]); // hiladas de ladrillo
+  px(3, 6, 1, 29, brick[1]); px(24, 6, 1, 29, brick[1]);
+  px(1, 3, 26, 3, '#5a4a44'); px(2, 2, 24, 1, '#7a6a62'); px(1, 6, 26, 1, '#3e322e'); // cornisa
+  px(7, 0, 3, 3, '#6a5a52'); px(19, 0, 3, 3, '#6a5a52'); // chimeneas
+  for (let fl = 0; fl < 3; fl++) { // tres plantas de ventanas
+    const wy = 9 + fl * 8; px(3, wy + 5, 22, 1, brick[2]); // la línea del forjado
+    for (const wx of [5, 11, 17]) { const lit = ((wx * 7 + fl * 13 + k * 5) % 5) === 0; px(wx, wy, 5, 4, '#2a2a30'); px(wx + 1, wy + 1, 3, 2, lit ? '#f0d890' : '#8ab0c8'); px(wx, wy + 4, 5, 1, '#d8d0c0'); }
+  }
+  px(11, 30, 6, 6, '#3a2a20'); px(12, 31, 4, 5, '#6a4a30'); px(10, 29, 8, 1, '#d8d0c0'); // portal
+  px(3, 35, 22, 1, 'rgba(0,0,0,.35)');
+  c.ax = 14; bloqueCache.set(k, c); return c;
+}
+{ const base = artSprite; artSprite = function(o){ if (o && o.key === 'house:bloque' && !(ART.ready && ART_MAP['house:bloque'])) return bloqueSprite(o.v); return base.apply(this, arguments); }; } // (si llega su dibujo al atlas, se usa ese)
