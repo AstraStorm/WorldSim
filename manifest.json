@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611252211",
- "fecha": "2026-11-25 22:11",
+ "version": "202611252214",
+ "fecha": "2026-11-25 22:14",
  "novedades": [
   {
    "fecha": "2026-11-25",
-   "texto": "Espacio"
+   "texto": "Misiles"
+  },
+  {
+   "fecha": "2026-11-25",
+   "texto": "Bloque 7 · Carrera espacial: cohetería, cohetes de 2 fases, combustible líquido, aterrizaje automático, satélites, estación espacial, hidroponía, defensa planetaria y colonización; lanzaderas de 3 niveles; 5 cohetes con cuenta atrás de 10 (aviso grande), llamarada, humo y estela, separación de propulsores laterales, fase central y superior, salida por arriba de la pantalla; la primera fase vuelve y aterriza en la base o en un carguero (o se estrella; la experiencia lo mejora); explosiones en vuelo; misiones de investigación, satélites (cobertura), estación (más ciencia), hidroponía (más comida), defensa contra meteoritos y colonos a la Luna o Marte; leyes y tratados del espacio. Los sitios grandes se buscan también junto a las otras ciudades de la nación"
   },
   {
    "fecha": "2026-11-25",
@@ -46,21 +50,17 @@
   {
    "fecha": "2026-11-25",
    "texto": "Puertos grandes (muelle a lo largo de la orilla, espigones, grúa y barcos amarrados) para pueblos de 35+ que viven del mar; bloques de pisos okupados con sus ventanas (ventanaPisoOkupada.png); más campos en los pueblos grandes (tope 110 → 320 casillas: a partir de unos 200 habitantes pasaban hambre)"
-  },
-  {
-   "fecha": "2026-11-25",
-   "texto": "Bloques de pisos con su dibujo (pisos.png): de 2 a 6 plantas (10 a 26 vecinos); en la era industrial las casas del centro van ganando plantas cuando ya no cabe nada (hasta 4 con el vapor, 5 con el ferrocarril, 6 con el dirigible)"
   }
  ],
  "archivos": {
-  "index.html": "87133134264f97d8e506a12b587e7782095dfc4a",
+  "index.html": "488c49feaa0d7484bac5c3a755dfc6f64f63523d",
   "css/estilo.css": "6e4a4e8a8043f8eb38b9c69eff149ce8f3845648",
   "js/aldeanos.js": "9893e512bc3f1e72538dfc1df5b08e979bf06532",
   "js/ambiente.js": "6c96bf777f6cdfc55b648f495836521ee28aeb8f",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "a94b46896cfd10fd688954a3c5b9297e9b693872",
   "js/armas.js": "d4710aa65550aceb06fbdd1d2d290c8085f58e96",
-  "js/arte.js": "0181924be75c588812bb92ebfe00467f7f34910e",
+  "js/arte.js": "6c3727d950a5945e8f0c833b24ca2b041cca8363",
   "js/arte_mapa.js": "0735aacd9374b7a018f29da50396ae69dac6c139",
   "js/aviacion.js": "d27238ab2b6974ac77f3705d5e4f2aedfe5730b6",
   "js/bandidos.js": "bc804375208c5f300e33435e76d16001e8c4daae",
@@ -114,6 +114,7 @@
   "js/lluvia.js": "f5d9f158319f36671117bcf52a7e408433bc153d",
   "js/mapas.js": "822f9d930f4b0a1f4fc0bbb8808ef5ba56f2f985",
   "js/minas.js": "4f093817fbd8df8654fd4d2c9507600191bcd312",
+  "js/misiles.js": "bfbdc51ca6a5c34cab357f63a99521ae2a91b2ba",
   "js/monedas.js": "140cee68524bf3ac2eb75ac948e10c1c1b93dd6e",
   "js/mundo.js": "91d53575bdbe7eec762a335955f474b46ae8cfce",
   "js/noticias.js": "11ffc23894887afe32946f29c6721dfd2183720d",
