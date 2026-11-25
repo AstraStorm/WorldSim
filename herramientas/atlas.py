@@ -255,6 +255,10 @@ if os.path.exists(os.path.join(SRC, 'pisos.png')):  # bloques de pisos (era indu
 if os.path.exists(os.path.join(SRC, 'ventanaPisoOkupada.png')):  # la ventana de un piso okupado (se pinta encima de los bloques)
     add('okupa:ventana', shrink(box_parts('ventanaPisoOkupada.png', (240, 230, 1010, 1010)), 9, 40))
 
+if os.path.exists(os.path.join(SRC, 'torreElectrica_GeneradorElectricoCarbon.png')):  # electricidad: torre de alta tensión y central de carbón
+    add('pylon:torre', shrink(box_parts('torreElectrica_GeneradorElectricoCarbon.png', (240, 10, 680, 720)), 14, 40))
+    add('power:central', shrink(box_parts('torreElectrica_GeneradorElectricoCarbon.png', (960, 120, 1880, 700)), 52, 40))
+
 if os.path.exists(os.path.join(SRC, 'casino.png')):
     add('casino:casino', shrink(box_parts('casino.png', (380, 190, 1150, 830)), 40, 48))
 
