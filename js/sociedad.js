@@ -623,6 +623,11 @@ function drinkSpot(v, g){
   }
   if (far && (g.jars || 0) >= 1 && (!p || Math.hypot(tx - g.fx, ty - g.fy) < 30)) { const [sx, sy] = fireSpot(v, g); return { x:sx, y:sy, jar:true }; } // sin agua a mano: a las tinajas del pueblo
   if (!p && best) { const sb = standBy(best.i); if (sb) return { x:sb[0], y:sb[1], well:best }; } // o al pozo, aunque quede lejos
+  if (!p) { // todo helado: rompen el hielo de un río o lago, o derriten nieve en la hoguera (antes, se morían de sed junto al río congelado)
+    const ice = ringFind(tx, ty, 30, (x, y) => { const i = y * W + x; return tileFree(x, y) && nb4i(i).some(n => FRESH(world.biome[n]) && frozen(n)); });
+    if (ice) return { x:ice[0] * T + 2, y:ice[1] * T + 3, ice:true };
+    if (snowA && snowSet.size) { const [sx, sy] = fireSpot(v, g); return { x:sx, y:sy, snow:true }; }
+  }
   return p ? { x:p[0], y:p[1] } : null;
 }
 function wellWater(g, i, dt){
@@ -1602,7 +1607,7 @@ function diploTick(){
       if (!att || !def || !popOf(att) || !popOf(def)) { r.war = null; continue; }
       fieldBattleTick(att, def, r); // batallas en campo abierto (guerra.js)
       if (warEndCheck(a, b, att, def, r)) {} // la guerra acaba al lograr su objetivo, por rendición o por un tratado que les interese a los dos (estrategia.js)
-      else if (yearT - r.war.raidT > 80) { const back = Math.random() < .25, A = back ? def : att; if (!(knowsT(A, 'noche') && !isNight() && yearT - r.war.raidT < 170)) { r.war.raidT = yearT; const D = back ? att : def, far = Math.hypot(A.fx - D.fx, A.fy - D.fy); if (!(A.port && (far > 60 || Math.random() < .45) && launchNavalRaid(A, D, r))) launchRaid(A, D, r); } } // a veces contraataca el atacado
+      else if (yearT - r.war.raidT > 120) { const back = Math.random() < .25, A = back ? def : att; if (!(knowsT(A, 'noche') && !isNight() && yearT - r.war.raidT < 170)) { r.war.raidT = yearT; const D = back ? att : def, far = Math.hypot(A.fx - D.fx, A.fy - D.fy); if (!(A.port && (far > 60 || Math.random() < .45) && launchNavalRaid(A, D, r))) launchRaid(A, D, r); } } // a veces contraataca el atacado
       continue;
     }
     // Caravanas de comercio y diplomáticos
@@ -1980,6 +1985,7 @@ function fightPerson(v, e, dt){
     if (Math.random() < hit) {
       if (!shoot) slashes.push({ x:(v.x + e.x) / 2, y:e.y - 6, dir:v.dir, t:0, big:!!v.weapon }); if (!shoot) for (let n = 0; n < 4; n++) chips.push({ x:(v.x + e.x) / 2, y:(v.y + e.y) / 2 - 6, vx:(Math.random() - .5) * 30, vy:-8 - Math.random() * 14, life:0, max:.25 + Math.random() * .2, col:n % 2 ? '#fff3a0' : '#ffd040' }); // chispas del choque
       e.hp = (e.hp ?? 1) - dmg * castleShield(e); hurtFx(e, v.x, v.y, walkable); // (en su castillo aguantan más: fama.js)
+      if (e.hp <= 0 && !(e.woundT > yearT - DAY_LEN) && Math.random() < .45) { e.hp = .12; e.woundT = yearT; releaseTask(e); e.task = e.task && e.task.k === 'asalto' ? { k:'volver' } : null; floats.push({ x:e.x, y:e.y - 12, txt:'¡herido!', col:'#f0a0a0', life:0 }); } // muchos caen heridos, no muertos: se retiran a curarse (una vez al día como mucho)
       if (gv) milOf(gv).xp += .2;
       if (e.hp <= 0) {
         const r = ge && gv && warRel(ge, gv); if (r && r.war) { r.war.dead++; warLoss(r, ge); }
@@ -3291,7 +3297,7 @@ function updateVillages(dt){
     const cap = houseCap(g) + 4 + (g.hall != null && world.objs[g.hall] ? 8 : 0), adults = people.filter(v => { const a = (yearT - v.born) / YEAR; return a >= ADULT_H && a < 12; });
     // Cuantas más parejas, más nacimientos (antes solo podía tener hijos la primera: los pueblos se estancaban en unos 30)
     // Cada madre, como mucho un hijo cada año y pico (embarazo y crianza): unos cinco o seis en toda su vida, no uno cada poco
-    const moms = adults.filter(v => v.sex === 'm' && partnerOf(v) && partnerOf(v).sex === 'h' && adults.includes(partnerOf(v)) && yearT - (v.lastBirth ?? -1e9) > YEAR * .9);
+    const moms = adults.filter(v => v.sex === 'm' && partnerOf(v) && partnerOf(v).sex === 'h' && adults.includes(partnerOf(v)) && yearT - (v.lastBirth ?? -1e9) > YEAR * .6);
     const mom = moms[Math.floor(Math.random() * moms.length)], dad = mom && partnerOf(mom); // de una pareja
     if (mom && dad && pop < cap && g.food >= pop * 1.5 + 3 && Math.random() < dt * Math.min(.12, moms.length / (YEAR * .7)) * (hasLaw(g, 'natalidad') ? 1.6 : 1) * (g.fort && g.fort.built && !g.fort.ruined && pop < 45 ? 1.25 : 1)) { // con castillo hacen falta más manos
       const kid = lifeFields({ name:NAMES[nameIdx++ % NAMES.length], x:mom.x, y:mom.y, path:null, wait:1, walk:0, moving:false, dir:1, appear:1,

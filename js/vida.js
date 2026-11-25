@@ -15,11 +15,11 @@ function diseaseTick(g, dt, people){
   const crowd = pop / Math.max(4, houseCap(g) + 4), hungry = g.food < pop * .5, winter = seasonInfo().i === 3, war = [...rels.values()].some(r => r.war && (r.war.def === g.id || r.war.att === g.id));
   const quarantine = hasLaw(g, 'cuarentena'), hosp = hasHosp(g), sanidad = hasLaw(g, 'sanidad');
   // Brote nuevo: más fácil con la gente hacinada, con hambre, en invierno o en guerra
-  if (pop >= 8 && !people.some(u => u.sick) && Math.random() < dt * 1.5e-4 * (crowd > 1 ? 2 : 1) * (hungry ? 2 : 1) * (winter ? 1.6 : 1) * (war ? 1.8 : 1) * (sanidad ? .5 : 1)) infect(people[Math.floor(Math.random() * pop)], newDisease(), g);
+  if (pop >= 8 && !people.some(u => u.sick) && Math.random() < dt * 1.5e-4 * (crowd > 1 ? 2 : 1) * (hungry ? 2 : 1) * (winter ? 1.6 : 1) * (war ? 1.8 : 1) * (sanidad ? .5 : 1) * (hasLaw(g, 'vacunacion') ? .3 : 1)) infect(people[Math.floor(Math.random() * pop)], newDisease(), g);
   for (const v of people) {
     const s = v.sick; if (!s) continue;
     s.t += dt;
-    for (const u of people) if (u !== v && !u.sick && (Math.hypot(u.x - v.x, u.y - v.y) < 18 || (u.home != null && u.home === v.home)) && Math.random() < dt * (u.home != null && u.home === v.home ? .035 : .022) * s.spread * (quarantine ? .35 : 1) * (crowd > 1 ? 1.5 : 1)) infect(u, s, g); // de cerca, o en la misma casa
+    for (const u of people) if (u !== v && !u.sick && (Math.hypot(u.x - v.x, u.y - v.y) < 18 || (u.home != null && u.home === v.home)) && Math.random() < dt * (u.home != null && u.home === v.home ? .035 : .022) * s.spread * (quarantine ? .35 : 1) * (hasLaw(g, 'vacunacion') ? .4 : 1) * (crowd > 1 ? 1.5 : 1)) infect(u, s, g); // de cerca, o en la misma casa
     v.hp = (v.hp ?? 1) - dt * .006 * s.sev * (ageOf(v) < ADULT_H || ageOf(v) > v.life * .75 ? 1.6 : 1) * (hosp ? .4 : 1) * (sanidad ? .6 : 1) * (v.cared > yearT ? .3 : 1);
     if (v.hp <= 0) { const ep = epidemics.find(e => e.name === s.name && e.vid === g.id && !e.over); if (ep) ep.deaths++; releaseTask(v); killVillager(v, 'enfermedad'); continue; }
     if (s.t > s.dur) { (v.immune ||= []).push(s.name); v.sick = null; floats.push({ x:v.x, y:v.y - 12, txt:'curado', col:'#a8e0a8', life:0 }); }

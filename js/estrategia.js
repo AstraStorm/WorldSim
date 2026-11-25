@@ -47,7 +47,7 @@ function warEndCheck(a, b, att, def, r){
     return true;
   }
   // Agotados: han caído muchos para lo que eran
-  const tiredA = la >= Math.max(5, P.a * .45), tiredD = ld >= Math.max(5, P.d * .45), long = yearT - W0.start > DAY_LEN * 10;
+  const tiredA = la >= Math.max(4, P.a * .25), tiredD = ld >= Math.max(4, P.d * .25), long = yearT - W0.start > DAY_LEN * 10;
   if (tiredD && !tiredA) { // se rinde el atacado: paga un tributo y acepta lo que le piden
     const take = Math.min(def.food * .4, 60); def.food -= take; att.food += take;
     const ed = ecOf(def), ea = ecOf(att); if (ed && ea && ed.treas > 0) { const g0 = Math.round(ed.treas * .3); ed.treas -= g0; ea.treas += Math.round(g0 / ed.P * ea.P); }

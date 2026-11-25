@@ -334,7 +334,7 @@ function gridSite(g, kind){
 const GRID_FARM = new Set(['casa', 'almacen', 'granero']);
 // El casco del pueblo: las primeras manzanas alrededor de la plaza, que crecen con la gente. Ahí no se siembra (los campos,
 // alrededor) y, si quedó algún campo de antes, las casas pueden ocuparlo
-const coreOf = g => { const p = popOf(g); return { x0:g.fx - Math.min(52, 22 + p * .5), x1:g.fx + Math.min(52, 22 + p * .5), y0:g.fy - Math.min(34, 14 + p * .3), y1:g.fy + Math.min(34, 14 + p * .3) }; };
+const coreOf = g => { const p = popOf(g), hw = Math.min(30, 14 + p * .2), hh = Math.min(20, 10 + p * .12); return { x0:g.fx - hw, x1:g.fx + hw, y0:g.fy - hh, y1:g.fy + hh }; }; // (pequeño: si no, a los pueblos medianos no les quedaba sitio para campos)
 const inTownCore = (g, x0, y0, x1, y1) => { const c = coreOf(g); return !(x1 < c.x0 || x0 > c.x1 || y1 < c.y0 || y0 > c.y1); };
 const lotRock = (x0, y0, x1, y1) => { let n = 0; for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const o = world.objs[y * W + x]; if (o && ['stone', 'mineral'].includes(OBJ[o.key][1])) n++; } return n; };
 // Una casilla por la que puede ir una calle recta (los árboles y matas se talan al abrirla)

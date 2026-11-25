@@ -39,7 +39,7 @@ const houseCap = g => housesOf(g).reduce((a, i) => a + houseRoom(i), 0);
 // Bloques de pisos: de 2 a 6 plantas (house:bloque1..5); cuánto se puede subir depende de la técnica
 const BLOQUE_ROOM = { 'house:bloque1':10, 'house:bloque2':14, 'house:bloque3':18, 'house:bloque4':22, 'house:bloque5':26, 'house:bloque':14 };
 const bloqueTier = k => k === 'house:piedra' ? 0 : k && k.startsWith('house:bloque') ? +(k.slice(12) || 2) : -1;
-const bloqueMax = g => knowsSci(g, 'dirigible') ? 5 : knowsSci(g, 'ferrocarril') ? 4 : 3;
+const bloqueMax = g => Math.min(5, (knowsSci(g, 'dirigible') ? 5 : knowsSci(g, 'ferrocarril') ? 4 : 3) + (hasLaw(g, 'edificacion_altura') ? 1 : 0)); // (con la ley de edificación en altura, una planta más)
 // Casas que pueden ganar una planta (de piedra a bloque, o un bloque que sube): las más cercanas a la plaza primero
 const pisoCands = g => { const mx = bloqueMax(g); return housesOf(g).filter(i => { const t = bloqueTier(world.objs[i].key); return t >= 0 && t < mx && !villagers.some(u => u.task && u.task.k === 'pisos' && u.task.i === i); }).sort((a, b) => Math.hypot(a % W - g.fx, ((a / W) | 0) - g.fy) - Math.hypot(b % W - g.fx, ((b / W) | 0) - g.fy)); };
 const penAnimals = g => animals.filter(a => !a.dead && a.dom === g.id);
@@ -783,7 +783,7 @@ function runTask(v, g, dt){
     case 'feria': fairArrive(v, g, t); break;
     case 'nadar': case 'correr': sportArrive(v, g, t); break;
     case 'dormir': dismount(v); v.sleep = true; v.home = t.h ?? null; v.task = null; return;
-    case 'beber': v.actT = 2; v.onDone = () => { v.water = 1; v.hot = Math.max(0, (v.hot || 0) - .6);
+    case 'beber': v.actT = t.ice || t.snow ? 5 : 2; if (t.ice || t.snow) floats.push({ x:v.x, y:v.y - 12, txt:t.ice ? 'rompe el hielo' : 'derrite nieve', col:'#cfe8ff', life:0 }); v.onDone = () => { v.water = 1; v.hot = Math.max(0, (v.hot || 0) - .6);
       if (t.cup) { g.cups = Math.max(0, (g.cups || 0) - 1); const pr = Math.min(v.money || 0, 1); if (pr > 0) { v.money -= pr; ecOf(g).treas += pr * .5; } floats.push({ x:v.x, y:v.y - 12, txt:'taza de agua', col:'#9cc8f0', life:0 }); }
       else if (t.jar) { g.jars = Math.max(0, (g.jars || 0) - 1); } else if (!t.well) { const jc = 6 + storesOf(g).length * 8; if ((g.jars || 0) < jc) { g.jars = Math.min(jc, (g.jars || 0) + 2); if (!g.jarMsg && g.jars >= 4) { g.jarMsg = true; notify(`En ${g.name} empiezan a traer cántaros de agua para no tener que ir tan lejos a beber`, { x:g.fx * T, y:g.fy * T }); } } } if (!v.swims && !t.well && Math.random() < .03) v.swims = true; if (t.well) t.well.q = Math.max(0, t.well.q - .02); }; break;
     case 'comer': v.actT = 1.5; dismount(v); v.onDone = () => { deposit(v, g); if (eatFrom(v, g, 1) && g.coin && g.market != null && (v.money || 0) > 0) { const pr = Math.min(v.money, priceOf(g)); v.money -= pr; ecOf(g).treas += pr * .1; floats.push({ x:v.x, y:v.y - 12, txt:`−${pr} ${g.coin}`, col:'#c8b080', life:0 }); } }; break;

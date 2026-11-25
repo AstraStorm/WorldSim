@@ -27,12 +27,16 @@ const LANG_KINDS = {
   melodica:  { txt:'melódica', cons:['l', 'm', 'n', 'r', 'v', 'y', 'w', 'b', 'd'], tone:[.2, .35], syl:[.1, .14], cp:[.25, .4], coda:.1, cf:[1800, 3200], pitch:[1, 1.2] },
   cortante:  { txt:'cortante', cons:['t', 'k', 'p', 'tz', 'q', 'x', 'd', 'g'], tone:[.05, .15], syl:[.045, .065], cp:[.8, .95], coda:.7, cf:[2500, 5000] },
   nasal:     { txt:'nasal', cons:['m', 'n', 'ng', 'ny', 'b', 'd', 'g', 'l', 'w'], tone:[.15, .3], syl:[.08, .11], cp:[.4, .6], coda:.8, cf:[1200, 2400], pitch:[.85, 1] },
+  vocalica:  { txt:'vocálica', cons:['h', 'k', 'l', 'm', 'n', 'p', 'w', 't'], tone:[.15, .3], syl:[.07, .1], cp:[.2, .35], coda:0, cf:[1600, 3000], pitch:[.95, 1.15], dv:.35 },
+  eslava:    { txt:'eslava', cons:['str', 'zd', 'pr', 'sk', 'vl', 'br', 'tr', 'dz', 'ch', 'v', 'k', 'm', 'n', 'sl'], tone:[.05, .15], syl:[.07, .1], cp:[.7, .9], coda:.7, cf:[2400, 4500] },
+  semitica:  { txt:'semítica', cons:['q', 'kh', 'h', 'sh', 'd', 'b', 'r', 'm', 'z', 'y', 't'], tone:[.1, .2], syl:[.07, .1], cp:[.6, .8], coda:.6, cf:[1400, 2800], pitch:[.85, 1] },
+  aglutinante:{ txt:'aglutinante', cons:['k', 't', 'l', 'm', 'n', 'r', 's', 'y', 'g'], tone:[.1, .2], syl:[.05, .07], cp:[.5, .7], coda:.4, cf:[2000, 3600], extra:.6 },
   suave:     { txt:'suave', cons:['l', 'r', 'v', 'f', 'h', 's', 'm', 'n', 'y', 'th'], tone:[.1, .25], syl:[.08, .11], cp:[.3, .5], coda:.25, cf:[2000, 3500] },
 };
 function langPhon(r){
   const kinds = Object.keys(LANG_KINDS), kind = kinds[Math.floor(r() * kinds.length)], K = LANG_KINDS[kind], span = ([a, b]) => a + r() * (b - a);
   const vs = ['a', 'e', 'i', 'o', 'u'].sort(() => r() - .5), cs = K.cons.slice().sort(() => r() - .5);
-  return { kind, vow:vs.slice(0, 3 + Math.floor(r() * 3)).join(''), cons:cs.slice(0, 5 + Math.floor(r() * 3)), cf:[span(K.cf), span(K.cf), span(K.cf)],
+  return { kind, dv:K.dv || 0, extra:K.extra || 0, vow:vs.slice(0, 3 + Math.floor(r() * 3)).join(''), cons:cs.slice(0, 5 + Math.floor(r() * 3)), cf:[span(K.cf), span(K.cf), span(K.cf)],
     cp:span(K.cp), syl:span(K.syl), pitch:K.pitch ? span(K.pitch) : .85 + r() * .35, tone:span(K.tone), coda:r() < K.coda };
 }
 // Una lengua hija: suena parecida a la madre, pero con algunos sonidos cambiados (como el latín y sus hijas)
@@ -45,7 +49,8 @@ function langMutate(P, r){
   return Q;
 }
 function langWord(P, n, r){
-  let w = ''; for (let k = 0; k < n; k++) { if (k || r() < .8) w += P.cons[Math.floor(r() * P.cons.length)]; w += P.vow[Math.floor(r() * P.vow.length)]; }
+  if (P.extra && r() < P.extra) n++; // (las aglutinantes, palabras más largas)
+  let w = ''; for (let k = 0; k < n; k++) { if (k || r() < .8) w += P.cons[Math.floor(r() * P.cons.length)]; w += P.vow[Math.floor(r() * P.vow.length)]; if (P.dv && r() < P.dv) w += P.vow[Math.floor(r() * P.vow.length)]; } // (las vocálicas encadenan vocales)
   if (P.coda && r() < .5) w += 'nsrl'[Math.floor(r() * 4)];
   return w;
 }
@@ -75,7 +80,7 @@ function personName(g, sex){
 // Que ningún nombre inventado forme una palabrota (en español o en inglés)
 const BAD_NAME = /put[aoe]|mierd|culo|cul[oa]s|co[nñ]o|pene|poll[ao]|caca|ped[oa]s?$|^ped[oa]|teta|nazi|maric|joder|foll|cabr[oó]n|zorr|guarr|pito|chocho|mam[oó]n|polla|fuck|shit|cunt|dick|cock|nigg|negrat|retras|idiot|subnor|anal|sexo|porn|orto|ojete|verga|chingu?|pinche|gilip|capull|hostia/i;
 const decent = w => !BAD_NAME.test(w);
-const readable = w => decent(w) && w.length >= 4 && w.length <= 11 && !/[^aeiouáéíóú]{3}/.test(w.replace(/sh|ch|ts|tz|kh|gh|th|ng|ny/g, 'x')) && !/(.)/.test(w) && /[aeiou]/.test(w);
+const readable = w => decent(w) && w.length >= 4 && w.length <= 11 && !/[^aeiouáéíóú]{3}/.test(w.replace(/str|sh|ch|ts|tz|kh|gh|th|ng|ny|zd|pr|sk|vl|br|tr|dz|sl/g, 'x')) && !/(.)/.test(w) && /[aeiou]/.test(w);
 function placeName(g){
   const L = langList()[villageLang(g)]; if (!L || L.common) return null;
   const P = L.phon, r = Math.random;
