@@ -140,11 +140,11 @@ function drawPowerLines(){
 }; }
 { const base = nightLights; nightLights = function(glow, k){
   base(glow, k);
-  for (const g of villages) { if (!popOf(g) || !powered(g).on) continue; for (const tc of g.torches || []) if (tc.elec && isPowered(g, tc.i % W, (tc.i / W) | 0)) glow((tc.i % W) * T + 4, ((tc.i / W) | 0) * T - 6, 26, .5 * k, '255,244,210'); if (plantOn(g)) glow((g.plant % W) * T + 2, ((g.plant / W) | 0) * T - 10, 30, .35 * k, '255,220,150'); }
+  for (const g of villages) { if (!popOf(g) || !powered(g).on) continue; for (const tc of g.torches || []) if (tc.elec && isPowered(g, tc.i % W, (tc.i / W) | 0)) glow((tc.i % W) * T + 4, ((tc.i / W) | 0) * T - 6, 26, .5 * k, '255,244,210'); if (hasPower(g) && plantOn(g)) glow((g.plant % W) * T + 2, ((g.plant / W) | 0) * T - 10, 30, .35 * k, '255,220,150'); }
 }; }
 // Humo de la chimenea de la central
 let plantSmokeT = 0;
-SYSTEMS.push(dt => { if ((plantSmokeT -= dt) > 0) return; plantSmokeT = .35; for (const g of villages) if (plantOn(g)) { const x = (g.plant % W) * T + 2 - 14, y = ((g.plant / W) | 0) * T + 3 - 30; chips.push({ x, y, vx:(Math.random() - .5) * 3, vy:-4 - Math.random() * 3, life:0, max:2.5, col:'rgba(120,116,112,.55)' }); } });
+SYSTEMS.push(dt => { if ((plantSmokeT -= dt) > 0) return; plantSmokeT = .35; for (const g of villages) if (hasPower(g) && plantOn(g)) { const x = (g.plant % W) * T + 2 - 14, y = ((g.plant / W) | 0) * T + 3 - 30; chips.push({ x, y, vx:(Math.random() - .5) * 3, vy:-4 - Math.random() * 3, life:0, max:2.5, col:'rgba(120,116,112,.55)' }); } });
 // ---- Ley y tratado ----
 Object.assign(LAW_TXT, { red_publica:'red eléctrica pública' }); Object.assign(LAW_DESC, { red_publica:'la luz no se cobra: la gente está más contenta, pero el tesoro paga el carbón' }); Object.assign(LAW_LEAN, { red_publica:-.45 });
 Object.assign(LAW_REQ, { red_publica:g => natAny(g, hasPower) }); Object.assign(LAW_WHY, { red_publica:'ahora que hay central eléctrica' });
