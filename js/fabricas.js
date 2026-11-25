@@ -667,6 +667,6 @@ function outskirtsSite(g, kind){
 }
 { const base = planSite; planSite = function(g, kind){
   const p = base.apply(this, arguments); if (p || kind === 'casa' || kind === 'pozo' || kind === 'chabola') return p;
-  const C = g.outC; if (C && C.kind === kind && C.t === yearT) return C.p;
-  const q = outskirtsSite(g, kind); g.outC = { kind, t:yearT, p:q }; return q;
+  const C = (g.outC ||= {})[kind]; if (C && yearT - C.t < 10 && yearT >= C.t && (!C.p || !buildingClash(C.p[0], C.p[1], kind))) return C.p; // (el sitio hallado vale unos segundos)
+  const q = outskirtsSite(g, kind); g.outC[kind] = { t:yearT, p:q }; return q;
 }; }

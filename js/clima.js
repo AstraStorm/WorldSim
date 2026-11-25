@@ -20,15 +20,17 @@ function cloudSprites(type, w, h){
   paintBlobs(g, blobs, rnd);
   const P = CLOUD_PAL[type], body = document.createElement('canvas'), shadow = document.createElement('canvas');
   body.width = shadow.width = g.w; body.height = shadow.height = g.h;
-  const bx = body.getContext('2d'), sx = shadow.getContext('2d');
-  sx.fillStyle = '#000';
+  // Se pinta de golpe con los píxeles (antes, un fillRect por píxel: miles por nube)
+  const bx = body.getContext('2d'), sx = shadow.getContext('2d'), bi = bx.createImageData(g.w, g.h), si = sx.createImageData(g.w, g.h), B0 = bi.data, S0 = si.data;
+  const rgb = {}; for (const k in P) { const n = parseInt(P[k].slice(1), 16); rgb[k] = [n >> 16, (n >> 8) & 255, n & 255]; }
   let x0 = g.w, x1 = 0, y1 = 0; // contorno real de la nube, para que la lluvia no caiga fuera de ella
-  g.a.forEach((ch, k) => {
-    if (ch === '.') return;
-    const x = k % g.w, y = (k / g.w) | 0;
-    bx.fillStyle = P[ch]; bx.fillRect(x, y, 1, 1); sx.fillRect(x, y, 1, 1);
+  for (let k = 0; k < g.a.length; k++) {
+    const ch = g.a[k]; if (ch === '.') continue;
+    const x = k % g.w, y = (k / g.w) | 0, c = rgb[ch], o = k * 4;
+    B0[o] = c[0]; B0[o + 1] = c[1]; B0[o + 2] = c[2]; B0[o + 3] = 255; S0[o + 3] = 255;
     if (x < x0) x0 = x; if (x > x1) x1 = x; if (y > y1) y1 = y;
-  });
+  }
+  bx.putImageData(bi, 0, 0); sx.putImageData(si, 0, 0);
   return { body, shadow, x0, x1, y1 };
 }
 function makeSystem(){
@@ -80,6 +82,7 @@ function liftAt(x, y, wx, wy){
   const j = clamp(Math.floor((y - wy * 3) / T), 0, H - 1) * W + clamp(Math.floor((x - wx * 3) / T), 0, W - 1);
   return clamp((Math.max(world.e[i], world.sea) - Math.max(world.e[j], world.sea)) * 25, 0, 1);
 }
+let respriteLeft = 2;
 function resprite(c){
   const cx = c.x + c.w / 2, cy = c.y + c.h / 2, w = cloudW(c.q) * (c.type === 'storm' ? 1.25 : 1), sp = cloudSprites(c.type, w, w * c.hr);
   Object.assign(c, { x:cx - sp.body.width / 2, y:cy - sp.body.height / 2, w:sp.body.width, h:sp.body.height, x0:sp.x0, x1:sp.x1, y1:sp.y1, body:sp.body, shadow:sp.shadow, sw:w });
@@ -146,6 +149,7 @@ function footprint(c, tx, ty, gx0, gx1, gy0, gy1){
 }
 function updateWeather(dt){
   if (!params.weather) return;
+  respriteLeft = 2; // (regenerar nubes cuesta: como mucho dos por paso; las demás, en el siguiente)
   windAng += dt * .015;
   for (let k = 0; k < systems.length; k++) {
     const s = systems[k];
@@ -173,7 +177,7 @@ function updateWeather(dt){
       // Su aspecto sigue a su agua: blanca, gris de lluvia o tormenta (con calor y aire inestable)
       const want = c.rainOn && c.q > .95 && t > 16 && (p < 0 || lift > .3) ? 'storm' : c.rainOn || c.q > .6 ? 'rain' : 'normal';
       if (want !== c.type) { if ((c.typeT += dt) > 3) { c.type = want; c.typeT = 0; resprite(c); } }
-      else { c.typeT = 0; if (Math.abs(cloudW(c.q) * (c.type === 'storm' ? 1.25 : 1) - c.sw) / c.sw > .35) resprite(c); } // (regenerar la nube cuesta: solo si cambia mucho)
+      else { c.typeT = 0; if (Math.abs(cloudW(c.q) * (c.type === 'storm' ? 1.25 : 1) - c.sw) / c.sw > .35 && respriteLeft-- > 0) resprite(c); } // (regenerar la nube cuesta: solo si cambia mucho)
       if (c.q < .06 && !c.rainOn) c.dying = true;
     }
     c.precip += ((c.rainOn && c.type !== 'normal' ? 1 : 0) - c.precip) * Math.min(1, dt * .5);

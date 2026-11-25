@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611250252",
- "fecha": "2026-11-25 02:52",
+ "version": "202611250259",
+ "fecha": "2026-11-25 02:59",
  "novedades": [
   {
    "fecha": "2026-11-25",
-   "texto": "Escuelas, fondo de obras y leyes"
+   "texto": "Nubes rápidas"
+  },
+  {
+   "fecha": "2026-11-25",
+   "texto": "Escuelas, fondo de obras y efectos de las leyes que no se aplicaban"
   },
   {
    "fecha": "2026-11-25",
@@ -46,19 +50,15 @@
   {
    "fecha": "2026-11-24",
    "texto": "Fábricas de la revolución industrial (fabricas.js)"
-  },
-  {
-   "fecha": "2026-11-24",
-   "texto": "Arreglos de supervivencia: bandidos, piratas, frío y viajeros que cruzaban el mar"
   }
  ],
  "archivos": {
-  "index.html": "5ceb0fb1684f44224fca53e5ca9e77240cfd68fc",
+  "index.html": "b4ff11999749370dfba81f86b8c91938d918a896",
   "css/estilo.css": "9ee4d9a478d7311dc4a9fa7ccd7a3abfb25afd84",
   "js/aldeanos.js": "d9920d364407645d80f1cdfbdcc1baf7fd203032",
   "js/ambiente.js": "6c96bf777f6cdfc55b648f495836521ee28aeb8f",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
-  "js/arte.js": "25e3ee5c256bd6718832625cb4121be31171669e",
+  "js/arte.js": "d286f2e2baebea39850225a1056069ee8f27a63a",
   "js/arte_mapa.js": "373de74c89b7418c4a040aaea0ee2fd64b367b53",
   "js/bandidos.js": "a41a64350dfb0cadc79876bf166b9e56ee1a9962",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
@@ -70,7 +70,7 @@
   "js/ciudades.js": "f18585be779225a53e181a28aef1b7d4879cf2ae",
   "js/civilizacion.js": "4815ea74560602b2c8d44fc5411d642bbe1bb216",
   "js/clases.js": "79bb4c32fb2e41c1d21249646e18870652e3a4af",
-  "js/clima.js": "486241b39e93245cf4374d74e2916f8e168cab34",
+  "js/clima.js": "9a77aff06f09795a17068bf46686756a31897cf8",
   "js/colonias.js": "7bde071d290c8bebaa8a04105d62a73d5e8c4285",
   "js/comercio.js": "a5d3d6c160291bc74c9db4ac0991dd6b84be4f7f",
   "js/consejo.js": "3ed73b3dcc91de9bb3f1c23c7caec240114f61e4",
@@ -86,7 +86,7 @@
   "js/espionaje.js": "6291557af0a9488f321131fbfb7cdccf50cdbbf1",
   "js/estaciones.js": "e9e2f1194fdb60ca73c007b1cd7e9ae392ce2ad7",
   "js/estrategia.js": "5aa33d384476a46fa53ee6adf7d7b72360c8fd0e",
-  "js/fabricas.js": "05cf9aa4471c8c6af9e490fec91888f7a14457c3",
+  "js/fabricas.js": "6cae55bd738ed647e749c139a1d6e2d8f956aad0",
   "js/fama.js": "1b98918f8d312e237c6f399a43c0a3e278a4604b",
   "js/fauna.js": "6fdd58ad0493aa5179cae3344dc0a075d990bc1f",
   "js/globos.js": "a8829293851b57da087576ad6fb947ff8eca7c86",
