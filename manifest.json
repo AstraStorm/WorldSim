@@ -5,7 +5,11 @@
  "novedades": [
   {
    "fecha": "2026-11-25",
-   "texto": "Pueblos en cuadrícula, sin pueblos pegados, ritmo más lógico"
+   "texto": "Calles unidas a la plaza otra vez"
+  },
+  {
+   "fecha": "2026-11-25",
+   "texto": "Urbanismo: pueblos en cuadrícula con calles rectas (manzanas, calle mayor y transversales); pueblos nuevos lejos de los que ya hay; casas sobre campos si faltan; edificios dañados sin desplazarse; instituciones y guerras a su debido tiempo; epidemias menos letales; menos pozos por muertes de sed lejos de casa"
   },
   {
    "fecha": "2026-11-25",
@@ -46,10 +50,6 @@
   {
    "fecha": "2026-11-25",
    "texto": "Dibujo más ligero: banderas guardadas y pintadas por columnas, nubes que se regeneran menos y simulación limitada a 30 ms por fotograma"
-  },
-  {
-   "fecha": "2026-11-25",
-   "texto": "Sin tirones con mucha gente (perfil de una partida real: 329 personas, 15 pueblos, x5)"
   }
  ],
  "archivos": {
@@ -128,7 +128,7 @@
   "js/trabajo.js": "6337df3b06ff54f44790b7a744c363a098833c07",
   "js/tratados.js": "c7221ac52158a928a77489448ca7f1ce45ade8e2",
   "js/ui.js": "87256f0f01b8aa2a5b9d282c0a2a538dce73cf85",
-  "js/urbanismo.js": "b087e0ddbc348133f7b8a85c65b13cc9030b8d45",
+  "js/urbanismo.js": "d02be5b3fe8373c3b1e5d3495a377022b61247e7",
   "js/vegetacion.js": "440be3b609ce5146ed024c3c0ea0ec694344c592",
   "js/vida.js": "e70bc2e79a09c6b46317c8aec7fc5c6bf476264a",
   "js/visitas.js": "5cafd3070fdf9de08e0a6eebf6644ad13c46bc1d",

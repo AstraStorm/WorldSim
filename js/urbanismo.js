@@ -284,7 +284,8 @@ SYSTEMS.push(dt => {
   const towns = liveTowns(); if (!towns.length) return;
   for (const g of towns) if (!g.wallV2 && (g.wallPlan || g.wallPlan1)) wallMigrate(g);
   const g = towns[urbIdx++ % towns.length]; clearTrails(g);
-  g.houses = [...new Set(g.houses.filter(i => !world.objs[i] || world.objs[i].key.startsWith('house')))]; // (una casa en cuyo solar ya se levantó otra cosa deja de contar como casa) if (g.hall != null || popOf(g) >= 6) linkTick(g);
+  g.houses = [...new Set(g.houses.filter(i => !world.objs[i] || world.objs[i].key.startsWith('house')))]; // (una casa en cuyo solar ya se levantó otra cosa deja de contar como casa)
+  if (g.hall != null || popOf(g) >= 6) linkTick(g);
 });
 
 // ---- Trama en cuadrícula: manzanas y calles rectas ----
