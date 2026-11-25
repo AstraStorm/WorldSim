@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611251905",
- "fecha": "2026-11-25 19:05",
+ "version": "202611251913",
+ "fecha": "2026-11-25 19:13",
  "novedades": [
   {
    "fecha": "2026-11-25",
-   "texto": "DNI y pasaportes, pestaña Ciencia"
+   "texto": "Mapas Titánico, Continental y Planetario"
+  },
+  {
+   "fecha": "2026-11-25",
+   "texto": "DNI y pasaporte dibujados en la ficha (el DNI con los colores, la bandera y la maqueta de cada país; el pasaporte, modelo común); pestaña «Ciencia» en la ficha de cada pueblo; pestañas en pastillas; nubes más grandes y fuegos artificiales menos deslumbrantes"
   },
   {
    "fecha": "2026-11-25",
@@ -46,20 +50,16 @@
   {
    "fecha": "2026-11-25",
    "texto": "Por mar, en carabela: viajeros, flotas, colonos y diplomáticos de pueblos con barcas o puerto van en galeón (uno por cada 10, con la gente en cubierta) en vez de en barcas"
-  },
-  {
-   "fecha": "2026-11-25",
-   "texto": "Urbanismo: murallas que siguen la forma del pueblo (y una sola por ciudad de la misma nación), pintadas en orden con los edificios; casas y pozos junto a las calles; todo edificio unido a la plaza"
   }
  ],
  "archivos": {
-  "index.html": "1ef0400f85123607b74b6df99f507fac49e695ca",
+  "index.html": "438ec2988a5d099b789e45f6933228ac5885ed4b",
   "css/estilo.css": "86812acfbb924fad43a3c902badb4761868990b5",
   "js/aldeanos.js": "d9920d364407645d80f1cdfbdcc1baf7fd203032",
   "js/ambiente.js": "6c96bf777f6cdfc55b648f495836521ee28aeb8f",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "a94b46896cfd10fd688954a3c5b9297e9b693872",
-  "js/arte.js": "6fb22a91ad91f9439c446e7b0c509208a98dc038",
+  "js/arte.js": "f25dc9d51057efcb068d7a49f37fab5802d266ef",
   "js/arte_mapa.js": "373de74c89b7418c4a040aaea0ee2fd64b367b53",
   "js/bandidos.js": "bc804375208c5f300e33435e76d16001e8c4daae",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
@@ -71,7 +71,7 @@
   "js/ciudades.js": "ddf423fc864609142d90a46e1e7def5c64fef621",
   "js/civilizacion.js": "4815ea74560602b2c8d44fc5411d642bbe1bb216",
   "js/clases.js": "79bb4c32fb2e41c1d21249646e18870652e3a4af",
-  "js/clima.js": "d3d6ff479b0bc3285ac2ac7a9350d9d610075195",
+  "js/clima.js": "e545e861b32b69714cf334b67d1a6308503596c7",
   "js/colonias.js": "7bde071d290c8bebaa8a04105d62a73d5e8c4285",
   "js/comercio.js": "a5d3d6c160291bc74c9db4ac0991dd6b84be4f7f",
   "js/consejo.js": "3ed73b3dcc91de9bb3f1c23c7caec240114f61e4",
@@ -90,7 +90,7 @@
   "js/estrategia.js": "5aa33d384476a46fa53ee6adf7d7b72360c8fd0e",
   "js/fabricas.js": "082d7e65754cca4cfe22ac20979d2a901f376189",
   "js/fama.js": "1b98918f8d312e237c6f399a43c0a3e278a4604b",
-  "js/fauna.js": "6fdd58ad0493aa5179cae3344dc0a075d990bc1f",
+  "js/fauna.js": "f9955feca793b4c39fb033e8dd56d59e0054b693",
   "js/globos.js": "955b67ce3b9dd8c36b7ee965f9f05f4fb8bd9d39",
   "js/grafica.js": "d548461632882f80f4077d9e5754c70c5319331e",
   "js/guerra.js": "0d922c7dec10df8302532c3f3ae65587845edbbd",
@@ -99,7 +99,7 @@
   "js/impuestos.js": "9820acf00db62b3039fb43433ddcc3f522453daa",
   "js/industria.js": "45344548ba566b198096e11e73952483dfb1b864",
   "js/instituciones.js": "0efca47be64b6fd263864fb8b5c3f0c732d457d3",
-  "js/interfaz.js": "4299237e6a9db7550875760cf5c56ed9972f099b",
+  "js/interfaz.js": "a1a5da654e71c84daab4ac5868a5dc1b6e6214c8",
   "js/islas.js": "d65159562d188788176b02cca6001d0abcb20629",
   "js/justicia.js": "100314d7858fe651a4e7b6d0d9530dab4bdaa99e",
   "js/leyes.js": "ef8a179ecd2f195493f87d8b2124de0e3e644084",
@@ -110,7 +110,7 @@
   "js/monedas.js": "140cee68524bf3ac2eb75ac948e10c1c1b93dd6e",
   "js/mundo.js": "91d53575bdbe7eec762a335955f474b46ae8cfce",
   "js/noticias.js": "11ffc23894887afe32946f29c6721dfd2183720d",
-  "js/nucleo.js": "facf12453d7aef3849fb6094680b0d8dde5d4497",
+  "js/nucleo.js": "7392638ef1e54ca7fc795f989207f7295999e4b7",
   "js/okupas.js": "8bf7e443dddd18ca6dca6ccfbe64b9cbb772f040",
   "js/papeles.js": "659a0c8c296ebc6139916e3f4227b1e4b846a3dc",
   "js/partidas.js": "553141f6090a43484d8a82d8a025a6f21ada8bd9",

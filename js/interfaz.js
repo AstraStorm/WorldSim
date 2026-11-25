@@ -326,7 +326,7 @@ function updateWaves(t){
   // horizontal (y solo esa se copia al lienzo), así nunca se procesan millones de píxeles de golpe.
   // Con poco a la vista se anima todo cada fotograma (de cerca, sin saltos)
   const vr = visibleRect(), area = (vr[2] - vr[0] + 1) * (vr[3] - vr[1] + 1), bands = Math.min(10, Math.ceil(area / 5e5));
-  if (t - waveLast < (bands === 1 && zoom < 2 ? 50 : 45)) return; // (rendimiento) unas 20 veces por segundo bastan: el agua se mueve despacio
+  if (t - waveLast < (zoom < 1 ? 160 : bands === 1 && zoom < 2 ? 50 : 45)) return; // (con todo el mundo a la vista las olas apenas se distinguen: menos a menudo) // (rendimiento) unas 20 veces por segundo bastan: el agua se mueve despacio
   waveLast = t;
   waveBand = (waveBand + 1) % bands;
   const hb = Math.ceil((vr[3] - vr[1] + 1) / bands);

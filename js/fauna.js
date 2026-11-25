@@ -340,12 +340,12 @@ function updateAnimals(dt){
   for (const a of animals) { const k = aCell(a.x, a.y); let l = aGrid.get(k); if (!l) aGrid.set(k, l = []); l.push(a); }
   const seasonI = seasonInfo().i, counts = {};
   for (const a of animals) counts[a.sp] = (counts[a.sp] || 0) + (a.dead ? 0 : 1);
-  const [lx0, ly0, lx1, ly1] = visibleRect(), half = (aLod = (aLod + 1) & 1), dtAll = dt;
+  const [lx0, ly0, lx1, ly1] = visibleRect(), half = (aLod = (aLod + 1) & 3), dtAll = dt;
   for (const a of animals) {
     if (a.dead) continue;
     // Lejos de la vista (o con el mapa entero a la vista, que se ven diminutos), los animales salvajes piensan un paso sí y otro no (con el doble de tiempo): lo mismo, con la mitad de trabajo
     let dt = dtAll;
-    if (!a.dom && !a.lead && (zoom < 1.2 || a.x < lx0 - 60 || a.x > lx1 + 60 || a.y < ly0 - 60 || a.y > ly1 + 60)) { if ((a.lod ??= Math.random() < .5 ? 0 : 1) !== half) continue; dt = dtAll * 2; }
+    if (!a.dom && !a.lead && (zoom < 1.2 || a.x < lx0 - 60 || a.x > lx1 + 60 || a.y < ly0 - 60 || a.y > ly1 + 60)) { if ((a.lod = (a.lod ?? Math.floor(Math.random() * 4)) & 3) !== half) continue; dt = dtAll * 4; } // (fuera de la vista, uno de cada cuatro pasos: en los mapas enormes hay miles)
     const S = ANIMALS[a.sp], age = (yearT - a.born) / YEAR;
     a.moving = false;
     // Muerte por vejez, lava, hambre, frío o sed
@@ -399,10 +399,9 @@ function updateAnimals(dt){
     a.scanT -= dt;
     if (a.scanT <= 0) {
       a.scanT = .5; a.threat = null;
-      for (const p of animals) {
-        if (p.dead || !ANIMALS[p.sp].prey || !ANIMALS[p.sp].prey.includes(a.sp)) continue;
-        if (Math.hypot(p.x - a.x, p.y - a.y) < 34) { a.threat = p; break; }
-      }
+      const cx = Math.floor(a.x / 8), cy = Math.floor(a.y / 8); // solo en las celdas de alrededor (antes, todos los animales del mapa: en los mapas enormes era lo que más costaba)
+      for (let dy = -5; dy <= 5 && !a.threat; dy++) for (let dx = -5; dx <= 5 && !a.threat; dx++) { const l = aGrid.get((cy + dy) * 4096 + cx + dx); if (!l) continue;
+        for (const p of l) { if (p.dead || !ANIMALS[p.sp].prey || !ANIMALS[p.sp].prey.includes(a.sp)) continue; if (Math.hypot(p.x - a.x, p.y - a.y) < 34) { a.threat = p; break; } } }
     }
     if (a.threat && !a.threat.dead) {
       a.state = 'huyendo';
@@ -500,10 +499,10 @@ function updateAnimals(dt){
         if (lead && lead !== a && lead.prey && !lead.prey.dead) a.prey = lead.prey;
         if (!a.prey || a.prey.dead || Math.hypot(a.prey.x - a.x, a.prey.y - a.y) > 120) {
           a.prey = null;
-          let bd = 100;
-          for (const p of animals) {
-            if (p.dead || !S.prey.includes(p.sp)) continue;
-            const d = Math.hypot(p.x - a.x, p.y - a.y); if (d < bd) { bd = d; a.prey = p; }
+          if (!((a.huntT = (a.huntT || 0) - dt) > 0)) { a.huntT = .6; // (buscar presa, como mucho dos veces por segundo y solo por las celdas de alrededor)
+            let bd = 100; const cx = Math.floor(a.x / 8), cy = Math.floor(a.y / 8);
+            for (let dy = -13; dy <= 13; dy++) for (let dx = -13; dx <= 13; dx++) { const l = aGrid.get((cy + dy) * 4096 + cx + dx); if (!l) continue;
+              for (const p of l) { if (p.dead || !S.prey.includes(p.sp)) continue; const d = Math.hypot(p.x - a.x, p.y - a.y); if (d < bd) { bd = d; a.prey = p; } } }
           }
         }
         if (a.prey) {
@@ -536,7 +535,7 @@ function updateAnimals(dt){
     // Reproducción: adultos sanos, en primavera o verano, con pareja cerca y sin pasarse del límite
     if (!baby && age < a.life * .85 && a.food > .6 && seasonI <= 1 && yearT - a.lastBirth > YEAR * .75 && Math.random() < dt * .08) {
       const cap = Math.max(6, Math.round(N / S.per * 12));
-      const mate = animals.find(o => !o.dead && o !== a && o.sp === a.sp && (yearT - o.born) / YEAR >= ADULT && Math.hypot(o.x - a.x, o.y - a.y) < 30);
+      let mate = null; { const cx = Math.floor(a.x / 8), cy = Math.floor(a.y / 8); for (let dy = -4; dy <= 4 && !mate; dy++) for (let dx = -4; dx <= 4 && !mate; dx++) { const l = aGrid.get((cy + dy) * 4096 + cx + dx); if (l) mate = l.find(o => !o.dead && o !== a && o.sp === a.sp && (yearT - o.born) / YEAR >= ADULT && Math.hypot(o.x - a.x, o.y - a.y) < 30) || null; } }
       if (mate && (counts[a.sp] || 0) < cap && animals.length < 600) {
         a.lastBirth = mate.lastBirth = yearT;
         const n = S.litter[0] + Math.floor(Math.random() * (S.litter[1] - S.litter[0] + 1));

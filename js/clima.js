@@ -83,8 +83,16 @@ function liftAt(x, y, wx, wy){
   return clamp((Math.max(world.e[i], world.sea) - Math.max(world.e[j], world.sea)) * 25, 0, 1);
 }
 let respriteLeft = 2;
+// Dibujos de nube ya hechos, por tipo y tamaño parecido: una nube nueva reutiliza uno de ellos (pintar una nube grande
+// cuesta, y en los mapas enormes nacen y mueren muchas)
+const cloudPool = new Map();
+function pooledCloud(type, w, hr){
+  const key = `${type}|${Math.round(w / 14)}|${Math.round(hr * 12)}`; let l = cloudPool.get(key); if (!l) cloudPool.set(key, l = []);
+  if (l.length < 5) { const sp = cloudSprites(type, w, w * hr); l.push(sp); return sp; }
+  return l[Math.floor(Math.random() * l.length)];
+}
 function resprite(c){
-  const cx = c.x + c.w / 2, cy = c.y + c.h / 2, w = cloudW(c.q) * (c.type === 'storm' ? 1.25 : 1), sp = cloudSprites(c.type, w, w * c.hr);
+  const cx = c.x + c.w / 2, cy = c.y + c.h / 2, w = cloudW(c.q) * (c.type === 'storm' ? 1.25 : 1), sp = pooledCloud(c.type, w, c.hr);
   Object.assign(c, { x:cx - sp.body.width / 2, y:cy - sp.body.height / 2, w:sp.body.width, h:sp.body.height, x0:sp.x0, x1:sp.x1, y1:sp.y1, body:sp.body, shadow:sp.shadow, sw:w });
 }
 function makeCloud(x, y, q){
@@ -118,7 +126,7 @@ function initWeather(){
   systems = [];
   for (let k = Math.max(2, Math.round(N / 30000)); k > 0; k--) { const s = makeSystem(); s.age = 10 + Math.random() * s.life * .5; systems.push(s); }
   initClimateLite();
-  for (let k = Math.round(N / 7000); k > 0; k--) { const c = makeCloud(Math.random() * PW, Math.random() * PH, Math.random() * .9); c.alpha = 1; clouds.push(c); }
+  for (let k = Math.round(N / 10000); k > 0; k--) { const c = makeCloud(Math.random() * PW, Math.random() * PH, Math.random() * .9); c.alpha = 1; clouds.push(c); }
 }
 function strike(c){
   strikeAt(c.x + c.x0 + (c.x1 - c.x0) * (.2 + Math.random() * .6), c.y + c.h * (.4 + Math.random() * .4), c.y - LIFT + c.y1 - 2);
@@ -176,7 +184,7 @@ function updateWeather(dt){
       c.q = clamp(c.q, 0, 1.6);
       // Su aspecto sigue a su agua: blanca, gris de lluvia o tormenta (con calor y aire inestable)
       const want = c.rainOn && c.q > .95 && t > 16 && (p < 0 || lift > .3) ? 'storm' : c.rainOn || c.q > .6 ? 'rain' : 'normal';
-      if (want !== c.type) { if ((c.typeT += dt) > 3) { c.type = want; c.typeT = 0; resprite(c); } }
+      if (want !== c.type) { if ((c.typeT += dt) > 3 && respriteLeft-- > 0) { c.type = want; c.typeT = 0; resprite(c); } }
       else { c.typeT = 0; if (Math.abs(cloudW(c.q) * (c.type === 'storm' ? 1.25 : 1) - c.sw) / c.sw > .35 && respriteLeft-- > 0) resprite(c); } // (regenerar la nube cuesta: solo si cambia mucho)
       if (c.q < .06 && !c.rainOn) c.dying = true;
     }

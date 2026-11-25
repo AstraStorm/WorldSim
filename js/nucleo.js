@@ -2,7 +2,7 @@
 // ================= Constantes =================
 const T = 5; // píxeles por casilla (más píxeles por casilla: el mundo se ve más grande y detallado)
 let W, H, N, PW, PH;
-const SIZES = { s:[160,100,'Pequeño'], m:[240,150,'Mediano'], l:[320,200,'Grande'], xl:[420,262,'Enorme'], xxl:[560,350,'Gigante'], col:[720,450,'Colosal'] };
+const SIZES = { s:[160,100,'Pequeño'], m:[240,150,'Mediano'], l:[320,200,'Grande'], xl:[420,262,'Enorme'], xxl:[560,350,'Gigante'], col:[720,450,'Colosal'], tit:[900,562,'Titánico'], cont:[1080,675,'Continental'], plan:[1280,800,'Planetario'] };
 const TYPES = {
   archi: { n:'Archipiélago', water:72, freq:7 },
   islas: { n:'Islas',        water:64, freq:5.5 },
