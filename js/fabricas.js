@@ -649,3 +649,24 @@ function bossCut(g, f){
   const cut = Math.max(1, Math.round(wageOf(g, 3) * (1.7 - (f.pay ?? 1)) * (FACS[f.k].pay || 1)));
   const b = bossOf(g, f); if (b) { b.money = (b.money || 0) + cut; b.bossEarn = (b.bossEarn || 0) + cut; } else ec.treas += cut;
 }
+// ---- Solar a las afueras para los edificios grandes cuando dentro del pueblo ya no cabe nada ----
+// (los pueblos crecidos tienen caminos y campos por todas partes: la escuela, la universidad o el hospital no
+//  encontraban sitio nunca y el pueblo se quedaba estancado). Se busca el hueco libre más cerca del centro, por fuera,
+//  al que se llegue andando; si no hay, se apunta y no se vuelve a buscar en un rato
+function outskirtsSite(g, kind){
+  const fail = g.outFail ||= {}; if (fail[kind] > yearT) return null;
+  const [hw, hh] = KIND_DIMS[kind] || [4, 6], rT = townRadius(g), gx = Math.round(g.fx), gy = Math.round(g.fy), R = Math.round(Math.min(70, rT + 25)), reach = walkSet(g, R + 6);
+  let best = null, bd = 1e9;
+  for (let dy = -R; dy <= R; dy += 2) for (let dx = -R; dx <= R; dx += 2) {
+    const d = Math.hypot(dx, dy * 1.2), x = gx + dx, y = gy + dy; if (d < 6 || d > R || d >= bd || x <= hw || y <= hh + 1 || x >= W - hw - 1 || y >= H - 3 || !reach.has((y + 1) * W + x)) continue;
+    if (!zoneFree(x, y, hw, hh) || buildingClash(x, y, kind)) continue;
+    bd = d; best = [x, y];
+  }
+  if (!best) fail[kind] = yearT + DAY_LEN;
+  return best;
+}
+{ const base = planSite; planSite = function(g, kind){
+  const p = base.apply(this, arguments); if (p || kind === 'casa' || kind === 'pozo' || kind === 'chabola') return p;
+  const C = g.outC; if (C && C.kind === kind && C.t === yearT) return C.p;
+  const q = outskirtsSite(g, kind); g.outC = { kind, t:yearT, p:q }; return q;
+}; }

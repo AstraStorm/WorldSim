@@ -327,7 +327,7 @@ function chooseJob(v, g){
   add('vender', g.market != null && world.objs[g.market] && busyWith(g, 'vender') < 3 ? (v.oficio === 'mercader' ? 3 : .3) : 0);
   add('taberna', !hasTavern(g) && houses >= 3 && pop >= 10 && g.wood >= 12 && g.stone >= 4 && !busyWith(g, 'taberna') ? 3.5 : 0);
   // El gran templo: con templo ya hecho, mucha fe y mucha piedra (más si es teocracia)
-  add('escuela', !hasSchool(g) && (g.know || {}).escritura && g.hall != null && pop >= 10 && (g.wood >= 12 && g.stone >= 6 || g.wood >= 22) && !busyWith(g, 'escuela') ? (hasLaw(g, 'educacion') ? 6 : 3.5) : 0); // (sin piedra, toda de madera: más cara) // con la ley de educación, con más prisa
+  add('escuela', !hasSchool(g) && (g.know || {}).escritura && g.hall != null && pop >= 10 && (g.wood >= 12 && g.stone >= 6 || g.wood >= 22) && !busyWith(g, 'escuela') ? (hasLaw(g, 'educacion') ? 9 : pop >= 20 ? 8 : 4.5) : 0); // un pueblo grande sin escuela se queda atrás (sin escuela no hay universidad) // (sin piedra, toda de madera: más cara) // con la ley de educación, con más prisa
   add('enseñar', hasSchool(g) && v.oficio === 'maestro' && !isFreeDay(g) && villagers.some(u => !u.dead && u.vid === g.id && u.task && u.task.k === 'clase') ? 6 : 0);
   add('catedral', g.faith && g.temple != null && world.objs[g.temple] && !hasCathedral(g) && pop >= 20 && g.stone >= 30 && g.wood >= 15 && (g.devotion || 0) >= 3 && !busyWith(g, 'catedral') ? (2 + Math.min(4, (g.devotion || 0) * .2)) * (regimeOf(g) === 'teocracia' ? 2 : 1) : 0);
   add('explorar', hasPaper(g) && pop >= 8 && !(g.noExplore > yearT) && !travelers.some(t => t.kind === 'expedicion' && t.from === g.id) && !busyWith(g, 'explorar') ? (v.oficio === 'cartógrafo' ? 4 : 1) * ((g.expeditions || 0) < 3 ? 2 : 1) : 0);

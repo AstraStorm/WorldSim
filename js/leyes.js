@@ -22,7 +22,7 @@ LAW_CLASH.push(['libertad_prensa', 'censura'], ['impuesto_ricos', 'impuestos_baj
 REGIME_LAWS.fascismo.push('servicio_militar', 'toque_queda'); REGIME_LAWS.dictadura.push('toque_queda'); REGIME_LAWS.comunismo.push('impuesto_ricos'); REGIME_LAWS.teocracia.push('ley_seca');
 // Efectos que van con el tiempo (desde el ciclo de cada pueblo)
 function lawsTick(g, dt, people){
-  if ((g.lawT = (g.lawT ?? Math.random() * 30) - dt) > 0) return; g.lawT = 30; // cada 30 s (un sexto de día)
+  if ((g.lawsT = (g.lawsT ?? Math.random() * 30) - dt) > 0) return; g.lawsT = 30; // cada 30 s (un sexto de día; g.lawsT: g.lawT es la hora de la última ley propuesta, sociedad.js)
   const at = { x:g.fx * T, y:g.fy * T }, adults = people.filter(u => ageOf(u) >= ADULT_H), ec = ecOf(g);
   if (hasLaw(g, 'ley_seca')) { g.anger = (g.anger || 0) + .4; if (hasTavern(g) && Math.random() < .05 && !g.dryMsg) { g.dryMsg = true; notify(`En ${g.name} cierra la taberna por la ley seca; ya hay quien vende licor a escondidas`, at); } }
   if (hasLaw(g, 'toque_queda') && isNight()) g.anger = (g.anger || 0) + .2;
@@ -80,7 +80,7 @@ function lawWakeTick(g){
   if (prev) for (const l of awake) if (!prev.has(l) && all.includes(l) && LAW_REQ[l] && g.lawsAll && g.lawsAll.includes(l)) notify(`En ${g.name} entra en vigor la ley de «${LAW_TXT[l]}» ${LAW_WHY[l] || 'ahora que tiene sentido'}`, { x:g.fx * T, y:g.fy * T });
   g.lawsAwake = [...awake]; g.lawsAll = all.slice();
 }
-{ const base = lawsTick; lawsTick = function(g, dt, people){ const due = (g.lawT ?? 0) - dt <= 0; base(g, dt, people); if (due) lawWakeTick(g); }; }
+{ const base = lawsTick; lawsTick = function(g, dt, people){ const due = (g.lawsT ?? 0) - dt <= 0; base(g, dt, people); if (due) lawWakeTick(g); }; }
 // ---- El voto con sentido: ideas + lo que le toca a cada uno ----
 function lawNeed(u, g, law){
   const age = ageOf(u), adultsMoney = g.moneyMed ?? 0, m = u.money || 0, rich = m > adultsMoney * 2.5 && m > 30, poor = m < adultsMoney * .6, ob = u.oficio === 'obrero', boss = u.facBoss != null;
@@ -132,3 +132,48 @@ function lawWho(adults, g, law, yesSet){
   const fav = rows.filter(r => r[1] >= .7).sort((a, b) => b[1] - a[1])[0], con = rows.filter(r => r[1] <= .3).sort((a, b) => a[1] - b[1])[0];
   return [fav && `a favor sobre todo ${fav[0]}`, con && `en contra ${con[0]}`].filter(Boolean).join('; ');
 }
+
+// ================= El fondo de obras se usa =================
+// · Si el pueblo quiere levantar algo (la escuela, una institución, la siguiente fábrica) y le faltan materiales, el
+//   gobierno los compra con el fondo de obras
+// · Lo que pase de un tope (unas cuantas obras grandes) vuelve al tesoro: el dinero parado no sirve de nada
+function worksUse(g){
+  if (!budgetOn(g)) return; const ec = ecOf(g); if (!ec) return;
+  const P = priceOf(g), pop = popOf(g), want = [];
+  if (!hasSchool(g) && (g.know || {}).escritura && g.hall != null && pop >= 10) want.push(['la escuela', { wood:12, stone:6 }]);
+  for (const [k, I] of Object.entries(INSTS)) if (!hasInst(g, k) && I.want(g)) want.push([I.name, { wood:I.wood, stone:I.stone, iron:I.iron, gold:I.gold }]);
+  if (typeof nextFac === 'function') { const k = nextFac(g); if (k) want.push([FACS[k].name.toLowerCase(), facCost(g, FACS[k])]); }
+  const UNIT = { wood:.6, stone:.8, iron:3, gold:8, coal:1 }, NAME = { wood:'madera', stone:'piedra', iron:'hierro', gold:'oro', coal:'carbón' };
+  const reserve = 30 * P; // lo que cuesta en dinero una obra grande: eso se guarda
+  for (const [name, cost] of want) {
+    const bought = [];
+    for (const [f, n] of Object.entries(cost)) {
+      const miss = Math.ceil((n || 0) - (g[f] || 0)); if (miss <= 0) continue;
+      const price = UNIT[f] * P, can = Math.floor(((g.works || 0) - reserve) / price), q = Math.min(miss, can); if (q <= 0) continue;
+      g.works -= q * price; g[f] = (g[f] || 0) + q; bought.push(`${q} de ${NAME[f]}`);
+    }
+    if (bought.length) { const d = Math.floor(yearT / DAY_LEN); if ((g.worksBuy || {})[name] !== d) { (g.worksBuy ||= {})[name] = d; notify(`El gobierno de ${g.name} compra ${bought.join(', ')} con el fondo de obras para levantar ${name}`, { x:g.fx * T, y:g.fy * T }); } }
+    if ((g.works || 0) <= reserve) break;
+  }
+  // La escuela (y la universidad) no se quedan sin hacer por falta de fondo: el gobierno pasa lo que falte del tesoro
+  for (const k of ['escuela', 'universidad']) {
+    const wantIt = k === 'escuela' ? !hasSchool(g) && (g.know || {}).escritura && g.hall != null && pop >= 10 : !hasInst(g, 'universidad') && INSTS.universidad.want(g);
+    const c = workCost(g, k) || Math.round(30 * P), lack = c - (g.works || 0); if (!wantIt || lack <= 0 || ec.treas < lack) continue;
+    ec.treas -= lack; g.works = (g.works || 0) + lack;
+    if (!(g.eduFundT > yearT)) { g.eduFundT = yearT + DAY_LEN * 2; notify(`El gobierno de ${g.name} pasa ${Math.round(lack)} ${coinPl(g)} del tesoro al fondo de obras para hacer ${k === 'escuela' ? 'la escuela' : 'la universidad'}`, { x:g.fx * T, y:g.fy * T }); }
+  }
+  // Y la encarga: si nadie está con ella y hay material y dinero, el gobierno manda a un constructor (o al primero libre)
+  for (const k of ['escuela', 'universidad']) {
+    const wantIt = k === 'escuela' ? !hasSchool(g) && (g.know || {}).escritura && g.hall != null && pop >= 10 : !hasInst(g, 'universidad') && INSTS.universidad.want(g);
+    if (!wantIt || busyWith(g, k) || !worksOk(g, k)) continue;
+    const mat = k === 'escuela' ? (g.wood >= 12 && g.stone >= 6) || g.wood >= 22 : instAfford(g, INSTS.universidad); if (!mat) continue;
+    const who = villagers.filter(u => !u.dead && u.vid === g.id && ageOf(u) >= ADULT_H && !u.away && !u.boat && !u.sleep && u !== g.leader && !(u.task && ['asalto', 'refugio', 'beber', 'comer', 'protesta'].includes(u.task.k)) && !(u.actT > 0))
+      .sort((a, b) => (b.oficio === 'constructor') - (a.oficio === 'constructor'))[0]; if (!who) continue;
+    const t = setupTask(who, g, k); if (!t) continue;
+    releaseTask(who); who.task = t; who.lastD = Infinity; who.wait = 0;
+    if (!(g.eduOrderT > yearT)) { g.eduOrderT = yearT + DAY_LEN; notify(`El gobierno de ${g.name} encarga ${k === 'escuela' ? 'la escuela' : 'la universidad'}: ${who.name} se pone con la obra`, { x:who.x, y:who.y }); }
+  }
+  const cap = 150 * P; // lo que sobra, al tesoro
+  if ((g.works || 0) > cap) { const ex = Math.round(g.works - cap); g.works = cap; ec.treas += ex; if (!(g.worksBackT > yearT)) { g.worksBackT = yearT + DAY_LEN * 3; notify(`En ${g.name} sobran ${ex} ${coinPl(g)} del fondo de obras: vuelven al tesoro`, { x:g.fx * T, y:g.fy * T }); } }
+}
+{ const base = lawsTick; lawsTick = function(g, dt, people){ const due = (g.lawsT ?? 0) - dt <= 0; base(g, dt, people); if (due) worksUse(g); }; }

@@ -65,15 +65,13 @@ function schoolSpot(g){ // delante de la puerta, donde se pueda estar
   return sb;
 }
 function kidTask(v, g){ // los niños, en día de clase, a la escuela
-  if (!hasSchool(g) || ageOf(v) < .8 || isNight() || isFreeDay(g) || !inShift(g) || Math.random() > .7) return null;
+  if (!hasSchool(g) || ageOf(v) < .8 || isNight() || isFreeDay(g) || !inShift(g) || Math.random() > .95) return null; // (casi siempre van)
   const p = schoolSpot(g); return p ? { k:'clase', x:p[0], y:p[1] } : null;
 }
 // ---- Festivos: celebración en la plaza y fuegos al caer la tarde ----
 function holidayTick(g, dt, people){
   const f = holidayToday(g); if (!f) return;
   if (g.fiestaMsg !== dayNum()) { g.fiestaMsg = dayNum(); const at = { x:g.fx * T, y:g.fy * T }; notify(`Hoy es fiesta en ${g.name}: «${f.name}»`, at); snd('cheer', at.x, at.y); }
-  if (dayT() > .4 && dayT() < .6 && Math.random() < dt * .6) { // fuegos artificiales
-    const x = g.fx * T + (Math.random() - .5) * 60, y = g.fy * T - 30 - Math.random() * 30, col = ['#f0d060', '#f08a7a', '#9cd0f8', '#c8f0a0', '#f0a0e0'][Math.floor(Math.random() * 5)];
-    for (let k = 0; k < 14; k++) { const a = k / 14 * Math.PI * 2; chips.push({ x, y, vx:Math.cos(a) * 22, vy:Math.sin(a) * 22 - 4, life:0, max:.9, col }); }
-  }
+  // Fuegos artificiales al caer la tarde: solo si saben hacerlos (pirotecnia, con pólvora: devocion.js), y una vez por fiesta
+  if (dayT() > .4 && dayT() < .6 && g.fiestaFw !== dayNum() && typeof canFireworks === 'function' && canFireworks(g)) { g.fiestaFw = dayNum(); fireworksShow(g, 12, `por la fiesta de «${f.name}»`); }
 }
