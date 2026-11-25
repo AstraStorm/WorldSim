@@ -271,6 +271,11 @@ if os.path.exists(os.path.join(SRC, 'camion.png')):  # el camión, en 8 direccio
                       ('s', (665, 630, 870, 960), 9), ('so', (150, 620, 440, 940), 13), ('o', (115, 365, 470, 600), 16), ('no', (175, 40, 435, 330), 12)]:
         add(f'truck:{d}', shrink(box_parts('camion.png', box), w, 40))
 
+if os.path.exists(os.path.join(SRC, 'barcoCarguero.png')):  # el carguero: lleno y vacío, de lado (proa a la derecha) y de frente
+    S9 = 1.086
+    for k, box, w in [('lleno', (60, 30, 730, 345), 40), ('vacio', (770, 30, 1445, 345), 40), ('lleno_f', (1490, 160, 1715, 505), 13), ('vacio_f', (1740, 160, 1965, 505), 13)]:
+        add(f'cargo:{k}', shrink(box_parts('barcoCarguero.png', tuple(int(c * S9) for c in box)), w, 40))
+
 if os.path.exists(os.path.join(SRC, 'casino.png')):
     add('casino:casino', shrink(box_parts('casino.png', (380, 190, 1150, 830)), 40, 48))
 

@@ -1,0 +1,80 @@
+// World Sim · El barco carguero: comercio a lo grande por mar (y petróleo de las plataformas)
+// ================= Carguero =================
+// · Nuevo descubrimiento: «el transporte en contenedores» (vapor + electricidad)
+// · Solo con el puerto grande terminado: el pueblo tiene un carguero (uno, dos si pasa de 80 habitantes)
+// · Viajes de comercio: con algo que le sobra de verdad (comida, madera, piedra, combustible, agua embotellada) sale
+//   cargado hasta los topes hacia el puerto de un pueblo amigo; al llegar descarga (se ve vacío), cobra y vuelve con lo
+//   que al otro le sobra (o de vacío)
+// · Si tiene plataformas petroleras en el mar, el carguero va vacío y vuelve lleno de bidones (mucho más que un barco)
+// · Lleno se pinta con los contenedores; vacío, con la bodega a la vista. De lado o de frente según adónde vaya
+(() => { if (DISCOVERIES.some(d => d.k === 'contenedores')) return; const i = DISCOVERIES.findIndex(d => d.k === 'electricidad');
+  DISCOVERIES.splice(i + 1, 0, { k:'contenedores', txt:'el transporte en contenedores', cost:125, eff:'con un puerto grande, barcos cargueros: comercio por mar a lo grande', req:['vapor', 'electricidad'].filter(k => DISCOVERIES.some(d => d.k === k)) });
+  if (typeof SCI_REQ === 'object') SCI_REQ.contenedores = ['vapor', 'electricidad']; })();
+let cargos = [];
+const CARGO_GOODS = [['food', 'comida', g => Math.max(popOf(g) * 3, capOf(g) * .45)], ['wood', 'madera', g => capOf(g) * .45], ['stone', 'piedra', g => capOf(g) * .45], ['fuel', 'combustible', () => 10], ['bottles', 'agua embotellada', () => 30]]; // (lo que sobra: lo que pasa de casi la mitad del almacén)
+const cargoPort = g => { const L = g.port.launch; return [(L % W) * T + 2, ((L / W) | 0) * T + 3]; };
+const canCargo = g => g.port && g.bigPort && g.bigPort.done && knowsSci(g, 'contenedores') && popOf(g);
+function seaPath(a, b){
+  if (seaLine(a[0], a[1], b[0], b[1])) return [b];
+  const r = seaRoute(seaFrom(a[0], a[1]), seaFrom(b[0], b[1])); if (!r) return null;
+  return thinRoute(a[0], a[1], [...r, b], (x0, y0, x1, y1) => seaLine(x0, y0, x1, y1));
+}
+let cargoT = 0;
+SYSTEMS.push(dt => {
+  if (!world || (cargoT -= dt) > 0) return; cargoT = 3;
+  for (const g of liveTowns()) {
+    if (!canCargo(g) || cargos.filter(c => c.g === g.id).length >= (popOf(g) > 80 ? 2 : 1) || (g.cargoT || 0) > yearT) continue;
+    const from = cargoPort(g);
+    // Petróleo de sus plataformas
+    const plat = typeof oilDeposits === 'function' ? oilDeposits().find(d => d.sea && d.owner === g.id && (d.stock || 0) >= 20 && !cargos.some(c => c.d === d)) : null;
+    if (plat) { const to = [(plat.i % W) * T + 2, ((plat.i / W) | 0) * T + 3 + T], p = seaPath(from, to); if (p) { cargos.push({ g:g.id, d:plat, kind:'petroleo', pts:p, back:null, k:0, x:from[0], y:from[1], full:false, phase:'ida', home:from }); g.cargoT = yearT + 20; continue; } }
+    // Comercio: lo que le sobra, a un pueblo amigo con puerto
+    const sell = CARGO_GOODS.map(([k, n, keep]) => [k, n, (g[k] || 0) - keep(g)]).filter(x => x[2] > 12).sort((a, b) => b[2] - a[2])[0]; if (!sell) continue;
+    const mates = liveTowns().filter(o => o !== g && o.port && (() => { const r = rels.get(relKey(g, o)); return r && r.known && !r.war && r.v > 0; })()).sort((a, b) => Math.hypot(a.fx - g.fx, a.fy - g.fy) - Math.hypot(b.fx - g.fx, b.fy - g.fy));
+    for (const o of mates.slice(0, 3)) {
+      const to = cargoPort(o), p = seaPath(from, to); if (!p) continue;
+      const n = Math.min(Math.floor(sell[2]), 80); g[sell[0]] -= n;
+      cargos.push({ g:g.id, to:o.id, kind:'comercio', good:sell[0], gname:sell[1], n, pts:p, k:0, x:from[0], y:from[1], full:true, phase:'ida', home:from });
+      g.cargoT = yearT + 30;
+      if (!g.cargoMsg) { g.cargoMsg = true; notify(`Zarpa el primer carguero de ${g.name}, hasta los topes de ${sell[1]} para ${o.name}`, { x:from[0], y:from[1] }); }
+      break;
+    }
+  }
+});
+SYSTEMS.push(dt => {
+  if (!cargos.length) return;
+  for (const c of cargos) {
+    const g = villageById(c.g); if (!g || !popOf(g)) { c.done = true; continue; }
+    if (c.wait > 0) { c.wait -= dt; continue; }
+    const tgt = c.pts[c.k];
+    if (!tgt) { // fin de tramo
+      if (c.phase === 'ida') {
+        if (c.kind === 'petroleo') { const q = Math.min(c.d.stock || 0, 60); c.d.stock -= q; c.load = q; c.full = true; }
+        else { const o = villageById(c.to); if (o && popOf(o)) { o[c.good] = (o[c.good] || 0) + c.n; const eg = ecOf(g), eo = ecOf(o); if (eg && eo) { const pay = Math.round(c.n * .6); eo.treas -= pay; eg.treas += pay; } const r = rels.get(relKey(g, o)); if (r) r.v = Math.min(100, r.v + 1);
+            // y vuelve con lo que al otro le sobra
+            const back = CARGO_GOODS.map(([k, n, keep]) => [k, n, (o[k] || 0) - keep(o)]).filter(x => x[2] > 20 && x[0] !== c.good).sort((a, b) => b[2] - a[2])[0];
+            c.full = false; if (back) { const n = Math.min(Math.floor(back[2]), 60); o[back[0]] -= n; c.backGood = back[0]; c.backN = n; c.full = true; } } }
+        c.phase = 'vuelta'; c.wait = 4; c.pts = seaPath([c.x, c.y], c.home) || [c.home]; c.k = 0; continue;
+      }
+      if (c.kind === 'petroleo') g.oilStock = (g.oilStock || 0) + (c.load || 0);
+      else if (c.backGood) g[c.backGood] = (g[c.backGood] || 0) + c.backN;
+      c.done = true; continue;
+    }
+    const sp = 22 * dt, dx = tgt[0] - c.x, dy = tgt[1] - c.y, d = Math.hypot(dx, dy);
+    if (d <= sp) { c.x = tgt[0]; c.y = tgt[1]; c.k++; } else { c.x += dx / d * sp; c.y += dy / d * sp; c.dx = dx / d; c.dy = dy / d; }
+  }
+  cargos = cargos.filter(c => !c.done);
+});
+function drawCargos(now){
+  const [x0, y0, x1, y1] = visibleRect();
+  for (const c of cargos) {
+    if (c.x < x0 - 40 || c.x > x1 + 40 || c.y < y0 - 30 || c.y > y1 + 30) continue;
+    const front = (c.dy || 0) > .6, s = artFrame(`cargo:${c.full ? 'lleno' : 'vacio'}${front ? '_f' : ''}`); if (!s) continue;
+    const left = !front && (c.dx || 1) < 0, bob = Math.round(Math.sin(now / 500 + c.x) * .5), x = Math.round(c.x), y = Math.round(c.y) + bob;
+    vctx.fillStyle = 'rgba(0,0,0,.22)'; vctx.fillRect(x - (s.width >> 1), y + 1, s.width, 2);
+    if (left) { vctx.save(); vctx.translate(x, 0); vctx.scale(-1, 1); vctx.drawImage(s, -s.ax, y - s.height + 4); vctx.restore(); } else vctx.drawImage(s, x - s.ax, y - s.height + 4);
+    vctx.fillStyle = 'rgba(235,248,255,.6)'; if (c.wait <= 0 || c.wait == null) for (let k = 0; k < 4; k++) vctx.fillRect(x - (left ? -1 : 1) * ((s.width >> 1) + 2 + k * 3), y + 1 + (k % 2), 2, 1); // estela
+    const g = villageById(c.g), n = g && nationOf(g); if (n && !front) { const fx = left ? x + (s.width >> 1) - 6 : x - (s.width >> 1) + 5, fy = y - s.height + 2; vctx.fillStyle = '#3a3a3a'; vctx.fillRect(fx, fy, 1, 5); if (n.flag) for (let a = 0; a < 4; a++) for (let b = 0; b < 3; b++) { vctx.fillStyle = flagColor(n.flag, (a + .5) / 4, (b + .5) / 3); vctx.fillRect(fx + 1 + a, fy + b, 1, 1); } }
+  }
+}
+{ const base = drawInstFlags; drawInstFlags = function(t){ base.apply(this, arguments); drawCargos(performance.now()); }; }

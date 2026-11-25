@@ -37,7 +37,7 @@ const houseRoom = i => { const k = world.objs[i] && world.objs[i].key; return k 
 const houseCap = g => housesOf(g).reduce((a, i) => a + houseRoom(i), 0);
 // Casas de piedra que pueden pasar a bloque de pisos: las más cercanas a la plaza primero
 // Bloques de pisos: de 2 a 6 plantas (house:bloque1..5); cuánto se puede subir depende de la técnica
-const BLOQUE_ROOM = { 'house:bloque1':10, 'house:bloque2':14, 'house:bloque3':18, 'house:bloque4':22, 'house:bloque5':26, 'house:bloque':14 };
+const BLOQUE_ROOM = { 'house:bloque1':12, 'house:bloque2':18, 'house:bloque3':24, 'house:bloque4':30, 'house:bloque5':36, 'house:bloque':18 };
 const bloqueTier = k => k === 'house:piedra' ? 0 : k && k.startsWith('house:bloque') ? +(k.slice(12) || 2) : -1;
 const bloqueMax = g => Math.min(5, (knowsSci(g, 'dirigible') ? 5 : knowsSci(g, 'ferrocarril') ? 4 : 3) + (hasLaw(g, 'edificacion_altura') ? 1 : 0)); // (con la ley de edificación en altura, una planta más)
 // Casas que pueden ganar una planta (de piedra a bloque, o un bloque que sube): las más cercanas a la plaza primero

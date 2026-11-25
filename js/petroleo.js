@@ -81,7 +81,8 @@ SYSTEMS.push(dt => {
     for (const d of D) {
       if (d.owner !== g.id || (d.stock || 0) < 8 || oilRuns.some(t => t.d === d)) continue;
       const a = [(g.refinery % W) * T + 2, ((g.refinery / W) | 0) * T + 3 + T * 2], b = [(d.i % W) * T + 2, ((d.i / W) | 0) * T + 3 + T];
-      if (d.sea) { if (!g.port) continue; const L = g.port.launch, pa = [(L % W) * T + 2, ((L / W) | 0) * T + 3]; oilRuns.push({ g:g.id, d, sea:true, pts:[pa, b], back:[b, pa], k:0, x:pa[0], y:pa[1], load:0, phase:'ida', drop:a }); }
+      if (d.sea) { if (!g.port || (typeof canCargo === 'function' && canCargo(g))) continue; // (con carguero, lo trae el carguero: carguero.js)
+        const L = g.port.launch, pa = [(L % W) * T + 2, ((L / W) | 0) * T + 3]; oilRuns.push({ g:g.id, d, sea:true, pts:[pa, b], back:[b, pa], k:0, x:pa[0], y:pa[1], load:0, phase:'ida', drop:a }); }
       else { const r = landRoute(a[0], a[1], b[0], b[1]); if (!r) continue; oilRuns.push({ g:g.id, d, sea:false, pts:[a, ...r], k:0, x:a[0], y:a[1], load:0, phase:'ida' }); }
     }
   }
