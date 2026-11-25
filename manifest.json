@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611250111",
- "fecha": "2026-11-25 01:11",
+ "version": "202611250127",
+ "fecha": "2026-11-25 01:27",
  "novedades": [
   {
    "fecha": "2026-11-25",
-   "texto": "Castillos, jefes de fábrica y huelgas"
+   "texto": "Castillos con piedras, gráfica"
+  },
+  {
+   "fecha": "2026-11-25",
+   "texto": "Castillos, jefes de fábrica y huelgas, extractora prioritaria"
   },
   {
    "fecha": "2026-11-25",
@@ -46,26 +50,22 @@
   {
    "fecha": "2026-11-24",
    "texto": "Ejércitos en bloque: nueva formación (filas anchas, la más habitual en ejércitos grandes); la formación se mantiene hasta llegar cerca del campo de batalla y los demás corren a su sitio detrás del de cabeza"
-  },
-  {
-   "fecha": "2026-11-24",
-   "texto": "Visitas oficiales (visitas.js): el líder visita naciones amigas con escolta, en el mejor transporte (dirigible, globo, barco o por tierra); mejoran las relaciones, hablan de tratados, comercian y hay fuegos artificiales; los espías rivales se enteran y a veces preparan un atentado que la escolta puede frustrar"
   }
  ],
  "archivos": {
-  "index.html": "f4999ecfd410cbaf3f956e076b2483e5bd6625b3",
+  "index.html": "15aa1a07e0f4f9ca6b5e5a89dad7c21e0d9bddcc",
   "css/estilo.css": "5102a249d843e933be3be74f960883ba03efd264",
   "js/aldeanos.js": "d9920d364407645d80f1cdfbdcc1baf7fd203032",
   "js/ambiente.js": "6c96bf777f6cdfc55b648f495836521ee28aeb8f",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
-  "js/arte.js": "f57321072a9bc4c12730094695e7001d075b0a8c",
+  "js/arte.js": "4d072ab0cb2e109ad8bf45d47c9a4aff337dcae4",
   "js/arte_mapa.js": "373de74c89b7418c4a040aaea0ee2fd64b367b53",
   "js/bandidos.js": "a41a64350dfb0cadc79876bf166b9e56ee1a9962",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
   "js/calendario.js": "03559b1ef711175c3f112ecaa0243a06a44b4b9c",
   "js/cartografia.js": "2ba2e493f521fb4b806f6e4a51ad38cac679351c",
   "js/casino.js": "54ef4165a2e87319bde127f1a42805751316b317",
-  "js/castillos.js": "84d43c35d7bd956bea76746bede41c8627f529b5",
+  "js/castillos.js": "ad7b3f22e722471b01da51393d02ec7c451685ba",
   "js/ciencia.js": "24b5a844a2740abfe0e0d77518cab8fabb211c41",
   "js/ciudades.js": "f18585be779225a53e181a28aef1b7d4879cf2ae",
   "js/civilizacion.js": "4815ea74560602b2c8d44fc5411d642bbe1bb216",
@@ -90,6 +90,7 @@
   "js/fama.js": "1b98918f8d312e237c6f399a43c0a3e278a4604b",
   "js/fauna.js": "ab4d9de4dea1f9f00ee90d76625658f2edd2695c",
   "js/globos.js": "a8829293851b57da087576ad6fb947ff8eca7c86",
+  "js/grafica.js": "d548461632882f80f4077d9e5754c70c5319331e",
   "js/guerra.js": "e900c85fb00f0b77aa2b5d69d50aa0a709cbc3f9",
   "js/humanos.js": "131ffd13a26f2356139b8123eb58172931a33b1e",
   "js/idiomas.js": "a64e7f699431735d8b20a2eb82d317a02f4bd265",

@@ -193,11 +193,25 @@ function fortTick(dt){
     if (f.shotT <= 0 && near.length) { f.shotT = 1.5; const range = 16 * T;
       for (let k = 0; k < Math.min(arch, 4); k++) {
         const e = near[Math.floor(Math.random() * near.length)], d = Math.hypot(e.x - gx, e.y - (gy - 30)); if (d > range) continue;
-        const sx = gx + (Math.random() - .5) * 40, sy = gy - 34 - Math.random() * 8, hit = Math.random() < .42;
+        const sx = gx + (Math.random() - .5) * 40, sy = gy - 34 - Math.random() * 8, hit = Math.random() < .68;
         arrows.push({ x0:sx, y0:sy, a:e, v:{ x:sx, y:sy, dead:false }, t:0, dur:Math.max(.2, d / 160), hit, vis:true, bolt:Math.random() < .3 }); snd('arrow', sx, sy, .3);
         if (hit) fortHit(g, e);
       }
     }
+    // Piedras desde las almenas sobre los que se acercan (y, si el pueblo tiene catapultas guardadas, desde el patio y más lejos)
+    f.rockT = (f.rockT || 0) - el;
+    const cat = (g.siege || 0) > 0, rng = (cat ? 20 : 9) * T, close = foes.filter(u => Math.hypot(u.x - gx, u.y - (gy - 20)) < rng);
+    if (f.rockT <= 0 && close.length) { f.rockT = cat ? 3 : 4;
+      for (let k = 0; k < (cat ? Math.min(2, g.siege) : 1); k++) {
+        const e = close[Math.floor(Math.random() * close.length)], sx = gx + (Math.random() - .5) * 30, sy = gy - 30, tx = e.x + (Math.random() - .5) * 6, ty = e.y + (Math.random() - .5) * 4;
+        stones.push({ x0:sx, y0:sy, x1:tx, y1:ty, t:0, dur:.6 + Math.hypot(tx - sx, ty - sy) / 220, tgt:{} }); snd('boom', sx, sy, .25);
+        const hitR = (cat ? 2.4 : 1.6) * T, dmg = cat ? .55 : .4;
+        (f.rocks ||= []).push({ x:tx, y:ty, at:yearT + .6 + Math.hypot(tx - sx, ty - sy) / 220, r:hitR, dmg });
+      }
+    }
+    if (f.rocks && f.rocks.length) f.rocks = f.rocks.filter(R => { if (yearT < R.at) return true; // la piedra cae: daña a los que pilla debajo
+      for (const u of foes) if (!u.dead && Math.hypot(u.x - R.x, u.y - R.y) < R.r) { u.hp = (u.hp ?? 1) - R.dmg + .25; fortHit(g, u); } // (fortHit quita otro 0,25)
+      return false; });
     // Los atacantes que llegan al castillo lo golpean; el castillo es uno de sus objetivos
     for (const e of foes) {
       if (Math.hypot(e.x / T - x, e.y / T - (y - 4)) < 11) { f.hp -= .0015 * el; if (Math.random() < .02) chips.push({ x:gx + (Math.random() - .5) * 40, y:gy - 20 - Math.random() * 20, vx:(Math.random() - .5) * 20, vy:-10, life:0, max:.6, col:'#9a968e' }); }

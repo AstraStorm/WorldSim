@@ -14,6 +14,13 @@ const BASE = () => app.isPackaged ? path.join(process.resourcesPath, 'juego-base
 const VIEJA = path.join(app.getPath('appData'), 'Forja de Mundos');
 if (process.env.FORJA_DATA) app.setPath('userData', process.env.FORJA_DATA); // (para las pruebas: otra carpeta)
 else if (fs.existsSync(VIEJA)) app.setPath('userData', VIEJA);
+// Que dibuje la tarjeta gráfica (y, en portátiles con dos, la potente): aceleración aunque el controlador esté en la
+// lista negra de Chromium, rasterizado por GPU y, en Windows, la preferencia «Alto rendimiento» para este programa
+app.commandLine.appendSwitch('ignore-gpu-blocklist');
+app.commandLine.appendSwitch('enable-gpu-rasterization');
+app.commandLine.appendSwitch('enable-zero-copy');
+app.commandLine.appendSwitch('force_high_performance_gpu');
+if (process.platform === 'win32') { try { require('child_process').execFile('reg', ['add', 'HKCU\\Software\\Microsoft\\DirectX\\UserGpuPreferences', '/v', process.execPath, '/t', 'REG_SZ', '/d', 'GpuPreference=2;', '/f'], () => {}); } catch (e) {} } // (vale desde el siguiente arranque)
 protocol.registerSchemesAsPrivileged([{ scheme:'forja', privileges:{ standard:true, secure:true, supportFetchAPI:true, corsEnabled:true, stream:true } }]);
 let launcher = null, game = null;
 // ---- Archivos del juego ----
