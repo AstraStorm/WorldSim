@@ -259,6 +259,18 @@ if os.path.exists(os.path.join(SRC, 'torreElectrica_GeneradorElectricoCarbon.png
     add('pylon:torre', shrink(box_parts('torreElectrica_GeneradorElectricoCarbon.png', (240, 10, 680, 720)), 14, 40))
     add('power:central', shrink(box_parts('torreElectrica_GeneradorElectricoCarbon.png', (960, 120, 1880, 700)), 52, 40))
 
+if os.path.exists(os.path.join(SRC, 'pozoPetrolero.png')):  # petróleo: el balancín del pozo en 8 fotogramas (fila de arriba)
+    for k in range(8):
+        add(f'oil:pozo{k}', shrink(box_parts('pozoPetrolero.png', (int((560 + 180 * k) * 1.086), 20, int((752 + 180 * k) * 1.086), 250)), 22, 40))
+if os.path.exists(os.path.join(SRC, 'pozoPetroleroAcuatico.png')):
+    add('oil:plataforma', shrink(box_parts('pozoPetroleroAcuatico.png', (240, 40, 1290, 970)), 44, 40))
+if os.path.exists(os.path.join(SRC, 'refineriaPetrolera.png')):
+    add('oil:refineria', shrink(box_parts('refineriaPetrolera.png', (70, 70, 830, 660)), 46, 40))
+if os.path.exists(os.path.join(SRC, 'camion.png')):  # el camión, en 8 direcciones (a la misma escala: el de lado mide 16)
+    for d, box, w in [('n', (680, 40, 860, 335), 8), ('ne', (1100, 40, 1370, 330), 12), ('e', (1065, 365, 1420, 600), 16), ('se', (1090, 620, 1380, 940), 13),
+                      ('s', (665, 630, 870, 960), 9), ('so', (150, 620, 440, 940), 13), ('o', (115, 365, 470, 600), 16), ('no', (175, 40, 435, 330), 12)]:
+        add(f'truck:{d}', shrink(box_parts('camion.png', box), w, 40))
+
 if os.path.exists(os.path.join(SRC, 'casino.png')):
     add('casino:casino', shrink(box_parts('casino.png', (380, 190, 1150, 830)), 40, 48))
 

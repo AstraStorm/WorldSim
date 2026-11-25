@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611252058",
- "fecha": "2026-11-25 20:58",
+ "version": "202611252102",
+ "fecha": "2026-11-25 21:02",
  "novedades": [
   {
    "fecha": "2026-11-25",
-   "texto": "Electricidad"
+   "texto": "Petróleo"
+  },
+  {
+   "fecha": "2026-11-25",
+   "texto": "Bloque 1 · Electricidad: descubrimiento «la electricidad» (vapor + metalurgia), central de carbón (fuera de la ciudad si no cabe; sin carbón, apagón), torres de alta tensión con cables que se ramifican hacia las casas (12 casillas de alcance cada una), red nacional entre ciudades de la misma nación, farolas eléctricas que se encienden solas, fábricas un tercio más productivas con corriente; ley «red eléctrica pública» y tratado de suministro eléctrico. Arreglo: el trazado de las murallas en obras ya no veta construir lejos de ellas"
   },
   {
    "fecha": "2026-11-25",
@@ -46,22 +50,18 @@
   {
    "fecha": "2026-11-25",
    "texto": "Cada cosa en su sitio: la rejilla de edificios a la medida de cada uno (catedrales y castillos ya no quedan bajo pistas o cercados), nada se construye dentro de plazas, plaza sagrada ni mercado, repaso que quita árboles, piedras y antorchas de pistas y plazas, canteras y pozos de la plaza sagrada y recintos montados sobre edificios; lo roto se repara y lo quemado se reconstruye en su sitio con prioridad; referencias a edificios desaparecidos se limpian para poder rehacerlos; renovación urbana (derribar casas viejas para un edificio público que no cabe, con el solar reservado); globos: bombardean en guerra (más alcance, teas sin piedra) y no vuelan sin motivo; casino con más prioridad; la distancia sola ya no independiza"
-  },
-  {
-   "fecha": "2026-11-25",
-   "texto": "Guerra al otro lado del agua: si no se llega sin nadar (la mitad no sabe y a caballo nadie cruza), las tropas cargan madera, se reúnen en la orilla y tienden un puente de troncos casilla a casilla (hasta 12, nunca en mar profundo); si no hay paso posible no salen; la corriente se lleva el puente días después. Los soldados con frío ya no abandonan el ataque al encender una fogata"
   }
  ],
  "archivos": {
-  "index.html": "a43dcd1cb058e974b9888524ff4ce1feebdcfc6e",
+  "index.html": "1b87fbb499bf98119e1b1b61fd397d393f42a2d7",
   "css/estilo.css": "a644b9fd24e235d50e6b68b872db18b62516414e",
   "js/aldeanos.js": "9893e512bc3f1e72538dfc1df5b08e979bf06532",
   "js/ambiente.js": "6c96bf777f6cdfc55b648f495836521ee28aeb8f",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "a94b46896cfd10fd688954a3c5b9297e9b693872",
   "js/armas.js": "d4710aa65550aceb06fbdd1d2d290c8085f58e96",
-  "js/arte.js": "b87d4b3f82f8d45d0e86be449a18b289e6ed157f",
-  "js/arte_mapa.js": "d144e054c90517035fa4a01b9db7d9dc0931540b",
+  "js/arte.js": "9a7a73573faac4f1bf30034621adb19319b6aed6",
+  "js/arte_mapa.js": "39b83339ba585c93c68eae21cf68932092fee5cf",
   "js/bandidos.js": "bc804375208c5f300e33435e76d16001e8c4daae",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
   "js/calendario.js": "03559b1ef711175c3f112ecaa0243a06a44b4b9c",
@@ -96,7 +96,7 @@
   "js/globos.js": "955b67ce3b9dd8c36b7ee965f9f05f4fb8bd9d39",
   "js/grafica.js": "d548461632882f80f4077d9e5754c70c5319331e",
   "js/guerra.js": "0d922c7dec10df8302532c3f3ae65587845edbbd",
-  "js/humanos.js": "6e00fe86ad08326027daf2c6bc1c2769c9cd2fa2",
+  "js/humanos.js": "ba68155e4a393ada9a729b61e0acea30aa37fd09",
   "js/idiomas.js": "6fcf8b439467c9bba4c533f86710240f477c5b5b",
   "js/impuestos.js": "9820acf00db62b3039fb43433ddcc3f522453daa",
   "js/industria.js": "45344548ba566b198096e11e73952483dfb1b864",
@@ -117,6 +117,7 @@
   "js/okupas.js": "8bf7e443dddd18ca6dca6ccfbe64b9cbb772f040",
   "js/papeles.js": "659a0c8c296ebc6139916e3f4227b1e4b846a3dc",
   "js/partidas.js": "553141f6090a43484d8a82d8a025a6f21ada8bd9",
+  "js/petroleo.js": "f98ad4757268f7071726a29b92e76dafb7d7c423",
   "js/piratas.js": "0afe0f113fbed4631108e88c1b8cb20f9e299251",
   "js/pontones.js": "8de37aa4831746fa922e201c5dbbc75704c2a7b8",
   "js/potencias.js": "92f95b1429ed22221248d46e587f32f7bbcf9e54",
@@ -141,7 +142,7 @@
   "js/vista.js": "7b844535f4eefeb3f2a7da05f13f657de285ebfb",
   "js/vivienda.js": "0f3091767a41917156ce106447eb0e9659b69271",
   "js/volcanes.js": "f4aea099226dfe1b064fdfbd4779bddb6ed8a250",
-  "arte/atlas.png": "7ebffe8e28e2bf004311e9d9e41abcff6dc4ee75",
+  "arte/atlas.png": "f187ea4c9069f21ce07125d85e2bda2a679c56b0",
   "arte/logo.png": "d18c1e289f646312aeb3ec4087060e60088f0ccd",
   "arte/papeles/contrato.png": "e1625cf1f7bb7b9b5b142d12899265fab2ce7cf0",
   "arte/papeles/dni.png": "6dcfc114b88e629bfed1b2ac368acbfcd1474f34",

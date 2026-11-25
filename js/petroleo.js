@@ -1,0 +1,174 @@
+// World Sim · El petróleo: yacimientos, pozos, refinería, camiones, asfalto y plástico
+// ================= Petróleo =================
+// · Al crear el mundo (o la primera vez en una partida de antes) aparecen yacimientos: en desiertos y secarrales y, en el
+//   mar, cerca de la costa. Se ven como una mancha negra en cuanto alguien sabe buscar petróleo
+// · Ciencia: «la prospección petrolera» (combustión + vapor) → pozos; «el refinado» (prospección + electricidad) →
+//   refinería, combustible y asfalto; «el plástico» (refinado) → botellas de agua que se venden en el mercado
+// · Una ciudad que sabe va a por el yacimiento libre más cercano (hasta 180 casillas, en tierra de nadie o la suya; los del
+//   mar, si tiene muelle): levanta el pozo (o la plataforma) y el petróleo se acumula allí
+// · Con refinería, camiones con la bandera del país van del pozo a la refinería y vuelven (los del mar, en barco). La
+//   refinería saca combustible (las fábricas lo queman si no hay carbón), asfalto (las carreteras empedradas se asfaltan:
+//   se va más rápido) y, con el plástico, botellas: con la extractora de agua, agua casi sin fin en el mercado
+// · Los pozos son un botín de guerra: quien se rinde entrega uno al vencedor
+// · Leyes: «nacionalizar el petróleo» (lo que sale va al tesoro), «impuesto al combustible». Tratado: «suministro de petróleo»
+(() => {
+  const add = (after, d) => { if (DISCOVERIES.some(x => x.k === d.k)) return; const i = DISCOVERIES.findIndex(x => x.k === after); DISCOVERIES.splice(i + 1, 0, { ...d, req:d.req.filter(k => DISCOVERIES.some(x => x.k === k)) }); if (typeof SCI_REQ === 'object') SCI_REQ[d.k] = d.req; };
+  add('combustion', { k:'petroleo', txt:'la prospección petrolera', cost:115, eff:'saben encontrar petróleo y sacarlo con pozos, en tierra y en el mar', req:['combustion', 'vapor'] });
+  add('petroleo', { k:'refinado', txt:'el refinado del petróleo', cost:130, eff:'refinerías: combustible para las fábricas, asfalto para las carreteras y camiones', req:['petroleo', 'electricidad'] });
+  add('refinado', { k:'plastico', txt:'el plástico', cost:120, eff:'botellas de agua: con la extractora, agua casi sin fin en el mercado', req:['refinado'] });
+})();
+BLD.add('oil'); BUILD_DIMS.oil = [4, 5]; KIND_DIMS.refineria = [5, 6];
+OBJ['oil:pozo'] = ['Pozo petrolero', 'house', 0]; OBJ['oil:plataforma'] = ['Plataforma petrolera', 'house', 0]; OBJ['oil:refineria'] = ['Refinería', 'house', 0];
+Object.assign(BLD_DESC, { oil:'Petróleo: el pozo lo saca de la tierra (o del fondo del mar) y la refinería lo convierte en combustible, asfalto y plástico' });
+Object.assign(BLD_TYPE, { oil:'Energía' });
+// ---- Yacimientos ----
+function oilDeposits(){
+  if (world.oil) return world.oil;
+  const r = mulberry32((hashStr(params.seed) ^ 0x0117) >>> 0), out = [], seaNear = i => { const x = i % W, y = (i / W) | 0; for (let d = 2; d <= 10; d++) for (const [a, b] of [[d, 0], [-d, 0], [0, d], [0, -d]]) { const j = (y + b) * W + x + a; if (j >= 0 && j < N && !WATER[world.biome[j]]) return true; } return false; };
+  const want = Math.max(4, Math.round(N / 22000)), wantSea = Math.max(3, Math.round(N / 35000));
+  for (let k = 0; k < 40000 && out.filter(o => !o.sea).length < want; k++) { const i = Math.floor(r() * N), b = world.biome[i]; if (![B.DESERT, B.DRY, B.SAND].includes(b) && !(b === B.PLAINS && r() < .08)) continue; const x = i % W, y = (i / W) | 0; if (x < 6 || y < 8 || x >= W - 6 || y >= H - 4 || out.some(o => Math.hypot(o.i % W - x, ((o.i / W) | 0) - y) < 30)) continue; out.push({ i, sea:false, amt:500 + r() * 700 }); }
+  for (let k = 0; k < 40000 && out.filter(o => o.sea).length < wantSea; k++) { const i = Math.floor(r() * N), b = world.biome[i]; if (b !== B.SHALLOW && b !== B.SEA) continue; const x = i % W, y = (i / W) | 0; if (x < 6 || y < 8 || x >= W - 6 || y >= H - 4 || !seaNear(i) || out.some(o => Math.hypot(o.i % W - x, ((o.i / W) | 0) - y) < 30)) continue; out.push({ i, sea:true, amt:800 + r() * 900 }); }
+  return world.oil = out;
+}
+const oilKnown = () => villages.some(g => popOf(g) && knowsSci(g, 'petroleo'));
+const wellsOfNation = g => oilDeposits().filter(d => d.owner != null && villageById(d.owner) && nationOf(villageById(d.owner)) === nationOf(g));
+// ---- Cada poco: pozos, producción, refinería y transporte ----
+let oilT = 0;
+SYSTEMS.push(dt => {
+  if (!world || (oilT -= dt) > 0) return; const step = 2 - oilT; oilT = 2;
+  if (!oilKnown()) return;
+  const D = oilDeposits(), towns = liveTowns();
+  for (const d of D) { // producción
+    if (d.well == null || !world.objs[d.well]) continue; const g = villageById(d.owner); if (!g || !popOf(g)) { d.owner = null; continue; }
+    if (d.amt <= 0) { if (!d.dry) { d.dry = true; notify(`Se agota el pozo petrolero de ${g.name}`, { x:(d.i % W) * T, y:(d.i / W | 0) * T }); } continue; }
+    const q = Math.min(d.amt, step * (d.sea ? .09 : .06)); d.amt -= q; d.stock = Math.min(80, (d.stock || 0) + q);
+  }
+  for (const g of towns) {
+    if (!knowsSci(g, 'petroleo')) continue;
+    // Ir a por un yacimiento (uno cada vez)
+    if (!(g.oilFail > yearT - DAY_LEN / 2) && wellsOfNation(g).length < 1 + Math.floor(popOf(g) / 60) && (g.iron || 0) >= 8 && g.stone >= 20 && g.wood >= 15) {
+      let best = null, bd = 1e9;
+      for (const d of D) {
+        if (d.owner != null || (d.sea && !g.port)) continue; const x = d.i % W, y = (d.i / W) | 0, dist = Math.hypot(x - g.fx, y - g.fy); if (dist > 180 || dist >= bd) continue;
+        if (towns.some(o => nationOf(o) !== nationOf(g) && Math.hypot(o.fx - x, o.fy - y) < 22)) continue; // en la tierra de otro, no (eso es cosa de guerras)
+        if (!d.sea && (!tileFree(x, y) || buildingClash(x, y, 'cantera'))) continue;
+        best = d; bd = dist;
+      }
+      if (!best) g.oilFail = yearT;
+      else {
+        const x = best.i % W, y = (best.i / W) | 0; best.owner = g.id; best.well = best.i; g.iron -= best.sea ? 15 : 8; g.stone -= 20; g.wood -= 15;
+        world.objs[best.i] = { key:best.sea ? 'oil:plataforma' : 'oil:pozo', v:0, ox:0, oy:0, vid:g.id }; composeRegion(x - 8, y - 12, x + 8, y + 4); addEffect(x * T + 2, y * T + 3, 'poof');
+        notify(`¡${g.name} levanta ${best.sea ? 'una plataforma petrolera en el mar' : 'un pozo petrolero'} a ${Math.round(bd)} casillas de casa! El petróleo ya mana`, { x:x * T, y:y * T });
+      }
+    }
+    // La refinería
+    if (knowsSci(g, 'refinado') && wellsOfNation(g).some(d => d.owner === g.id) && !hasRefinery(g) && (g.iron || 0) >= 10 && g.stone >= 40 && g.wood >= 20 && !(g.refFail > yearT - DAY_LEN / 3)) {
+      const s = typeof plantSite === 'function' ? plantSite(g) : null;
+      if (!s || !tileFree(s[0], s[1]) || buildingClash(s[0], s[1], 'refineria')) g.refFail = yearT;
+      else { const i = s[1] * W + s[0]; world.objs[i] = { key:'oil:refineria', v:0, ox:0, oy:0, vid:g.id }; g.refinery = i; g.iron -= 10; g.stone -= 40; g.wood -= 20; composeRegion(s[0] - 10, s[1] - 12, s[0] + 10, s[1] + 4); addEffect(s[0] * T + 2, s[1] * T + 3, 'poof'); connect(g, s[0], s[1]); notify(`${g.name} abre su refinería: del petróleo saldrán combustible y asfalto`, { x:s[0] * T, y:s[1] * T }); }
+    }
+    if (!hasRefinery(g)) continue;
+    // Refinar: 2 de petróleo → 1 de combustible, algo de asfalto y (con el plástico) plástico
+    if ((g.oilStock || 0) >= 2) { const n = Math.min(Math.floor(g.oilStock / 2), 3); g.oilStock -= n * 2; g.fuel = (g.fuel || 0) + n; g.asphalt = (g.asphalt || 0) + n * .5; if (knowsSci(g, 'plastico')) g.plastic = (g.plastic || 0) + n * .5;
+      const ec = ecOf(g); if (ec && hasLaw(g, 'nacionalizar_petroleo')) ec.treas += n * 1.5; }
+    // Sin carbón, las fábricas queman combustible
+    if ((g.coal || 0) < 4 && (g.fuel || 0) >= 2) { g.fuel -= 2; g.coal = (g.coal || 0) + 2; }
+    // Asfalto: las carreteras empedradas del pueblo, una a una
+    if ((g.asphalt || 0) >= 1 && world.roads && world.roads.length) asphaltOne(g);
+    // Botellas de agua (con plástico y extractora)
+    if ((g.plastic || 0) >= 1 && (typeof hasPump !== 'function' || hasPump(g) || g.market != null)) { g.plastic -= 1; g.bottles = Math.min(200, (g.bottles || 0) + 6); if (!g.bottleMsg) { g.bottleMsg = true; notify(`En el mercado de ${g.name} ya venden agua embotellada: nadie pasa sed`, { x:g.fx * T, y:g.fy * T }); } }
+    // Camiones (y barcos, a las plataformas del mar): uno por pozo con petróleo esperando
+    for (const d of D) {
+      if (d.owner !== g.id || (d.stock || 0) < 8 || oilRuns.some(t => t.d === d)) continue;
+      const a = [(g.refinery % W) * T + 2, ((g.refinery / W) | 0) * T + 3 + T * 2], b = [(d.i % W) * T + 2, ((d.i / W) | 0) * T + 3 + T];
+      if (d.sea) { if (!g.port) continue; const L = g.port.launch, pa = [(L % W) * T + 2, ((L / W) | 0) * T + 3]; oilRuns.push({ g:g.id, d, sea:true, pts:[pa, b], back:[b, pa], k:0, x:pa[0], y:pa[1], load:0, phase:'ida', drop:a }); }
+      else { const r = landRoute(a[0], a[1], b[0], b[1]); if (!r) continue; oilRuns.push({ g:g.id, d, sea:false, pts:[a, ...r], k:0, x:a[0], y:a[1], load:0, phase:'ida' }); }
+    }
+  }
+});
+const hasRefinery = g => g.refinery != null && world.objs[g.refinery] && world.objs[g.refinery].key === 'oil:refineria';
+// ---- Asfalto ----
+let asphSet = null, asphN = -1;
+const asphaltSet = () => { const A = world.asphalt ||= []; if (!asphSet || asphN !== A.length) { asphSet = new Set(A); asphN = A.length; } return asphSet; };
+const isAsphalt = i => !!(world.asphalt && world.asphalt.length && asphaltSet().has(i));
+function asphaltOne(g){
+  const S = roadSet(), A = asphaltSet(); let best = null, bd = 1e9;
+  for (const i of S) { if (A.has(i)) continue; const d = Math.hypot(i % W - g.fx, ((i / W) | 0) - g.fy); if (d < bd && d < 60) { bd = d; best = i; } }
+  if (best == null) return; g.asphalt -= .25; world.asphalt.push(best); groundSig = '';
+  if (!g.asphMsg) { g.asphMsg = true; notify(`${g.name} empieza a asfaltar sus carreteras: los carros y camiones van mucho más rápido`, { x:g.fx * T, y:g.fy * T }); }
+}
+{ const base = paintRoads; paintRoads = function(){
+  base.apply(this, arguments); if (!world.asphalt || !world.asphalt.length) return;
+  const [x0, y0, x1, y1] = visibleRect(), A = asphaltSet();
+  for (const i of A) {
+    const px = (i % W) * T, py = ((i / W) | 0) * T; if (px + T < x0 || px > x1 || py + T < y0 || py > y1) continue;
+    vctx.fillStyle = '#3a3c40'; vctx.fillRect(px, py, T, T); vctx.fillStyle = '#46484e'; vctx.fillRect(px + 1, py + 1, T - 2, 1);
+    const h = A.has(i - 1) || A.has(i + 1), v = A.has(i - W) || A.has(i + W);
+    vctx.fillStyle = '#e8d070'; if (h && !v && (i % W) % 2) vctx.fillRect(px + 1, py + 2, 3, 1); else if (v && !h && ((i / W) | 0) % 2) vctx.fillRect(px + 2, py + 1, 1, 3); // la raya del medio
+  }
+}; }
+// ---- Los viajes del petróleo: camiones por tierra, barcos por mar ----
+let oilRuns = [];
+SYSTEMS.push(dt => {
+  if (!oilRuns.length) return;
+  for (const t of oilRuns) {
+    const g = villageById(t.g); if (!g || !popOf(g) || !hasRefinery(g)) { t.done = true; continue; }
+    const sp = (t.sea ? 26 : (knowsSci(g, 'refinado') ? 34 : 26)) * dt, tgt = t.pts[t.k];
+    if (!tgt) { // llegó al final del tramo
+      if (t.phase === 'ida') { t.load = Math.min(t.d.stock || 0, t.sea ? 30 : 12); t.d.stock -= t.load; t.phase = 'vuelta'; t.pts = t.sea ? t.back : t.pts.slice().reverse(); t.k = 0; continue; }
+      g.oilStock = (g.oilStock || 0) + t.load; if (t.sea && hasLaw(g, 'impuesto_combustible')) { const ec = ecOf(g); if (ec) ec.treas += 1; } t.done = true; continue;
+    }
+    const dx = tgt[0] - t.x, dy = tgt[1] - t.y, d = Math.hypot(dx, dy);
+    if (d <= sp) { t.x = tgt[0]; t.y = tgt[1]; t.k++; } else { t.x += dx / d * sp; t.y += dy / d * sp; t.ang = Math.atan2(dy, dx); }
+  }
+  oilRuns = oilRuns.filter(t => !t.done);
+});
+const TRUCK_DIR = ['e', 'se', 's', 'so', 'o', 'no', 'n', 'ne'];
+function drawOil(now){
+  const [x0, y0, x1, y1] = visibleRect(), known = oilKnown();
+  for (const d of oilDeposits()) {
+    const x = (d.i % W) * T + 2, y = ((d.i / W) | 0) * T + 3; if (x < x0 - 30 || x > x1 + 30 || y < y0 - 40 || y > y1 + 20) continue;
+    if (d.well == null || !world.objs[d.well]) { if (known && !d.sea) { vctx.fillStyle = 'rgba(16,14,18,.85)'; vctx.fillRect(x - 3, y - 1, 6, 2); vctx.fillRect(x - 2, y - 2, 4, 1); vctx.fillStyle = 'rgba(120,120,150,.6)'; vctx.fillRect(x - 1, y - 2, 1, 1); } else if (known) { vctx.fillStyle = 'rgba(16,14,18,.35)'; vctx.fillRect(x - 4, y - 1, 8, 2); } continue; }
+    if (!d.sea) { // el balancín, en marcha (8 fotogramas) mientras quede petróleo
+      const f = d.amt > 0 ? Math.floor(now / 140 + d.i) % 8 : 0, s = artFrame(`oil:pozo${f}`); if (s) vctx.drawImage(s, x - s.ax, y - s.height + 1);
+    }
+  }
+  for (const t of oilRuns) {
+    if (t.x < x0 - 20 || t.x > x1 + 20 || t.y < y0 - 20 || t.y > y1 + 20) continue; const g = villageById(t.g); if (!g) continue;
+    if (t.sea) { drawShip(t.x, t.y, Math.cos(t.ang || 0) < 0 ? -1 : 1, true, villageColor(nationOf(g)), now, .6, true); continue; }
+    const k = (Math.round(((t.ang || 0) / (Math.PI * 2)) * 8) + 8) % 8, s = artFrame(`truck:${TRUCK_DIR[k]}`); if (!s) continue;
+    vctx.drawImage(s, Math.round(t.x - s.ax), Math.round(t.y - s.height + 2));
+    const n = nationOf(g), c = villageColor(n), fx = Math.round(t.x) - 1, fy = Math.round(t.y - s.height - 1); // banderín del país en el techo
+    vctx.fillStyle = '#3a3a3a'; vctx.fillRect(fx, fy, 1, 4); if (n.flag) for (let a = 0; a < 4; a++) for (let b2 = 0; b2 < 3; b2++) { vctx.fillStyle = flagColor(n.flag, (a + .5) / 4, (b2 + .5) / 3); vctx.fillRect(fx + 1 + a, fy + b2, 1, 1); } else { vctx.fillStyle = `rgb(${c.join(',')})`; vctx.fillRect(fx + 1, fy, 4, 3); }
+  }
+}
+{ const base = drawInstFlags; drawInstFlags = function(t){ base.apply(this, arguments); drawOil(performance.now()); }; }
+// El pozo de tierra se pinta en vivo (animado): en la capa fija, nada
+{ const blank = document.createElement('canvas'); blank.width = 22; blank.height = 22; blank.ax = 11;
+  const base = artSprite; artSprite = function(o){ if (o && o.key === 'oil:pozo') return blank; return base.apply(this, arguments); }; }
+// Agua embotellada: en el mercado, como las tazas (y sin acabarse casi nunca)
+{ const base = drinkSpot; drinkSpot = function(v, g){
+  if (g && (g.bottles || 0) >= 1 && g.market != null && world.objs[g.market] && Math.hypot(g.market % W - v.x / T, ((g.market / W) | 0) - v.y / T) < 40) { const sb = standBy(g.market); if (sb) { g.bottles -= .5; return { x:sb[0], y:sb[1], cup:true }; } }
+  return base.apply(this, arguments);
+}; }
+// Guerra: quien se rinde entrega al vencedor el pozo que tenga más cerca
+{ const base = makePeace; makePeace = function(a, b, r, why){
+  const out = base.apply(this, arguments);
+  if (why && / se rinde /.test(why)) { const loser = / se rinde/.test(why) && why.startsWith(a.name) ? a : b, win = loser === a ? b : a; const d = wellsOfNation(loser).sort((p, q) => Math.hypot(p.i % W - win.fx, ((p.i / W) | 0) - win.fy) - Math.hypot(q.i % W - win.fx, ((q.i / W) | 0) - win.fy))[0];
+    if (d) { d.owner = win.id; const o = world.objs[d.well]; if (o) o.vid = win.id; notify(`${loser.name} entrega su pozo petrolero a ${win.name} como parte de la rendición`, { x:(d.i % W) * T, y:((d.i / W) | 0) * T }); } }
+  return out;
+}; }
+// ---- Leyes y tratado ----
+Object.assign(LAW_TXT, { nacionalizar_petroleo:'nacionalizar el petróleo', impuesto_combustible:'impuesto al combustible' });
+Object.assign(LAW_DESC, { nacionalizar_petroleo:'lo que sale de la refinería deja dinero en el tesoro', impuesto_combustible:'el combustible paga impuesto: más dinero para el tesoro, algo más de enfado' });
+Object.assign(LAW_LEAN, { nacionalizar_petroleo:-.5, impuesto_combustible:-.2 });
+Object.assign(LAW_REQ, { nacionalizar_petroleo:g => wellsOfNation(g).length > 0, impuesto_combustible:g => natAny(g, hasRefinery) });
+Object.assign(LAW_WHY, { nacionalizar_petroleo:'ahora que hay pozos', impuesto_combustible:'ahora que hay refinería' });
+LAW_CLASH.push(['nacionalizar_petroleo', 'libre_industria']);
+{ const base = lawsTick; lawsTick = function(g, dt, people){ const due = (g.lawsT ?? 0) - dt <= 0; base.apply(this, arguments); if (!due || !hasLaw(g, 'impuesto_combustible') || !(g.fuel > 0)) return; const ec = ecOf(g); if (ec) ec.treas += 2; g.anger = (g.anger || 0) + .1; }; }
+Object.assign(TREATY, { petroleo:{ n:'acuerdo de suministro de petróleo', days:[6, 10], icon:'🛢' } });
+{ const base = treatyTick; treatyTick = function(a, b, r){
+  base.apply(this, arguments); if (!r.known || r.war) return;
+  if (hasTreaty(r, 'petroleo')) { for (const [s, c] of [[a, b], [b, a]]) if ((s.fuel || 0) > 6 && !hasRefinery(c)) { s.fuel -= 1; c.fuel = (c.fuel || 0) + 1; const es = ecOf(s), ec = ecOf(c); if (es && ec) { ec.treas -= 1; es.treas += 1; } } }
+  else if (r.v > 20 && ((hasRefinery(a) && !hasRefinery(b) && industrial(b)) || (hasRefinery(b) && !hasRefinery(a) && industrial(a))) && Math.random() < .03) signTreaty(a, b, r, 'petroleo');
+}; }

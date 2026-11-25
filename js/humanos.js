@@ -212,7 +212,7 @@ function vGo(v, x, y, dt, run){
   const swim = inWater(v.x, v.y), child = (yearT - v.born) / YEAR < ADULT_H;
   const onPath = pathMap.has(Math.floor(v.y / T) * W + Math.floor(v.x / T)) || bridgeSet.has(Math.floor(v.y / T) * W + Math.floor(v.x / T));
   const sp = Math.min(dg, (swim ? 4 * (1 + (v.swimFit || 0)) : 10 * (1 + (v.fit || 0) * .3)) * // (la piscina y la pista mejoran la velocidad: deportes.js)
-     (onPath ? (isRoad(Math.floor(v.y / T) * W + Math.floor(v.x / T)) ? 1.75 : 1.3) : 1) * (run ? 1.35 : 1) * (child ? .8 : 1) * (v.mount ? (v.cart ? 1.6 : 2) : 1) * dt), base = Math.atan2(dy, dx);
+     (onPath ? (typeof isAsphalt === 'function' && isAsphalt(Math.floor(v.y / T) * W + Math.floor(v.x / T)) ? 2.2 : isRoad(Math.floor(v.y / T) * W + Math.floor(v.x / T)) ? 1.75 : 1.3) : 1) * (run ? 1.35 : 1) * (child ? .8 : 1) * (v.mount ? (v.cart ? 1.6 : 2) : 1) * dt), base = Math.atan2(dy, dx);
   let moved = false;
   // Rodea los obstáculos siempre por el mismo lado durante un rato (si no, da bandazos a izquierda y derecha),
   // y no se gira a cada paso
