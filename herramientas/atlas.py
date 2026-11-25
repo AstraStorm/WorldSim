@@ -284,6 +284,12 @@ if os.path.exists(os.path.join(SRC, 'turbinaEolica.png')):  # molino eólico: to
     for k, box in enumerate([(990, 205, 1135, 360), (1130, 230, 1260, 350), (1225, 245, 1350, 385), (1345, 250, 1500, 390), (1015, 480, 1140, 635), (1120, 480, 1240, 625), (1235, 500, 1370, 635), (1350, 470, 1500, 605)]):
         add(f'wind:aspas{k}', shrink(box_parts('turbinaEolica.png', box), 15, 40))
 
+if os.path.exists(os.path.join(SRC, 'planeador6Dir.png')):  # el planeador en 6 vistas: de frente, de espaldas, de lado (izquierda y derecha) y en diagonal
+    for k, box, w in [('s', (50, 165, 485, 425), 20), ('n', (525, 95, 1005, 450), 22), ('o', (1060, 200, 1485, 420), 20), ('so', (50, 565, 450, 880), 19), ('se', (575, 565, 975, 880), 19), ('e', (1055, 620, 1470, 825), 20)]:
+        add(f'plane:{k}', shrink(box_parts('planeador6Dir.png', box), w, 40))
+if os.path.exists(os.path.join(SRC, 'materialPistas.png')):  # el aeródromo: pista con su torre, hangar, manga y luces
+    add('air:aerodromo', shrink(box_parts('materialPistas.png', (30, 45, 760, 895)), 56, 40))
+
 if os.path.exists(os.path.join(SRC, 'casino.png')):
     add('casino:casino', shrink(box_parts('casino.png', (380, 190, 1150, 830)), 40, 48))
 
