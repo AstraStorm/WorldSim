@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611250227",
- "fecha": "2026-11-25 02:27",
+ "version": "202611250236",
+ "fecha": "2026-11-25 02:36",
  "novedades": [
   {
    "fecha": "2026-11-25",
-   "texto": "Dibujo más ligero"
+   "texto": "Pensar por turnos y caminos guardados"
+  },
+  {
+   "fecha": "2026-11-25",
+   "texto": "Dibujo más ligero: banderas guardadas y pintadas por columnas, nubes que se regeneran menos y simulación limitada a 30 ms por fotograma"
   },
   {
    "fecha": "2026-11-25",
@@ -46,19 +50,15 @@
   {
    "fecha": "2026-11-24",
    "texto": "Globos y dirigibles en guerra: además de rocas lanzan teas (cachos de madera con tela ardiendo, 2 de madera y 1 de tela cada una) que prenden la aldea enemiga; prenden la madera aunque el suelo no arda y la apagan agua, nieve o lluvia. Las espadas de combate, mucho más grandes"
-  },
-  {
-   "fecha": "2026-11-24",
-   "texto": "Farolas: fuera las farolas que se encendían solas; en los pueblos crecidos (ayuntamiento y 20 habitantes) las antorchas pasan a ser farolas de vela, que se encienden a mano al atardecer como las antorchas"
   }
  ],
  "archivos": {
-  "index.html": "1ec51f863485aa911b382ee2438d2cd38520f5bc",
+  "index.html": "5cb7db03475a231b73695b14d01d25c3d2050c1f",
   "css/estilo.css": "9ee4d9a478d7311dc4a9fa7ccd7a3abfb25afd84",
   "js/aldeanos.js": "d9920d364407645d80f1cdfbdcc1baf7fd203032",
   "js/ambiente.js": "6c96bf777f6cdfc55b648f495836521ee28aeb8f",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
-  "js/arte.js": "d0759d7b04173a8bc6545cdfce701a4e7f641aa6",
+  "js/arte.js": "ada34569c7fad73505dae2dd932400820bf5de82",
   "js/arte_mapa.js": "373de74c89b7418c4a040aaea0ee2fd64b367b53",
   "js/bandidos.js": "a41a64350dfb0cadc79876bf166b9e56ee1a9962",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
@@ -92,7 +92,7 @@
   "js/globos.js": "a8829293851b57da087576ad6fb947ff8eca7c86",
   "js/grafica.js": "d548461632882f80f4077d9e5754c70c5319331e",
   "js/guerra.js": "e900c85fb00f0b77aa2b5d69d50aa0a709cbc3f9",
-  "js/humanos.js": "fd8f7c41dd6d55aee99245254487dd247a4279a4",
+  "js/humanos.js": "ef79a3aa2a56449fc219caa68a0986e778ee1206",
   "js/idiomas.js": "a64e7f699431735d8b20a2eb82d317a02f4bd265",
   "js/impuestos.js": "9820acf00db62b3039fb43433ddcc3f522453daa",
   "js/industria.js": "beb92aac57d833266a64013f2d92b3ee256a6c03",
@@ -121,7 +121,7 @@
   "js/riqueza.js": "4437665e375d993ccfc2bec62225436b8fd03dce",
   "js/rutas.js": "6e12cafc1992e09fc3c2b5b13ca7d7db6416c364",
   "js/sindicatos.js": "f7cb8bf83ff74322a6fc45cc6ac90550425c6d15",
-  "js/sociedad.js": "a7dd838e1417f139e5e8e45f1b54f59ee5b6170a",
+  "js/sociedad.js": "e2680684f24b19e9b5f6bfdad5e6a3b16d73847c",
   "js/sonido.js": "25be9d9bda62336aba463c82e31668d0e9b2bc54",
   "js/titulares.js": "0506409e843da939370bb404b894a52cffa68620",
   "js/trabajo.js": "50d504968cee2cd4f5170a8e34cd81f649d6bf04",

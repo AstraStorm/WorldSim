@@ -145,6 +145,21 @@ function routeTo(v, goal){
   out.reverse(); if (partial) out.partial = true;
   return out;
 }
+// Caminos guardados: quien sale de la misma zona (4×4 casillas) hacia el mismo destino reutiliza la ruta que alguien
+// calculó hace poco (20 s de juego; los destinos imposibles, 6 s). Con fuego en el mapa no se guarda nada (cambia el paso)
+const routeC = new Map(); let routeCW = null, routeHits = 0, routeMiss = 0;
+{ const base = routeTo; routeTo = function(v, goal){
+  if (fires.size) return base(v, goal);
+  if (routeCW !== world) { routeC.clear(); routeCW = world; }
+  const sx = Math.floor(v.x / T), sy = Math.floor(v.y / T), key = `${v.swims !== false && !v.mount ? 1 : 0}${v.task && v.task.k === 'asalto' ? 'a' : ''}|${(sy >> 2) * W + (sx >> 2)}|${goal}`;
+  const c = routeC.get(key);
+  if (c && yearT - c.t < (c.r ? 20 : 6) && yearT >= c.t) { routeHits++; if (!c.r) return null; const out = c.r.slice(); if (c.r.partial) out.partial = true; return out; }
+  routeMiss++;
+  const r = base(v, goal);
+  if (routeC.size > 3000) routeC.delete(routeC.keys().next().value);
+  routeC.set(key, { t:yearT, r:r ? r.slice() : null }); if (r && r.partial) routeC.get(key).r.partial = true;
+  return r;
+}; }
 function vGo(v, x, y, dt, run){
   const d = Math.hypot(x - v.x, y - v.y);
   if (d < 3 || (d < 9 && !walkable(x, y))) { v.route = null; return true; }

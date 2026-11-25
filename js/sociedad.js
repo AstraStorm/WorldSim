@@ -2820,6 +2820,7 @@ function killVillager(v, cause){
 }
 function updateVillagers(dt){
   if (!world) return;
+  let thinkLeft = 8 + Math.ceil(villagers.length / 25); // decisiones por paso (pensar por turnos)
   updateArrows(dt);
   updateTravelers(dt);
   // (rendimiento) quién está asaltando, una vez por paso: así cada aldeano no repasa a todos los demás
@@ -2920,7 +2921,7 @@ function updateVillagers(dt){
       if (G && G.camp && (!isNight() || !eg || !r || !r.war)) { G.camp.done = true; G.camp = null; G.campedT = yearT; }
       if (G && !G.field && eg && r && r.war && isNight() && !knowsT(g, 'noche') && yearT - (G.campedT ?? -1e9) > DAY_LEN * .3 && Math.hypot(v.x / T - eg.fx, v.y / T - eg.fy) > 18 && (G.camp || Math.hypot(v.x / T - g.fx, v.y / T - g.fy) > 15)) { // (cerca de casa, no: siguen)
         const alive = G.ps.filter(u => !u.dead && u.task && u.task.k === 'asalto');
-        if (!G.camp && alive.length) {
+        if (!G.camp && alive.length && !(G.campFail > yearT)) { // (si no encontraron sitio, no lo buscan otra vez cada soldado en cada paso)
           const cx = alive.reduce((a, u) => a + u.x, 0) / alive.length, cy = alive.reduce((a, u) => a + u.y, 0) / alive.length;
           const p = ringFind(Math.round(cx / T), Math.round(cy / T), 12, campOk); // (guerra.js: donde caben las tiendas)
           if (p) {
@@ -2928,7 +2929,7 @@ function updateVillagers(dt){
             if (hide) g.hides -= Math.min(g.hides, nT); // las pieles, para las tiendas (se gastan)
             G.camp = { x:p[0] * T + 2, y:p[1] * T + 3, tents:nT, hide, vid:g.id, seed:Math.random() * 100 }; warCamps.push(G.camp);
             if (!r.war.campMsg || yearT - r.war.campMsg > DAY_LEN) { r.war.campMsg = yearT; notify(`Se hace de noche: las tropas de ${g.name} acampan de camino a ${eg.name}${hide ? ' en tiendas de pieles' : ''}`, { x:G.camp.x, y:G.camp.y }); }
-          }
+          } else G.campFail = yearT + 20;
         }
         if (G.camp) { const k = G.ps.indexOf(v), a = k / Math.max(1, G.ps.length) * Math.PI * 2; if (vGo(v, G.camp.x + Math.cos(a) * 9, G.camp.y + Math.sin(a) * 6 + 2, dt)) { v.moving = false; v.dir = G.camp.x < v.x ? -1 : 1; } continue; }
       }
@@ -2997,6 +2998,9 @@ function updateVillagers(dt){
     if (v.wait > 0) { v.wait -= dt; continue; }
     if (!v.task && v.carry) v.task = { k:'volver' }; // lo que lleva encima, primero a casa
     if (!v.task) {
+      // Por turnos: cada paso solo deciden unos cuantos (los demás esperan unas décimas); con mucha sed o hambre, al momento
+      if (thinkLeft <= 0 && v.water > .2 && v.food > .2) { v.wait = .08 + Math.random() * .2; continue; }
+      thinkLeft--;
       const [fx, fy] = fireXY(g);
       if (v.water < .5) { const p = drinkSpot(v, g); v.task = p ? { k:'beber', ...p } : null; }
       else if (v.food < .5 && canEat(v, g)) v.task = { k:'comer', ...eatSpot(v, g) };
@@ -3009,7 +3013,7 @@ function updateVillagers(dt){
     if (((v.hp ?? 1) < .45 || (v.sick && v.sick.t > 8)) && hasHosp(g) && !v.enemy && !v.foe && !['curarse', 'asalto', 'beber', 'comer', 'trabajando'].includes(v.task.k)) { const sb = standBy(g.hospital); if (sb) { releaseTask(v); v.task = { k:'curarse', x:sb[0], y:sb[1] }; v.lastD = Infinity; } }
     if (v.water < .12 && v.task.k === 'trabajando' && v.task.job !== 'beber' && !v.boat) { const p = drinkSpot(v, g); if (p) { v.actT = 0; v.onDone = null; releaseTask(v); v.task = { k:'beber', ...p }; v.lastD = Infinity; } }
     if (v.task.k !== 'beber' && v.task.k !== 'comer' && v.task.k !== 'trabajando' && !v.boat) {
-      if (v.water < .3) { const p = drinkSpot(v, g); if (p) { releaseTask(v); v.task = { k:'beber', ...p }; v.lastD = Infinity; } }
+      if (v.water < .3 && !(v.drinkFail > yearT)) { const p = drinkSpot(v, g); if (p) { releaseTask(v); v.task = { k:'beber', ...p }; v.lastD = Infinity; } else v.drinkFail = yearT + 2; } // (si no hay dónde, no se busca en cada paso)
       else if (v.food < .28 && canEat(v, g)) { releaseTask(v); const [fx, fy] = fireXY(g); v.task = { k:'comer', ...eatSpot(v, g) }; v.lastD = Infinity; }
     }
     if (v.task.k === 'capturar' && v.task.phase === 'llevar') { if (vGo(v, v.task.x, v.task.y, dt)) { const a = v.task.a; if (a && !a.dead) { a.lead = null; a.x = v.task.x; a.y = v.task.y; } v.task = null; } continue; }
