@@ -16,7 +16,7 @@ const GAMES = {
   poquer:{ name:'Póquer', ic:'♠', bet:[.1, .4], roll:() => Math.random() < .48 ? 1.9 : 0 }, // la casa se queda una comisión: ≈ 9 %
 };
 INSTS.casino = { key:'casino:casino', field:'casino', wood:14, stone:22, gold:2, flag:[.5, 0], t:16, name:'un casino', why:'abre sus mesas de ruleta, blackjack, póquer y bingo, y sus tragaperras',
-  want:g => !!g.coin && popOf(g) >= 22 && !hasLaw(g, 'prohibir_juego') && (g.know || {}).escritura, w:g => 3 };
+  want:g => !!g.coin && popOf(g) >= 22 && !hasLaw(g, 'prohibir_juego') && (g.know || {}).escritura, w:g => popOf(g) >= 40 ? 6 : 4 };
 KIND_DIMS.casino = [5, 7]; TASK_KIND.casino = 'casino'; OBJ['casino:casino'] = ['Casino', 'house', 0]; BLD.add('casino'); SPRITE_ALIAS['casino:casino'] = 'tavern:taberna';
 Object.assign(LAW_TXT, { prohibir_juego:'prohibición del juego' }); Object.assign(LAW_DESC, { prohibir_juego:'el casino cierra: nadie se arruina jugando, pero el tesoro deja de cobrar' }); Object.assign(LAW_LEAN, { prohibir_juego:.3 });
 REGIME_LAWS.teocracia.push('prohibir_juego');

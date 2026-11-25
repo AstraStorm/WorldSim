@@ -287,6 +287,7 @@ SYSTEMS.push(dt => {
   g.houses = [...new Set(g.houses.filter(i => !world.objs[i] || world.objs[i].key.startsWith('house')))]; // (una casa en cuyo solar ya se levantó otra cosa deja de contar como casa)
   if (g.hall != null || popOf(g) >= 6) linkTick(g);
   if (wallSet.size) wallUnderFix(g);
+  overlapFix(g); danglingFix(g);
 });
 
 // ---- Trama en cuadrícula: manzanas y calles rectas ----
@@ -374,3 +375,78 @@ function wallUnderFix(g){
   }
   return n;
 }
+
+// ---- Repaso de solapes (sobre todo de partidas de antes): cada cosa en su sitio ----
+// · Árboles, matas y piedras dentro de una pista, un campo, una piscina, una plaza, la plaza sagrada o el mercado: fuera
+// · Antorchas plantadas dentro de esos recintos: fuera. Una cantera o un pozo dentro de una plaza o de la plaza sagrada: se desmonta
+// · Arboledas, bayales, registro e instalaciones deportivas montadas sobre un edificio o una plaza: se quitan (se rehacen en otro sitio)
+// · El último cercado, si pisa un edificio, se desmonta
+const rectOf = q => q.x1 != null ? q : { x0:q.x0, y0:q.y0, x1:q.x0 + q.w - 1, y1:q.y0 + q.h - 1 };
+const rectHit = (a, b) => !(a.x1 < b.x0 || a.x0 > b.x1 || a.y1 < b.y0 || a.y0 > b.y1);
+function bldRects(){
+  const out = []; for (const o0 of villages) for (const b of buildingsOf(o0)) { const o = world.objs[b]; if (!o || !isBuilding(o)) continue; const [hw, hh] = BUILD_DIMS[o.key.split(':')[0]] || [4, 5], x = b % W, y = (b / W) | 0; out.push({ i:b, k:o.key.split(':')[0], x0:x - hw + 1, y0:y - hh + 1, x1:x + hw - 1, y1:y }); }
+  return out;
+}
+function overlapFix(g){
+  let n = 0; const B0 = bldRects(), zones = [g.pitch, g.pool, g.track, g.holy, g.marketRect, g.plaza].filter(Boolean).map(rectOf);
+  for (const z of zones) for (let y = z.y0; y <= z.y1; y++) for (let x = z.x0; x <= z.x1; x++) {
+    const i = y * W + x, o = world.objs[i]; if (!o || isBuilding(o)) continue;
+    if (o.key.startsWith('quarry') && z === g.holy && villages.every(q => q.quarry !== i || q.dead || !popOf(q))) { world.objs[i] = null; n++; continue; } // cantera abandonada dentro de la plaza sagrada
+    if (o.vid != null) continue;
+    const c = OBJ[o.key] && OBJ[o.key][1]; if (!['tree', 'berry', 'stone', 'mineral'].includes(c)) continue;
+    if (c === 'tree') fallObj(i); world.objs[i] = null; n++;
+  }
+  const allZones = villages.flatMap(o => [o.holy, o.plaza, o.marketRect, o.pitch, o.pool, o.track].filter(Boolean).map(rectOf));
+  const inZone = (x, y) => allZones.some(z => x >= z.x0 && x <= z.x1 && y >= z.y0 && y <= z.y1);
+  if (g.torches) { const k0 = g.torches.length; g.torches = g.torches.filter(t => !inZone(t.i % W, (t.i / W) | 0)); n += k0 - g.torches.length; }
+  if (g.quarry != null && world.objs[g.quarry] && villages.some(o => o.holy && rectHit({ x0:(g.quarry % W) - 3, y0:((g.quarry / W) | 0) - 3, x1:(g.quarry % W) + 3, y1:(g.quarry / W) | 0 }, o.holy))) { world.objs[g.quarry] = null; g.quarry = null; n++; }
+  for (const w of [...(g.wells || [])]) { const x = w.i % W, y = (w.i / W) | 0; if (villages.some(o => [o.holy, o.plaza, o.registry].some(q => q && rectHit({ x0:x - 1, y0:y - 2, x1:x + 1, y1:y }, rectOf(q))))) { world.objs[w.i] = null; g.wells = g.wells.filter(q => q !== w); n++; } }
+  for (const key of ['grove', 'berryPlot', 'registry', 'pitch', 'pool', 'track']) {
+    const q = g[key]; if (!q) continue; const r = rectOf(q);
+    const hit = B0.some(b => rectHit(b, r)) || villages.some(o => [o.holy, o.plaza, o.marketRect].some(z => z && rectHit(z, r))) || villages.some(o => ['grove', 'berryPlot', 'registry', 'pitch', 'pool', 'track', 'cemetery'].some(k2 => o[k2] && o[k2] !== q && k2 !== key && rectHit(rectOf(o[k2]), r) && ['pitch', 'pool', 'track', 'cemetery'].includes(k2) && !['pitch', 'pool', 'track'].includes(key)));
+    if (!hit) continue;
+    g[key] = null; n++;
+    if (['pitch', 'pool', 'track'].includes(key)) notify(`En ${g.name} desmontan ${key === 'pitch' ? 'el campo de fútbol' : key === 'pool' ? 'la piscina' : 'la pista de atletismo'}, que pisaba otras cosas: lo levantarán en otro sitio`, { x:r.x0 * T, y:r.y0 * T });
+  }
+  const ps = pensOf(g); if (ps.length) { const last = ps[ps.length - 1]; if (B0.some(b => rectHit(b, last))) { ps.pop(); g.pen = ps[0] || null; n++; } }
+  if (n) { composeRegion(Math.round(g.fx) - 50, Math.round(g.fy) - 50, Math.round(g.fx) + 50, Math.round(g.fy) + 50); groundSig = ''; }
+  return n;
+}
+// Edificios que ya no están (derribados o arrasados en partidas de antes) pero el pueblo seguía dando por hechos: así nunca
+// se volvían a levantar (un ayuntamiento quemado y quitado dejaba al pueblo sin ayuntamiento para siempre)
+const SINGLE_BLD = ['hall', 'mill', 'quarry', 'altar', 'temple', 'monument', 'market', 'bank', 'wonder', 'forge', 'hospital', 'barracks', 'lonja', 'theater', 'coliseum', 'tavern', 'cathedral', 'school', 'court', 'prison', 'press', 'unionHall', 'parliament', 'academy', 'mine', 'university', 'councilHall', 'spyHouse', 'granary', 'smokehouse', 'woodshed', 'postHouse'];
+function danglingFix(g){
+  for (const f of SINGLE_BLD) if (g[f] != null && !world.objs[g[f]]) g[f] = null;
+  if (g.stores) g.stores = g.stores.filter(i => world.objs[i]);
+  if (g.towers) g.towers = g.towers.filter(i => world.objs[i]);
+  if (g.wells) g.wells = g.wells.filter(w => world.objs[w.i]);
+  g.houses = g.houses.filter(i => world.objs[i]);
+}
+
+// ---- Renovación urbana: si un edificio público no cabe en ningún sitio, se derriban casas viejas para hacerle hueco ----
+// Solo en ciudades grandes (40+), como mucho dos casas propias que estén juntas (ningún otro edificio), tres veces al día y
+// lo más cerca del centro; quienes vivían allí buscan otra casa (se construyen más)
+function renewalSite(g, kind){
+  if (popOf(g) < 40 || (g.renewT || -1e9) > yearT - DAY_LEN / 3) return null;
+  const [hw, hh] = KIND_DIMS[kind] || [4, 6], B0 = bldRects(), own = new Set(g.houses), cand = [];
+  for (const h of g.houses) { if (!world.objs[h]) continue; const x = h % W, y = (h / W) | 0; for (const dx of [0, -5, 5]) cand.push([Math.hypot(x + dx - g.fx, (y - g.fy) * 1.2), x + dx, y]); }
+  cand.sort((a, b) => a[0] - b[0]);
+  for (const [, x, y] of cand.slice(0, 60)) {
+    const r = { x0:x - hw, y0:y - hh, x1:x + hw, y1:y + 1 }, hits = B0.filter(b => rectHit(b, r));
+    if (!hits.length || hits.length > 2 || hits.some(b => !own.has(b.i) || b.k !== 'house')) continue;
+    const saved = hits.map(b => [b.i, world.objs[b.i]]); for (const [i] of saved) world.objs[i] = null; abT = -1; ubT = -1;
+    const ok = clearable(x - hw, y - hh, x + hw, y + 1) && !buildingClash(x, y, kind) && !wallIn(x - hw, y - hh, x + hw, y + 1) && !farmIn(x - hw, y - hh, x + hw, y + 1);
+    for (const [i, o] of saved) world.objs[i] = o; abT = -1; ubT = -1;
+    if (!ok) continue;
+    for (const [i] of saved) { world.objs[i] = null; g.houses = g.houses.filter(q => q !== i); for (const u of villagers) if (u.home === i) u.home = null; addEffect((i % W) * T + 2, ((i / W) | 0) * T + 3, 'poof'); }
+    abT = -1; ubT = -1; g.renewT = yearT; g.reserve = { kind, x, y, until:yearT + DAY_LEN * 1.5 }; composeRegion(x - hw - 8, y - hh - 12, x + hw + 8, y + 12);
+    notify(`En ${g.name} derriban ${saved.length === 1 ? 'una casa vieja' : 'dos casas viejas'} del centro para hacer sitio a ${INSTS[kind] ? INSTS[kind].name : `un edificio nuevo (${kind})`}`, { x:x * T, y:y * T });
+    return [x, y];
+  }
+  return null;
+}
+{ const base = planSite; planSite = function(g, kind){
+  const R = g.reserve; if (R && R.kind === kind && R.until > yearT) { if (!buildingClash(R.x, R.y, kind)) return [R.x, R.y]; g.reserve = null; } // el solar que se le despejó
+  const p = base.apply(this, arguments); if (p || kind === 'casa' || kind === 'pozo' || kind === 'chabola' || !KIND_DIMS[kind]) return p;
+  return renewalSite(g, kind);
+}; }

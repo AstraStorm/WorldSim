@@ -397,8 +397,11 @@ function chooseJob(v, g){
   add('antorcha', know.antorchas && torchesOf(g).length < 4 + Math.floor(pop / 3) && g.wood >= 1 && !busyWith(g, 'antorcha') ? 1.5 : 0);
   add('alumbrar', dark && unlit && !busyWith(g, 'alumbrar') ? 8 : 0);
   const broken = buildingsOf(g).filter(b => world.objs[b] && (world.objs[b].burnt || world.objs[b].dmg > .3));
-  add('reparar', broken.some(b => !world.objs[b].burnt) && g.wood >= 3 && busyWith(g, 'reparar') < 2 ? 7 : 0);
-  add('derribar', broken.some(b => world.objs[b].burnt) && busyWith(g, 'derribar') < 2 ? 6 : 0);
+  // Lo roto se repara y lo quemado se reconstruye en su sitio, con prioridad: un pueblo no vive entre ruinas
+  const nBroken = broken.filter(b => !world.objs[b].burnt).length, nBurnt = broken.length - nBroken;
+  add('reparar', nBroken && g.wood >= 3 && busyWith(g, 'reparar') < 1 + Math.floor(nBroken / 2) ? Math.min(20, 10 + nBroken * 2) : 0);
+  add('derribar', nBurnt && g.wood >= 6 && busyWith(g, 'derribar') < 1 + Math.floor(nBurnt / 2) ? Math.min(20, 10 + nBurnt * 2) : 0);
+  if (nBurnt && g.wood < 12) add('talar', 5); // madera para reconstruir
   const near = fireNear(g);
   add('apagar', know.bomberos && near != null ? 12 : 0);
   // Quemas controladas: en verano o con sequía, sin lluvia ni viento fuerte, queman a propósito tiras de hierba alrededor
@@ -418,10 +421,10 @@ function chooseJob(v, g){
   // Hambruna (o el invierno encima sin despensa): todos a buscar comida; lo que no da de comer espera
   const FOOD_JOBS = ['cosechar', 'sembrar', 'arar', 'campo', 'bayas', 'pescar', 'cazar', 'barca', 'capturar', 'bayal', 'plantar'];
   const famine = g.food < pop * 1.2 || ((si === 2 || (si === 1 && seasonInfo().f > .7)) && g.food < pop * 4);
-  if (famine) for (const j of J) j[1] *= FOOD_JOBS.includes(j[0]) ? 3 : ['apagar', 'encender', 'alumbrar', 'beber', 'comer', 'pozo', 'construir', 'ampliar', 'ayuntamiento'].includes(j[0]) || (atWarJ && ['arma', 'muralla'].includes(j[0])) ? 1 : ['talar', 'picar'].includes(j[0]) ? .7 : .35;
+  if (famine) for (const j of J) j[1] *= FOOD_JOBS.includes(j[0]) ? 3 : ['apagar', 'encender', 'alumbrar', 'beber', 'comer', 'pozo', 'construir', 'ampliar', 'ayuntamiento', 'reparar', 'derribar'].includes(j[0]) || (atWarJ && ['arma', 'muralla'].includes(j[0])) ? 1 : ['talar', 'picar'].includes(j[0]) ? .7 : .35;
   // Fuera de su horario, los adultos descansan: solo atienden lo urgente (fuego, defensa, la hoguera, las antorchas)
   if (!inShift(g) && !isNight() && ageOf(v) >= ADULT_H && !(g.danger > 0) && !(famine && g.food < pop * 1.5)) {
-    for (let k2 = J.length - 1; k2 >= 0; k2--) if (!['apagar', 'encender', 'alumbrar', 'arma', 'equipar', 'beber', 'comer', 'cosechar'].includes(J[k2][0])) J.splice(k2, 1); // (la cosecha madura se recoge aunque sea tarde)
+    for (let k2 = J.length - 1; k2 >= 0; k2--) if (!['apagar', 'encender', 'alumbrar', 'arma', 'equipar', 'beber', 'comer', 'cosechar', 'reparar', 'derribar'].includes(J[k2][0])) J.splice(k2, 1); // (la cosecha madura se recoge aunque sea tarde)
     if (hasLaw(g, 'toque_queda') && dayT() > .62) J.push(['ocio', 6]); // toque de queda: al caer la tarde, nada de salir (leyes.js)
     else { J.push(['ocio', 6], ['pasear', 1]); sportsLeisure(v, g, J); fairLeisure(v, g, J); eventLeisure(v, g, J); if (holidayToday(g)) J.push(['fiesta', 10]); if (hasTheater(g)) J.push(['ver_teatro', 3]); if (hasColiseum(g)) J.push(['ver_coliseo', 2.5]); if (hasTavern(g) && !hasLaw(g, 'ley_seca')) J.push(['ir_taberna', ageOf(v) < ADULT_H ? 1 : 4]); }
   }
@@ -947,7 +950,12 @@ function runTask(v, g, dt){
       if (!raining(t.tc.i)) { t.tc.lit = true; for (let n = 0; n < 3; n++) chips.push({ x:(t.tc.i % W) * T + 2, y:((t.tc.i / W) | 0) * T - 6, vx:(Math.random() - .5) * 14, vy:-8 - Math.random() * 6, life:0, max:.4, col:'#ffd060' }); }
     }; break;
     case 'reparar': v.actT = 6; v.onDone = () => { const o = world.objs[t.i]; if (o && !o.burnt && g.wood >= 3) { g.wood -= 3; o.dmg = 0; o.dmgMsg = false; composeRegion((t.i % W) - 8, ((t.i / W) | 0) - 12, (t.i % W) + 8, ((t.i / W) | 0) + 12); floats.push({ x:v.x, y:v.y - 12, txt:'reparado', col:'#c8e0a0', life:0 }); } }; break;
-    case 'derribar': v.actT = 7; v.onDone = () => { const o = world.objs[t.i]; if (o && o.burnt) { world.objs[t.i] = null; g.wood += 2; addEffect((t.i % W) * T + 2, ((t.i / W) | 0) * T + 3, 'poof'); composeRegion((t.i % W) - 8, ((t.i / W) | 0) - 12, (t.i % W) + 8, ((t.i / W) | 0) + 12); } }; break;
+    case 'derribar': v.actT = 10; v.onDone = () => { // quitan los escombros y lo vuelven a levantar en el mismo sitio (de casa, 6 de madera; lo demás, 8 y 4 de piedra, o 14 de madera)
+      const o = world.objs[t.i]; if (!o || !o.burnt) return; const house = o.key.startsWith('house'), stone = !house && (g.stone || 0) >= 4, cw = house ? 6 : stone ? 8 : 14;
+      if (g.wood < cw) return; g.wood -= cw; if (stone) g.stone -= 4;
+      o.burnt = false; o.dmg = 0; o.dmgMsg = false; burntDirty = true; addEffect((t.i % W) * T + 2, ((t.i / W) | 0) * T + 3, 'poof'); composeRegion((t.i % W) - 8, ((t.i / W) | 0) - 14, (t.i % W) + 8, ((t.i / W) | 0) + 12);
+      floats.push({ x:v.x, y:v.y - 12, txt:'¡reconstruido!', col:'#c8e0a0', life:0 });
+    }; break;
     case 'apagar':
       if (t.phase === 'agua') { v.actT = 1.2; v.onDone = () => { if (t.well) t.well.q = Math.max(0, t.well.q - .04); v.bucket = true;
           const fi = fires.has(t.fire) ? t.fire : fireNear(g); if (fi == null) { v.bucket = false; return; }

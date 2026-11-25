@@ -181,7 +181,7 @@ function underBuilding(g, x, y){
     const sig = ubCache.length + ':' + ubCache.reduce((a, b) => (a + b * 31) % 1e9, 0);
     if (sig !== ubSig || !ubGrid || ubGrid.length !== N) {
       ubSig = sig; if (!ubGrid || ubGrid.length !== N) ubGrid = new Uint8Array(N); else ubGrid.fill(0);
-      for (const h of ubCache) { const hx = h % W, hy = (h / W) | 0; for (let yy = Math.max(0, hy - 7); yy <= Math.min(H - 1, hy + 1); yy++) for (let xx = Math.max(0, hx - 5); xx <= Math.min(W - 1, hx + 5); xx++) ubGrid[yy * W + xx] = 1; }
+      for (const h of ubCache) { const hx = h % W, hy = (h / W) | 0, o = world.objs[h], d = (o && BUILD_DIMS[o.key.split(':')[0]]) || [5, 7], dx = Math.max(5, d[0] + 1), dy = Math.max(7, d[1] + 1); for (let yy = Math.max(0, hy - dy); yy <= Math.min(H - 1, hy + 1); yy++) for (let xx = Math.max(0, hx - dx); xx <= Math.min(W - 1, hx + dx); xx++) ubGrid[yy * W + xx] = 1; } // (a la medida de cada edificio: una catedral o un castillo ocupan mucho más que una casa)
     }
   }
   return x >= 0 && y >= 0 && x < W && y < H && ubGrid[y * W + x] === 1;
@@ -217,13 +217,15 @@ function bestSite(v, g, kind){
   return best || planSite(g, kind);
 }
 // Tamaño de cada edificio (medio ancho y alto en casillas, por encima de su base): para que no se monten
-const BUILD_DIMS = { altar:[1, 2], temple:[4, 7], obelisk:[1, 4], market:[4, 4], house:[4, 6], hall:[5, 8], mill:[3, 8], well:[2, 4], store:[4, 5], tower:[2, 7], quarry:[4, 4], fire:[1, 1], bank:[4, 5], wonder:[6, 10], forge:[3, 5], hospital:[4, 5], barracks:[5, 6], tradehall:[5, 6], theater:[6, 6], coliseum:[6, 6], tavern:[5, 5], cathedral:[6, 13], school:[5, 9], court:[4, 7], jail:[4, 6], press:[4, 6], union:[4, 6], parliament:[6, 8], academy:[4, 8], mine:[5, 6], university:[5, 9], council:[6, 9], spy:[4, 6], granary:[4, 6], smoke:[3, 5], woodshed:[3, 4], post:[4, 6] };
+const BUILD_DIMS = { castle:[6, 10], altar:[1, 2], temple:[4, 7], obelisk:[1, 4], market:[4, 4], house:[4, 6], hall:[5, 8], mill:[3, 8], well:[2, 4], store:[4, 5], tower:[2, 7], quarry:[4, 4], fire:[1, 1], bank:[4, 5], wonder:[6, 10], forge:[3, 5], hospital:[4, 5], barracks:[5, 6], tradehall:[5, 6], theater:[6, 6], coliseum:[6, 6], tavern:[5, 5], cathedral:[6, 13], school:[5, 9], court:[4, 7], jail:[4, 6], press:[4, 6], union:[4, 6], parliament:[6, 8], academy:[4, 8], mine:[5, 6], university:[5, 9], council:[6, 9], spy:[4, 6], granary:[4, 6], smoke:[3, 5], woodshed:[3, 4], post:[4, 6] };
 const KIND_DIMS = { altar:[1, 2], templo:[4, 7], mercado:[4, 4], casa:[4, 6], ayuntamiento:[5, 8], molino:[3, 8], pozo:[2, 4], almacen:[4, 5], torre:[2, 7], cantera:[4, 4], banco:[4, 5], maravilla:[6, 10], herreria:[3, 5], hospital:[4, 5], cuartel:[5, 6], lonja:[5, 6], teatro:[6, 6], coliseo:[6, 6], taberna:[5, 5], catedral:[6, 13], escuela:[5, 9], tribunal:[4, 7], carcel:[4, 6], imprenta:[4, 6], sindicato:[4, 6], parlamento:[6, 8], academia:[4, 8], mina:[5, 6], universidad:[5, 9], consejo:[6, 9], espias:[4, 6], granero:[4, 6], ahumadero:[3, 5], lenera:[3, 4], postas:[4, 6], chabola:[2, 4] };
 const TASK_KIND = { templo:'templo', mercado:'mercado', construir:'casa', ayuntamiento:'ayuntamiento', molino:'molino', pozo:'pozo', almacen:'almacen', torre:'torre', cantera:'cantera', banco:'banco', maravilla:'maravilla', herreria:'herreria', hospital:'hospital', cuartel:'cuartel', lonja:'lonja', teatro:'teatro', coliseo:'coliseo', taberna:'taberna', catedral:'catedral', escuela:'escuela', tribunal:'tribunal', carcel:'carcel', imprenta:'imprenta', sindicato:'sindicato', parlamento:'parlamento', academia:'academia', mina:'mina', universidad:'universidad', consejo:'consejo', espias:'espias', granero:'granero', ahumadero:'ahumadero', lenera:'lenera', postas:'postas', chabola:'chabola' };
 // ¿Choca con un edificio ya hecho o con uno que alguien está a punto de levantar? (skip: el propio solar)
 // Todos los edificios (y las hogueras) de todos los pueblos, una vez por paso: buildingClash se pregunta muchísimo
 let abC = null, abT = -1;
 function allBuildings(){ if (abT !== yearT || !abC) { abT = yearT; abC = []; for (const g of villages) { for (const b of buildingsOf(g)) abC.push(b); abC.push(Math.round(g.fy) * W + Math.round(g.fx)); } } return abC; }
+const ZONE_OK = new Set(['altar', 'templo', 'catedral', 'mercado', 'maravilla', 'ayuntamiento']);
+const zoneHit = (x0, y0, x1, y1) => villages.some(o => [o.holy, o.marketRect, o.plaza].some(q => q && !(x1 < q.x0 || x0 > q.x1 || y1 < q.y0 || y0 > q.y1)));
 function buildingClash(x, y, kind, skip){
   if (volcDanger(x, y)) return true; // ni en las faldas de un volcán ni sobre la lava (volcanes.js)
   const [hw, hh] = KIND_DIMS[kind] || [4, 5];
@@ -233,6 +235,8 @@ function buildingClash(x, y, kind, skip){
     const d = BUILD_DIMS[o.key.split(':')[0]]; if (d && hit(b % W, (b / W) | 0, d)) return true;
   }
   if (penOverlap(null, x - hw, y - hh, x + hw, y + 1) || plotIn(x - hw, y - hh, x + hw, y + 1)) return true;
+  if (!ZONE_OK.has(kind) && zoneHit(x - hw, y - hh, x + hw, y)) return true;
+  for (const o of villages) { const R = o.reserve; if (R && R.until > yearT && R.kind !== kind && hit(R.x, R.y, KIND_DIMS[R.kind] || [4, 6])) return true; } // el solar que se despejó para otro edificio (urbanismo.js) // ni dentro de una plaza, la plaza sagrada o el mercado (la puerta sí puede dar a ellas)
   if (wallSet.size) for (let yy = y - 1; yy <= y + 1; yy++) for (let xx = x - hw; xx <= x + hw; xx++) if (wallSet.has(yy * W + xx)) return true; // ni encima de la muralla // ni encima de un cercado ni de una arboleda o bayal
   for (const v of villagers) {
     const t = v.task; if (!t || t.i == null || t.i === skip) continue;
@@ -1098,7 +1102,7 @@ function torchSite(g){
     const pi = near[Math.floor(Math.random() * near.length)];
     for (const j of [pi - 1, pi + 1, pi - W, pi + W]) {
       const x = j % W, y = (j / W) | 0;
-      if (!tileFree(x, y) || pathMap.has(j) || farmMap.has(j) || plazaSet.has(j) || underBuilding(g, x, y)) continue;
+      if (!tileFree(x, y) || pathMap.has(j) || farmMap.has(j) || plazaSet.has(j) || underBuilding(g, x, y) || plotIn(x, y, x, y) || holyNear(x, y, x, y)) continue; // (ni dentro de una pista, un campo o la plaza sagrada)
       if (villages.some(o => torchesOf(o).some(t => Math.hypot((t.i % W) - x, ((t.i / W) | 0) - y) < 6))) continue;
       return j;
     }
@@ -3244,14 +3248,15 @@ function updateVillages(dt){
     // Descontento de los pueblos de una nación: lejos de la capital, con otra fe, con hambre o conquistados a la fuerza;
     // si se acumula, se independizan
     if (g.nation && g.nation !== g.id && villageById(g.nation) && popOf(villageById(g.nation))) {
-      const cap = villageById(g.nation), f = { distancia:Math.hypot(g.fx - cap.fx, g.fy - cap.fy) > 70 ? .6 * colonyCare(g, cap) : 0, 'religión':g.faith && cap.faith && g.faith.god !== cap.faith.god ? .8 : 0,
+      // (la distancia sola no es motivo: lejos de la capital, lo que ya molesta pesa más, pero sin motivo nadie se va)
+      const cap = villageById(g.nation), far = Math.hypot(g.fx - cap.fx, g.fy - cap.fy) > 70 ? 1 + .5 * colonyCare(g, cap) : 1, f = { 'religión':g.faith && cap.faith && g.faith.god !== cap.faith.god ? .8 : 0,
         hambre:g.food < popOf(g) ? .6 : 0, impuestos:hasLaw(cap, 'ejercito') || hasLaw(cap, 'expansion') ? .3 : 0 };
-      const up = Object.values(f).reduce((a2, b2) => a2 + b2, 0) - .5 - (hasLaw(cap, 'reparto') ? .2 : 0) - (hasLaw(cap, 'autonomia') ? .25 : 0);
+      const up = Object.values(f).reduce((a2, b2) => a2 + b2, 0) * far - .5 - (hasLaw(cap, 'reparto') ? .2 : 0) - (hasLaw(cap, 'autonomia') ? .25 : 0);
       g.unrest = clamp((g.unrest || 0) + up * dt, 0, 100);
       if (g.unrest > 70 && independenceReferendum(g, cap)) { // donde la capital vota, antes hay referéndum (colonias.js)
         const why = Object.entries(f).sort((a2, b2) => b2[1] - a2[1])[0][0];
         becomeIndependent(g); addFiesta(g, 'Día de la Independencia'); const r = relOf(g, cap); r.known = true; r.v = -35; r.reason = why === 'religión' ? 'religión' : why === 'hambre' ? 'recursos' : 'territorio';
-        notify(`¡${g.name} se independiza de ${cap.name}! (por ${{ distancia:'estar tan lejos', 'religión':'la religión', hambre:'el hambre', impuestos:'los impuestos y las levas' }[why]})`, { x:g.fx * T, y:g.fy * T });
+        notify(`¡${g.name} se independiza de ${cap.name}! (por ${{ 'religión':'la religión', hambre:'el hambre', impuestos:'los impuestos y las levas' }[why]})`, { x:g.fx * T, y:g.fy * T });
       }
     } else if (g.nation && g.nation !== g.id) becomeIndependent(g); // la capital ya no existe
     // Cada poco cuentan los árboles que les quedan cerca y las piedras sueltas por el pueblo

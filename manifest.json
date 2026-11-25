@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611251814",
- "fecha": "2026-11-25 18:14",
+ "version": "202611251850",
+ "fecha": "2026-11-25 18:50",
  "novedades": [
   {
    "fecha": "2026-11-25",
-   "texto": "Puentes de troncos para la guerra"
+   "texto": "Sin solapes, reconstrucción, globos con sentido"
+  },
+  {
+   "fecha": "2026-11-25",
+   "texto": "Guerra al otro lado del agua: si no se llega sin nadar (la mitad no sabe y a caballo nadie cruza), las tropas cargan madera, se reúnen en la orilla y tienden un puente de troncos casilla a casilla (hasta 12, nunca en mar profundo); si no hay paso posible no salen; la corriente se lleva el puente días después. Los soldados con frío ya no abandonan el ataque al encender una fogata"
   },
   {
    "fecha": "2026-11-25",
@@ -46,26 +50,22 @@
   {
    "fecha": "2026-11-25",
    "texto": "Castillos variados: cada ciudad sortea su modelo según el terreno y evita repetir el de las demás"
-  },
-  {
-   "fecha": "2026-11-25",
-   "texto": "Nubes que se pintan de golpe (antes un fillRect por píxel) y como mucho dos regeneradas por paso; el solar de las afueras se guarda unos segundos"
   }
  ],
  "archivos": {
-  "index.html": "32e6a6366953d343159c7bb409c4c5b162412356",
+  "index.html": "9d84beebe768095d332496e8fd45cc826c51a4ca",
   "css/estilo.css": "3404df583ba0abb42e900a09f41cf266ca250528",
   "js/aldeanos.js": "d9920d364407645d80f1cdfbdcc1baf7fd203032",
   "js/ambiente.js": "6c96bf777f6cdfc55b648f495836521ee28aeb8f",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "793f9933d7892b751a2de3017d536eb71172bb63",
-  "js/arte.js": "1eb8ac879fa479a79daa58631ab65c584e853054",
+  "js/arte.js": "69e9009228b728e60e9f54cc5d6c2da2457d7086",
   "js/arte_mapa.js": "373de74c89b7418c4a040aaea0ee2fd64b367b53",
   "js/bandidos.js": "bc804375208c5f300e33435e76d16001e8c4daae",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
   "js/calendario.js": "03559b1ef711175c3f112ecaa0243a06a44b4b9c",
   "js/cartografia.js": "2ba2e493f521fb4b806f6e4a51ad38cac679351c",
-  "js/casino.js": "54ef4165a2e87319bde127f1a42805751316b317",
+  "js/casino.js": "8f0563111a86c2d0e37e7fbf5214f9777d070b00",
   "js/castillos.js": "c3a2bc112dc4f96ea7b70f59ccd6b692822ef207",
   "js/ciencia.js": "24b5a844a2740abfe0e0d77518cab8fabb211c41",
   "js/ciudades.js": "ddf423fc864609142d90a46e1e7def5c64fef621",
@@ -90,10 +90,10 @@
   "js/fabricas.js": "082d7e65754cca4cfe22ac20979d2a901f376189",
   "js/fama.js": "1b98918f8d312e237c6f399a43c0a3e278a4604b",
   "js/fauna.js": "6fdd58ad0493aa5179cae3344dc0a075d990bc1f",
-  "js/globos.js": "a8829293851b57da087576ad6fb947ff8eca7c86",
+  "js/globos.js": "955b67ce3b9dd8c36b7ee965f9f05f4fb8bd9d39",
   "js/grafica.js": "d548461632882f80f4077d9e5754c70c5319331e",
   "js/guerra.js": "0d922c7dec10df8302532c3f3ae65587845edbbd",
-  "js/humanos.js": "87e5a64635b59bcdb761a5296c08be00dfb2d134",
+  "js/humanos.js": "c80884339737130565832ccd7dc327160ad2b3d7",
   "js/idiomas.js": "a64e7f699431735d8b20a2eb82d317a02f4bd265",
   "js/impuestos.js": "9820acf00db62b3039fb43433ddcc3f522453daa",
   "js/industria.js": "45344548ba566b198096e11e73952483dfb1b864",
@@ -123,13 +123,13 @@
   "js/riqueza.js": "4437665e375d993ccfc2bec62225436b8fd03dce",
   "js/rutas.js": "6e12cafc1992e09fc3c2b5b13ca7d7db6416c364",
   "js/sindicatos.js": "f7cb8bf83ff74322a6fc45cc6ac90550425c6d15",
-  "js/sociedad.js": "db5dbe1f72eef601b1b798845e913d8322e53a90",
+  "js/sociedad.js": "cd3f33b5078f331800985208fee866edd94c9fb6",
   "js/sonido.js": "25be9d9bda62336aba463c82e31668d0e9b2bc54",
   "js/titulares.js": "0506409e843da939370bb404b894a52cffa68620",
   "js/trabajo.js": "6337df3b06ff54f44790b7a744c363a098833c07",
   "js/tratados.js": "c7221ac52158a928a77489448ca7f1ce45ade8e2",
   "js/ui.js": "87256f0f01b8aa2a5b9d282c0a2a538dce73cf85",
-  "js/urbanismo.js": "a6d05c3b20889c28ea3cd2b7dfc1777c0c743903",
+  "js/urbanismo.js": "6f83c37472a4e051b8bd96da6764bd20c0cc9f2b",
   "js/vegetacion.js": "440be3b609ce5146ed024c3c0ea0ec694344c592",
   "js/vida.js": "e70bc2e79a09c6b46317c8aec7fc5c6bf476264a",
   "js/visitas.js": "5cafd3070fdf9de08e0a6eebf6644ad13c46bc1d",

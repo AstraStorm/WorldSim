@@ -61,9 +61,10 @@ function balloonJobs(v, g, add){
   const want = !hasSock(g) ? 3 : kn.globo && (!bs.length || more) ? 10 : small ? 6 : 0;
   add('tejer', want && cloth < want + 2 && busyWith(g, 'tejer') < 2 ? (woolOf(g) ? 3 : 2) : 0);
   add('manga', !hasSock(g) && cloth >= 3 && g.wood >= 4 && !busyWith(g, 'manga') ? 4 : 0);
-  add('globo', kn.globo && hasSock(g) && (!bs.length || more) && cloth >= 10 && g.wood >= 6 && !busyWith(g, 'globo') ? (bs.length ? 2.5 : 4) : 0);
+  const war = villages.some(o => o !== g && popOf(o) && atWar(g, o) && Math.hypot(o.fx - g.fx, o.fy - g.fy) < 260); // en guerra, el globo es un arma: se hace antes y se vuela más
+  add('globo', kn.globo && hasSock(g) && (!bs.length || more) && cloth >= 10 && g.wood >= 6 && !busyWith(g, 'globo') ? (bs.length ? 2.5 : 4) * (war ? 2 : 1) : 0);
   add('cesta', small && cloth >= 6 && g.wood >= 6 && pop >= 4 + small.cap * 4 && !busyWith(g, 'cesta') ? 2 : 0);
-  add('volar', ageOf(v) >= ADULT_H && flyWeather(g) && busyWith(g, 'volar') < parkedReady(g).length ? (v.oficio === 'cartógrafo' ? 6 : 2.5) : 0);
+  add('volar', ageOf(v) >= ADULT_H && flyWeather(g) && busyWith(g, 'volar') < parkedReady(g).length ? (war && ((g.stone || 0) >= 4 || ((g.wood || 0) >= 4 && (g.cloth || 0) >= 1)) ? 12 : v.oficio === 'cartógrafo' ? 6 : .6) : 0); // (sin guerra vuelan sobre todo los cartógrafos, no cualquiera)
 }
 // Adónde ir para cada trabajo (se llama desde setupTask)
 function balloonTarget(v, g, job){
@@ -120,8 +121,9 @@ function pickMission(g){
     }
   }
   const friends = villages.filter(o => o !== g && popOf(o) && Math.hypot(o.fx - g.fx, o.fy - g.fy) < 170 && (() => { const r = rels.get(relKey(g, o)); return r && r.known && !r.war; })());
-  if (friends.length) {
-    const o = friends[Math.floor(Math.random() * friends.length)];
+  const lukewarm = friends.filter(o => ((rels.get(relKey(g, o)) || {}).v || 0) < 40); // de visita, a quien aún hay que ganarse (con los amigos de siempre no hace falta)
+  if (lukewarm.length) {
+    const o = lukewarm[Math.floor(Math.random() * lukewarm.length)];
     // Si tienen puerto de globos, a uno de sus huecos libres; si no, junto al pueblo. Los dirigibles solo amarran en
     // plataformas de dirigibles y los globos solo en puertos de globos: si no es el suyo, se posan junto al pueblo
     const taken = new Set(villages.flatMap(q => balloonsOf(q).map(b => b.mission && b.mission.to === o.id && b.mission.slot)).filter(Boolean));
@@ -138,11 +140,12 @@ function pickMission(g){
     if (p) opts.push([4, { kind:'comercio', to:o.id, tx:p[0] * T + 2, ty:p[1] * T + 3, good:sell[0], gname:GOODS_B[sell[0]] }]);
   }
   // En guerra: a soltar rocas sobre un pueblo enemigo (si tienen piedra para cargarlas)
-  if ((g.stone || 0) >= 4) {
-    const foes = villages.filter(o => o !== g && popOf(o) && atWar(g, o) && Math.hypot(o.fx - g.fx, o.fy - g.fy) < 170);
-    if (foes.length) { const o = foes[Math.floor(Math.random() * foes.length)]; opts.push([8, { kind:'bombardeo', to:o.id, tx:o.fx * T, ty:o.fy * T }]); }
+  if ((g.stone || 0) >= 4 || ((g.wood || 0) >= 4 && (g.cloth || 0) >= 1)) { // piedras, o teas (madera y tela)
+    const foes = villages.filter(o => o !== g && popOf(o) && atWar(g, o) && Math.hypot(o.fx - g.fx, o.fy - g.fy) < 260);
+    if (foes.length) { const o = foes[Math.floor(Math.random() * foes.length)]; opts.push([40, { kind:'bombardeo', to:o.id, tx:o.fx * T, ty:o.fy * T }]); }
   }
-  const res = g.wood < g.stone + 10 ? 'tree' : 'stone';
+  const res = g.wood < g.stone + 10 ? 'tree' : 'stone', needRes = res === 'tree' ? !treesNear(g) && g.wood < 30 : !(g.rocksNear > 0) && g.quarry == null && (g.stone || 0) < 20; // a por madera o piedra en globo, solo si no la hay cerca
+  if (needRes)
   for (let k = 0; k < 200; k++) {
     const a = Math.random() * Math.PI * 2, d = 20 + Math.random() * 60, x = Math.round(g.fx + Math.cos(a) * d), y = Math.round(g.fy + Math.sin(a) * d);
     if (x < 4 || y < 4 || x >= W - 4 || y >= H - 4) continue;
