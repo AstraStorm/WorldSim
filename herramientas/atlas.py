@@ -276,6 +276,14 @@ if os.path.exists(os.path.join(SRC, 'barcoCarguero.png')):  # el carguero: lleno
     for k, box, w in [('lleno', (60, 30, 730, 345), 40), ('vacio', (770, 30, 1445, 345), 40), ('lleno_f', (1490, 160, 1715, 505), 13), ('vacio_f', (1740, 160, 1965, 505), 13)]:
         add(f'cargo:{k}', shrink(box_parts('barcoCarguero.png', tuple(int(c * S9) for c in box)), w, 40))
 
+if os.path.exists(os.path.join(SRC, 'panelSolar.png')):  # placa solar
+    add('solar:placa', shrink(box_parts('panelSolar.png', (60, 270, 730, 910)), 14, 40))
+if os.path.exists(os.path.join(SRC, 'turbinaEolica.png')):  # molino eólico: torre (con la góndola) y las aspas en 8 fotogramas
+    add('wind:torre', shrink(box_parts('turbinaEolica.png', (560, 160, 720, 640)), 6, 40))
+    add('wind:gondola', shrink(box_parts('turbinaEolica.png', (750, 170, 905, 330)), 5, 40))
+    for k, box in enumerate([(990, 205, 1135, 360), (1130, 230, 1260, 350), (1225, 245, 1350, 385), (1345, 250, 1500, 390), (1015, 480, 1140, 635), (1120, 480, 1240, 625), (1235, 500, 1370, 635), (1350, 470, 1500, 605)]):
+        add(f'wind:aspas{k}', shrink(box_parts('turbinaEolica.png', box), 15, 40))
+
 if os.path.exists(os.path.join(SRC, 'casino.png')):
     add('casino:casino', shrink(box_parts('casino.png', (380, 190, 1150, 830)), 40, 48))
 

@@ -18,7 +18,7 @@ Object.assign(BLD_DESC, { power:'Central eléctrica: quema carbón y manda la co
 Object.assign(BLD_TYPE, { power:'Energía', pylon:'Energía' });
 const PYLON_R = 12, PYLON_GAP = 11;
 const hasPower = g => g.plant != null && world.objs[g.plant] && world.objs[g.plant].key === 'power:central';
-const plantOn = g => hasPower(g) && !g.plantOff;
+function plantOn(g){ return hasPower(g) && !g.plantOff; }
 // Torres conectadas (con su torre «madre», hacia la central) y casillas con corriente, por pueblo (caché)
 const powC = new Map();
 function powered(g){

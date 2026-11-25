@@ -9,7 +9,7 @@ const ART = { img:null, ready:false, cache:new Map() };
   if (typeof ART_MAP === 'undefined') return;
   const im = new Image();
   im.onload = () => { ART.img = im; ART.ready = true; ART.cache.clear(); if (typeof world !== 'undefined' && world && typeof composeRegion === 'function') composeRegion(0, 0, W - 1, H - 1); };
-  im.src = 'arte/atlas.png?v=202611252113';
+  im.src = 'arte/atlas.png?v=202611252116';
 })();
 const ART_DECID = new Set(['oak:forest', 'birch:birch', 'willow:swamp', 'willow:moss', 'acacia:dry', 'acacia:sunset', 'oak:cherry', 'pine:autumn']);
 const ART_EVER = new Set(['pine:pine', 'pine:snow', 'pine:blue', 'ancient:elder', 'ancient:mangrove', 'ancient:life', 'ancient:baobab']);
