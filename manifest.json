@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611250259",
- "fecha": "2026-11-25 02:59",
+ "version": "202611251339",
+ "fecha": "2026-11-25 13:39",
  "novedades": [
   {
    "fecha": "2026-11-25",
-   "texto": "Nubes rápidas"
+   "texto": "Castillos variados"
+  },
+  {
+   "fecha": "2026-11-25",
+   "texto": "Nubes que se pintan de golpe (antes un fillRect por píxel) y como mucho dos regeneradas por paso; el solar de las afueras se guarda unos segundos"
   },
   {
    "fecha": "2026-11-25",
@@ -46,26 +50,22 @@
   {
    "fecha": "2026-11-25",
    "texto": "Obreros, sueldos por oficio, fomento de la industria, fábricas que se modernizan y almacenes ampliables"
-  },
-  {
-   "fecha": "2026-11-24",
-   "texto": "Fábricas de la revolución industrial (fabricas.js)"
   }
  ],
  "archivos": {
-  "index.html": "b4ff11999749370dfba81f86b8c91938d918a896",
+  "index.html": "3d3681ee5c85be274d607f01b894355a81aad2a1",
   "css/estilo.css": "9ee4d9a478d7311dc4a9fa7ccd7a3abfb25afd84",
   "js/aldeanos.js": "d9920d364407645d80f1cdfbdcc1baf7fd203032",
   "js/ambiente.js": "6c96bf777f6cdfc55b648f495836521ee28aeb8f",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
-  "js/arte.js": "d286f2e2baebea39850225a1056069ee8f27a63a",
+  "js/arte.js": "a3641584c3d3b6057c1b156e11cb77b46731fe3d",
   "js/arte_mapa.js": "373de74c89b7418c4a040aaea0ee2fd64b367b53",
   "js/bandidos.js": "a41a64350dfb0cadc79876bf166b9e56ee1a9962",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
   "js/calendario.js": "03559b1ef711175c3f112ecaa0243a06a44b4b9c",
   "js/cartografia.js": "2ba2e493f521fb4b806f6e4a51ad38cac679351c",
   "js/casino.js": "54ef4165a2e87319bde127f1a42805751316b317",
-  "js/castillos.js": "ad7b3f22e722471b01da51393d02ec7c451685ba",
+  "js/castillos.js": "29c17ab16423958779dd6733e341fb1b2bab1657",
   "js/ciencia.js": "24b5a844a2740abfe0e0d77518cab8fabb211c41",
   "js/ciudades.js": "f18585be779225a53e181a28aef1b7d4879cf2ae",
   "js/civilizacion.js": "4815ea74560602b2c8d44fc5411d642bbe1bb216",

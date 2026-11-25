@@ -39,14 +39,16 @@ function wantsFort(g){
   if (n === g) return pop >= 16;
   return pop >= 22 && !!fortOf(n); // las demás ciudades, cuando la capital ya lo tiene
 }
-// Qué castillo les sale: según lo que tienen y dónde están
+// Qué castillo les sale: según lo que tienen y dónde están, pero con algo de gusto propio (sorteo con pesos) y
+// procurando no copiar el que ya tienen las otras ciudades
 function fortType(g){
   const n = nationOf(g), pop = popOf(g), hi = highGround(g), wet = waterNear(g.fx, g.fy, 24);
-  if ((g.stone || 0) < 40 && (g.know || {}).cantera !== true && !hasInst(g, 'universidad')) return 'empalizada';
-  if (n === g && ['monarquia', 'monarquia_parlamentaria'].includes(regimeOf(n)) && (g.gold || 0) >= 10 && pop >= 30) return 'palacio';
-  if (pop >= 45) return 'concentrico';
-  if (hi) return 'roca';
-  if (wet) return 'foso';
+  const stone = (g.stone || 0) >= 40 || (g.know || {}).cantera || hasInst(g, 'universidad');
+  const w = { empalizada:stone ? 1 : 6, torre:3, roca:hi ? 4 : 0, foso:wet ? 4 : 0, concentrico:pop >= 45 ? 5 : pop >= 30 ? 1.5 : 0,
+    palacio:n === g && ['monarquia', 'monarquia_parlamentaria'].includes(regimeOf(n)) && (g.gold || 0) >= 10 && pop >= 30 ? 7 : 0 };
+  for (const o of villages) if (o !== g && o.fort && w[o.fort.type]) w[o.fort.type] /= nationOf(o) === n ? 4 : 1.6;
+  let r = Math.random() * Object.values(w).reduce((a, b) => a + b, 0);
+  for (const [k, x] of Object.entries(w)) if ((r -= x) <= 0 && x > 0) return k;
   return 'torre';
 }
 const isHigh = i => { const b = world.biome[i]; return b === B.HILLS || b === B.ROCK || world.e[i] > .62; };
@@ -89,7 +91,7 @@ function fortTarget(v, g, job){
     let f = g.fort;
     if (!f || (f.ruined && f.redo)) {
       if (f && f.ruined) { const i0 = f.i; world.objs[i0] = null; composeRegion(i0 % W - 10, ((i0 / W) | 0) - 16, i0 % W + 10, ((i0 / W) | 0) + 12); g.fort = null; } // se desescombra
-      const type = fortType(g), p = fortSite(g, type); if (!p) { g.fortNoSite = yearT + DAY_LEN * 3; return null; }
+      let type = fortType(g), p = fortSite(g, type); if (!p && (type === 'roca' || type === 'foso')) p = fortSite(g, type = 'torre'); if (!p) { g.fortNoSite = yearT + DAY_LEN * 3; return null; }
       f = g.fort = { i:p[1] * W + p[0], type, prog:0, built:false, food:0, water:0, fuel:0 };
       notify(`${g.name} empieza a levantar ${/^(Empalizada|Torre)/.test(FORTS[type].name) ? 'una' : 'un'} ${FORTS[type].name.toLowerCase()}: ${FORTS[type].desc}`, { x:p[0] * T, y:p[1] * T });
     }
@@ -270,7 +272,7 @@ function fortFalls(g, f, gx, gy){
 function fortRuinTick(g){
   const f = g.fort; if (!f || !f.ruined || f.redo || f.decided || yearT - (f.fellT ?? 0) < DAY_LEN) return;
   if (fortFoes(g, 70).length) return;
-  f.decided = true; const c = fortCost(g, fortType(g));
+  f.decided = true; const c = fortCost(g, f.type);
   if (wantsFortAgain(g) && MATS.every(([m]) => (g[m] || 0) >= (c[m] || 0) * .5)) { f.redo = true; notify(`${g.name} decide reconstruir su castillo`, { x:(f.i % W) * T, y:((f.i / W) | 0) * T }); }
   else notify(`${g.name} deja su castillo en ruinas: no hay con qué (ni ganas) de levantarlo otra vez`, { x:(f.i % W) * T, y:((f.i / W) | 0) * T });
 }
