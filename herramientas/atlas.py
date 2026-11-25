@@ -252,6 +252,9 @@ if os.path.exists(os.path.join(SRC, 'pisos.png')):  # bloques de pisos (era indu
     for k, (box, w) in enumerate([((60, 300, 345, 724), 28), ((380, 260, 680, 724), 30), ((740, 200, 1095, 724), 34), ((1170, 120, 1540, 724), 36), ((1620, 40, 2070, 724), 40)]):
         add(f'house:bloque{k + 1}', shrink(box_parts('pisos.png', box), w, 40))
 
+if os.path.exists(os.path.join(SRC, 'ventanaPisoOkupada.png')):  # la ventana de un piso okupado (se pinta encima de los bloques)
+    add('okupa:ventana', shrink(box_parts('ventanaPisoOkupada.png', (240, 230, 1010, 1010)), 9, 40))
+
 if os.path.exists(os.path.join(SRC, 'casino.png')):
     add('casino:casino', shrink(box_parts('casino.png', (380, 190, 1150, 830)), 40, 48))
 

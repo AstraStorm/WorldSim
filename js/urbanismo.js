@@ -478,3 +478,13 @@ SYSTEMS.push(dt => {
 // ---- Bloques de pisos (era industrial): dibujos de pisos.png en el atlas, de 2 a 6 plantas ----
 for (let k = 1; k <= 5; k++) OBJ[`house:bloque${k}`] = [`Bloque de ${k + 1} plantas`, 'house', 0];
 OBJ['house:bloque'] = ['Bloque de pisos', 'house', 0]; SPRITE_ALIAS['house:bloque'] = 'house:bloque2'; // (los de la primera versión)
+// Bloque okupado: el mismo edificio con dos ventanas okupadas (contraventana rota, plantas, trapos colgando) en plantas distintas
+const okupaBloqueCache = new Map();
+{ const base = artSprite; artSprite = function(o){
+  if (!(o && o.okupa && o.key && o.key.startsWith('house:bloque') && ART.ready && ART_MAP['okupa:ventana'])) return base.apply(this, arguments);
+  const key = SPRITE_ALIAS[o.key] || o.key; let c = okupaBloqueCache.get(key); if (c) return c;
+  const b = artFrame(key), w = artFrame('okupa:ventana'); if (!b || !w) return base.apply(this, arguments);
+  c = document.createElement('canvas'); c.width = b.width; c.height = b.height; const x = c.getContext('2d'); x.imageSmoothingEnabled = false; x.drawImage(b, 0, 0);
+  for (const [fx, fy] of [[.2, .42], [.66, .64]]) x.drawImage(w, Math.round(b.width * fx), Math.round(b.height * fy));
+  c.ax = b.ax; okupaBloqueCache.set(key, c); return c;
+}; }

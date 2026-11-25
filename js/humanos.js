@@ -326,7 +326,7 @@ function chooseJob(v, g){
   add('cosechar', nRipe ? 9 + Math.min(12, nRipe) : 0); // la cosecha no espera
   add('sembrar', nPlowed ? 5 + Math.min(7, nPlowed / 3) : 0);
   add('arar', nRaw ? 4 + Math.min(6, nRaw / 4) : 0);
-  add('campo', farms.length < Math.min(110, 14 + pop * 4) && nRaw < 10 && busyWith(g, 'campo') < (pop >= 20 ? 2 : 1) ? (g.food < pop * 3 ? 7 : 4.5) : 0); // más campos cuanto más gente; no esperan a arar todo
+  add('campo', farms.length < Math.min(320, 14 + pop * 4) && nRaw < 10 && busyWith(g, 'campo') < (pop >= 20 ? 2 : 1) ? (g.food < pop * 3 ? 7 : 4.5) : 0); // más campos cuanto más gente; no esperan a arar todo
   const berriesNear = g.berriesNear ?? 99;
   add('cementerio', !g.cemetery && houses >= 2 && (pop >= 10 || Object.values(g.deaths || {}).reduce((a, b) => a + b, 0) >= 2) && !busyWith(g, 'cementerio') ? 3 : 0);
   add('arboleda', !g.grove && houses >= 2 && pop >= 6 && !busyWith(g, 'arboleda') ? ((g.treesNear ?? 99) < 20 ? 4 : 1.5) : 0);
