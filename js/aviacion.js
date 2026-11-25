@@ -9,13 +9,13 @@
 (() => { if (DISCOVERIES.some(d => d.k === 'aviacion')) return; const i = DISCOVERIES.findIndex(d => d.k === 'combustion');
   DISCOVERIES.splice(i + 1, 0, { k:'aviacion', txt:'la aviación', cost:140, eff:'aeródromos y planeadores: reconocimiento, correo y, en guerra, bombardeos', req:['combustion', 'aeronautica'].filter(k => DISCOVERIES.some(d => d.k === k)) });
   if (typeof SCI_REQ === 'object') SCI_REQ.aviacion = ['combustion', 'aeronautica']; })();
-BLD.add('air'); BUILD_DIMS.air = [6, 12]; KIND_DIMS.aerodromo = [6, 12];
+BLD.add('air'); BUILD_DIMS.air = [13, 13]; KIND_DIMS.aerodromo = [13, 13];
 OBJ['air:aerodromo'] = ['Aeródromo', 'house', 0];
 Object.assign(BLD_DESC, { air:'Aeródromo: pista, torre de control y hangar; de aquí despegan los planeadores' });
 Object.assign(BLD_TYPE, { air:'Transporte' });
 let planes = [];
 const hasAirfield = g => g.airfield != null && world.objs[g.airfield] && world.objs[g.airfield].key === 'air:aerodromo';
-const stripOf = g => { const x = (g.airfield % W) * T + 2, y = ((g.airfield / W) | 0) * T + 3; return { x0:x - 18, x1:x + 18, y:y - 22 }; }; // la pista, de lado a lado del aeródromo
+const stripOf = g => { const x = (g.airfield % W) * T + 2, y = ((g.airfield / W) | 0) * T + 3; return { x0:x - 56, x1:x + 56, y:y - 17 }; }; // la pista de baldosas, de punta a punta
 let airT = 0;
 SYSTEMS.push(dt => {
   if (!world || (airT -= dt) > 0) return; airT = 3;
@@ -23,19 +23,19 @@ SYSTEMS.push(dt => {
     if (!knowsSci(g, 'aviacion')) continue;
     if (!hasAirfield(g)) {
       if (popOf(g) < 30 || (g.iron || 0) < 10 || g.wood < 30 || g.stone < 20 || (g.airFail || -1e9) > yearT - DAY_LEN / 3) continue;
-      const s = typeof plantSite === 'function' ? farSite(g, 6, 12) : null; if (!s) { g.airFail = yearT; continue; }
-      if (clearable(s[0] - 6, s[1] - 12, s[0] + 6, s[1] + 1)) clearSite(g, s[0] - 6, s[1] - 12, s[0] + 6, s[1] + 1);
+      const s = typeof plantSite === 'function' ? farSite(g, 13, 13) : null; if (!s) { g.airFail = yearT; continue; }
+      clearRocks(s[0] - 13, s[1] - 13, s[0] + 13, s[1] + 1);
       if (!tileFree(s[0], s[1]) || buildingClash(s[0], s[1], 'aerodromo')) { g.airFail = yearT; continue; }
-      const i = s[1] * W + s[0]; for (let yy = s[1] - 12; yy <= s[1]; yy++) for (let xx = s[0] - 6; xx <= s[0] + 6; xx++) farmMap.delete(yy * W + xx);
+      const i = s[1] * W + s[0]; for (let yy = s[1] - 13; yy <= s[1]; yy++) for (let xx = s[0] - 13; xx <= s[0] + 13; xx++) farmMap.delete(yy * W + xx);
       world.objs[i] = { key:'air:aerodromo', v:0, ox:0, oy:0, vid:g.id }; g.airfield = i; g.iron -= 10; g.wood -= 30; g.stone -= 20;
-      composeRegion(s[0] - 10, s[1] - 16, s[0] + 10, s[1] + 4); addEffect(s[0] * T + 2, s[1] * T + 3, 'poof'); connect(g, s[0], s[1]);
+      composeRegion(s[0] - 18, s[1] - 18, s[0] + 18, s[1] + 4); addEffect(s[0] * T + 2, s[1] * T + 3, 'poof'); connect(g, s[0], s[1]);
       notify(`${g.name} inaugura su aeródromo: pista, torre y hangar para sus planeadores`, { x:s[0] * T, y:s[1] * T }); continue;
     }
     // Un vuelo (si hay planeador libre, combustible y buen tiempo)
     const mine = planes.filter(p => p.g === g.id); if (mine.length >= (popOf(g) > 70 ? 2 : 1) || isNight() || (g.planeT || 0) > yearT || ((g.fuel || 0) < 1 && (g.coal || 0) < 2)) continue;
     const m = planeMission(g); if (!m) continue;
     if ((g.fuel || 0) >= 1) g.fuel -= 1; else g.coal -= 2; g.planeT = yearT + 25;
-    const st = stripOf(g); planes.push({ g:g.id, m, x:st.x0, y:st.y, alt:0, phase:'pista', t:0, ang:0, hp:1, bombs:m.kind === 'bombardeo' ? 4 : 0 });
+    const st = stripOf(g); planes.push({ g:g.id, m, x:st.x0 + 8, y:st.y, alt:0, phase:'pista', t:0, ang:0, hp:1, bombs:m.kind === 'bombardeo' ? 4 : 0 });
     if (!g.planeMsg) { g.planeMsg = true; notify(`¡Despega el primer planeador de ${g.name}!`, { x:st.x0, y:st.y }); }
   }
 });
@@ -44,12 +44,30 @@ function farSite(g, hw, hh){ // (alrededor de la ciudad y, si no cabe, de las de
   for (const o of [g, ...liveTowns().filter(q => q !== g && nationOf(q) === nationOf(g))]) { const s0 = farSite1(o, g, hw, hh); if (s0) return s0; }
   return null;
 }
+// Como clearable, pero las piedras sueltas también se pueden quitar (para lo grande: aeródromo, lanzadera, silos...)
+function clearableRocks(x0, y0, x1, y1){
+  if (x0 < 0 || y0 < 0 || x1 >= W || y1 >= H) return false;
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const i = y * W + x, b = world.biome[i], o = world.objs[i]; if (WATER[b] || b === B.LAVA || bridgeSet.has(i) || isFlooded(i)) return false; if (o && !['tree', 'berry', 'stone'].includes(OBJ[o.key][1])) return false; }
+  return true;
+}
+function clearRocks(x0, y0, x1, y1){ for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const i = y * W + x, o = world.objs[i]; if (o && ['tree', 'berry', 'stone'].includes(OBJ[o.key][1])) delete world.objs[i]; } }
+// Las instalaciones grandes de todas las ciudades (aeródromo, lanzadera, central, refinería, silos, parque de renovables):
+// una nueva no puede pisar ninguna (con 2 casillas de margen)
+function bigClash(x, y, hw, hh){
+  for (const o of villages) for (const [i, w, h] of [[o.airfield, 13, 13], [o.spacePad, 6, 10], [o.plant, 6, 7], [o.refinery, 6, 7], [o.renewAt, 16, 6], ...(o.silos || []).map(s => [s.i, 3, 4])]) {
+    if (i == null) continue; const bx = i % W, by = (i / W) | 0;
+    if (!(x + hw + 2 < bx - w || x - hw - 2 > bx + w || y + 3 < by - h || y - hh - 2 > by + 1 + (w === 16 ? 6 : 0))) return true;
+  }
+  return false;
+}
+// ¿Hay casas o edificios en ese rectángulo? (las instalaciones grandes, con margen: nunca pegadas al pueblo)
+function nearBuildings(x0, y0, x1, y1){ for (let y = Math.max(0, y0); y <= Math.min(H - 1, y1); y++) for (let x = Math.max(0, x0); x <= Math.min(W - 1, x1); x++) { const o = world.objs[y * W + x]; if (o && BLD.has(o.key.split(':')[0]) && !/^(pylon|wind|solar):/.test(o.key)) return true; } return false; }
 function farSite1(c, g, hw, hh){
   const towns = liveTowns().filter(q => q !== g), cx = Math.round(c.fx), cy = Math.round(c.fy);
-  for (let r = 16; r <= 150; r += 5) for (let k = 0; k < 48; k++) {
-    const a2 = k / 48 * Math.PI * 2, x = Math.round(cx + Math.cos(a2) * r), y = Math.round(cy + Math.sin(a2) * r * .85);
+  for (let r = 16; r <= 150; r += 4) for (let k = 0; k < 72; k++) {
+    const a2 = k / 72 * Math.PI * 2, x = Math.round(cx + Math.cos(a2) * r), y = Math.round(cy + Math.sin(a2) * r * .85);
     if (x < hw + 4 || y < hh + 4 || x >= W - hw - 4 || y >= H - 4 || towns.some(o => nationOf(o) !== nationOf(g) && Math.hypot(o.fx - x, o.fy - y) < 25)) continue;
-    if (!clearable(x - hw, y - hh, x + hw, y + 1) || pathIn(x - hw, y - hh, x + hw, y) || plazaIn(x - hw, y - hh, x + hw, y) || penOverlap(null, x - hw, y - hh, x + hw, y + 1) || buildingClash(x, y, 'aerodromo')) continue;
+    if (bigClash(x, y, hw, hh) || !clearableRocks(x - hw, y - hh, x + hw, y + 1) || nearBuildings(x - hw - 4, y - hh - 3, x + hw + 4, y + 4) || pathIn(x - hw, y - hh, x + hw, y) || plazaIn(x - hw, y - hh, x + hw, y) || penOverlap(null, x - hw, y - hh, x + hw, y + 1) || buildingClash(x, y, 'aerodromo')) continue;
     return [x, y];
   }
   return null;
@@ -66,10 +84,10 @@ SYSTEMS.push(dt => {
   for (const p of planes) {
     const g = villageById(p.g); if (!g || !popOf(g) || !hasAirfield(g)) { p.done = true; continue; }
     const st = stripOf(g); p.t += dt;
-    if (p.phase === 'pista') { p.x += dt * (10 + p.t * 18); p.ang = 0; if (p.x > st.x0 + 22) p.phase = 'sube'; continue; } // carrera de despegue
+    if (p.phase === 'pista') { p.x += dt * (6 + p.t * 16); p.ang = 0; if (p.x > st.x0 + 70) p.phase = 'sube'; continue; } // carrera de despegue por la pista
     if (p.phase === 'sube' || p.phase === 'ida' || p.phase === 'vuelta') {
-      if (p.phase === 'sube') { p.alt = Math.min(30, p.alt + dt * 12); if (p.alt >= 30) p.phase = 'ida'; }
-      const [tx, ty] = p.phase === 'vuelta' ? [st.x0 - 30, st.y] : [p.m.tx, p.m.ty], dx = tx - p.x, dy = ty - p.y, d = Math.hypot(dx, dy), sp = 46 * dt;
+      if (p.phase === 'sube') { p.alt = Math.min(40, p.alt + dt * 12); if (p.alt >= 40) p.phase = 'ida'; }
+      const [tx, ty] = p.phase === 'vuelta' ? [st.x0 - 70, st.y] : [p.m.tx, p.m.ty], dx = tx - p.x, dy = ty - p.y, d = Math.hypot(dx, dy), sp = 46 * dt;
       p.ang = Math.atan2(dy, dx);
       if (d > sp) { p.x += dx / d * sp; p.y += dy / d * sp; }
       else if (p.phase === 'vuelta') p.phase = 'aterriza';
@@ -79,7 +97,7 @@ SYSTEMS.push(dt => {
       planeShot(p, g, dt);
       continue;
     }
-    if (p.phase === 'aterriza') { p.alt = Math.max(0, p.alt - dt * 14); p.ang = 0; p.x += dt * Math.max(8, 40 - (30 - p.alt) * 1.2); p.y += (st.y - p.y) * Math.min(1, dt * 2); if (p.alt <= 0 && p.x > st.x0 + 28) p.done = true; }
+    if (p.phase === 'aterriza') { p.ang = 0; p.alt = Math.max(0, p.alt - dt * 14); p.x += dt * (p.alt > 0 ? 30 : Math.max(4, 30 - (p.x - st.x0) * .35)); p.y += (st.y - p.y) * Math.min(1, dt * 2); if (p.alt <= 0 && p.x > st.x1 - 20) p.done = true; } // toca tierra al principio de la pista y frena
   }
   planes = planes.filter(p => !p.done);
 });
@@ -104,20 +122,28 @@ function planeShot(p, g, dt){
   for (const v of villagers) { if (v.dead || !v.weapon || !isRanged(v.weapon) || !enemyOfVil(v, g) || Math.hypot(v.x - p.x, v.y - p.y) > 40) continue; if (Math.random() < dt * (isGun(v.weapon) ? .35 : .12)) { p.hp -= isGun(v.weapon) ? .25 : .12; if (p.hp <= 0) { p.done = true; addEffect(p.x, p.y, 'poof'); notify(`¡Derriban el planeador de ${g.name}!`, { x:p.x, y:p.y }); return; } } }
 }
 const enemyOfVil = (v, g) => { const o = villageById(v.vid); return o && o !== g && atWar(o, g); };
-// ---- Dibujo ----
+// ---- Dibujo (por encima de todo: van por el aire) ----
 const PLANE_DIR = a => { const k = (Math.round(a / (Math.PI / 4)) + 8) % 8; return ['e', 'se', 's', 'so', 'o', 'n', 'n', 'n'][k]; };
+// dónde está la hélice en cada vista (fracción del dibujo) y cómo se ve: de frente gira entera, de lado es una raya, en diagonal se aplasta
+const PROP_AT = { s:[.49, .48, 1], e:[.97, .4, 0], o:[.03, .42, 0], so:[.36, .5, .6], se:[.64, .5, .6] };
 function drawPlanes(now){
   const [x0, y0, x1, y1] = visibleRect();
   for (const p of planes) {
-    if (p.x < x0 - 30 || p.x > x1 + 30 || p.y < y0 - 60 || p.y > y1 + 30) continue;
+    if (p.x < x0 - 40 || p.x > x1 + 40 || p.y < y0 - 80 || p.y > y1 + 30) continue;
     const k = PLANE_DIR(p.ang), s = artFrame(`plane:${k}`); if (!s) continue;
-    const sc = .75 + p.alt / 30 * .4, w = s.width * sc, h = s.height * sc, x = p.x, y = p.y - p.alt;
-    vctx.fillStyle = `rgba(0,0,0,${.28 - p.alt / 200})`; vctx.beginPath(); vctx.ellipse(p.x + p.alt * .25, p.y + 2, w * .4, 2, 0, 0, Math.PI * 2); vctx.fill(); // la sombra en el suelo
-    vctx.drawImage(s, Math.round(x - w / 2), Math.round(y - h), Math.round(w), Math.round(h));
-    // la hélice: un disco que gira delante del morro
-    const nose = k === 'e' ? [w / 2, -h / 2] : k === 'o' ? [-w / 2, -h / 2] : k === 's' ? [0, -h * .45] : k === 'se' ? [w * .35, -h * .3] : k === 'so' ? [-w * .35, -h * .3] : null;
-    if (nose) { const ph = Math.floor(now / 40) % 3, px = Math.round(x + nose[0]), py = Math.round(y + nose[1]); vctx.fillStyle = 'rgba(70,50,30,.55)'; if (k === 'e' || k === 'o') vctx.fillRect(px, py - 3 + ph, 1, 3); else vctx.fillRect(px - 3 + ph, py, 3, 1); vctx.fillStyle = 'rgba(230,220,200,.35)'; vctx.fillRect(px - 2, py - 2, 4, 4); }
+    const sc = 1 + p.alt / 40 * .25, w = s.width * sc, h = s.height * sc, x = p.x, y = p.y - p.alt;
+    vctx.fillStyle = `rgba(0,0,0,${.3 - p.alt / 200})`; vctx.beginPath(); vctx.ellipse(p.x + p.alt * .3, p.y + 1, w * .42, 2.5, 0, 0, Math.PI * 2); vctx.fill(); // la sombra en el suelo
+    const L = Math.round(x - w / 2), Tp = Math.round(y - h);
+    vctx.drawImage(s, L, Tp, Math.round(w), Math.round(h));
+    const pa = PROP_AT[k];
+    if (pa) { // la hélice girando
+      const px = L + pa[0] * w, py = Tp + pa[1] * h, fr = Math.floor(now / 45) % 4;
+      if (pa[2] === 0) { const f = artFrame('prop:0'); if (f) { const hh = f.height * sc * (fr % 2 ? .45 : 1); vctx.drawImage(f, Math.round(px - 1), Math.round(py - hh / 2), Math.max(1, Math.round(f.width * sc * .6)), Math.round(hh)); } }
+      else { const f = artFrame(`prop:${fr}`); if (f) { const fw = f.width * sc * pa[2], fh = f.height * sc; vctx.drawImage(f, Math.round(px - fw / 2), Math.round(py - fh / 2), Math.max(1, Math.round(fw)), Math.round(fh)); } }
+    }
     if (p.hp < .6) chips.push({ x, y:y - h / 2, vx:(Math.random() - .5) * 4, vy:-3, life:0, max:1, col:'rgba(60,60,60,.6)' }); // tocado: echa humo
   }
 }
-{ const base = drawInstFlags; drawInstFlags = function(t){ base.apply(this, arguments); drawPlanes(performance.now()); }; }
+{ const base = drawAir; drawAir = function(t){ base.apply(this, arguments); drawPlanes(performance.now()); }; }
+// Los aeródromos de antes (más pequeños) se levantan de nuevo con las piezas nuevas, en un sitio donde quepan
+SYSTEMS.push(() => { if (!world) return; for (const g of villages) { if (g.airV === 2) continue; g.airV = 2; if (g.airfield != null && world.objs[g.airfield] && world.objs[g.airfield].key === 'air:aerodromo') { const x = g.airfield % W, y = (g.airfield / W) | 0; delete world.objs[g.airfield]; g.airfield = null; g.airFail = -1e9; composeRegion(x - 18, y - 18, x + 18, y + 4); } } });

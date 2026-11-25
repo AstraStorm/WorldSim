@@ -47,17 +47,19 @@ SYSTEMS.push(dt => {
     if (!knowsSci(g, 'petroleo')) continue;
     // Ir a por un yacimiento (uno cada vez)
     if (!(g.oilFail > yearT - DAY_LEN / 2) && wellsOfNation(g).length < 1 + Math.floor(popOf(g) / 60) && (g.iron || 0) >= 8 && g.stone >= 20 && g.wood >= 15) {
-      let best = null, bd = 1e9;
+      let best = null, bd = 1e9; const cands = [];
       for (const d of D) {
-        if (d.owner != null || (d.sea && !g.port)) continue; const x = d.i % W, y = (d.i / W) | 0, dist = Math.hypot(x - g.fx, y - g.fy); if (dist > 180 || dist >= bd) continue;
+        if (d.owner != null || (d.sea && !g.port)) continue; const x = d.i % W, y = (d.i / W) | 0, dist = Math.hypot(x - g.fx, y - g.fy); if (dist > 180) continue;
         if (towns.some(o => nationOf(o) !== nationOf(g) && Math.hypot(o.fx - x, o.fy - y) < 22)) continue; // en la tierra de otro, no (eso es cosa de guerras)
-        if (!d.sea && (!tileFree(x, y) || buildingClash(x, y, 'cantera'))) continue;
-        best = d; bd = dist;
+        let at = d.i; if (!d.sea) { const p = ringFind(x, y, 4, (xx, yy) => tileFree(xx, yy) && !world.objs[yy * W + xx] && !buildingClash(xx, yy, 'cantera')); if (!p) continue; at = p[1] * W + p[0]; } // (si el yacimiento tiene algo encima, el pozo se pone al lado)
+        cands.push([dist, d, at]);
       }
+      // el más cercano al que llegue un camión por tierra (o, en el mar, con puerto)
+      let bat = null; for (const [dist, d, at] of cands.sort((a, b) => a[0] - b[0]).slice(0, 4)) { if (!d.sea && !landRoute(g.fx * T, g.fy * T, (at % W) * T + 2, ((at / W) | 0) * T + 3 + T)) continue; best = d; bd = dist; bat = at; break; }
       if (!best) g.oilFail = yearT;
       else {
-        const x = best.i % W, y = (best.i / W) | 0; best.owner = g.id; best.well = best.i; g.iron -= best.sea ? 15 : 8; g.stone -= 20; g.wood -= 15;
-        world.objs[best.i] = { key:best.sea ? 'oil:plataforma' : 'oil:pozo', v:0, ox:0, oy:0, vid:g.id }; composeRegion(x - 8, y - 12, x + 8, y + 4); addEffect(x * T + 2, y * T + 3, 'poof');
+        const x = bat % W, y = (bat / W) | 0; best.owner = g.id; best.well = bat; g.iron -= best.sea ? 15 : 8; g.stone -= 20; g.wood -= 15;
+        world.objs[bat] = { key:best.sea ? 'oil:plataforma' : 'oil:pozo', v:0, ox:0, oy:0, vid:g.id }; composeRegion(x - 8, y - 12, x + 8, y + 4); addEffect(x * T + 2, y * T + 3, 'poof');
         notify(`¡${g.name} levanta ${best.sea ? 'una plataforma petrolera en el mar' : 'un pozo petrolero'} a ${Math.round(bd)} casillas de casa! El petróleo ya mana`, { x:x * T, y:y * T });
       }
     }
@@ -79,14 +81,16 @@ SYSTEMS.push(dt => {
     if ((g.plastic || 0) >= 1 && (typeof hasPump !== 'function' || hasPump(g) || g.market != null)) { g.plastic -= 1; g.bottles = Math.min(200, (g.bottles || 0) + 6); if (!g.bottleMsg) { g.bottleMsg = true; notify(`En el mercado de ${g.name} ya venden agua embotellada: nadie pasa sed`, { x:g.fx * T, y:g.fy * T }); } }
     // Camiones (y barcos, a las plataformas del mar): uno por pozo con petróleo esperando
     for (const d of D) {
-      if (d.owner !== g.id || (d.stock || 0) < 8 || oilRuns.some(t => t.d === d)) continue;
-      const a = [(g.refinery % W) * T + 2, ((g.refinery / W) | 0) * T + 3 + T * 2], b = [(d.i % W) * T + 2, ((d.i / W) | 0) * T + 3 + T];
+      const ow = villageById(d.owner); if (!ow || nationOf(ow) !== nationOf(g) || (d.stock || 0) < 8 || oilRuns.some(t => t.d === d)) continue;
+      if (d.owner !== g.id && (hasRefinery(ow) || nearestRefinery(d) !== g)) continue; // (si el pueblo del pozo no tiene refinería, lo lleva la más cercana de su nación)
+      const a = [(g.refinery % W) * T + 2, ((g.refinery / W) | 0) * T + 3 + T * 2], b = [((d.well ?? d.i) % W) * T + 2, (((d.well ?? d.i) / W) | 0) * T + 3 + T];
       if (d.sea) { if (!g.port || (typeof canCargo === 'function' && canCargo(g))) continue; // (con carguero, lo trae el carguero: carguero.js)
         const L = g.port.launch, pa = [(L % W) * T + 2, ((L / W) | 0) * T + 3]; oilRuns.push({ g:g.id, d, sea:true, pts:[pa, b], back:[b, pa], k:0, x:pa[0], y:pa[1], load:0, phase:'ida', drop:a }); }
       else { const r = landRoute(a[0], a[1], b[0], b[1]); if (!r) continue; oilRuns.push({ g:g.id, d, sea:false, pts:[a, ...r], k:0, x:a[0], y:a[1], load:0, phase:'ida' }); }
     }
   }
 });
+const nearestRefinery = d => { const ow = villageById(d.owner); return liveTowns().filter(o => nationOf(o) === nationOf(ow) && hasRefinery(o)).sort((a, b) => Math.hypot(a.refinery % W - d.i % W, ((a.refinery / W) | 0) - ((d.i / W) | 0)) - Math.hypot(b.refinery % W - d.i % W, ((b.refinery / W) | 0) - ((d.i / W) | 0)))[0] || null; };
 const hasRefinery = g => g.refinery != null && world.objs[g.refinery] && world.objs[g.refinery].key === 'oil:refineria';
 // ---- Asfalto ----
 let asphSet = null, asphN = -1;
@@ -125,13 +129,25 @@ SYSTEMS.push(dt => {
   oilRuns = oilRuns.filter(t => !t.done);
 });
 const TRUCK_DIR = ['e', 'se', 's', 'so', 'o', 'no', 'n', 'ne'];
+// Mancha de petróleo: en tierra, un charco negro brillante que rezuma (burbujas); en el mar, una película irisada
+function drawOilSeep(d, x, y, now){
+  const h = (a, b) => ((d.i * 2654435761 + a * 40503 + b * 9973) >>> 0) % 1000 / 1000;
+  if (!d.sea) {
+    for (let k = 0; k < 9; k++) { const ox = Math.round((h(k, 1) - .5) * 14), oy = Math.round((h(k, 2) - .5) * 6), w = 3 + Math.round(h(k, 3) * 5); vctx.fillStyle = 'rgba(14,12,16,.9)'; vctx.fillRect(x + ox - (w >> 1), y + oy - 1, w, 2 + (k % 2)); }
+    vctx.fillStyle = 'rgba(150,150,190,.55)'; vctx.fillRect(x - 3, y - 1, 3, 1); vctx.fillRect(x + 2, y + 1, 2, 1); // el brillo
+    const b = (now / 900 + h(0, 7) * 5) % 1; if (b < .4) { vctx.fillStyle = `rgba(60,55,70,${.9 - b * 2})`; vctx.fillRect(x + Math.round((h(1, 9) - .5) * 8), y - 1 - Math.round(b * 3), 1, 1); } // una burbuja que sube
+  } else {
+    const cols = ['rgba(170,80,190,.28)', 'rgba(70,150,200,.28)', 'rgba(90,190,120,.25)', 'rgba(220,190,80,.25)', 'rgba(20,20,30,.35)'], sh = Math.sin(now / 1400 + d.i) * 1.5;
+    for (let k = 0; k < cols.length; k++) { vctx.fillStyle = cols[k]; vctx.beginPath(); vctx.ellipse(x + sh * (k % 2 ? 1 : -1), y, 22 - k * 3.5, 8 - k * 1.2, 0, 0, Math.PI * 2); vctx.fill(); }
+  }
+}
 function drawOil(now){
   const [x0, y0, x1, y1] = visibleRect(), known = oilKnown();
   for (const d of oilDeposits()) {
-    const x = (d.i % W) * T + 2, y = ((d.i / W) | 0) * T + 3; if (x < x0 - 30 || x > x1 + 30 || y < y0 - 40 || y > y1 + 20) continue;
-    if (d.well == null || !world.objs[d.well]) { if (known && !d.sea) { vctx.fillStyle = 'rgba(16,14,18,.85)'; vctx.fillRect(x - 3, y - 1, 6, 2); vctx.fillRect(x - 2, y - 2, 4, 1); vctx.fillStyle = 'rgba(120,120,150,.6)'; vctx.fillRect(x - 1, y - 2, 1, 1); } else if (known) { vctx.fillStyle = 'rgba(16,14,18,.35)'; vctx.fillRect(x - 4, y - 1, 8, 2); } continue; }
+    const wi = d.well != null && world.objs[d.well] ? d.well : d.i, x = (wi % W) * T + 2, y = ((wi / W) | 0) * T + 3; if (x < x0 - 30 || x > x1 + 30 || y < y0 - 40 || y > y1 + 20) continue;
+    if (d.well == null || !world.objs[d.well]) { drawOilSeep(d, x, y, now); continue; } // (sin pozo: la mancha negra que delata el petróleo)
     if (!d.sea) { // el balancín, en marcha (8 fotogramas) mientras quede petróleo
-      const f = d.amt > 0 ? Math.floor(now / 140 + d.i) % 8 : 0, s = artFrame(`oil:pozo${f}`); if (s) vctx.drawImage(s, x - s.ax, y - s.height + 1);
+      const f = d.amt > 0 ? Math.floor(now / 140 + d.i) % 8 : 0, s = artFrame(`oil:pozo${f}`); if (s) { vctx.drawImage(s, x - s.ax, y - s.height + 1); redrawFront(x - s.ax, x - s.ax + s.width, y - s.height + 1, y + 1); }
     }
   }
   for (const t of oilRuns) {

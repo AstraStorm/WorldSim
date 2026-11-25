@@ -41,7 +41,9 @@ const BLOQUE_ROOM = { 'house:bloque1':12, 'house:bloque2':18, 'house:bloque3':24
 const bloqueTier = k => k === 'house:piedra' ? 0 : k && k.startsWith('house:bloque') ? +(k.slice(12) || 2) : -1;
 const bloqueMax = g => Math.min(5, (knowsSci(g, 'dirigible') ? 5 : knowsSci(g, 'ferrocarril') ? 4 : 3) + (hasLaw(g, 'edificacion_altura') ? 1 : 0)); // (con la ley de edificación en altura, una planta más)
 // Casas que pueden ganar una planta (de piedra a bloque, o un bloque que sube): las más cercanas a la plaza primero
-const pisoCands = g => { const mx = bloqueMax(g); return housesOf(g).filter(i => { const t = bloqueTier(world.objs[i].key); return t >= 0 && t < mx && !villagers.some(u => u.task && u.task.k === 'pisos' && u.task.i === i); }).sort((a, b) => Math.hypot(a % W - g.fx, ((a / W) | 0) - g.fy) - Math.hypot(b % W - g.fx, ((b / W) | 0) - g.fy)); };
+// Un bloque de pisos solo donde hay calle delante (o al lado): la casa tiene que dar a un camino
+const onStreet = i => { const x = i % W, y = (i / W) | 0; for (let yy = y - 1; yy <= y + 2; yy++) for (let xx = x - 4; xx <= x + 4; xx++) if (pathMap.has(yy * W + xx)) return true; return false; };
+const pisoCands = g => { const mx = bloqueMax(g); return housesOf(g).filter(i => { const t = bloqueTier(world.objs[i].key); return t >= 0 && t < mx && onStreet(i) && !villagers.some(u => u.task && u.task.k === 'pisos' && u.task.i === i); }).sort((a, b) => Math.hypot(a % W - g.fx, ((a / W) | 0) - g.fy) - Math.hypot(b % W - g.fx, ((b / W) | 0) - g.fy)); };
 const penAnimals = g => animals.filter(a => !a.dead && a.dom === g.id);
 const MALE_ONLY = new Set(['barba', 'calvo', 'coronilla', 'calvoBarba', 'cresta']), FEMALE_ONLY = new Set(['largo', 'melena', 'coleta', 'mono']);
 function pickStyleSex(r, sex){

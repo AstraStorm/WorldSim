@@ -26,23 +26,20 @@ let renewT = 0;
 SYSTEMS.push(dt => {
   if (!world || (renewT -= dt) > 0) return; renewT = 4;
   for (const g of liveTowns()) {
-    if (!knowsSci(g, 'renovables') || !(supplierOf(g) || (g.pylons || []).length)) continue;
+    if (!knowsSci(g, 'renovables')) continue;
     const R = renewOf(g), want = 2 + Math.floor(popOf(g) / 18);
     if (R.length >= want || (g.iron || 0) < 3 || g.stone < 6 || (g.renewT || 0) > yearT - 8) continue; g.renewT = yearT;
-    // Junto a la red: alrededor de sus torres (o del centro); el molino donde más sopla, la placa donde más seco
-    const nodes = [...(g.pylons || []).map(p => p.i), Math.round(g.fy) * W + Math.round(g.fx)], k = R.filter(r => r.k === 'wind').length <= R.filter(r => r.k === 'solar').length ? 'wind' : 'solar';
-    let best = null, bs = -1e9;
-    for (const n of nodes) for (let t = 0; t < 10; t++) {
-      const a = Math.random() * Math.PI * 2, d = 4 + Math.random() * 9, x = Math.round(n % W + Math.cos(a) * d), y = Math.round(((n / W) | 0) + Math.sin(a) * d);
-      if (x < 3 || y < 6 || x >= W - 3 || y >= H - 2 || !tileFree(x, y) || pathMap.has(y * W + x) || plazaSet.has(y * W + x) || wallSet.has(y * W + x) || villages.some(q => underBuilding(q, x, y)) || plotIn(x, y, x, y)) continue;
-      const b = world.biome[y * W + x], coast = nb4i(y * W + x).some(j => WATER[world.biome[j]]);
-      const sc = k === 'wind' ? (b === B.HILLS ? 3 : 0) + (coast ? 2 : 0) + (world.e[y * W + x] || 0) * 4 : ([B.DESERT, B.DRY, B.SAND].includes(b) ? 3 : 0) - (farmMap.has(y * W + x) ? 1 : 0);
-      if (sc > bs) { bs = sc; best = [x, y]; }
-    }
+    // En un parque a las afueras (no en mitad del pueblo): los molinos en fila, separados; las placas, juntas en hileras
+    if (g.renewAt == null || !clearable(g.renewAt % W - 1, ((g.renewAt / W) | 0) - 1, g.renewAt % W + 1, ((g.renewAt / W) | 0) + 1) && !R.length) { const s0 = typeof farSite === 'function' ? farSite(g, 7, 6) : null; if (!s0) { g.renewT = yearT + DAY_LEN / 2; continue; } g.renewAt = s0[1] * W + s0[0]; }
+    const k = R.filter(r => r.k === 'wind').length <= R.filter(r => r.k === 'solar').length ? 'wind' : 'solar', ax = g.renewAt % W, ay = (g.renewAt / W) | 0;
+    const near = (x, y, r) => { for (let yy = y - r; yy <= y + r; yy++) for (let xx = x - r; xx <= x + r; xx++) { const o = world.objs[yy * W + xx]; if (o && BLD.has(o.key.split(':')[0]) && !/^(wind|solar|pylon):/.test(o.key)) return true; } return false; };
+    let best = null;
+    const slots = k === 'wind' ? [[0, -4], [-5, -4], [5, -4], [-10, -4], [10, -4], [-15, -4], [15, -4]] : [[-4, 2], [-2, 2], [0, 2], [2, 2], [4, 2], [-4, 5], [-2, 5], [0, 5], [2, 5], [4, 5], [-6, 2], [6, 2], [-6, 5], [6, 5]];
+    for (const [dx, dy] of slots) { const x = ax + dx, y = ay + dy; if (x < 3 || y < 6 || x >= W - 3 || y >= H - 2 || !(tileFree(x, y) || clearable(x, y, x, y)) || pathMap.has(y * W + x) || plazaSet.has(y * W + x) || wallSet.has(y * W + x) || near(x, y, 2) || villages.some(q => underBuilding(q, x, y)) || plotIn(x, y, x, y)) continue; best = [x, y]; break; }
     if (!best) continue;
-    const i = best[1] * W + best[0]; farmMap.delete(i);
+    const i = best[1] * W + best[0]; farmMap.delete(i); if (world.objs[i]) delete world.objs[i];
     world.objs[i] = { key:k === 'wind' ? 'wind:torre' : 'solar:placa', v:0, ox:0, oy:0, vid:g.id }; g.renew.push({ i, k }); g.iron -= 3; g.stone -= 6; if (powC) powC.delete(g.id);
-    composeRegion(best[0] - 4, best[1] - 8, best[0] + 4, best[1] + 2); addEffect(best[0] * T + 2, best[1] * T + 3, 'poof');
+    composeRegion(best[0] - 4, best[1] - 8, best[0] + 4, best[1] + 2); if (powC) powC.delete(g.id); addEffect(best[0] * T + 2, best[1] * T + 3, 'poof');
     if (!g.renewMsg) { g.renewMsg = true; notify(`${g.name} levanta ${k === 'wind' ? 'su primer molino eólico' : 'sus primeras placas solares'}: corriente sin quemar carbón`, { x:best[0] * T, y:best[1] * T }); }
   }
 });
@@ -64,6 +61,7 @@ function drawWindmills(now){
     const [wx, wy] = windAt(x, y), sp = 120 + 60 / Math.max(.3, Math.hypot(wx, wy) / 6), f = Math.floor(now / sp + r.i) % 8, s = artFrame(`wind:aspas${f}`), gd = artFrame('wind:gondola');
     const hx = x, hy = y - 19; if (gd) vctx.drawImage(gd, hx - (gd.width >> 1), hy - (gd.height >> 1));
     if (s) vctx.drawImage(s, Math.round(hx - s.width / 2), Math.round(hy - s.height / 2));
+    redrawFront(hx - 9, hx + 9, hy - 9, y + 1); // lo que está delante tapa las aspas
   }
 }
 { const base = drawInstFlags; drawInstFlags = function(t){ base.apply(this, arguments); drawWindmills(performance.now()); }; }
@@ -76,3 +74,6 @@ Object.assign(TREATY, { clima:{ n:'acuerdo climático', days:[8, 12], icon:'🌱
   if (hasTreaty(r, 'clima')) { r.v = Math.min(100, r.v + .1); for (const g of [a, b]) g.anger = Math.max(0, (g.anger || 0) - .05); }
   else if (r.v > 30 && knowsSci(a, 'renovables') && knowsSci(b, 'renovables') && Math.random() < .03) signTreaty(a, b, r, 'clima');
 }; }
+
+// Las renovables de antes (sueltas entre las casas) se quitan una vez: se vuelven a levantar en su parque, a las afueras
+SYSTEMS.push(() => { if (!world) return; for (const g of villages) { if (g.renewV === 2) continue; g.renewV = 2; for (const r of renewOf(g)) { delete world.objs[r.i]; const x = r.i % W, y = (r.i / W) | 0; composeRegion(x - 4, y - 8, x + 4, y + 2); } g.renew = []; g.renewAt = null; g.renewT = 0; if (powC) powC.delete(g.id); } });

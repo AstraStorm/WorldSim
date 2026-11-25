@@ -23,6 +23,7 @@ function zoomAt(sx, sy, nz){
 }
 function centerOn(px, py, z){ if (!isFinite(px) || !isFinite(py) || !isFinite(z)) return; zoom = z; offX = cw / 2 - px * zoom; offY = ch / 2 - py * zoom; }
 
+function drawAir(t){} // (lo amplían los módulos de lo que vuela)
 function draw(t){
   if (!world || !cw || busy) return;
   if (needFit) { fit(); needFit = false; }
@@ -77,6 +78,7 @@ function draw(t){
   drawAnimals();
   drawSmoke();
   drawBalloons(t); // por encima de árboles y animales: el globo va por el aire
+  drawAir(t); // aviones, cohetes y misiles en vuelo (aviacion.js, espacio.js, misiles.js)
   drawVapor(Math.min(.1, (t - (drawVapor.last || t)) / 1000)); drawVapor.last = t;
   drawSandstorms(t);
   // Volcanes: resplandor del cráter, humo según lo activos que estén y bombas de lava en erupción

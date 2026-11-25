@@ -3,8 +3,9 @@
 // · Nuevo descubrimiento, «la electricidad» (hace falta la máquina de vapor y la metalurgia)
 // · Un pueblo de 25 o más que la conoce levanta una central de carbón en su zona industrial (o a las afueras): quema carbón
 //   y, sin carbón, se apaga y la ciudad se queda a oscuras
-// · Desde la central salen torres de alta tensión, unidas por cables, que se van ramificando hacia las casas: cada torre
-//   da corriente a lo que tiene alrededor (12 casillas). Cada torre cuesta hierro y madera; se levantan una a una
+// · Desde la central salen torres de alta tensión, unidas por cables, por fuera de las casas (nunca en mitad del pueblo):
+//   en cuanto la línea llega a las afueras, todo el pueblo tiene luz (de ahí en adelante va por la red de la ciudad). Las
+//   fábricas sueltas, lejos, reciben su propia línea. Cada torre cuesta hierro y madera; se levantan una a una
 // · Con corriente: las farolas de vela pasan a ser eléctricas (se encienden solas al anochecer, con más luz) y las
 //   fábricas producen un tercio más
 // · Ley «red eléctrica pública» (la luz no se cobra: la gente, más contenta) y tratado «suministro eléctrico» (quien no
@@ -16,7 +17,7 @@ BLD.add('power'); BLD.add('pylon'); BUILD_DIMS.power = [6, 7]; BUILD_DIMS.pylon 
 OBJ['power:central'] = ['Central eléctrica de carbón', 'house', 0]; OBJ['pylon:torre'] = ['Torre de alta tensión', 'house', 0];
 Object.assign(BLD_DESC, { power:'Central eléctrica: quema carbón y manda la corriente por las torres de alta tensión', pylon:'Torre de alta tensión: lleva la corriente por los cables y la reparte a lo que tiene cerca' });
 Object.assign(BLD_TYPE, { power:'Energía', pylon:'Energía' });
-const PYLON_R = 12, PYLON_GAP = 11;
+const PYLON_R = 12, PYLON_GAP = 11, LINK_R = 8; // (LINK_R: a cuánto de una casa tiene que llegar la línea para dar luz a todo el pueblo)
 const hasPower = g => g.plant != null && world.objs[g.plant] && world.objs[g.plant].key === 'power:central';
 function plantOn(g){ return hasPower(g) && !g.plantOff; }
 // Torres conectadas (con su torre «madre», hacia la central) y casillas con corriente, por pueblo (caché)
@@ -26,9 +27,16 @@ function powered(g){
   const set = new Set(), P = (g.pylons || []).filter(p => world.objs[p.i]);
   const sup = supplierOf(g), on = !!(sup && plantOn(sup));
   if (on) { const src = [g.plant, ...P.map(p => p.i)].filter(i => i != null && world.objs[i]); for (const i of src) { const x = i % W, y = (i / W) | 0; for (let yy = y - PYLON_R; yy <= y + PYLON_R; yy += 2) for (let xx = x - PYLON_R; xx <= x + PYLON_R; xx += 2) if (Math.hypot(xx - x, yy - y) <= PYLON_R) set.add((yy >> 1) * W + (xx >> 1)); } }
-  c = { t:yearT, n:(g.pylons || []).length, set, on }; powC.set(g.id, c); return c;
+  // ¿Ha llegado la línea al pueblo? Entonces todo el pueblo (hasta su última casa) tiene luz
+  const hs = housesOf(g), src = [g.plant, ...P.map(p => p.i), ...(typeof renewOf === 'function' ? renewOf(g).map(r => r.i) : [])].filter(i => i != null && world.objs[i]);
+  // (o, si compra la luz a una ciudad vecina ya encendida y sus casas casi se tocan, le llega por la red de la ciudad)
+  const town = on && (hs.some(h => src.some(n => Math.hypot(h % W - n % W, ((h / W) | 0) - ((n / W) | 0)) <= LINK_R)) || (sup && sup !== g && powered(sup).town && hs.some(h => housesOf(sup).some(h2 => Math.hypot(h % W - h2 % W, ((h / W) | 0) - ((h2 / W) | 0)) <= LINK_R * 1.5))));
+  const reach = hs.reduce((m, h) => Math.max(m, Math.hypot(h % W - g.fx, ((h / W) | 0) - g.fy)), 0) + 4;
+  c = { t:yearT, n:(g.pylons || []).length, set, on, town, reach }; powC.set(g.id, c); return c;
 }
-const isPowered = (g, x, y) => g && powered(g).set.has(((y | 0) >> 1) * W + ((x | 0) >> 1));
+const isPowered = (g, x, y) => { if (!g) return false; const c = powered(g); return c.set.has(((y | 0) >> 1) * W + ((x | 0) >> 1)) || (c.town && Math.hypot(x - g.fx, y - g.fy) <= c.reach); };
+const isBldObj = o => o && BLD.has(o.key.split(':')[0]) && !o.key.startsWith('pylon:');
+const clearOfBuildings = (x, y, r) => { for (let yy = y - r; yy <= y + r; yy++) for (let xx = x - r; xx <= x + r; xx++) if (xx >= 0 && yy >= 0 && xx < W && yy < H && isBldObj(world.objs[yy * W + xx])) return false; return !villages.some(q => underBuilding(q, x, y)); };
 // De dónde le llega la corriente: de su central; si no tiene, de la de otra ciudad de su nación (red nacional, hasta 90
 // casillas) o de la de un vecino con tratado de suministro eléctrico
 function supplierOf(g){
@@ -52,18 +60,23 @@ function plantSite(g){
   return best; // (nunca derribando casas del centro: una central de carbón no va en mitad de la ciudad)
 }
 function nextPylon(g){
-  const sup = supplierOf(g); if (!sup) return null; const P = (g.pylons || []).filter(p => world.objs[p.i]), nodes = [{ i:sup.plant }, ...(sup === g ? [] : (sup.pylons || []).filter(p => world.objs[p.i])), ...P];
-  const cov = (x, y) => nodes.some(n => Math.hypot(n.i % W - x, ((n.i / W) | 0) - y) <= PYLON_R - 2);
-  // Lo que falta por iluminar: casas, plaza y fábricas sin corriente, de la más cercana a la red a la más lejana
-  const want = [...housesOf(g), ...(g.facs || []).map(f => f.i), Math.round(g.fy) * W + Math.round(g.fx)].filter(i => !cov(i % W, (i / W) | 0));
+  const sup = supplierOf(g); if (!sup) return null; const P = (g.pylons || []).filter(p => world.objs[p.i]), nodes = [{ i:sup.plant }, ...(typeof renewOf === 'function' ? renewOf(sup).map(r => ({ i:r.i })) : []), ...(sup === g ? [] : (sup.pylons || []).filter(p => world.objs[p.i])), ...P].filter(n => n.i != null);
+  const cov = (x, y) => nodes.some(n => Math.hypot(n.i % W - x, ((n.i / W) | 0) - y) <= PYLON_R - 2), c = powered(g);
+  // Lo que falta: llegar al pueblo (a la casa más a mano) y a las fábricas que quedan fuera de él
+  const want = [...(c.town ? [] : housesOf(g)), ...(g.facs || []).map(f => f.i).filter(i => !cov(i % W, (i / W) | 0) && !(c.town && Math.hypot(i % W - g.fx, ((i / W) | 0) - g.fy) <= c.reach))];
   if (!want.length) return null;
   const skip = g.pylonSkip ||= {}, pairs = [];
   for (const t of want) { if (skip[t] > yearT) continue; let bn = null, bd = Infinity; for (const n of nodes) { const d = Math.hypot(t % W - n.i % W, ((t / W) | 0) - ((n.i / W) | 0)); if (d < bd) { bd = d; bn = n; } } pairs.push([bd, bn, t]); }
   pairs.sort((a, b) => a[0] - b[0]);
-  const ok = (x, y) => tileFree(x, y) && !pathMap.has(y * W + x) && !plazaSet.has(y * W + x) && !wallSet.has(y * W + x) && !villages.some(q => underBuilding(q, x, y)) && !plotIn(x, y, x, y); // (en un campo sí: la torre ocupa poco)
+  // los pueblos (su círculo de casas): las torres los rodean, no los cruzan (salvo para salir del pueblo en el que ya están)
+  const circ = liveTowns().map(o => { const hs = housesOf(o); return [o.fx, o.fy, Math.min(30, hs.reduce((m, h) => Math.max(m, Math.hypot(h % W - o.fx, ((h / W) | 0) - o.fy)), 0) * .85)]; });
+  let from0 = null; const outside = (x, y) => circ.every(([cx, cy, r]) => Math.hypot(x - cx, y - cy) >= r || (from0 && Math.hypot(from0[0] - cx, from0[1] - cy) < r));
+  const okR = (r, out = true) => (x, y) => (!out || outside(x, y)) && tileFree(x, y) && !pathMap.has(y * W + x) && !plazaSet.has(y * W + x) && !wallSet.has(y * W + x) && clearOfBuildings(x, y, r) && !plotIn(x, y, x, y); // (lejos de casas y edificios; en un campo sí: la torre ocupa poco)
+  // si hay casas por medio, rodea; y si no queda otra, se arrima algo más
   for (const [, from, to] of pairs.slice(0, 6)) {
     const fx = from.i % W, fy = (from.i / W) | 0, tx = to % W, ty = (to / W) | 0, d = Math.hypot(tx - fx, ty - fy) || 1;
-    for (const step of [Math.min(PYLON_GAP, d), Math.min(7, d)]) { const p = ringFind(Math.round(fx + (tx - fx) / d * step), Math.round(fy + (ty - fy) / d * step), 5, ok); if (p) { farmMap.delete(p[1] * W + p[0]); return { i:p[1] * W + p[0], from:from.i }; } }
+    from0 = [fx, fy];
+    for (const [step, R, cl, out] of [[Math.min(PYLON_GAP, Math.max(1, d - 5)), 5, 3, true], [Math.min(7, Math.max(1, d - 5)), 5, 3, true], [Math.min(PYLON_GAP, Math.max(1, d - 5)), 10, 3, true], [Math.min(PYLON_GAP, Math.max(1, d - 5)), 9, 3, false]]) { const p = ringFind(Math.round(fx + (tx - fx) / d * step), Math.round(fy + (ty - fy) / d * step), R, okR(cl, out)); if (p) { farmMap.delete(p[1] * W + p[0]); return { i:p[1] * W + p[0], from:from.i }; } }
     skip[to] = yearT + DAY_LEN / 2; // por aquí no hay sitio: otro rato
   }
   return null;
@@ -117,6 +130,7 @@ function drawPowerLines(){
       const fo = world.objs[p.from], [ax, ay] = fo.key === 'power:central' ? [(p.from % W) * T + 2 - 14, ((p.from / W) | 0) * T + 3 - 18] : pylonTop(p.from), [bx, by] = pylonTop(p.i);
       if (Math.max(ax, bx) < x0 || Math.min(ax, bx) > x1 || Math.max(ay, by) < y0 - 10 || Math.min(ay, by) > y1 + 10) continue;
       for (const off of [-3, 3]) { vctx.beginPath(); vctx.moveTo(ax + off, ay); vctx.quadraticCurveTo((ax + bx) / 2 + off, (ay + by) / 2 + 6, bx + off, by); vctx.stroke(); } // dos cables, combados
+      redrawFront(Math.min(ax, bx) - 4, Math.max(ax, bx) + 4, Math.min(ay, by), Math.max(((p.from / W) | 0), ((p.i / W) | 0)) * T + 3); // y lo que hay delante, por encima
     }
   }
 }
@@ -156,3 +170,12 @@ Object.assign(TREATY, { electrico:{ n:'acuerdo de suministro eléctrico', days:[
   if (has) { for (const [s, c] of [[a, b], [b, a]]) if (plantOn(s) && !hasPower(c)) { const es = ecOf(s), ec = ecOf(c); if (es && ec) { ec.treas -= .4; es.treas += .4; } } }
   else if (!has && r.v > 25 && Math.hypot(a.fx - b.fx, a.fy - b.fy) < 90 && ((plantOn(a) && !hasPower(b) && knowsSci(b, 'electricidad')) || (plantOn(b) && !hasPower(a) && knowsSci(a, 'electricidad'))) && Math.random() < .03) signTreaty(a, b, r, 'electrico');
 }; }
+
+// Las redes de antes (torres en mitad del pueblo) se rehacen una vez con la regla nueva: torres por fuera, hasta las afueras
+SYSTEMS.push(() => {
+  if (!world || !villages.some(g => g.gridV !== 2 && (g.pylons || []).length)) return;
+  const old = villages.filter(g => g.gridV !== 2 && (g.pylons || []).length);
+  for (const g of old) { for (const p of g.pylons) if (world.objs[p.i] && world.objs[p.i].key === 'pylon:torre') { delete world.objs[p.i]; const x = p.i % W, y = (p.i / W) | 0; composeRegion(x - 4, y - 8, x + 4, y + 2); } g.pylons = []; g.pylonSkip = {}; g.gridV = 2; powC.delete(g.id); }
+  for (const g of [...old.filter(hasPower), ...old.filter(g => !hasPower(g))]) for (let k = 0; k < 30; k++) { const n = nextPylon(g); if (!n) break; world.objs[n.i] = { key:'pylon:torre', v:0, ox:0, oy:0, vid:g.id }; g.pylons.push(n); powC.delete(g.id); const x = n.i % W, y = (n.i / W) | 0; composeRegion(x - 4, y - 8, x + 4, y + 2); }
+});
+SYSTEMS.push(() => { if (world) for (const g of villages) if (g.gridV == null && !(g.pylons || []).length) g.gridV = 2; });

@@ -45,23 +45,28 @@ SYSTEMS.push(dt => {
   if (!cargos.length) return;
   for (const c of cargos) {
     const g = villageById(c.g); if (!g || !popOf(g)) { c.done = true; continue; }
-    if (c.wait > 0) { c.wait -= dt; continue; }
+    if (c.wait > 0) { // en puerto: se ve cómo lo descargan (se queda vacío) y, si hay, cómo lo vuelven a cargar
+      c.wait -= dt; for (const e of c.ev || []) if (!e.done && c.wait <= e.at) { e.done = true; c.full = e.full; c.label = e.label; addEffect(c.x, c.y - 8, 'poof'); }
+      if (c.wait <= 0) c.label = null; continue; }
     const tgt = c.pts[c.k];
     if (!tgt) { // fin de tramo
       if (c.phase === 'ida') {
-        if (c.kind === 'petroleo') { const q = Math.min(c.d.stock || 0, 60); c.d.stock -= q; c.load = q; c.full = true; }
+        if (c.kind === 'petroleo') { const q = Math.min(c.d.stock || 0, 60); c.d.stock -= q; c.load = q; c.label = 'Cargando crudo'; c.ev = [{ at:2.5, full:true, label:'Cargado de crudo' }]; }
         else { const o = villageById(c.to); if (o && popOf(o)) { o[c.good] = (o[c.good] || 0) + c.n; const eg = ecOf(g), eo = ecOf(o); if (eg && eo) { const pay = Math.round(c.n * .6); eo.treas -= pay; eg.treas += pay; } const r = rels.get(relKey(g, o)); if (r) r.v = Math.min(100, r.v + 1);
             // y vuelve con lo que al otro le sobra
             const back = CARGO_GOODS.map(([k, n, keep]) => [k, n, (o[k] || 0) - keep(o)]).filter(x => x[2] > 20 && x[0] !== c.good).sort((a, b) => b[2] - a[2])[0];
-            c.full = false; if (back) { const n = Math.min(Math.floor(back[2]), 60); o[back[0]] -= n; c.backGood = back[0]; c.backN = n; c.full = true; } } }
-        c.phase = 'vuelta'; c.wait = 4; c.pts = seaPath([c.x, c.y], c.home) || [c.home]; c.k = 0; continue;
+            c.label = `Descargando ${c.gname}`; c.ev = [{ at:4.5, full:false, label:'Vacío' }]; if (back) { const n = Math.min(Math.floor(back[2]), 60); o[back[0]] -= n; c.backGood = back[0]; c.backN = n; c.ev.push({ at:2.4, full:false, label:`Cargando ${CARGO_GOODS.find(q => q[0] === back[0])?.[1] || back[0]}` }, { at:.8, full:true, label:'Cargado' }); } } }
+        c.phase = 'vuelta'; c.wait = c.kind === 'petroleo' ? 4 : 7; c.pts = seaPath([c.x, c.y], c.home) || [c.home]; c.k = 0; continue;
       }
       if (c.kind === 'petroleo') g.oilStock = (g.oilStock || 0) + (c.load || 0);
       else if (c.backGood) g[c.backGood] = (g[c.backGood] || 0) + c.backN;
+      if (c.full) { c.ev = [{ at:1.5, full:false, label:'Vacío' }]; c.label = 'Descargando'; c.wait = 3.5; c.pts = [c.home]; c.k = 1; c.backGood = null; c.load = 0; c.kind = 'fin'; continue; } // en casa: lo descargan y se queda vacío
       c.done = true; continue;
     }
     const sp = 22 * dt, dx = tgt[0] - c.x, dy = tgt[1] - c.y, d = Math.hypot(dx, dy);
     if (d <= sp) { c.x = tgt[0]; c.y = tgt[1]; c.k++; } else { c.x += dx / d * sp; c.y += dy / d * sp; c.dx = dx / d; c.dy = dy / d; }
+    if (Math.random() < dt * 26) { const sw = 34, side = (Math.random() - .5) * 6; chips.push({ x:c.x - (c.dx || 1) * sw + side * -(c.dy || 0), y:c.y + 1 + side * (c.dx || 0) * .4, vx:-(c.dx || 1) * 4 + (Math.random() - .5) * 4, vy:(Math.random() - .5) * 2, life:0, max:1.6 + Math.random(), col:`rgba(240,250,255,${.45 + Math.random() * .35})` }); } // la espuma que deja detrás
+    if (Math.random() < dt * 14) for (const sg of [-1, 1]) chips.push({ x:c.x + (c.dx || 1) * 30, y:c.y + 1, vx:(c.dx || 1) * 2 + sg * -(c.dy || 0) * 6, vy:sg * (c.dx || 1) * 3, life:0, max:.7, col:'rgba(235,248,255,.7)' }); // la ola de proa
   }
   cargos = cargos.filter(c => !c.done);
 });
@@ -70,10 +75,10 @@ function drawCargos(now){
   for (const c of cargos) {
     if (c.x < x0 - 40 || c.x > x1 + 40 || c.y < y0 - 30 || c.y > y1 + 30) continue;
     const front = (c.dy || 0) > .6, s = artFrame(`cargo:${c.full ? 'lleno' : 'vacio'}${front ? '_f' : ''}`); if (!s) continue;
-    const left = !front && (c.dx || 1) < 0, bob = Math.round(Math.sin(now / 500 + c.x) * .5), x = Math.round(c.x), y = Math.round(c.y) + bob;
+    const left = !front && (c.dx || 1) < 0, bob = Math.round(Math.sin(now / 600 + c.home[0]) * 1.2), x = Math.round(c.x), y = Math.round(c.y) + bob, tilt = Math.sin(now / 900 + c.home[1]) * .025;
     vctx.fillStyle = 'rgba(0,0,0,.22)'; vctx.fillRect(x - (s.width >> 1), y + 1, s.width, 2);
-    if (left) { vctx.save(); vctx.translate(x, 0); vctx.scale(-1, 1); vctx.drawImage(s, -s.ax, y - s.height + 4); vctx.restore(); } else vctx.drawImage(s, x - s.ax, y - s.height + 4);
-    vctx.fillStyle = 'rgba(235,248,255,.6)'; if (c.wait <= 0 || c.wait == null) for (let k = 0; k < 4; k++) vctx.fillRect(x - (left ? -1 : 1) * ((s.width >> 1) + 2 + k * 3), y + 1 + (k % 2), 2, 1); // estela
+    vctx.save(); vctx.translate(x, y + 4); vctx.rotate(front ? 0 : tilt); if (left) vctx.scale(-1, 1); vctx.drawImage(s, -s.ax, -s.height); vctx.restore(); // navega: sube, baja y cabecea con las olas
+    if (c.label) { vctx.save(); vctx.font = `bold ${Math.max(4, 11 / zoom)}px system-ui`; vctx.textAlign = 'center'; vctx.lineWidth = 2 / zoom; vctx.strokeStyle = 'rgba(0,0,0,.75)'; vctx.fillStyle = '#fff'; vctx.strokeText(c.label, x, y - s.height - 2); vctx.fillText(c.label, x, y - s.height - 2); vctx.restore(); }
     const g = villageById(c.g), n = g && nationOf(g); if (n && !front) { const fx = left ? x + (s.width >> 1) - 6 : x - (s.width >> 1) + 5, fy = y - s.height + 2; vctx.fillStyle = '#3a3a3a'; vctx.fillRect(fx, fy, 1, 5); if (n.flag) for (let a = 0; a < 4; a++) for (let b = 0; b < 3; b++) { vctx.fillStyle = flagColor(n.flag, (a + .5) / 4, (b + .5) / 3); vctx.fillRect(fx + 1 + a, fy + b, 1, 1); } }
   }
 }

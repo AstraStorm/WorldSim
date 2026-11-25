@@ -34,7 +34,7 @@ SYSTEMS.push(dt => {
     const foes = liveTowns().filter(o => atWar(g, o) && !noProlif(g, o)), S = silosOf(g), want = (hasLaw(g, 'disuasion') ? 2 : 1) + Math.floor(popOf(g) / 80);
     // Silos: en guerra (o con la ley de disuasión), hasta los que quiera
     if ((foes.length || hasLaw(g, 'disuasion')) && S.length < want && (g.iron || 0) >= 25 && g.stone >= 40 && !(g.siloFail > yearT - DAY_LEN / 3)) {
-      const s = typeof farSite === 'function' ? farSite(g, 3, 4) : null; if (!s) { g.siloFail = yearT; continue; }
+      const s = typeof farSite === 'function' ? farSite(g, 3, 4) : null; if (!s) { g.siloFail = yearT; continue; } clearRocks(s[0] - 3, s[1] - 4, s[0] + 3, s[1] + 1);
       const i = s[1] * W + s[0]; world.objs[i] = { key:'silo:0', v:0, ox:0, oy:0, vid:g.id }; g.silos.push({ i, f:0, st:'cerrado', t:0, ready:yearT + 20 }); g.iron -= 25; g.stone -= 40;
       composeRegion(s[0] - 6, s[1] - 8, s[0] + 6, s[1] + 3); notify(`${g.name} construye un silo de misiles`, { x:s[0] * T, y:s[1] * T }); continue;
     }
@@ -54,13 +54,13 @@ SYSTEMS.push(dt => {
 SYSTEMS.push(dt => {
   for (const g of villages) for (const s of g.silos || []) {
     if (s.st === 'cerrado') continue; s.t += dt;
-    if (s.st === 'abriendo') { s.f = Math.min(5, Math.floor(s.t / .3)); if (s.f >= 5 && s.load) { const L = s.load; s.load = null; const x = (s.i % W) * T + 2, y = ((s.i / W) | 0) * T + 3 - 8; missiles.push({ ...L, x0:x, y0:y, x, y, t:0, phase:'sale' }); const M = MISSILES[L.k]; notify(`¡${g.name} dispara un ${M.n} contra ${villageById(L.to)?.name || 'el enemigo'}!`, { x, y }); worldOutrage(g); s.st = 'abierto'; s.t = 0; } }
-    else if (s.st === 'abierto') { s.f = 5; if (s.t > 2.5) { s.st = 'cerrando'; s.t = 0; } }
-    else if (s.st === 'cerrando') { s.f = 6 + Math.min(5, Math.floor(s.t / .3)); if (s.f >= 11) { s.st = 'cerrado'; s.f = 0; } }
+    if (s.st === 'abriendo') { s.f = Math.min(5, Math.floor(s.t / .3)); if (s.f >= 5 && s.load) { const L = s.load; s.load = null; const x = (s.i % W) * T + 2, lip = ((s.i / W) | 0) * T + 3 - 10, mh = (artFrame(`missile:${L.k}`) || { height:24 }).height, y = lip + mh / 2; missiles.push({ ...L, x0:x, y0:y, x, y, lip, mh, t:0, phase:'sale' }); const M = MISSILES[L.k]; notify(`¡${g.name} dispara un ${M.n} contra ${villageById(L.to)?.name || 'el enemigo'}!`, { x, y }); worldOutrage(g); s.st = 'abierto'; s.t = 0; } }
+    else if (s.st === 'abierto') { s.f = 6; if (s.t > 3.4) { s.st = 'cerrando'; s.t = 0; } }
+    else if (s.st === 'cerrando') { s.f = 7 + Math.min(4, Math.floor(s.t / .3)); if (s.t > 1.6) { s.st = 'cerrado'; s.f = 0; } }
   }
   for (const m of missiles) {
     m.t += dt;
-    if (m.phase === 'sale') { m.y = m.y0 - m.t * m.t * 40; m.ang = -Math.PI / 2; if (Math.random() < dt * 30) smokePuff(m.x0, m.y0, 1); if (m.t > 1) { m.phase = 'vuela'; m.t = 0; m.sx = m.x; m.sy = m.y; m.dur = Math.max(2.5, Math.hypot(m.tx - m.sx, m.ty - m.sy) / 140); interceptCheck(m); } continue; }
+    if (m.phase === 'sale') { m.y = m.y0 - (m.t < 1.6 ? m.t / 1.6 * m.mh * 1.1 : m.mh * 1.1 + (m.t - 1.6) ** 2 * 70); m.ang = -Math.PI / 2; if (Math.random() < dt * (m.t < 1.6 ? 8 : 40)) smokePuff(m.x0 + (Math.random() - .5) * 10, m.lip, m.t < 1.6 ? .6 : 1.3); if (m.t > 2.5) { m.phase = 'vuela'; m.t = 0; m.sx = m.x; m.sy = m.y; m.dur = Math.max(2.5, Math.hypot(m.tx - m.sx, m.ty - m.sy) / 140); interceptCheck(m); } continue; }
     if (m.phase === 'vuela') {
       const k = Math.min(1, m.t / m.dur), H0 = Math.hypot(m.tx - m.sx, m.ty - m.sy) * .35, px = m.x, py = m.y;
       m.x = m.sx + (m.tx - m.sx) * k; m.y = m.sy + (m.ty - m.sy) * k - Math.sin(k * Math.PI) * H0; m.ang = Math.atan2(m.y - py, m.x - px);
@@ -85,21 +85,28 @@ function missileImpact(m){
 function worldOutrage(g){ for (const o of liveTowns()) { if (nationOf(o) === nationOf(g) || nationOf(o) !== o) continue; const r = relOf(o, nationOf(g)); r.v = clamp(r.v - 12, -100, 100); } }
 const noProlif = (a, b) => { const r = rels.get(relKey(nationOf(a), nationOf(b))); return !!(r && hasTreaty(r, 'no_proliferacion')); };
 // ---- Dibujo ----
-function drawMissiles(now){
+function drawSilos(now){
   const [x0, y0, x1, y1] = visibleRect();
   for (const g of villages) for (const s of g.silos || []) {
-    if (!world.objs[s.i]) continue; const x = (s.i % W) * T + 2, y = ((s.i / W) | 0) * T + 3; if (x < x0 - 20 || x > x1 + 20 || y < y0 - 30 || y > y1 + 10) continue;
-    const f = artFrame(`silo:${s.f || 0}`); if (f) vctx.drawImage(f, x - f.ax, y - f.height + 2);
-    if (s.st === 'abriendo' || s.st === 'abierto') { vctx.fillStyle = `rgba(255,60,40,${.5 + .5 * Math.sin(now / 120)})`; vctx.fillRect(x - 9, y - 9, 2, 2); vctx.fillRect(x + 7, y - 9, 2, 2); } // las luces de alarma
-  }
-  for (const m of missiles) {
-    const s = artFrame(`missile:${m.k}`); if (!s) continue;
-    vctx.save(); vctx.translate(Math.round(m.x), Math.round(m.y)); vctx.rotate((m.ang || -Math.PI / 2) + Math.PI / 2); vctx.drawImage(s, -s.width / 2, -s.height / 2);
-    const f = .7 + Math.random() * .6; vctx.fillStyle = 'rgba(255,230,150,.95)'; vctx.fillRect(-1, s.height / 2, 2, 3 * f); vctx.fillStyle = 'rgba(255,120,40,.75)'; vctx.fillRect(-1.5, s.height / 2 + 2, 3, 5 * f); vctx.restore();
+    if (!world.objs[s.i]) continue; const x = (s.i % W) * T + 2, y = ((s.i / W) | 0) * T + 3; if (x < x0 - 20 || x > x1 + 20 || y < y0 - 40 || y > y1 + 10) continue;
+    const f = artFrame(`silo:${s.f || 0}`); if (f) { vctx.drawImage(f, x - f.ax, y - f.height + 2); redrawFront(x - f.ax, x - f.ax + f.width, y - f.height + 2, y + 2); }
+    if (s.st !== 'cerrado') { vctx.fillStyle = `rgba(255,60,40,${.5 + .5 * Math.sin(now / 120)})`; vctx.fillRect(x - 12, y - 11, 2, 2); vctx.fillRect(x + 10, y - 11, 2, 2); } // las luces de alarma
   }
 }
-{ const blank = document.createElement('canvas'); blank.width = 24; blank.height = 26; blank.ax = 12; const base = artSprite; artSprite = function(o){ if (o && o.key === 'silo:0') return blank; return base.apply(this, arguments); }; } // (el silo se pinta en vivo, con su compuerta)
-{ const base = drawInstFlags; drawInstFlags = function(t){ base.apply(this, arguments); drawMissiles(performance.now()); }; }
+function drawMissiles(now){
+  for (const m of missiles) {
+    const s = artFrame(`missile:${m.k}`); if (!s) continue;
+    const sc = m.phase === 'vuela' ? 1 + .6 * Math.sin(Math.min(1, m.t / m.dur) * Math.PI) : 1; // cuanto más alto, más cerca de la vista: más grande
+    vctx.save();
+    if (m.phase === 'sale') { vctx.beginPath(); vctx.rect(m.x0 - 30, m.lip - 400, 60, 400); vctx.clip(); } // sale de dentro del silo: lo de debajo de la boca no se ve
+    vctx.translate(Math.round(m.x), Math.round(m.y)); vctx.rotate((m.ang || -Math.PI / 2) + Math.PI / 2); vctx.scale(sc, sc); vctx.drawImage(s, -s.width / 2, -s.height / 2);
+    if (m.phase !== 'sale' || m.t > 1.2) { const f = .7 + Math.random() * .6; vctx.fillStyle = 'rgba(255,230,150,.95)'; vctx.fillRect(-1.5, s.height / 2, 3, 4 * f); vctx.fillStyle = 'rgba(255,120,40,.75)'; vctx.fillRect(-2, s.height / 2 + 3, 4, 7 * f); }
+    vctx.restore();
+  }
+}
+{ const blank = document.createElement('canvas'); blank.width = 30; blank.height = 33; blank.ax = 15; const base = artSprite; artSprite = function(o){ if (o && o.key === 'silo:0') return blank; return base.apply(this, arguments); }; } // (el silo se pinta en vivo, con su compuerta)
+{ const base = drawInstFlags; drawInstFlags = function(t){ base.apply(this, arguments); drawSilos(performance.now()); }; }
+{ const base = drawAir; drawAir = function(t){ base.apply(this, arguments); drawMissiles(performance.now()); }; }
 // ---- Leyes y tratado ----
 Object.assign(LAW_TXT, { desarme:'desarme', disuasion:'disuasión' });
 Object.assign(LAW_DESC, { desarme:'no se construyen silos ni se disparan misiles: el mundo se fía más', disuasion:'más silos, aunque no haya guerra: que nadie se atreva' });

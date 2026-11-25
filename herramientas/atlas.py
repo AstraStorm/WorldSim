@@ -127,7 +127,7 @@ def frames(name, cols, rows, w, skip_small=True):
         pt = ((ps[0]['x0'] + ps[0]['x1']) // 2, (ps[0]['y0'] + ps[0]['y1']) // 2)
         out.append(shrink(cut(name, [((p['x0'] + p['x1']) // 2, (p['y0'] + p['y1']) // 2) for p in ps], box), w, 16))
     return out
-for k, f in enumerate(frames('barco.png', 4, 2, 30)): add(f'boat:{k}', f)
+for k, f in enumerate(frames('barco.png', 4, 2, 22)): add(f'boat:{k}', f)  # (barcas: más pequeñas que los barcos grandes)
 for k, f in enumerate(frames('catapulta.png', 4, 2, 18)): add(f'catapult:{k}', f)
 
 # ---- Texturas que se repiten (campos, murallas, puentes): tamaño exacto, sin conservar proporción ----
@@ -273,7 +273,7 @@ if os.path.exists(os.path.join(SRC, 'camion.png')):  # el camión, en 8 direccio
 
 if os.path.exists(os.path.join(SRC, 'barcoCarguero.png')):  # el carguero: lleno y vacío, de lado (proa a la derecha) y de frente
     S9 = 1.086
-    for k, box, w in [('lleno', (60, 30, 730, 345), 40), ('vacio', (770, 30, 1445, 345), 40), ('lleno_f', (1490, 160, 1715, 505), 13), ('vacio_f', (1740, 160, 1965, 505), 13)]:
+    for k, box, w in [('lleno', (60, 30, 730, 345), 76), ('vacio', (770, 30, 1445, 345), 76), ('lleno_f', (1490, 160, 1715, 505), 25), ('vacio_f', (1740, 160, 1965, 505), 25)]:
         add(f'cargo:{k}', shrink(box_parts('barcoCarguero.png', tuple(int(c * S9) for c in box)), w, 40))
 
 if os.path.exists(os.path.join(SRC, 'panelSolar.png')):  # placa solar
@@ -285,14 +285,45 @@ if os.path.exists(os.path.join(SRC, 'turbinaEolica.png')):  # molino eólico: to
         add(f'wind:aspas{k}', shrink(box_parts('turbinaEolica.png', box), 15, 40))
 
 if os.path.exists(os.path.join(SRC, 'planeador6Dir.png')):  # el planeador en 6 vistas: de frente, de espaldas, de lado (izquierda y derecha) y en diagonal
-    for k, box, w in [('s', (50, 165, 485, 425), 20), ('n', (525, 95, 1005, 450), 22), ('o', (1060, 200, 1485, 420), 20), ('so', (50, 565, 450, 880), 19), ('se', (575, 565, 975, 880), 19), ('e', (1055, 620, 1470, 825), 20)]:
+    for k, box, w in [('s', (50, 165, 485, 425), 34), ('n', (525, 95, 1005, 450), 37), ('o', (1060, 200, 1485, 420), 34), ('so', (50, 565, 450, 880), 32), ('se', (575, 565, 975, 880), 32), ('e', (1055, 620, 1470, 825), 34)]:
         add(f'plane:{k}', shrink(box_parts('planeador6Dir.png', box), w, 40))
 if os.path.exists(os.path.join(SRC, 'materialPistas.png')):  # el aeródromo: pista con su torre, hangar, manga y luces
-    add('air:aerodromo', shrink(box_parts('materialPistas.png', (30, 45, 760, 895)), 56, 40))
+    # Se monta con las piezas sueltas: una pista larga de baldosas (esquinas, franjas, el círculo del avión...), detrás el
+    # hangar, la torre de control, la manga de viento, cajas y barriles; delante vallas, farolas y banderines
+    PZ = lambda box, sc: (lambda im: shrink(im, max(2, round(im.width * sc)), 40))(box_parts('materialPistas.png', box))
+    sc = .118
+    hangar, torre, manga = PZ((785, 60, 1125, 320), sc), PZ((1160, 50, 1325, 335), sc), PZ((1360, 100, 1505, 310), sc)
+    cajas, barril, flag1, farol, flag2 = PZ((800, 355, 950, 495), sc), PZ((995, 375, 1090, 480), sc), PZ((1105, 350, 1215, 500), sc), PZ((1250, 370, 1350, 500), sc), PZ((1405, 350, 1510, 510), sc)
+    valla, mata1, mata2, mata3 = PZ((790, 530, 1050, 615), sc), PZ((1095, 530, 1235, 630), sc), PZ((1250, 535, 1355, 625), sc), PZ((1380, 530, 1495, 625), sc)
+    t_circ, t_esq, t_fran, t_fran2 = PZ((775, 660, 975, 870), .12), PZ((995, 660, 1220, 865), .12), PZ((1255, 660, 1500, 870), .12), PZ((995, 870, 1235, 995), .12)
+    run = [t_esq, t_fran, t_circ, t_fran, t_esq]
+    RW = sum(t.width for t in run) - 2 * (len(run) - 1); RH = max(t.height for t in run)
+    Wc, Hc = RW + 10, RH + hangar.height + 10
+    can = Image.new('RGBA', (Wc, Hc), (0, 0, 0, 0)); ry = Hc - RH - 6
+    def put(im, x, y): can.alpha_composite(im, (int(x), int(y)))
+    # detrás de la pista (de izquierda a derecha): torre, manga, cajas, hangar, barril
+    put(mata1, 2, ry - mata1.height + 2); put(torre, 8, ry - torre.height + 3); put(manga, 8 + torre.width + 2, ry - manga.height + 2)
+    put(cajas, Wc * .36, ry - cajas.height + 2); put(hangar, Wc - hangar.width - 14, ry - hangar.height + 3); put(barril, Wc - 12, ry - barril.height + 2); put(mata2, Wc * .5, ry - mata2.height + 1)
+    x = 5
+    for t in run: put(t, x, ry + (RH - t.height) // 2); x += t.width - 2
+    # delante: farolas en las puntas, vallas y banderines
+    put(farol, 1, Hc - farol.height); put(farol, Wc - farol.width - 1, Hc - farol.height)
+    put(flag1, farol.width + 1, Hc - flag1.height); put(flag2, Wc - farol.width - flag2.width - 1, Hc - flag2.height)
+    put(valla, Wc * .5 - valla.width - 1, Hc - valla.height); put(valla, Wc * .5 + 1, Hc - valla.height)
+    add('air:aerodromo', can)
+    print('aerodromo', can.size, 'pista y', ry, RH)
+if os.path.exists(os.path.join(SRC, 'helicesPlaneador.png')):  # la hélice girando (4 fotogramas, sobre fondo blanco: se quita)
+    from PIL import ImageDraw
+    hp = Image.open(os.path.join(SRC, 'helicesPlaneador.png')).convert('RGBA'); hb = hp.copy()
+    for c in [(0, 0), (hp.width - 1, 0), (0, hp.height - 1), (hp.width - 1, hp.height - 1)]: ImageDraw.floodfill(hb, c, (255, 0, 255, 0), thresh=60)
+    hb = np.array(hb); hb[(hb[..., 0] > 235) & (hb[..., 1] < 30) & (hb[..., 2] > 235), 3] = 0; hp = Image.fromarray(hb)
+    for k, (x0, x1) in enumerate([(150, 360), (480, 820), (860, 1310), (1340, 1690)]):
+        im = hp.crop((x0, 120, x1, 600)); bb = im.getbbox(); im = im.crop(bb)
+        add(f'prop:{k}', shrink(im, max(2, round(im.width * .03)), 16))
 
 if os.path.exists(os.path.join(SRC, 'antenasComunicacion.png')):  # antena de telefonía y antena parabólica
-    add('tele:antena', shrink(box_parts('antenasComunicacion.png', (270, 20, 660, 830)), 11, 40))
-    add('tele:parabolica', shrink(box_parts('antenasComunicacion.png', (1060, 140, 1570, 820)), 15, 40))
+    add('tele:antena', shrink(box_parts('antenasComunicacion.png', (270, 20, 660, 830)), 17, 40))
+    add('tele:parabolica', shrink(box_parts('antenasComunicacion.png', (1060, 140, 1570, 820)), 22, 40))
 
 if os.path.exists(os.path.join(SRC, 'lanzadoras.png')):  # lanzaderas: base, mejorada y puerto espacial
     for k, box, w in [(1, (70, 230, 500, 700), 34), (2, (600, 180, 1190, 700), 46), (3, (1290, 60, 2075, 700), 60)]:
@@ -305,9 +336,9 @@ if os.path.exists(os.path.join(SRC, 'cohetes.png')):  # cohetes (a la misma esca
 if os.path.exists(os.path.join(SRC, 'siloMisiles.png')):  # silo de misiles: 12 fotogramas (se abre y se cierra)
     xs = [(15, 280), (310, 575), (605, 870), (900, 1165), (1195, 1460), (1490, 1760)]
     for r, (y0, y1) in enumerate([(125, 425), (495, 795)]):
-        for c, (x0, x1) in enumerate(xs): add(f'silo:{r * 6 + c}', shrink(box_parts('siloMisiles.png', (x0, y0, x1, y1)), 24, 40))
+        for c, (x0, x1) in enumerate(xs): add(f'silo:{r * 6 + c}', shrink(box_parts('siloMisiles.png', (x0, y0, x1, y1)), 30, 40))
 if os.path.exists(os.path.join(SRC, 'misiles.png')):  # 6 misiles
-    for k, (box, w) in enumerate([((170, 40, 345, 495), 8), ((705, 70, 830, 495), 5), ((1195, 15, 1365, 495), 8), ((175, 565, 340, 1005), 8), ((715, 560, 820, 1005), 4), ((1195, 545, 1370, 1005), 8)]):
+    for k, (box, w) in enumerate([((170, 40, 345, 495), 10), ((705, 70, 830, 495), 7), ((1195, 15, 1365, 495), 10), ((175, 565, 340, 1005), 10), ((715, 560, 820, 1005), 6), ((1195, 545, 1370, 1005), 10)]):
         add(f'missile:{k}', shrink(box_parts('misiles.png', box), w, 40))
 
 if os.path.exists(os.path.join(SRC, 'casino.png')):

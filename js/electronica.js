@@ -25,7 +25,7 @@ OBJ['tele:antena'] = ['Antena de telefonía', 'house', 0]; OBJ['tele:parabolica'
 Object.assign(BLD_DESC, { tele:'Telecomunicaciones: la antena da cobertura a los móviles de alrededor; la parabólica une la ciudad con el resto del mundo' });
 Object.assign(BLD_TYPE, { tele:'Comunicaciones' });
 const teleOf = g => (g.tele ||= []).filter(t => world.objs[t.i]);
-const TELE_R = 18;
+const TELE_R = 26; // (las antenas, en las afueras, cubren desde allí todo su lado del pueblo)
 // Conectividad: fracción de casas con cobertura (y con parabólica para internet)
 function connOf(g){
   const T0 = teleOf(g).filter(t => t.k === 'antena'); if (!T0.length) return 0;
@@ -43,8 +43,10 @@ SYSTEMS.push(dt => {
       g.teleT = yearT; const need = !hasDish(g) ? 'parabolica' : connOf(g) < .95 ? 'antena' : null;
       if (need) {
         const ants = teleOf(g).filter(t => t.k === 'antena'), uncovered = housesOf(g).filter(h => !ants.some(t => Math.hypot(t.i % W - h % W, ((t.i / W) | 0) - ((h / W) | 0)) <= TELE_R));
-        const tgt = need === 'antena' && uncovered.length ? uncovered[Math.floor(Math.random() * uncovered.length)] : Math.round(g.fy) * W + Math.round(g.fx);
-        const p = ringFind(tgt % W, (tgt / W) | 0, 10, (x, y) => tileFree(x, y) && !pathMap.has(y * W + x) && !plazaSet.has(y * W + x) && !wallSet.has(y * W + x) && !villages.some(q => underBuilding(q, x, y)) && !plotIn(x, y, x, y));
+        // en las afueras, del lado de las casas sin cobertura (nunca en mitad del pueblo)
+        const tgt = need === 'antena' && uncovered.length ? uncovered[Math.floor(Math.random() * uncovered.length)] : null, reach = housesOf(g).reduce((m, h) => Math.max(m, Math.hypot(h % W - g.fx, ((h / W) | 0) - g.fy)), 0);
+        const ang = tgt != null ? Math.atan2(((tgt / W) | 0) - g.fy, tgt % W - g.fx) : Math.random() * Math.PI * 2, rr = Math.max(6, reach * (tgt != null ? .8 : 1) + 3);
+        const p = ringFind(Math.round(g.fx + Math.cos(ang) * rr), Math.round(g.fy + Math.sin(ang) * rr), 8, (x, y) => tileFree(x, y) && !pathMap.has(y * W + x) && !plazaSet.has(y * W + x) && !wallSet.has(y * W + x) && (typeof clearOfBuildings !== 'function' || clearOfBuildings(x, y, 2)) && !plotIn(x, y, x, y));
         if (p) { const i = p[1] * W + p[0]; farmMap.delete(i); world.objs[i] = { key:`tele:${need}`, v:0, ox:0, oy:0, vid:g.id }; g.tele.push({ i, k:need }); g.iron -= 3; g.stone -= 4; composeRegion(p[0] - 4, p[1] - 8, p[0] + 4, p[1] + 2); addEffect(p[0] * T + 2, p[1] * T + 3, 'poof');
           if (!g.teleMsg) { g.teleMsg = true; notify(`${g.name} levanta su primera ${need === 'parabolica' ? 'antena parabólica' : 'antena de telefonía'}: la ciudad empieza a estar conectada`, { x:p[0] * T, y:p[1] * T }); } }
       }
@@ -68,10 +70,14 @@ function newPhone(n){
   let brand = n.phoneBrand; if (!brand) { let w = P ? langWord(P, 2, r) : 'nova'; w = w.replace(/[aeiou]$/, '') + ['ix', 'on', 'a', 'o', 'ia', 'us'][Math.floor(r() * 6)]; brand = n.phoneBrand = capFirst(w); }
   const sci = DISCOVERIES.filter(d => knowsSci(n, d.k)).length, gen = (n.phoneGen = (n.phoneGen || 0) + 1), age = Math.floor(yearT / DAY_LEN) + 1;
   const model = { brand, name:`${brand} ${['', 'S', 'X', 'Pro', 'Max', 'Neo', 'Ultra'][gen % 7]} ${gen + Math.floor(r() * 3)}`.replace(/\s+/g, ' '), nat:n.id, natName:n.name, day:age,
-    screen:+(3.5 + gen * .35 + r() * .5).toFixed(1), mem:Math.round(2 ** Math.min(10, 2 + gen + Math.floor(sci / 10))), bat:Math.round(10 + gen * 3 + r() * 6), cam:Math.round(2 + gen * 4 + r() * 4), price:Math.round(60 + gen * 25 + r() * 40),
+    // poco a poco: los primeros, de pantalla pequeña, con unos KB de memoria y sin cámara; cada modelo, algo mejor
+    screen:+Math.min(7.2, 1.4 + gen * .28 + r() * .2).toFixed(1), memKB:Math.round(16 * 2 ** Math.min(26, gen - 1 + Math.floor(r() * 1.4))), bat:Math.round(gen < 4 ? 60 + r() * 40 : 8 + gen * 1.5 + r() * 6), cam:gen < 3 ? 0 : +Math.min(200, .3 * 1.7 ** (gen - 3) * (1 + r() * .3)).toFixed(gen < 7 ? 1 : 0), price:Math.round(60 + gen * 25 + r() * 40),
     col:villageColor(n), seed:Math.floor(r() * 1e6) };
   (world.phones ||= []).push(model); if (world.phones.length > 60) world.phones.shift();
-  notify(`${n.name} presenta el móvil ${model.name}: pantalla de ${model.screen}", ${model.mem} GB, ${model.cam} Mpx y ${model.bat} h de batería`, { x:n.fx * T, y:n.fy * T });
+  notify(`${n.name} presenta el móvil ${model.name}: pantalla de ${model.screen}", ${fmtMem(model)}, ${model.cam ? `cámara de ${model.cam} Mpx` : 'sin cámara'} y ${model.bat} h de batería`, { x:n.fx * T, y:n.fy * T });
+}
+// La memoria, en KB, MB o GB (los guardados antes la tenían en GB)
+function fmtMem(m){ const kb = m.memKB ?? (m.mem || 0) * 1048576; return kb >= 1048576 ? `${+(kb / 1048576).toFixed(kb < 1048576 * 10 ? 1 : 0)} GB` : kb >= 1024 ? `${+(kb / 1024).toFixed(kb < 10240 ? 1 : 0)} MB` : `${kb} KB`;
 }
 function phoneImg(m){
   const c = document.createElement('canvas'); c.width = 60; c.height = 104; const x = c.getContext('2d'), [r, g, b] = m.col, rr = (X, Y, w, h, rad, f) => { x.fillStyle = f; x.beginPath(); x.roundRect(X, Y, w, h, rad); x.fill(); };
@@ -88,7 +94,7 @@ function phoneImg(m){
   const btn = document.createElement('button'); btn.id = 'phoneBtn'; btn.dataset.ic = '📱'; btn.title = 'Los móviles que ha sacado cada nación'; btn.textContent = 'Móviles'; bar.before(btn);
   const panel = document.createElement('div'); panel.className = 'chron'; panel.id = 'phonePanel'; panel.hidden = true; document.getElementById('savePanel').after(panel);
   const render = () => { const L = (world && world.phones || []).slice().reverse();
-    panel.innerHTML = `<div class="ch-h"><b>Móviles del mundo</b><button class="x" aria-label="Cerrar">×</button></div><div class="hp-body">${L.length ? `<div class="phones">${L.map(m => `<div class="phone"><img src="${phoneImg(m)}" alt=""><div><b>${esc(m.name)}</b><span class="muted">${esc(m.natName)} · día ${m.day}</span><span>Pantalla ${m.screen}" · ${m.mem} GB</span><span>Cámara ${m.cam} Mpx · ${m.bat} h de batería</span><span>${m.price} monedas</span></div></div>`).join('')}</div>` : '<p class="muted">Todavía nadie ha inventado el teléfono móvil.</p>'}</div>`; };
+    panel.innerHTML = `<div class="ch-h"><b>Móviles del mundo</b><button class="x" aria-label="Cerrar">×</button></div><div class="hp-body">${L.length ? `<div class="phones">${L.map(m => `<div class="phone"><img src="${phoneImg(m)}" alt=""><div><b>${esc(m.name)}</b><span class="muted">${esc(m.natName)} · día ${m.day}</span><span>Pantalla ${m.screen}" · ${fmtMem(m)}</span><span>${m.cam ? `Cámara ${m.cam} Mpx` : 'Sin cámara'} · ${m.bat} h de batería</span><span>${m.price} monedas</span></div></div>`).join('')}</div>` : '<p class="muted">Todavía nadie ha inventado el teléfono móvil.</p>'}</div>`; };
   btn.onclick = () => { panel.hidden = !panel.hidden; if (!panel.hidden) { for (const id of ['chron', 'histPanel', 'sndPanel', 'savePanel']) { const e = document.getElementById(id); if (e) e.hidden = true; } render(); } };
   panel.addEventListener('click', e => { if (e.target.closest('.x')) panel.hidden = true; });
 })();
