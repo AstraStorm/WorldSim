@@ -82,7 +82,7 @@ function loop(t){
     // cada sistema por separado: si uno falla en un fotograma, el resto sigue y el juego no se congela
     const simT0 = performance.now();
     for (let k = 0; k < gameSpeed; k++) {
-      if (k && performance.now() - simT0 > 40) { simLag = gameSpeed - k; break; } // no da para tanto: el resto, otro fotograma (más lento, pero sin tirones)
+      if (k && performance.now() - simT0 > 30) { simLag = gameSpeed - k; break; } // no da para tanto: el resto, otro fotograma (más lento, pero sin tirones)
       yearT += dt;
       for (let n = 0; n < SYSTEMS.length; n++) { const S = SYSTEMS[n]; if (k && (S === WAVES_SYS || isSlowSys(S))) continue; if (!k && isSlowSys(S)) { try { S(dt * gameSpeed, t); } catch (err) { console.error(err); } continue; } try { SYSTEMS[n](dt, t); } catch (err) { console.error(err); } }
     }

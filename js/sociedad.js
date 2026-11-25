@@ -1024,11 +1024,21 @@ function flagColor(f, u, v){
   return base;
 }
 // Dibuja la bandera: w×h celdas de tamaño px, ondeando (se ve a cualquier escala)
+// (la tela se pinta una vez por bandera y tamaño y se guarda; luego se dibuja por columnas para que ondee)
+const flagCanvas = new WeakMap();
+function flagCloth(f, w, h){
+  let m = flagCanvas.get(f); if (!m) flagCanvas.set(f, m = new Map());
+  const k = w + 'x' + h, sig = f.a + f.b + f.c + f.charge + f.layout + f.pos; let c = m.get(k);
+  if (!c || c.sig !== sig) { c = document.createElement('canvas'); c.width = w; c.height = h; c.sig = sig; const x = c.getContext('2d'); for (let i = 0; i < w; i++) for (let j = 0; j < h; j++) { x.fillStyle = flagColor(f, (i + .5) / w, (j + .5) / h); x.fillRect(i, j, 1, 1); } m.set(k, c); }
+  return c;
+}
 function drawFlag(f, x, y, w, h, px, t){
+  const c = flagCloth(f, w, h), smooth = vctx.imageSmoothingEnabled; vctx.imageSmoothingEnabled = false;
   for (let i = 0; i < w; i++) {
     const off = t != null ? Math.round(Math.sin(t / 260 - i * .7) * .7 * i / w) * px : 0;
-    for (let j = 0; j < h; j++) { vctx.fillStyle = flagColor(f, (i + .5) / w, (j + .5) / h); vctx.fillRect(x + i * px, y + j * px + off, px, px); }
+    vctx.drawImage(c, i, 0, 1, h, x + i * px, y + off, px, h * px);
   }
+  vctx.imageSmoothingEnabled = smooth;
 }
 function flagDataUrl(f){
   const c = document.createElement('canvas'); c.width = 36; c.height = 24; const x = c.getContext('2d');

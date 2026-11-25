@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611250222",
- "fecha": "2026-11-25 02:22",
+ "version": "202611250227",
+ "fecha": "2026-11-25 02:27",
  "novedades": [
   {
    "fecha": "2026-11-25",
-   "texto": "Sin tirones con mucha gente"
+   "texto": "Dibujo más ligero"
+  },
+  {
+   "fecha": "2026-11-25",
+   "texto": "Sin tirones con mucha gente (perfil de una partida real: 329 personas, 15 pueblos, x5)"
   },
   {
    "fecha": "2026-11-25",
@@ -46,19 +50,15 @@
   {
    "fecha": "2026-11-24",
    "texto": "Farolas: fuera las farolas que se encendían solas; en los pueblos crecidos (ayuntamiento y 20 habitantes) las antorchas pasan a ser farolas de vela, que se encienden a mano al atardecer como las antorchas"
-  },
-  {
-   "fecha": "2026-11-24",
-   "texto": "Guerra al estilo WorldBox, más ciencia, bandidos nuevos y orden de dibujo"
   }
  ],
  "archivos": {
-  "index.html": "bf4b84beee7b049654a59bc0fa74799ca597ce07",
+  "index.html": "1ec51f863485aa911b382ee2438d2cd38520f5bc",
   "css/estilo.css": "9ee4d9a478d7311dc4a9fa7ccd7a3abfb25afd84",
   "js/aldeanos.js": "d9920d364407645d80f1cdfbdcc1baf7fd203032",
   "js/ambiente.js": "6c96bf777f6cdfc55b648f495836521ee28aeb8f",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
-  "js/arte.js": "89f82598606cbde215f19e03b44b04355df0d900",
+  "js/arte.js": "d0759d7b04173a8bc6545cdfce701a4e7f641aa6",
   "js/arte_mapa.js": "373de74c89b7418c4a040aaea0ee2fd64b367b53",
   "js/bandidos.js": "a41a64350dfb0cadc79876bf166b9e56ee1a9962",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
@@ -70,7 +70,7 @@
   "js/ciudades.js": "f18585be779225a53e181a28aef1b7d4879cf2ae",
   "js/civilizacion.js": "4815ea74560602b2c8d44fc5411d642bbe1bb216",
   "js/clases.js": "79bb4c32fb2e41c1d21249646e18870652e3a4af",
-  "js/clima.js": "bf4d5a0f7e736137eca20c6318647ee5c1abb6b9",
+  "js/clima.js": "486241b39e93245cf4374d74e2916f8e168cab34",
   "js/colonias.js": "7bde071d290c8bebaa8a04105d62a73d5e8c4285",
   "js/comercio.js": "a5d3d6c160291bc74c9db4ac0991dd6b84be4f7f",
   "js/consejo.js": "3ed73b3dcc91de9bb3f1c23c7caec240114f61e4",
@@ -121,13 +121,13 @@
   "js/riqueza.js": "4437665e375d993ccfc2bec62225436b8fd03dce",
   "js/rutas.js": "6e12cafc1992e09fc3c2b5b13ca7d7db6416c364",
   "js/sindicatos.js": "f7cb8bf83ff74322a6fc45cc6ac90550425c6d15",
-  "js/sociedad.js": "3df04215e4b61a02aa3f50a190761d0b501f9a3d",
+  "js/sociedad.js": "a7dd838e1417f139e5e8e45f1b54f59ee5b6170a",
   "js/sonido.js": "25be9d9bda62336aba463c82e31668d0e9b2bc54",
   "js/titulares.js": "0506409e843da939370bb404b894a52cffa68620",
   "js/trabajo.js": "50d504968cee2cd4f5170a8e34cd81f649d6bf04",
   "js/tratados.js": "c7221ac52158a928a77489448ca7f1ce45ade8e2",
   "js/ui.js": "ba4cbcdaa9bb436822270b090af56ef0e9c8bc2c",
-  "js/vegetacion.js": "f9c1ec9b6def65f6e81709eef1a644e2dd0c6186",
+  "js/vegetacion.js": "440be3b609ce5146ed024c3c0ea0ec694344c592",
   "js/vida.js": "5b036c14fbd1d9fc061f4f98ddd8adcb43134ef0",
   "js/visitas.js": "5cafd3070fdf9de08e0a6eebf6644ad13c46bc1d",
   "js/vista.js": "1cf14d49ecdbfbe171b660d80a2d0d084382c7b5",

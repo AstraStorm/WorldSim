@@ -173,7 +173,7 @@ function updateWeather(dt){
       // Su aspecto sigue a su agua: blanca, gris de lluvia o tormenta (con calor y aire inestable)
       const want = c.rainOn && c.q > .95 && t > 16 && (p < 0 || lift > .3) ? 'storm' : c.rainOn || c.q > .6 ? 'rain' : 'normal';
       if (want !== c.type) { if ((c.typeT += dt) > 3) { c.type = want; c.typeT = 0; resprite(c); } }
-      else { c.typeT = 0; if (Math.abs(cloudW(c.q) * (c.type === 'storm' ? 1.25 : 1) - c.sw) / c.sw > .2) resprite(c); }
+      else { c.typeT = 0; if (Math.abs(cloudW(c.q) * (c.type === 'storm' ? 1.25 : 1) - c.sw) / c.sw > .35) resprite(c); } // (regenerar la nube cuesta: solo si cambia mucho)
       if (c.q < .06 && !c.rainOn) c.dying = true;
     }
     c.precip += ((c.rainOn && c.type !== 'normal' ? 1 : 0) - c.precip) * Math.min(1, dt * .5);
