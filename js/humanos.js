@@ -353,7 +353,7 @@ function chooseJob(v, g){
   const wantArmy = pop * (atWarJ ? .45 : g.danger > 0 || L.includes('ejercito') ? .3 : .15) * (g.food < pop * 3 ? .5 : 1); // una pequeña guardia siempre; en guerra, a filas
   add('arma', soldiersJ < wantArmy && g.wood >= (needHouse ? 6 : 3) && busyWith(g, 'arma') < (atWarJ ? 3 : 2) ? (atWarJ ? 8 : g.danger > 0 ? 5 : 2.5) : 0); // sin dejar al pueblo sin madera para casas
   const know = g.know ||= {};
-  add('pozo', know.pozo && houses >= 1 && (g.stone >= 5 || g.wood >= 8) && wellsOf(g).length < 1 + Math.floor(pop / 10) + (g.thirsty ? 1 + Math.floor(pop / 15) : 0) && !busyWith(g, 'pozo') ? (g.thirsty ? 14 : 4) : 0);
+  add('pozo', know.pozo && houses >= 1 && (g.stone >= 5 || g.wood >= 8) && wellsOf(g).length < 1 + Math.floor(pop / 14) + (sedNow(g) ? 1 + Math.floor(pop / 20) : 0) && !busyWith(g, 'pozo') ? (sedNow(g) ? 14 : 4) : 0); // (con sed de verdad, no por el aviso de siempre)
   add('molino', know.molino && houses >= 3 && (g.mill == null || !world.objs[g.mill]) && spare >= 10 && g.stone >= 3 && farms.length >= 8 && !busyWith(g, 'molino') ? 4 : 0);
   const quarry = g.quarry != null && world.objs[g.quarry] && world.objs[g.quarry].key === 'quarry:cantera';
   const wantStone = g.stone < (g.temple != null && world.objs[g.temple] && !hasCathedral(g) ? 40 : 20); // con templo, ahorran para el grande

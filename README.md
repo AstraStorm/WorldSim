@@ -102,6 +102,7 @@ Sin dependencias ni compilación: cada archivo es un script normal y se cargan e
 | `js/riqueza.js` | Mansiones, chabolas y la ropa de ricos y pobres |
 | `js/noticias.js` | Mensajeros, casa de postas y batidas en busca de animales |
 | `js/defensa.js` | Murallas antes y más rápido, puertas que se cierran y ley de fortificación |
+| `js/urbanismo.js` | Casas en fila junto a las calles, pozos repartidos, todo edificio con camino a la plaza y murallas a la medida del pueblo |
 | `js/trabajo.js` | Reparto de oficios, escuelas, días libres, festivos y quejas por falta de maestros, médicos o bomberos |
 | `js/arte_mapa.js`, `js/arte.js`, `arte/atlas.png` | Arte dibujado (edificios, árboles, rocas, barca, catapulta…) con colores por estación; si un objeto no tiene dibujo, se usa el de siempre |
 | `js/vegetacion.js` | Crecimiento y muerte de la vegetación |

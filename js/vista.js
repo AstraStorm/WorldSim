@@ -60,6 +60,7 @@ function draw(t){
   drawArtFlames(t);
   drawInstFlags(t); // la bandera en los edificios del gobierno (instituciones.js)
   drawFactoryIcons(t); // humo de las chimeneas e iconos de en marcha / parada (fabricas.js)
+  drawGateFlags(); // banderas de las puertas de la muralla (defensa.js)
   drawForts(t); // castillos en obras, bandera y gente dentro (castillos.js)
   drawSelBuilding(t); // el edificio elegido, marcado (edificios.js)
   drawCastles(t); // torres de los castillos (fama.js)
