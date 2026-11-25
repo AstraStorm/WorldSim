@@ -69,11 +69,11 @@ function personName(g, sex){
   if (!g || !world || !world.langs) return null;
   const L = langList()[villageLang(g)]; if (!L || L.common) return null;
   const P = L.phon, r = Math.random;
-  if (!P.fem) { P.fem = P.vow[Math.floor(r() * P.vow.length)]; const m = P.coda ? 'nrsl'[Math.floor(r() * 4)] : P.vow.replace(P.fem, '')[0] || 'o'; P.masc = m === P.fem ? 'n' : m; }
+  if (!P.fem || !P.masc) { P.fem = P.vow[Math.floor(r() * P.vow.length)]; const m = P.coda ? 'nrsl'[Math.floor(r() * 4)] : P.vow.replace(P.fem, '')[0] || 'o'; P.masc = m === P.fem ? 'n' : m; }
   let w = '';
   for (let k = 0; k < 12 && (!/[aeiou].*[^aeiou]$|[aeiou]{1}[^aeiou]+$/.test(w) || !decent(w + P.fem) || !decent(w + P.masc)); k++) w = langWord(P, r() < .7 ? 2 : 3, r).replace(/[aeiou]+$/, ''); // con alguna vocal dentro (y sin palabrotas)
   if (!/[aeiou]/.test(w)) w = P.cons[0] + P.vow[0] + P.cons[1 % P.cons.length];
-  return capFirst(w + (sex === 'm' ? P.fem : P.masc)); // (sex 'm' es mujer, 'h' hombre)
+  return capFirst(w + ((sex === 'm' ? P.fem : P.masc) || '')); // (sex 'm' es mujer, 'h' hombre)
 }
 // Nombre de pueblo en su lengua, corto y legible: una raíz y la terminación de lugar de esa lengua (todos los pueblos
 // de una misma lengua acaban igual, como pasa con los topónimos de verdad)

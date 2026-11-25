@@ -488,3 +488,24 @@ const okupaBloqueCache = new Map();
   for (const [fx, fy] of [[.2, .42], [.66, .64]]) x.drawImage(w, Math.round(b.width * fx), Math.round(b.height * fy));
   c.ax = b.ax; okupaBloqueCache.set(key, c); return c;
 }; }
+
+// ---- Varados: quien lleva medio día lejísimos de su pueblo sin estar de viaje (soldados que no supieron volver,
+// emigrantes atascados por el agua...) se queda a vivir en el pueblo que tiene al lado. Y los nombres rotos se arreglan ----
+let strandT = 0;
+SYSTEMS.push(dt => {
+  if (!world || (strandT -= dt) > 0) return; strandT = 5;
+  const towns = liveTowns();
+  for (const v of villagers) {
+    if (v.dead) continue;
+    if (typeof v.name === 'string' && v.name.includes('undefined')) v.name = v.name.replace(/undefined/g, '') || 'Ana';
+    if (v.away || v.boat || v.slave || (v.camp && v.camp.until > yearT) || (v.task && ['asalto', 'viaje', 'explorar', 'volver', 'detenido', 'golpe', 'protesta'].includes(v.task.k))) { v.farT = 0; continue; }
+    const g = villageById(v.vid); if (!g) continue;
+    const tx = v.x / T, ty = v.y / T; if (Math.hypot(tx - g.fx, ty - g.fy) < 60) { v.farT = 0; continue; }
+    if ((v.farT = (v.farT || 0) + 5) < DAY_LEN / 2) continue;
+    const o = towns.filter(q => q !== g).sort((a, b) => Math.hypot(a.fx - tx, a.fy - ty) - Math.hypot(b.fx - tx, b.fy - ty))[0];
+    if (!o || Math.hypot(o.fx - tx, o.fy - ty) > 40) continue;
+    const r = rels.get(relKey(o, g)); if (r && r.war) continue; // (en el pueblo enemigo, no)
+    releaseTask(v); v.task = null; v.vid = o.id; v.home = null; v.farT = 0; if (nationOf(o) !== nationOf(g)) v.arrived = g.id;
+    if (!(o.strandMsg > yearT - DAY_LEN)) { o.strandMsg = yearT; notify(`${v.name}, de ${g.name}, no encuentra el camino de vuelta y se queda a vivir en ${o.name}`, { x:v.x, y:v.y }); }
+  }
+});
