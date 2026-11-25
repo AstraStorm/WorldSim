@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611252316",
- "fecha": "2026-11-25 23:16",
+ "version": "202611252356",
+ "fecha": "2026-11-25 23:56",
  "novedades": [
   {
    "fecha": "2026-11-25",
-   "texto": "Revisión visual"
+   "texto": "Revisión 2"
+  },
+  {
+   "fecha": "2026-11-25",
+   "texto": "Revisión visual de la revolución industrial"
   },
   {
    "fecha": "2026-11-25",
@@ -46,27 +50,23 @@
   {
    "fecha": "2026-11-25",
    "texto": "IA: quien queda varado lejos de su pueblo (sin camino de vuelta) se queda a vivir en el pueblo de al lado; nombres con «undefined» arreglados (37 en una partida) y que no vuelvan a salir"
-  },
-  {
-   "fecha": "2026-11-25",
-   "texto": "Menús: los botones de arriba con su nombre (antes solo iconos); carteles de los pueblos que no se pisan (más huecos, las aldeas diminutas sin cartel con el mapa lejos, las siglas de alianza solo de cerca)"
   }
  ],
  "archivos": {
-  "index.html": "7424eff787de0479e45fe278be49eff9d047cf25",
-  "css/estilo.css": "6e4a4e8a8043f8eb38b9c69eff149ce8f3845648",
+  "index.html": "6975adeada1191cfab8ef7c675528f631c2d26db",
+  "css/estilo.css": "580fcb7726b11c083f7020e8a324fefb112b64ed",
   "js/aldeanos.js": "9893e512bc3f1e72538dfc1df5b08e979bf06532",
   "js/ambiente.js": "6c96bf777f6cdfc55b648f495836521ee28aeb8f",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "a94b46896cfd10fd688954a3c5b9297e9b693872",
   "js/armas.js": "d4710aa65550aceb06fbdd1d2d290c8085f58e96",
-  "js/arte.js": "dfef2c7d8f405e14d31a11982145c7a538c46bf0",
-  "js/arte_mapa.js": "6eaa64fd339d20baa2a2156eb83fd2cd996a033d",
-  "js/aviacion.js": "b5319537427b2d63297cb436907cd7ba13d91a8e",
+  "js/arte.js": "4b5b9b422a54ba0e1b551ac09cc564fffe44d72b",
+  "js/arte_mapa.js": "eb6999f6fad024d0ad837289d26f2fa3e8867df0",
+  "js/aviacion.js": "eed445a888015f1cdb7e58164bd12c40daf368b6",
   "js/bandidos.js": "bc804375208c5f300e33435e76d16001e8c4daae",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
   "js/calendario.js": "03559b1ef711175c3f112ecaa0243a06a44b4b9c",
-  "js/carguero.js": "56c2a0570cd53a1a93e95819d2fa0326b03a05b1",
+  "js/carguero.js": "d90da624f9b69522b03005c043f0db9f1f963ee6",
   "js/cartografia.js": "2ba2e493f521fb4b806f6e4a51ad38cac679351c",
   "js/casino.js": "8f0563111a86c2d0e37e7fbf5214f9777d070b00",
   "js/castillos.js": "c3a2bc112dc4f96ea7b70f59ccd6b692822ef207",
@@ -90,12 +90,12 @@
   "js/edificios.js": "dde752d5265cc8d7a145ef54e73f7d48141f3eb3",
   "js/electricidad.js": "fa4298facd59297361a027759021083a24e1d61e",
   "js/electronica.js": "d16687a33090b324490ea4369a67d994e495f161",
-  "js/espacio.js": "4e8ccff239d613b96f957fd44778c59121b40d1d",
+  "js/espacio.js": "f478aa3d4d5aabba0dabc3a245200b26477914f5",
   "js/espionaje.js": "6291557af0a9488f321131fbfb7cdccf50cdbbf1",
   "js/estaciones.js": "e9e2f1194fdb60ca73c007b1cd7e9ae392ce2ad7",
   "js/estrategia.js": "b3ac0d30743ec5665f761208e455cc100e032c46",
   "js/fabricas.js": "082d7e65754cca4cfe22ac20979d2a901f376189",
-  "js/fama.js": "1b98918f8d312e237c6f399a43c0a3e278a4604b",
+  "js/fama.js": "475d658c3bec6c3395db299e0e75f5ae60dae32c",
   "js/fauna.js": "f9955feca793b4c39fb033e8dd56d59e0054b693",
   "js/globos.js": "955b67ce3b9dd8c36b7ee965f9f05f4fb8bd9d39",
   "js/grafica.js": "d548461632882f80f4077d9e5754c70c5319331e",
@@ -114,7 +114,7 @@
   "js/lluvia.js": "f5d9f158319f36671117bcf52a7e408433bc153d",
   "js/mapas.js": "822f9d930f4b0a1f4fc0bbb8808ef5ba56f2f985",
   "js/minas.js": "4f093817fbd8df8654fd4d2c9507600191bcd312",
-  "js/misiles.js": "ea6325c7317660f4a9694148e7877849c19035a5",
+  "js/misiles.js": "a52ce408a2ee98ad3752e579f20ecd157947183e",
   "js/monedas.js": "140cee68524bf3ac2eb75ac948e10c1c1b93dd6e",
   "js/mundo.js": "91d53575bdbe7eec762a335955f474b46ae8cfce",
   "js/noticias.js": "11ffc23894887afe32946f29c6721dfd2183720d",
@@ -122,7 +122,7 @@
   "js/okupas.js": "8bf7e443dddd18ca6dca6ccfbe64b9cbb772f040",
   "js/papeles.js": "659a0c8c296ebc6139916e3f4227b1e4b846a3dc",
   "js/partidas.js": "553141f6090a43484d8a82d8a025a6f21ada8bd9",
-  "js/petroleo.js": "57c696284b30b1c22796565434b52aa655fa667d",
+  "js/petroleo.js": "6cce1c395cf2398727f57c704adba8383afc555e",
   "js/piratas.js": "0afe0f113fbed4631108e88c1b8cb20f9e299251",
   "js/pontones.js": "8de37aa4831746fa922e201c5dbbc75704c2a7b8",
   "js/potencias.js": "92f95b1429ed22221248d46e587f32f7bbcf9e54",
@@ -130,7 +130,7 @@
   "js/presupuestos.js": "27743ad6dbf256cc4d124f2bff019d6b0ee1eb75",
   "js/puertos.js": "affa01683a0e078054babe79033142ed55a05a43",
   "js/regimenes.js": "7573d0d69c7a331715b2c4ee302711d39a47490a",
-  "js/renovables.js": "8cc8f2f0dc84e95fa25ba5757d2a8f8f398b4854",
+  "js/renovables.js": "7f3d36c46afb3bed99dc3e25a0b96d34efd934dd",
   "js/rescate.js": "d21e0bb80c7639eb13d89dace4a5553c498a6853",
   "js/riqueza.js": "4437665e375d993ccfc2bec62225436b8fd03dce",
   "js/rutas.js": "6e12cafc1992e09fc3c2b5b13ca7d7db6416c364",
@@ -145,10 +145,10 @@
   "js/vegetacion.js": "440be3b609ce5146ed024c3c0ea0ec694344c592",
   "js/vida.js": "4cb485afe1643d0ab10df2dbc40b492b572466b0",
   "js/visitas.js": "5cafd3070fdf9de08e0a6eebf6644ad13c46bc1d",
-  "js/vista.js": "04c846cc0a86cfb469454c6b3d994e58bc1357bd",
+  "js/vista.js": "e3c8d0d7459ad9ab7ed29fba2ebd6b68be3f6c7d",
   "js/vivienda.js": "0f3091767a41917156ce106447eb0e9659b69271",
   "js/volcanes.js": "f4aea099226dfe1b064fdfbd4779bddb6ed8a250",
-  "arte/atlas.png": "608f61f65fdf0a8d9dbf8965ad87302f553b737e",
+  "arte/atlas.png": "edbb7a97e1e2585d56931a7ca1810383a1324c1f",
   "arte/logo.png": "d18c1e289f646312aeb3ec4087060e60088f0ccd",
   "arte/papeles/contrato.png": "e1625cf1f7bb7b9b5b142d12899265fab2ce7cf0",
   "arte/papeles/dni.png": "6dcfc114b88e629bfed1b2ac368acbfcd1474f34",

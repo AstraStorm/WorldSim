@@ -86,10 +86,25 @@ SYSTEMS.push(dt => {
       const a = [(g.refinery % W) * T + 2, ((g.refinery / W) | 0) * T + 3 + T * 2], b = [((d.well ?? d.i) % W) * T + 2, (((d.well ?? d.i) / W) | 0) * T + 3 + T];
       if (d.sea) { if (!g.port || (typeof canCargo === 'function' && canCargo(g))) continue; // (con carguero, lo trae el carguero: carguero.js)
         const L = g.port.launch, pa = [(L % W) * T + 2, ((L / W) | 0) * T + 3]; oilRuns.push({ g:g.id, d, sea:true, pts:[pa, b], back:[b, pa], k:0, x:pa[0], y:pa[1], load:0, phase:'ida', drop:a }); }
-      else { const r = landRoute(a[0], a[1], b[0], b[1]); if (!r) continue; oilRuns.push({ g:g.id, d, sea:false, pts:[a, ...r], k:0, x:a[0], y:a[1], load:0, phase:'ida' }); }
+      else { const r = truckRoute(a[0], a[1], b[0], b[1]) || landRoute(a[0], a[1], b[0], b[1]); if (!r) continue; oilRuns.push({ g:g.id, d, sea:false, pts:[a, ...r], k:0, x:a[0], y:a[1], load:0, phase:'ida' }); }
     }
   }
 });
+// La ruta del camión: por tierra y sin ir pegado a la orilla (el camión no puede asomar sobre el agua); mejor por camino
+function truckRoute(x0, y0, x1, y1){
+  const a = tileOfXY(x0, y0), b = tileOfXY(x1, y1), dry = i => { if (!landOk(i)) return false; const x = i % W, y = (i / W) | 0; for (let dy = -2; dy <= 1; dy++) for (let dx = -2; dx <= 2; dx++) { const j = (y + dy) * W + x + dx; if (j >= 0 && j < N && WATER[world.biome[j]]) return false; } return true; };
+  const cost = new Float32Array(N).fill(Infinity), prev = new Int32Array(N).fill(-1), q = [[0, a]]; cost[a] = 0;
+  const push = e => { q.push(e); let k = q.length - 1; while (k > 0) { const p = (k - 1) >> 1; if (q[p][0] <= q[k][0]) break; [q[p], q[k]] = [q[k], q[p]]; k = p; } };
+  const pop = () => { const top = q[0], last = q.pop(); if (q.length) { q[0] = last; let k = 0; for (;;) { const l = 2 * k + 1, r = l + 1; let m = k; if (l < q.length && q[l][0] < q[m][0]) m = l; if (r < q.length && q[r][0] < q[m][0]) m = r; if (m === k) break; [q[m], q[k]] = [q[k], q[m]]; k = m; } } return top; };
+  let n = 0;
+  while (q.length && n++ < 200000) {
+    const [c, i] = pop(); if (i === b) break; if (c > cost[i]) continue; const x = i % W, y = (i / W) | 0;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { if (!dx && !dy) continue; const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue; const j = ny * W + nx; if (j !== b && !dry(j)) continue;
+      const nc = c + (dx && dy ? 1.41 : 1) * (pathMap.has(j) || isAsphalt(j) ? .5 : 1.6); if (nc < cost[j]) { cost[j] = nc; prev[j] = i; push([nc, j]); } }
+  }
+  if (prev[b] === -1) return null;
+  const pts = []; for (let i = b; i !== a; i = prev[i]) pts.push([(i % W) * T + 2, ((i / W) | 0) * T + 3]); pts.reverse(); return pts;
+}
 const nearestRefinery = d => { const ow = villageById(d.owner); return liveTowns().filter(o => nationOf(o) === nationOf(ow) && hasRefinery(o)).sort((a, b) => Math.hypot(a.refinery % W - d.i % W, ((a.refinery / W) | 0) - ((d.i / W) | 0)) - Math.hypot(b.refinery % W - d.i % W, ((b.refinery / W) | 0) - ((d.i / W) | 0)))[0] || null; };
 const hasRefinery = g => g.refinery != null && world.objs[g.refinery] && world.objs[g.refinery].key === 'oil:refineria';
 // ---- Asfalto ----
@@ -129,17 +144,26 @@ SYSTEMS.push(dt => {
   oilRuns = oilRuns.filter(t => !t.done);
 });
 const TRUCK_DIR = ['e', 'se', 's', 'so', 'o', 'no', 'n', 'ne'];
-// Mancha de petróleo: en tierra, un charco negro brillante que rezuma (burbujas); en el mar, una película irisada
-function drawOilSeep(d, x, y, now){
-  const h = (a, b) => ((d.i * 2654435761 + a * 40503 + b * 9973) >>> 0) % 1000 / 1000;
-  if (!d.sea) {
-    for (let k = 0; k < 9; k++) { const ox = Math.round((h(k, 1) - .5) * 14), oy = Math.round((h(k, 2) - .5) * 6), w = 3 + Math.round(h(k, 3) * 5); vctx.fillStyle = 'rgba(14,12,16,.9)'; vctx.fillRect(x + ox - (w >> 1), y + oy - 1, w, 2 + (k % 2)); }
-    vctx.fillStyle = 'rgba(150,150,190,.55)'; vctx.fillRect(x - 3, y - 1, 3, 1); vctx.fillRect(x + 2, y + 1, 2, 1); // el brillo
-    const b = (now / 900 + h(0, 7) * 5) % 1; if (b < .4) { vctx.fillStyle = `rgba(60,55,70,${.9 - b * 2})`; vctx.fillRect(x + Math.round((h(1, 9) - .5) * 8), y - 1 - Math.round(b * 3), 1, 1); } // una burbuja que sube
-  } else {
-    const cols = ['rgba(170,80,190,.28)', 'rgba(70,150,200,.28)', 'rgba(90,190,120,.25)', 'rgba(220,190,80,.25)', 'rgba(20,20,30,.35)'], sh = Math.sin(now / 1400 + d.i) * 1.5;
-    for (let k = 0; k < cols.length; k++) { vctx.fillStyle = cols[k]; vctx.beginPath(); vctx.ellipse(x + sh * (k % 2 ? 1 : -1), y, 22 - k * 3.5, 8 - k * 1.2, 0, 0, Math.PI * 2); vctx.fill(); }
+// Mancha de petróleo: un manchurrón irregular, oscuro pero translúcido (se ve el suelo o el agua debajo), quieto; en
+// tierra con algún brillo y una burbuja que sube de vez en cuando; en el mar, con un borde irisado
+const seepC = new Map();
+function seepCanvas(d){
+  if (seepC.has(d.i)) return seepC.get(d.i);
+  const R = d.sea ? 30 : 22, c = document.createElement('canvas'); c.width = R * 2 + 4; c.height = R + 4; const x = c.getContext('2d'), rnd = mulberry32((d.i * 2654435761) >>> 0);
+  const blobs = []; for (let k = 0; k < 16; k++) { const a = rnd() * Math.PI * 2, r = rnd() * R * .62; blobs.push([R + 2 + Math.cos(a) * r, R / 2 + 2 + Math.sin(a) * r * .5, R * (.22 + rnd() * .3)]); }
+  const px = (X, Y) => blobs.some(([bx, by, br]) => ((X - bx) / br) ** 2 + ((Y - by) / (br * .5)) ** 2 <= 1);
+  for (let Y = 0; Y < c.height; Y++) for (let X = 0; X < c.width; X++) {
+    if (!px(X, Y)) continue; const edge = !px(X - 1, Y) || !px(X + 1, Y) || !px(X, Y - 1) || !px(X, Y + 1);
+    if (d.sea) x.fillStyle = edge ? ['rgba(170,90,200,.35)', 'rgba(80,160,210,.35)', 'rgba(110,200,120,.32)', 'rgba(230,200,90,.32)'][(X + Y) % 4] : 'rgba(12,14,22,.42)';
+    else x.fillStyle = edge ? 'rgba(28,22,18,.4)' : 'rgba(16,12,10,.55)';
+    x.fillRect(X, Y, 1, 1);
   }
+  if (!d.sea) { x.fillStyle = 'rgba(150,150,185,.35)'; for (let k = 0; k < 6; k++) { const [bx, by] = blobs[k]; x.fillRect(Math.round(bx), Math.round(by) - 1, 2 + (k % 2), 1); } } // brillos
+  seepC.set(d.i, c); return c;
+}
+function drawOilSeep(d, x, y, now){
+  const c = seepCanvas(d); vctx.drawImage(c, Math.round(x - c.width / 2), Math.round(y - c.height / 2));
+  if (!d.sea) { const b = (now / 1400 + (d.i % 97) / 97) % 1; if (b < .3) { vctx.fillStyle = `rgba(40,34,44,${.7 - b * 2})`; vctx.fillRect(x + (d.i % 9) - 4, y - Math.round(b * 4), 1, 1); } } // una burbuja que sube
 }
 function drawOil(now){
   const [x0, y0, x1, y1] = visibleRect(), known = oilKnown();
@@ -147,7 +171,7 @@ function drawOil(now){
     const wi = d.well != null && world.objs[d.well] ? d.well : d.i, x = (wi % W) * T + 2, y = ((wi / W) | 0) * T + 3; if (x < x0 - 30 || x > x1 + 30 || y < y0 - 40 || y > y1 + 20) continue;
     if (d.well == null || !world.objs[d.well]) { drawOilSeep(d, x, y, now); continue; } // (sin pozo: la mancha negra que delata el petróleo)
     if (!d.sea) { // el balancín, en marcha (8 fotogramas) mientras quede petróleo
-      const f = d.amt > 0 ? Math.floor(now / 140 + d.i) % 8 : 0, s = artFrame(`oil:pozo${f}`); if (s) { vctx.drawImage(s, x - s.ax, y - s.height + 1); redrawFront(x - s.ax, x - s.ax + s.width, y - s.height + 1, y + 1); }
+      const f = d.amt > 0 ? Math.floor(now / 140 + d.i) % 8 : 0, s = artFrame(`oil:pozo${f}`); if (s) liveQ.push({ y, f:() => { vctx.drawImage(s, x - s.ax, y - s.height + 1); redrawFront(x - s.ax, x - s.ax + s.width, y - s.height + 1, y + 1); } });
     }
   }
   for (const t of oilRuns) {

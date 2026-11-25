@@ -24,8 +24,10 @@ function zoomAt(sx, sy, nz){
 function centerOn(px, py, z){ if (!isFinite(px) || !isFinite(py) || !isFinite(z)) return; zoom = z; offX = cw / 2 - px * zoom; offY = ch / 2 - py * zoom; }
 
 function drawAir(t){} // (lo amplían los módulos de lo que vuela)
+let liveQ = []; // lo que se pinta en vivo en el suelo (aspas, balancines, silos...): por altura, intercalado con la gente
 function draw(t){
   if (!world || !cw || busy) return;
+  liveQ = [];
   if (needFit) { fit(); needFit = false; }
   clampView();
   const dpr = window.devicePixelRatio || 1;

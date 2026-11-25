@@ -70,7 +70,7 @@ SYSTEMS.push(dt => {
     const [x, y] = padSpot(g);
     const R = { g:g.id, k, m, x, y, x0:x, y0:y, alt:0, v:0, t:10, phase:'cuenta', parts:ROCKETS[k].fases === 3 ? 3 : ROCKETS[k].fases, liquid:knowsSci(g, 'combustible_liquido'), auto:knowsSci(g, 'aterrizaje_auto') };
     const fail = Math.max(.03, .28 - xp * .03 - (R.liquid ? .06 : 0)); if (Math.random() < fail) R.failAt = 40 + Math.random() * 240;
-    rockets.push(R); launchBanner(R, g);
+    rockets.push(R); sendBarge(g, R);
     notify(`¡Lanzamiento en ${g.name}! Un ${ROCKETS[k].n.toLowerCase()} despega con una misión de ${MISSION_TXT[m]}: cuenta atrás desde 10`, { x, y });
   }
 });
@@ -84,18 +84,20 @@ function rocketMission(g, k){ // por orden: primero investigar; luego satélites
   if (knowsSci(g, 'colonizacion_espacial') && huge && n.station && n.hydro && xp >= 12 && popOf(g) >= 60) opts.push([(n.moon || 0) < 12 ? 'luna' : 'marte', 4]);
   let r = Math.random() * opts.reduce((s, o) => s + o[1], 0); for (const [m, w] of opts) if ((r -= w) < 0) return m; return 'investigacion';
 }
-// Aviso grande arriba: «LANZAMIENTO» y la cuenta atrás (con un botón para ir a verlo)
-function launchBanner(R, g){
-  let el = document.getElementById('launchBanner');
-  if (!el) { el = document.createElement('div'); el.id = 'launchBanner'; document.body.appendChild(el); el.addEventListener('click', e => { const r = rockets.find(q => q === el._r); if (r && e.target.closest('button')) { setFollow(null); centerOn(r.x, r.y - r.alt, Math.max(zoom, 3)); } }); }
-  el._r = R; el.hidden = false; R.banner = el; el.dataset.g = g.name;
+// Avisos a la izquierda (lanzamientos y misiles): una tarjeta por cada uno; al pulsarla, la cámara va allí
+function sideCard(key, cls, html, at){
+  let box = document.getElementById('sideCards'); if (!box) { box = document.createElement('div'); box.id = 'sideCards'; document.body.appendChild(box); }
+  let el = box.querySelector(`[data-k="${key}"]`);
+  if (!el) { el = document.createElement('div'); el.className = 'sc ' + cls; el.dataset.k = key; box.appendChild(el); el.addEventListener('click', () => { const p = el._at && el._at(); if (p) { setFollow(null); centerOn(p[0], p[1], Math.max(zoom, 3)); } }); }
+  if (el._h !== html) { el._h = html; el.innerHTML = html; } el._at = at; el._seen = true; return el;
 }
+function sideCardsSweep(){ for (const el of document.querySelectorAll('#sideCards .sc')) { if (!el._seen && !(el._until > performance.now())) el.remove(); el._seen = false; } }
 function bannerTick(){
-  const el = document.getElementById('launchBanner'); if (!el || el.hidden) return; const R = el._r;
-  if (!R || R.done || (R.phase !== 'cuenta' && R.alt > 400)) { el.hidden = true; return; }
-  const txt = R.phase === 'cuenta' ? `<span class="lb-n">${Math.max(0, Math.ceil(R.t))}</span>` : '<span class="lb-n go">¡DESPEGUE!</span>';
-  const h = `<div class="lb-t">LANZAMIENTO · ${esc(el.dataset.g)}</div>${txt}<div class="lb-m">${esc(ROCKETS[R.k].n)} · ${esc(MISSION_TXT[R.m])}</div><button>Ver</button>`;
-  if (el._h !== h) { el._h = h; el.innerHTML = h; }
+  for (const R of rockets) {
+    const g = villageById(R.g); if (!g || R.alt > 700) continue; R.key ||= 'r' + Math.random().toString(36).slice(2);
+    const n = R.phase === 'cuenta' ? `<span class="n">${Math.max(0, Math.ceil(R.t))}</span>` : '<span class="n go">¡DESPEGUE!</span>';
+    sideCard(R.key, 'rk', `<div class="t">🚀 LANZAMIENTO · ${esc(g.name)}</div>${n}<div class="m">${esc(ROCKETS[R.k].n)} · ${esc(MISSION_TXT[R.m])}</div>`, () => [R.x, R.y0 - R.alt]);
+  }
 }
 // ---- El vuelo ----
 SYSTEMS.push(dt => {
@@ -111,10 +113,10 @@ SYSTEMS.push(dt => {
       // Separación de fases
       const Rk = ROCKETS[R.k];
       if (Rk.fases === 3 && R.parts === 3 && R.alt > 110) { R.parts = 2; const S = stageCv(R.k); // primero, los propulsores laterales
-        if (S) for (const [cv, cx, sg] of [[S.boostL, S.blx, -1], [S.boostR, S.brx, 1]]) rocketBits.push({ cv, x:R.x + cx, y:R.y0 - R.alt, vx:sg * 9, vy:-R.v * .25, rot:0, vr:sg * 1.2, sea:true, burn:.6 });
+        if (S) for (const [cv, cx, sg] of [[S.boostL, S.blx, -1], [S.boostR, S.brx, 1]]) rocketBits.push({ cv, x:R.x + cx, y:R.y0 - R.alt, vx:sg * (6 + Math.random() * 4), vy:-R.v * .45, rot:0, vr:sg * .7, sea:true, burn:.6, gy:R.y0 + 20 + Math.random() * 60 });
         notify(`Se separan los propulsores laterales del cohete de ${g.name}`, { x:R.x, y:R.y0 - R.alt }); }
       if (Rk.fases >= 2 && R.parts === 2 && R.alt > 210) { R.parts = 1; const S = stageCv(R.k); // luego, la primera fase (la de abajo); la de arriba sigue sola
-        if (S) { const b = { cv:S.core, x:R.x, y:R.y0 - R.alt, rot:0 }; if (R.auto) Object.assign(b, { vx:0, vy:0, vr:0, land:true, g:R.g, barge:bargeFor(g) }); else Object.assign(b, { vx:3, vy:-R.v * .2, vr:.6, sea:true }); rocketBits.push(b); R.alt += S.lowH; }
+        if (S) { const b = { cv:S.core, x:R.x, y:R.y0 - R.alt, rot:0 }; if (R.auto) Object.assign(b, { vx:0, vy:0, vr:0, land:true, g:R.g, barge:R.barge || null }); else Object.assign(b, { vx:4, vy:-R.v * .35, vr:.4, sea:true, gy:R.y0 + 40 + Math.random() * 60 }); rocketBits.push(b); R.alt += S.lowH; }
         notify(`Se separa la primera fase del cohete de ${g.name}${R.auto ? ': da la vuelta para aterrizar' : ''}`, { x:R.x, y:R.y0 - R.alt }); }
       if (R.alt > 900) { R.done = true; rocketSuccess(R, g); } // fuera de la pantalla: ya está en el espacio
     }
@@ -122,22 +124,39 @@ SYSTEMS.push(dt => {
   rockets = rockets.filter(r => !r.done);
   for (const b of rocketBits) {
     if (b.land) { // la fase que vuelve: cae, da la vuelta y frena con el motor hasta posarse
-      const g = villageById(b.g); const [tx, ty] = b.barge ? [b.barge.x, b.barge.y - 6] : g && padOf(g) ? padSpot(g) : [b.x, b.y];
+      const g = villageById(b.g), bg = b.barge && !b.barge.done ? b.barge : null; if (b.barge && !bg) b.barge = null;
+      const [tx, ty] = bg ? [bg.x, bg.y - 4] : g && padOf(g) ? padSpot(g) : [b.x, b.y + 300]; // (en el carguero, sobre la cubierta; en la base, en el centro del círculo)
       const dy = ty - b.y, dx = tx - b.x; b.rot += (0 - b.rot) * Math.min(1, dt * 2);
-      b.vy = Math.min(dy * .8, 60); if (dy < 40) b.vy = Math.max(6, dy * .9); b.vx = dx * .8;
-      b.x += b.vx * dt; b.y += b.vy * dt; b.burn = dy < 70; if (b.burn && Math.random() < dt * 20) smokePuff(b.x, b.y + 6, .6);
-      if (Math.abs(dy) < 2 && Math.abs(dx) < 3) { b.done = true; const xp = g ? g.rocketXP || 0 : 0; if (Math.random() < Math.max(.08, .45 - xp * .06)) { rocketBoomAt(b.x, b.y); if (g) notify(`La primera fase del cohete de ${g.name} se estrella al aterrizar${b.barge ? ' en el carguero' : ''}. La próxima vez irá mejor`, { x:b.x, y:b.y }); } else if (g) { g.reusable = true; rocketBits.push({ cv:b.cv, x:b.x, y:b.y, rot:0, parked:true, t:0 }); notify(`¡La primera fase del cohete de ${g.name} aterriza ${b.barge ? 'en el carguero en pleno mar' : 'en la base'}! Se podrá reutilizar`, { x:b.x, y:b.y }); } }
+      b.vy = Math.min(dy * .6, 50); if (dy < 50) b.vy = Math.max(5, dy * .7); b.vx = clamp(dx * .9, -45, 45); // baja frenando con el motor y se va centrando
+      b.x += b.vx * dt; b.y += b.vy * dt; b.burn = dy < 80; if (b.burn && Math.random() < dt * 20) smokePuff(b.x, b.y + 6, .6);
+      if (Math.abs(dy) < 1.5 && Math.abs(dx) < 1.5) { b.done = true; const xp = g ? g.rocketXP || 0 : 0;
+        if (Math.random() < Math.max(.08, .45 - xp * .06)) { rocketBoomAt(tx, ty); if (bg) { bg.wait = 0; bg.label = null; bg.phase = 'vuelta'; bg.pts = seaPath([bg.x, bg.y], bg.home) || [bg.home]; bg.k = 0; } if (g) notify(`La primera fase del cohete de ${g.name} se estrella al aterrizar${bg ? ' en el carguero' : ''}. La próxima vez irá mejor`, { x:tx, y:ty }); }
+        else if (g) { g.reusable = true;
+          if (bg) { bg.stageCv = b.cv; bg.full = true; bg.kind = 'fin'; bg.wait = 2; bg.label = 'Trae la fase del cohete'; bg.phase = 'vuelta'; bg.pts = seaPath([bg.x, bg.y], bg.home) || [bg.home]; bg.k = 0; } // el carguero se la lleva a puerto
+          else rocketBits.push({ cv:b.cv, x:tx, y:ty, rot:0, parked:true, t:0 }); // se queda de pie en la plataforma
+          notify(`¡La primera fase del cohete de ${g.name} aterriza ${bg ? 'en un carguero en pleno mar! El barco la trae a puerto' : 'en el centro de la base!'} Se podrá reutilizar`, { x:tx, y:ty }); } }
       continue;
     }
-    if (b.parked) { b.t += dt; if (b.t > 40) b.done = true; continue; } // la fase recuperada, de pie en la plataforma hasta que se la llevan
-    b.vy += 40 * dt; b.x += b.vx * dt; b.y += b.vy * dt; b.rot += b.vr * dt; b.t = (b.t || 0) + dt; if (b.t > .8) b.burn = 0; if (Math.random() < dt * 8) smokePuff(b.x, b.y, .5);
-    if (b.t > 4) { b.done = true; const i = Math.floor(b.y / T) * W + Math.floor(b.x / T); if (i >= 0 && i < N && WATER[world.biome[i]]) addEffect(b.x, b.y, 'poof'); else rocketBoomAt(b.x, b.y, .5); } // al mar (o donde caiga)
+    if (b.parked) { b.t += dt; if (b.t > 70) { b.x += dt * 6; b.alpha = Math.max(0, 1 - (b.t - 70) / 8); if (b.t > 78) b.done = true; } continue; } // de pie en la plataforma un buen rato; luego se la llevan al hangar
+    // lo que se suelta cae despacio (aún lleva impulso), dando vueltas, hasta el suelo o el mar
+    b.vy += 16 * dt; b.x += b.vx * dt; b.y += b.vy * dt; b.rot += b.vr * dt; b.t = (b.t || 0) + dt; if (b.t > 1.6) b.burn = 0; if (Math.random() < dt * 10) smokePuff(b.x, b.y - 4, .6);
+    if (b.y >= b.gy || b.t > 14) { b.done = true; const i = Math.floor(b.y / T) * W + Math.floor(b.x / T); if (i >= 0 && i < N && WATER[world.biome[i]]) { addEffect(b.x, b.y, 'poof'); for (let n = 0; n < 14; n++) chips.push({ x:b.x, y:b.y, vx:(Math.random() - .5) * 30, vy:-10 - Math.random() * 20, life:0, max:.9, col:'rgba(230,245,255,.85)' }); } else rocketBoomAt(b.x, b.y, .6); } // al mar (chapuzón) o donde caiga
   }
   rocketBits = rocketBits.filter(b => !b.done);
-  bannerTick();
 });
+SYSTEMS.push(() => { if (!world) return; bannerTick(); if (typeof missileCards === 'function') missileCards(); sideCardsSweep(); });
 // Con puerto grande, la fase aterriza en un carguero vacío en el mar (que luego vuelve a puerto)
-function bargeFor(g){ if (!g.bigPort || !g.bigPort.done || Math.random() < .5) return null; const L = g.port.launch, s = seaFrom((L % W) * T + 2 + (g.port.dx || 0) * 60, ((L / W) | 0) * T + 3 + (g.port.dy || 0) * 60); return { x:(s % W) * T + 2, y:((s / W) | 0) * T + 3 }; }
+// Con aterrizaje automático y un puerto grande en la nación, una vez de cada dos la fase aterriza en el mar, sobre un
+// carguero vacío que sale de puerto al empezar la cuenta atrás, la espera y luego la trae
+function sendBarge(g, R){
+  if (!R.auto || typeof canCargo !== 'function' || (g.bargeN = (g.bargeN || 0) + 1) % 2) return;
+  const P = liveTowns().filter(o => nationOf(o) === nationOf(g) && canCargo(o)).sort((a, b) => Math.hypot(a.fx - g.fx, a.fy - g.fy) - Math.hypot(b.fx - g.fx, b.fy - g.fy))[0]; if (!P) return;
+  const home = cargoPort(P);
+  for (let k = 0; k < 24; k++) { const a = k / 24 * Math.PI * 2, d = 35 + (k % 3) * 12, x = home[0] + Math.cos(a) * d * T, y = home[1] + Math.sin(a) * d * T, i = Math.floor(y / T) * W + Math.floor(x / T);
+    if (i < 0 || i >= N || !WATER[world.biome[i]] || world.biome[i] === B.SHALLOW) continue; const p = seaPath(home, [x, y]); if (!p) continue;
+    const c = { g:P.id, kind:'barcaza', pts:p, k:0, x:home[0], y:home[1], full:false, phase:'ida', home, label:'Sale a esperar el cohete' }; cargos.push(c); R.barge = c;
+    notify(`Un carguero de ${P.name} sale al mar: la primera fase del cohete intentará aterrizar sobre él`, { x:home[0], y:home[1] }); return; }
+}
 function smokePuff(x, y, s){ chips.push({ x, y, vx:(Math.random() - .5) * 14 * s, vy:-2 - Math.random() * 6, life:0, max:1.5 + s, col:`rgba(${200 + Math.floor(Math.random() * 40)},${200 + Math.floor(Math.random() * 40)},${205 + Math.floor(Math.random() * 40)},.6)` }); }
 function rocketBoomAt(x, y, k = 1){ addEffect(x, y, 'poof'); snd('boom', x, y, .6 * k); for (let n = 0; n < 30 * k; n++) chips.push({ x, y, vx:(Math.random() - .5) * 60, vy:(Math.random() - .7) * 50, life:0, max:.8 + Math.random(), col:n % 3 ? '#ff9a3a' : '#ffe080' }); for (let n = 0; n < 12 * k; n++) smokePuff(x + (Math.random() - .5) * 10, y, 1.5); }
 function rocketBoom(R, g){
@@ -188,9 +207,8 @@ function drawRockets(now){
     const g = villageById(R.g); if (R.alt < 50 && g && g.spacePad != null) redrawFront(R.x - s.width / 2, R.x + s.width / 2, y - s.height, ((g.spacePad / W) | 0) * T + 4); // lo que está delante de la plataforma (no ella misma) lo tapa
   }
   for (const b of rocketBits) {
-    if (b.barge) { const s = artFrame('cargo:vacio'); if (s) vctx.drawImage(s, b.barge.x - s.ax, b.barge.y - s.height + 4); }
     if (b.burn) flame(Math.round(b.x), Math.round(b.y + 1), b.burn === true ? 1 : b.burn);
-    drawCv(b.cv, b.x, b.y, b.rot);
+    if (b.alpha != null) vctx.globalAlpha = b.alpha; drawCv(b.cv, b.x, b.y, b.rot); vctx.globalAlpha = 1;
   }
 }
 { const base = drawAir; drawAir = function(t){ base.apply(this, arguments); drawRockets(performance.now()); }; }

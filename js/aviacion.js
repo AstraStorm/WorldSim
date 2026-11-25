@@ -54,7 +54,7 @@ function clearRocks(x0, y0, x1, y1){ for (let y = y0; y <= y1; y++) for (let x =
 // Las instalaciones grandes de todas las ciudades (aeródromo, lanzadera, central, refinería, silos, parque de renovables):
 // una nueva no puede pisar ninguna (con 2 casillas de margen)
 function bigClash(x, y, hw, hh){
-  for (const o of villages) for (const [i, w, h] of [[o.airfield, 13, 13], [o.spacePad, 6, 10], [o.plant, 6, 7], [o.refinery, 6, 7], [o.renewAt, 16, 6], ...(o.silos || []).map(s => [s.i, 3, 4])]) {
+  for (const o of villages) for (const [i, w, h] of [[o.airfield, 13, 13], [o.spacePad, 6, 10], [o.plant, 6, 7], [o.refinery, 6, 7], [o.renewAt, 17, 8], ...(o.silos || []).map(s => [s.i, 3, 4])]) {
     if (i == null) continue; const bx = i % W, by = (i / W) | 0;
     if (!(x + hw + 2 < bx - w || x - hw - 2 > bx + w || y + 3 < by - h || y - hh - 2 > by + 1 + (w === 16 ? 6 : 0))) return true;
   }
@@ -62,13 +62,16 @@ function bigClash(x, y, hw, hh){
 }
 // ¿Hay casas o edificios en ese rectángulo? (las instalaciones grandes, con margen: nunca pegadas al pueblo)
 function nearBuildings(x0, y0, x1, y1){ for (let y = Math.max(0, y0); y <= Math.min(H - 1, y1); y++) for (let x = Math.max(0, x0); x <= Math.min(W - 1, x1); x++) { const o = world.objs[y * W + x]; if (o && BLD.has(o.key.split(':')[0]) && !/^(pylon|wind|solar):/.test(o.key)) return true; } return false; }
+const wallNear = (x0, y0, x1, y1) => { for (let y = Math.max(0, y0); y <= Math.min(H - 1, y1); y++) for (let x = Math.max(0, x0); x <= Math.min(W - 1, x1); x++) if (wallSet.has(y * W + x)) return true; return false; }; // (ni pegado a una muralla)
+const pathCount = (x0, y0, x1, y1) => { let n = 0; for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (pathMap.has(y * W + x)) n++; return n; }; // (un camino corto que cruce el sitio, se puede tapar)
 function farSite1(c, g, hw, hh){
   const towns = liveTowns().filter(q => q !== g), cx = Math.round(c.fx), cy = Math.round(c.fy);
-  for (let r = 16; r <= 150; r += 4) for (let k = 0; k < 72; k++) {
-    const a2 = k / 72 * Math.PI * 2, x = Math.round(cx + Math.cos(a2) * r), y = Math.round(cy + Math.sin(a2) * r * .85);
+  for (let r = 16; r <= 150; r += 3) { const nk = Math.max(48, Math.round(r * 2)); for (let k = 0; k < nk; k++) { // (más puntos cuanto más lejos: que no se escape ningún hueco)
+    const a2 = k / nk * Math.PI * 2, x = Math.round(cx + Math.cos(a2) * r), y = Math.round(cy + Math.sin(a2) * r * .85);
     if (x < hw + 4 || y < hh + 4 || x >= W - hw - 4 || y >= H - 4 || towns.some(o => nationOf(o) !== nationOf(g) && Math.hypot(o.fx - x, o.fy - y) < 25)) continue;
-    if (bigClash(x, y, hw, hh) || !clearableRocks(x - hw, y - hh, x + hw, y + 1) || nearBuildings(x - hw - 4, y - hh - 3, x + hw + 4, y + 4) || pathIn(x - hw, y - hh, x + hw, y) || plazaIn(x - hw, y - hh, x + hw, y) || penOverlap(null, x - hw, y - hh, x + hw, y + 1) || buildingClash(x, y, 'aerodromo')) continue;
+    if (bigClash(x, y, hw, hh) || !clearableRocks(x - hw, y - hh, x + hw, y + 1) || nearBuildings(x - hw - 2, y - hh - 2, x + hw + 2, y + 3) || plotIn(x - hw - 3, y - hh - 3, x + hw + 3, y + 4) || wallNear(x - hw - 2, y - hh - 2, x + hw + 2, y + 3) || pathCount(x - hw, y - hh, x + hw, y) > 10 || plazaIn(x - hw, y - hh, x + hw, y) || penOverlap(null, x - hw, y - hh, x + hw, y + 1) || buildingClash(x, y, 'aerodromo')) continue;
     return [x, y];
+  }
   }
   return null;
 }
@@ -132,15 +135,20 @@ function drawPlanes(now){
     if (p.x < x0 - 40 || p.x > x1 + 40 || p.y < y0 - 80 || p.y > y1 + 30) continue;
     const k = PLANE_DIR(p.ang), s = artFrame(`plane:${k}`); if (!s) continue;
     const sc = 1 + p.alt / 40 * .25, w = s.width * sc, h = s.height * sc, x = p.x, y = p.y - p.alt;
-    vctx.fillStyle = `rgba(0,0,0,${.3 - p.alt / 200})`; vctx.beginPath(); vctx.ellipse(p.x + p.alt * .3, p.y + 1, w * .42, 2.5, 0, 0, Math.PI * 2); vctx.fill(); // la sombra en el suelo
+    // la sombra: pegada a las ruedas en tierra; en el aire, más pequeña, más clara y desplazada
+    const sw = w * (p.alt > 0 ? .42 - p.alt / 400 : .46); vctx.fillStyle = `rgba(0,0,0,${p.alt > 0 ? .26 - p.alt / 220 : .38})`; vctx.beginPath(); vctx.ellipse(p.x + p.alt * .3, p.y, sw, p.alt > 0 ? 2.5 : 1.6, 0, 0, Math.PI * 2); vctx.fill();
+    // inclinación: en tierra, con la cola apoyada (morro algo arriba); al despegar, morro arriba; en vuelo, recto; al aterrizar, algo arriba
+    const side = k === 'e' ? 1 : k === 'o' ? -1 : 0, pitch = !side ? 0 : p.phase === 'sube' ? -.2 : p.phase === 'aterriza' ? (p.alt > 0 ? -.1 : -.07) : p.alt <= 0 ? -.07 : 0;
     const L = Math.round(x - w / 2), Tp = Math.round(y - h);
-    vctx.drawImage(s, L, Tp, Math.round(w), Math.round(h));
+    vctx.save(); if (pitch) { const wx = x + side * w * .2; vctx.translate(wx, y); vctx.rotate(pitch * side); vctx.translate(-wx, -y); } // (gira sobre las ruedas delanteras: siguen tocando el suelo)
+    vctx.drawImage(s, L, Tp + 1, Math.round(w), Math.round(h));
     const pa = PROP_AT[k];
     if (pa) { // la hélice girando
       const px = L + pa[0] * w, py = Tp + pa[1] * h, fr = Math.floor(now / 45) % 4;
       if (pa[2] === 0) { const f = artFrame('prop:0'); if (f) { const hh = f.height * sc * (fr % 2 ? .45 : 1); vctx.drawImage(f, Math.round(px - 1), Math.round(py - hh / 2), Math.max(1, Math.round(f.width * sc * .6)), Math.round(hh)); } }
       else { const f = artFrame(`prop:${fr}`); if (f) { const fw = f.width * sc * pa[2], fh = f.height * sc; vctx.drawImage(f, Math.round(px - fw / 2), Math.round(py - fh / 2), Math.max(1, Math.round(fw)), Math.round(fh)); } }
     }
+    vctx.restore();
     if (p.hp < .6) chips.push({ x, y:y - h / 2, vx:(Math.random() - .5) * 4, vy:-3, life:0, max:1, col:'rgba(60,60,60,.6)' }); // tocado: echa humo
   }
 }

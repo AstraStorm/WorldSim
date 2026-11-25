@@ -10,7 +10,7 @@
 (() => { if (DISCOVERIES.some(d => d.k === 'renovables')) return; const i = DISCOVERIES.findIndex(d => d.k === 'plastico');
   DISCOVERIES.splice(i + 1, 0, { k:'renovables', txt:'las energías renovables', cost:150, eff:'molinos eólicos y placas solares: luz sin quemar carbón', req:['electricidad', 'plastico'].filter(k => DISCOVERIES.some(d => d.k === k)) });
   if (typeof SCI_REQ === 'object') SCI_REQ.renovables = ['electricidad', 'plastico']; })();
-BLD.add('wind'); BLD.add('solar'); BUILD_DIMS.wind = [1, 4]; BUILD_DIMS.solar = [1, 2];
+BLD.add('wind'); BLD.add('solar'); BUILD_DIMS.wind = [1, 4]; BUILD_DIMS.solar = [3, 3];
 OBJ['wind:torre'] = ['Molino eólico', 'house', 0]; OBJ['solar:placa'] = ['Placa solar', 'house', 0];
 Object.assign(BLD_DESC, { wind:'Molino eólico: el viento mueve las aspas y da corriente sin quemar nada', solar:'Placa solar: convierte la luz del sol en corriente' });
 Object.assign(BLD_TYPE, { wind:'Energía', solar:'Energía' });
@@ -30,11 +30,11 @@ SYSTEMS.push(dt => {
     const R = renewOf(g), want = 2 + Math.floor(popOf(g) / 18);
     if (R.length >= want || (g.iron || 0) < 3 || g.stone < 6 || (g.renewT || 0) > yearT - 8) continue; g.renewT = yearT;
     // En un parque a las afueras (no en mitad del pueblo): los molinos en fila, separados; las placas, juntas en hileras
-    if (g.renewAt == null || !clearable(g.renewAt % W - 1, ((g.renewAt / W) | 0) - 1, g.renewAt % W + 1, ((g.renewAt / W) | 0) + 1) && !R.length) { const s0 = typeof farSite === 'function' ? farSite(g, 7, 6) : null; if (!s0) { g.renewT = yearT + DAY_LEN / 2; continue; } g.renewAt = s0[1] * W + s0[0]; }
+    if (g.renewAt == null || !clearable(g.renewAt % W - 1, ((g.renewAt / W) | 0) - 1, g.renewAt % W + 1, ((g.renewAt / W) | 0) + 1) && !R.length) { const s0 = typeof farSite === 'function' ? farSite(g, 16, 8) : null; if (!s0) { g.renewT = yearT + DAY_LEN / 2; continue; } g.renewAt = s0[1] * W + s0[0]; }
     const k = R.filter(r => r.k === 'wind').length <= R.filter(r => r.k === 'solar').length ? 'wind' : 'solar', ax = g.renewAt % W, ay = (g.renewAt / W) | 0;
     const near = (x, y, r) => { for (let yy = y - r; yy <= y + r; yy++) for (let xx = x - r; xx <= x + r; xx++) { const o = world.objs[yy * W + xx]; if (o && BLD.has(o.key.split(':')[0]) && !/^(wind|solar|pylon):/.test(o.key)) return true; } return false; };
     let best = null;
-    const slots = k === 'wind' ? [[0, -4], [-5, -4], [5, -4], [-10, -4], [10, -4], [-15, -4], [15, -4]] : [[-4, 2], [-2, 2], [0, 2], [2, 2], [4, 2], [-4, 5], [-2, 5], [0, 5], [2, 5], [4, 5], [-6, 2], [6, 2], [-6, 5], [6, 5]];
+    const slots = k === 'wind' ? [[0, -6], [-7, -6], [7, -6], [-14, -6], [14, -6]] : [[-3, -2], [3, -2], [-9, -2], [9, -2], [-3, 1], [3, 1], [-9, 1], [9, 1], [-15, -2], [15, -2], [-15, 1], [15, 1]]; // (separados: el rotor y las placas ya no se pisan)
     for (const [dx, dy] of slots) { const x = ax + dx, y = ay + dy; if (x < 3 || y < 6 || x >= W - 3 || y >= H - 2 || !(tileFree(x, y) || clearable(x, y, x, y)) || pathMap.has(y * W + x) || plazaSet.has(y * W + x) || wallSet.has(y * W + x) || near(x, y, 2) || villages.some(q => underBuilding(q, x, y)) || plotIn(x, y, x, y)) continue; best = [x, y]; break; }
     if (!best) continue;
     const i = best[1] * W + best[0]; farmMap.delete(i); if (world.objs[i]) delete world.objs[i];
@@ -55,13 +55,17 @@ SYSTEMS.push(dt => {
 { const base = plantOn; plantOn = function(g){ return base(g) || renewOf(g).length >= 3; }; } // (con 3 renovables o más, hay luz aunque la central esté apagada o no exista)
 // Dibujo: las aspas de los molinos, girando (más deprisa con más viento)
 function drawWindmills(now){
-  const [x0, y0, x1, y1] = visibleRect();
+  const [x0, y0, x1, y1] = visibleRect(), tw = artFrame('wind:torre'), gd = artFrame('wind:gondola'), pl = artFrame('wind:pala'), hb = artFrame('wind:buje'); if (!tw || !pl) return;
   for (const g of villages) for (const r of g.renew || []) {
-    if (r.k !== 'wind' || !world.objs[r.i]) continue; const x = (r.i % W) * T + 2, y = ((r.i / W) | 0) * T + 3; if (x < x0 - 20 || x > x1 + 20 || y < y0 - 40 || y > y1 + 10) continue;
-    const [wx, wy] = windAt(x, y), sp = 120 + 60 / Math.max(.3, Math.hypot(wx, wy) / 6), f = Math.floor(now / sp + r.i) % 8, s = artFrame(`wind:aspas${f}`), gd = artFrame('wind:gondola');
-    const hx = x, hy = y - 19; if (gd) vctx.drawImage(gd, hx - (gd.width >> 1), hy - (gd.height >> 1));
-    if (s) vctx.drawImage(s, Math.round(hx - s.width / 2), Math.round(hy - s.height / 2));
-    redrawFront(hx - 9, hx + 9, hy - 9, y + 1); // lo que está delante tapa las aspas
+    if (r.k !== 'wind' || !world.objs[r.i]) continue; const x = (r.i % W) * T + 2, y = ((r.i / W) | 0) * T + 3; if (x < x0 - 30 || x > x1 + 30 || y < y0 - 60 || y > y1 + 10) continue;
+    const [wx, wy] = windAt(x, y), spd = .8 + Math.min(3, Math.hypot(wx, wy) / 4), ang = (now / 1000 * spd + r.i % 7) % (Math.PI * 2); // gira suave, más deprisa cuanto más sopla
+    const hx = x, hy = y + 2 - tw.height + 2;
+    liveQ.push({ y, f:() => { // (por altura: quien pasa por detrás queda tapado)
+      if (gd) vctx.drawImage(gd, hx - (gd.width >> 1), hy - (gd.height >> 1));
+      vctx.save(); vctx.translate(hx, hy); for (let k = 0; k < 3; k++) { vctx.save(); vctx.rotate(ang + k * Math.PI * 2 / 3); vctx.drawImage(pl, -pl.width / 2, -pl.height + 1); vctx.restore(); } vctx.restore(); // las tres palas, cada una a 120°, girando alrededor del buje
+      if (hb) vctx.drawImage(hb, hx - (hb.width >> 1), hy - (hb.height >> 1));
+      redrawFront(hx - 16, hx + 16, hy - 16, y + 1);
+    } });
   }
 }
 { const base = drawInstFlags; drawInstFlags = function(t){ base.apply(this, arguments); drawWindmills(performance.now()); }; }
@@ -76,4 +80,4 @@ Object.assign(TREATY, { clima:{ n:'acuerdo climático', days:[8, 12], icon:'🌱
 }; }
 
 // Las renovables de antes (sueltas entre las casas) se quitan una vez: se vuelven a levantar en su parque, a las afueras
-SYSTEMS.push(() => { if (!world) return; for (const g of villages) { if (g.renewV === 2) continue; g.renewV = 2; for (const r of renewOf(g)) { delete world.objs[r.i]; const x = r.i % W, y = (r.i / W) | 0; composeRegion(x - 4, y - 8, x + 4, y + 2); } g.renew = []; g.renewAt = null; g.renewT = 0; if (powC) powC.delete(g.id); } });
+SYSTEMS.push(() => { if (!world) return; for (const g of villages) { if (g.renewV === 3) continue; g.renewV = 3; for (const r of renewOf(g)) { delete world.objs[r.i]; const x = r.i % W, y = (r.i / W) | 0; composeRegion(x - 4, y - 8, x + 4, y + 2); } g.renew = []; g.renewAt = null; g.renewT = 0; if (powC) powC.delete(g.id); } });

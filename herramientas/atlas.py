@@ -267,8 +267,8 @@ if os.path.exists(os.path.join(SRC, 'pozoPetroleroAcuatico.png')):
 if os.path.exists(os.path.join(SRC, 'refineriaPetrolera.png')):
     add('oil:refineria', shrink(box_parts('refineriaPetrolera.png', (70, 70, 830, 660)), 46, 40))
 if os.path.exists(os.path.join(SRC, 'camion.png')):  # el camión, en 8 direcciones (a la misma escala: el de lado mide 16)
-    for d, box, w in [('n', (680, 40, 860, 335), 8), ('ne', (1100, 40, 1370, 330), 12), ('e', (1065, 365, 1420, 600), 16), ('se', (1090, 620, 1380, 940), 13),
-                      ('s', (665, 630, 870, 960), 9), ('so', (150, 620, 440, 940), 13), ('o', (115, 365, 470, 600), 16), ('no', (175, 40, 435, 330), 12)]:
+    for d, box, w in [('n', (680, 40, 860, 335), 12), ('ne', (1100, 40, 1370, 330), 18), ('e', (1065, 365, 1420, 600), 24), ('se', (1090, 620, 1380, 940), 20),
+                      ('s', (665, 630, 870, 960), 14), ('so', (150, 620, 440, 940), 20), ('o', (115, 365, 470, 600), 24), ('no', (175, 40, 435, 330), 18)]:
         add(f'truck:{d}', shrink(box_parts('camion.png', box), w, 40))
 
 if os.path.exists(os.path.join(SRC, 'barcoCarguero.png')):  # el carguero: lleno y vacío, de lado (proa a la derecha) y de frente
@@ -277,12 +277,14 @@ if os.path.exists(os.path.join(SRC, 'barcoCarguero.png')):  # el carguero: lleno
         add(f'cargo:{k}', shrink(box_parts('barcoCarguero.png', tuple(int(c * S9) for c in box)), w, 40))
 
 if os.path.exists(os.path.join(SRC, 'panelSolar.png')):  # placa solar
-    add('solar:placa', shrink(box_parts('panelSolar.png', (60, 270, 730, 910)), 14, 40))
+    add('solar:placa', shrink(box_parts('panelSolar.png', (60, 270, 730, 910)), 24, 40))
 if os.path.exists(os.path.join(SRC, 'turbinaEolica.png')):  # molino eólico: torre (con la góndola) y las aspas en 8 fotogramas
-    add('wind:torre', shrink(box_parts('turbinaEolica.png', (560, 160, 720, 640)), 6, 40))
-    add('wind:gondola', shrink(box_parts('turbinaEolica.png', (750, 170, 905, 330)), 5, 40))
+    add('wind:torre', shrink(box_parts('turbinaEolica.png', (560, 160, 720, 640)), 10, 40))
+    add('wind:gondola', shrink(box_parts('turbinaEolica.png', (750, 170, 905, 330)), 9, 40))
+    add('wind:buje', shrink(box_parts('turbinaEolica.png', (785, 345, 880, 435)), 6, 40))  # el buje y una pala suelta: el rotor se monta y se hace girar en el juego
+    add('wind:pala', shrink(box_parts('turbinaEolica.png', (730, 450, 795, 650)), 5, 40))
     for k, box in enumerate([(990, 205, 1135, 360), (1130, 230, 1260, 350), (1225, 245, 1350, 385), (1345, 250, 1500, 390), (1015, 480, 1140, 635), (1120, 480, 1240, 625), (1235, 500, 1370, 635), (1350, 470, 1500, 605)]):
-        add(f'wind:aspas{k}', shrink(box_parts('turbinaEolica.png', box), 15, 40))
+        add(f'wind:aspas{k}', shrink(box_parts('turbinaEolica.png', box), 30, 40))
 
 if os.path.exists(os.path.join(SRC, 'planeador6Dir.png')):  # el planeador en 6 vistas: de frente, de espaldas, de lado (izquierda y derecha) y en diagonal
     for k, box, w in [('s', (50, 165, 485, 425), 34), ('n', (525, 95, 1005, 450), 37), ('o', (1060, 200, 1485, 420), 34), ('so', (50, 565, 450, 880), 32), ('se', (575, 565, 975, 880), 32), ('e', (1055, 620, 1470, 825), 34)]:
@@ -319,26 +321,25 @@ if os.path.exists(os.path.join(SRC, 'helicesPlaneador.png')):  # la hélice gira
     hb = np.array(hb); hb[(hb[..., 0] > 235) & (hb[..., 1] < 30) & (hb[..., 2] > 235), 3] = 0; hp = Image.fromarray(hb)
     for k, (x0, x1) in enumerate([(150, 360), (480, 820), (860, 1310), (1340, 1690)]):
         im = hp.crop((x0, 120, x1, 600)); bb = im.getbbox(); im = im.crop(bb)
-        add(f'prop:{k}', shrink(im, max(2, round(im.width * .03)), 16))
+        add(f'prop:{k}', shrink(im, max(2, round(im.width * .046)), 16))
 
 if os.path.exists(os.path.join(SRC, 'antenasComunicacion.png')):  # antena de telefonía y antena parabólica
-    add('tele:antena', shrink(box_parts('antenasComunicacion.png', (270, 20, 660, 830)), 17, 40))
+    add('tele:antena', shrink(box_parts('antenasComunicacion.png', (270, 20, 660, 830)), 26, 40))
     add('tele:parabolica', shrink(box_parts('antenasComunicacion.png', (1060, 140, 1570, 820)), 22, 40))
 
 if os.path.exists(os.path.join(SRC, 'lanzadoras.png')):  # lanzaderas: base, mejorada y puerto espacial
     for k, box, w in [(1, (70, 230, 500, 700), 34), (2, (600, 180, 1190, 700), 46), (3, (1290, 60, 2075, 700), 60)]:
         add(f'space:lanzadera{k}', shrink(box_parts('lanzadoras.png', box), w, 40))
 if os.path.exists(os.path.join(SRC, 'cohetes.png')):  # cohetes (a la misma escala, ~0,07) y sus piezas sueltas para separar las fases
-    R = [('a', (45, 240, 250, 640), 13), ('b', (255, 170, 480, 640), 14), ('c', (530, 145, 715, 640), 12), ('c_sup', (750, 115, 870, 295), 7), ('c_inf', (715, 335, 905, 640), 12),
-         ('d', (1000, 130, 1205, 645), 13), ('d_sup', (1262, 100, 1372, 272), 6), ('d_int', (1278, 282, 1362, 368), 5), ('d_low', (1215, 375, 1425, 645), 13),
-         ('e', (1500, 100, 1740, 645), 15), ('e_sup', (1880, 45, 2005, 230), 7), ('e_int', (1885, 232, 2000, 315), 6), ('e_low', (1795, 320, 2090, 645), 19)]
+    R = [('a', (45, 240, 250, 640), 18), ('b', (255, 170, 480, 640), 19), ('c', (530, 145, 715, 640), 16), ('d', (1000, 130, 1205, 645), 18), ('e', (1500, 100, 1740, 645), 20)]  # (las fases se recortan en el juego del cohete entero)
     for k, box, w in R: add(f'rocket:{k}', shrink(box_parts('cohetes.png', box), w, 40))
 if os.path.exists(os.path.join(SRC, 'siloMisiles.png')):  # silo de misiles: 12 fotogramas (se abre y se cierra)
     xs = [(15, 280), (310, 575), (605, 870), (900, 1165), (1195, 1460), (1490, 1760)]
     for r, (y0, y1) in enumerate([(125, 425), (495, 795)]):
-        for c, (x0, x1) in enumerate(xs): add(f'silo:{r * 6 + c}', shrink(box_parts('siloMisiles.png', (x0, y0, x1, y1)), 30, 40))
+        for c, (x0, x1) in enumerate(xs): add(f'silo:{r * 6 + c}', shrink(box_parts('siloMisiles.png', (x0, y0, x1, y1)), 27, 40))
 if os.path.exists(os.path.join(SRC, 'misiles.png')):  # 6 misiles
-    for k, (box, w) in enumerate([((170, 40, 345, 495), 10), ((705, 70, 830, 495), 7), ((1195, 15, 1365, 495), 10), ((175, 565, 340, 1005), 10), ((715, 560, 820, 1005), 6), ((1195, 545, 1370, 1005), 10)]):
+    # (la hoja trae 5: el 2, el de largo alcance, usa el táctico en grande mientras no tenga dibujo propio)
+    for k, (box, w) in enumerate([((170, 40, 345, 495), 11), ((705, 70, 830, 495), 7), ((705, 70, 830, 495), 10), ((175, 565, 340, 1005), 11), ((715, 560, 820, 1005), 6), ((1195, 545, 1370, 1005), 12)]):
         add(f'missile:{k}', shrink(box_parts('misiles.png', box), w, 40))
 
 if os.path.exists(os.path.join(SRC, 'casino.png')):

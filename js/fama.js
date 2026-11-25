@@ -81,12 +81,16 @@ function drawFairs(now){
   for (let k = 0; k < 3; k++) { const a = ts * 5 + k * 2.09, bx = jx + Math.cos(a) * 3, by = jy - 9 - Math.abs(Math.sin(a)) * 6; vctx.fillStyle = ['#f0d060', '#e87050', '#70b0f0'][k]; vctx.fillRect(Math.round(bx), Math.round(by), 1, 1); }
   if (Math.random() < .03) floats.push({ x:F.x + (Math.random() - .5) * 30, y:F.y - 14, txt:['♪', '♫', '♪♫'][Math.floor(Math.random() * 3)], col:'#f8e0a0', life:0 });
 }
+// Las torres no se pintan aquí: van a la cola por altura (campQueue) y drawVillagers las intercala con la gente: quien pasa por detrás queda tapado
+let castleQ = [];
 function drawCastles(now){
+  castleQ = [];
   const [vx0, vy0, vx1, vy1] = visibleRect();
   for (const g of villages) {
     if (!g.castle || !popOf(g) || g.hall == null || !world.objs[g.hall]) continue;
     const [x0, y0, x1, y1] = bldBox(g.hall); if (x1 < vx0 - 20 || x0 > vx1 + 20 || y1 < vy0 - 30 || y0 > vy1 + 30) continue;
     const col = villageColor(nationOf(g)), h = Math.round((y1 - y0) * .85), w = 11;
+    castleQ.push({ y:y1, f:() => {
     for (const tx of [x0 - w + 1, x1 - 1]) { // torres de sillares con almenas, saeteras y estandarte
       const top = y1 - h;
       vctx.fillStyle = 'rgba(0,0,0,.28)'; vctx.fillRect(tx - 1, y1, w + 2, 2);
@@ -101,5 +105,8 @@ function drawCastles(now){
       const wave = Math.round(Math.sin(now / 250 + tx) * .7); vctx.fillStyle = '#22201e'; vctx.fillRect(tx + (w >> 1) + 1, top - 16 + wave, 7, 5);
       vctx.fillStyle = `rgb(${col.join(',')})`; vctx.fillRect(tx + (w >> 1) + 1, top - 15 + wave, 6, 3);
     }
+    } });
   }
 }
+
+{ const base = drawCamps; drawCamps = function(t){ base.apply(this, arguments); if (castleQ.length || liveQ.length) { campQueue.push(...castleQ, ...liveQ); campQueue.sort((a, b) => a.y - b.y); } }; }

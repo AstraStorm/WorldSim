@@ -20,9 +20,9 @@ OBJ['silo:0'] = ['Silo de misiles', 'house', 0];
 Object.assign(BLD_DESC, { silo:'Silo de misiles: bajo la compuerta espera un misil' }); Object.assign(BLD_TYPE, { silo:'Defensa' });
 // alcance (casillas), radio de la explosión, puntería, ciencia que hace falta
 const MISSILES = [
-  { n:'V-2', range:160, R:3, acc:.65, need:'misiles' }, { n:'misil táctico', range:120, R:2.4, acc:.9, need:'misiles' },
-  { n:'misil de propulsores', range:380, R:4.5, acc:.7, need:'misiles' }, { n:'misil remachado', range:260, R:4, acc:.85, need:'misiles_guiados' },
-  { n:'antimisil', range:0, R:0, acc:1, need:'misiles_guiados', anti:true }, { n:'misil pesado', range:520, R:6.5, acc:.8, need:'misil_pesado' },
+  { n:'V-2', range:160, R:5, acc:.65, need:'misiles' }, { n:'misil táctico', range:120, R:4, acc:.9, need:'misiles' },
+  { n:'misil de largo alcance', range:380, R:7, acc:.7, need:'misiles' }, { n:'misil remachado', range:260, R:6.5, acc:.85, need:'misiles_guiados' },
+  { n:'antimisil', range:0, R:0, acc:1, need:'misiles_guiados', anti:true }, { n:'misil pesado', range:520, R:10, acc:.8, need:'misil_pesado' },
 ];
 let missiles = [];
 const silosOf = g => (g.silos ||= []).filter(s => world.objs[s.i]);
@@ -65,8 +65,8 @@ SYSTEMS.push(dt => {
       const k = Math.min(1, m.t / m.dur), H0 = Math.hypot(m.tx - m.sx, m.ty - m.sy) * .35, px = m.x, py = m.y;
       m.x = m.sx + (m.tx - m.sx) * k; m.y = m.sy + (m.ty - m.sy) * k - Math.sin(k * Math.PI) * H0; m.ang = Math.atan2(m.y - py, m.x - px);
       if (Math.random() < dt * 25) smokePuff(m.x, m.y, .5);
-      if (m.icp && k >= m.icp.k) { m.done = true; rocketBoomAt(m.x, m.y, 1.2); const o = villageById(m.to); if (o) notify(`¡Los antimisiles de ${o.name} derriban el misil en el aire!`, { x:m.x, y:m.y }); continue; }
-      if (k >= 1) { m.done = true; missileImpact(m); }
+      if (m.icp && k >= m.icp.k) { m.done = true; rocketBoomAt(m.x, m.y, 1.2); const o = villageById(m.to); if (o) notify(`¡Los antimisiles de ${o.name} derriban el misil en el aire!`, { x:m.x, y:m.y }); missileLog.push({ key:m.key, until:performance.now() + 6000, at:[m.x, m.y], html:`<div class="t">🛡 DERRIBADO</div><span class="n">¡Interceptado!</span><div class="m">Los antimisiles de ${esc(o ? o.name : '?')} lo derriban en el aire</div>` }); continue; }
+      if (k >= 1) { m.done = true; missileImpact(m); const g = villageById(m.g), o = villageById(m.to); missileLog.push({ key:m.key, until:performance.now() + 6000, at:[m.x, m.y], html:`<div class="t">💥 IMPACTO · ${esc(o ? o.name : '?')}</div><span class="n">${m.hit.dead} muertos</span><div class="m">${m.hit.ruined} edificios destrozados por el ${esc(MISSILES[m.k].n)} de ${esc(g ? g.name : '?')}</div>` }); }
     }
   }
   missiles = missiles.filter(m => !m.done);
@@ -74,12 +74,25 @@ SYSTEMS.push(dt => {
 // Antimisil: la nación atacada, si lo tiene y tiene silo, lo intenta derribar
 function interceptCheck(m){ const o = villageById(m.to), n = o && nationOf(o); if (!n || !knowsSci(n, 'misiles_guiados') || !silosOf(n).length) return; if (Math.random() < .55) m.icp = { k:.55 + Math.random() * .3 }; }
 function missileImpact(m){
-  const M = MISSILES[m.k], o = villageById(m.to), g = villageById(m.g);
-  if (typeof impact === 'function') impact({ x:m.x, y:m.y, size:M.R / 5, R:M.R, blastR:M.R * 3.2 }); // como un meteorito: cráter, edificios y gente
-  rocketBoomAt(m.x, m.y, 1 + M.R / 3); if (typeof flash !== 'undefined') flash = Math.min(1, (flash || 0) + .6);
-  for (const v of villagers) if (!v.dead && Math.hypot(v.x - m.x, v.y - m.y) < M.R * T * 1.6) killVillager(v, 'misil');
-  if (o) { o.anger = (o.anger || 0) + 20; const r = warRel(o, g); if (r && r.war) { r.war.dead = (r.war.dead || 0) + 3; } }
-  notify(`¡El ${M.n} de ${g ? g.name : '?'} cae sobre ${o ? o.name : 'el enemigo'}! Una explosión enorme`, { x:m.x, y:m.y });
+  const M = MISSILES[m.k], o = villageById(m.to), g = villageById(m.g), tx = Math.floor(m.x / T), ty = Math.floor(m.y / T);
+  if (typeof impact === 'function') impact({ x:m.x, y:m.y, size:M.R / 4, R:M.R, blastR:M.R * 4 }); // como un meteorito: cráter, edificios y gente
+  rocketBoomAt(m.x, m.y, 1.5 + M.R / 2.5); if (typeof flash !== 'undefined') flash = Math.min(.45, (flash || 0) + .35); shake = Math.max(shake || 0, M.R / 2);
+  // la onda expansiva: lo que está cerca, destruido; más lejos, dañado y ardiendo
+  let ruined = 0;
+  for (const q of liveTowns()) for (const b of buildingsOf(q)) { if (!world.objs[b]) continue; const d = Math.hypot(b % W - tx, ((b / W) | 0) - ty); if (d < M.R * 2.5) { damageBuilding(b, d < M.R * 1.2 ? 1 : d < M.R * 1.8 ? .7 : .4); ruined++; if (typeof igniteBuilding === 'function' && Math.random() < .5) igniteBuilding(b); } }
+  let dead = 0; for (const v of villagers) if (!v.dead && Math.hypot(v.x - m.x, v.y - m.y) < M.R * T * 2.4) { killVillager(v, 'misil'); dead++; }
+  if (o) { o.anger = (o.anger || 0) + 30; const r = warRel(o, g); if (r && r.war) r.war.dead = (r.war.dead || 0) + dead; }
+  m.hit = { dead, ruined, t:performance.now() };
+  notify(`¡El ${M.n} de ${g ? g.name : '?'} cae sobre ${o ? o.name : 'el enemigo'}! ${dead} muertos y ${ruined} edificios destrozados`, { x:m.x, y:m.y });
+}
+// El aviso a la izquierda: «¡están lanzando un misil!», cómo va y, al caer, el balance (se queda unos segundos)
+const missileLog = [];
+function missileCards(){
+  for (const m of missiles) { const g = villageById(m.g), o = villageById(m.to); if (!g) continue; m.key ||= 'm' + Math.random().toString(36).slice(2);
+    const st = m.phase === 'sale' ? 'sale del silo...' : m.icp ? 'en vuelo · ¡los antimisiles van a por él!' : `en vuelo · ${Math.max(0, Math.ceil(m.dur - m.t))} s para el impacto`;
+    sideCard(m.key, 'ms', `<div class="t">🚨 MISIL · ${esc(g.name)} → ${esc(o ? o.name : '?')}</div><span class="n">${esc(MISSILES[m.k].n)}</span><div class="m">${st}</div>`, () => [m.x, m.y]); }
+  for (const e of missileLog) { const el = sideCard(e.key, 'ms', e.html, () => e.at); el._until = e.until; }
+  while (missileLog.length && missileLog[0].until < performance.now()) missileLog.shift();
 }
 // Todo el mundo condena el ataque
 function worldOutrage(g){ for (const o of liveTowns()) { if (nationOf(o) === nationOf(g) || nationOf(o) !== o) continue; const r = relOf(o, nationOf(g)); r.v = clamp(r.v - 12, -100, 100); } }
@@ -89,8 +102,8 @@ function drawSilos(now){
   const [x0, y0, x1, y1] = visibleRect();
   for (const g of villages) for (const s of g.silos || []) {
     if (!world.objs[s.i]) continue; const x = (s.i % W) * T + 2, y = ((s.i / W) | 0) * T + 3; if (x < x0 - 20 || x > x1 + 20 || y < y0 - 40 || y > y1 + 10) continue;
-    const f = artFrame(`silo:${s.f || 0}`); if (f) { vctx.drawImage(f, x - f.ax, y - f.height + 2); redrawFront(x - f.ax, x - f.ax + f.width, y - f.height + 2, y + 2); }
-    if (s.st !== 'cerrado') { vctx.fillStyle = `rgba(255,60,40,${.5 + .5 * Math.sin(now / 120)})`; vctx.fillRect(x - 12, y - 11, 2, 2); vctx.fillRect(x + 10, y - 11, 2, 2); } // las luces de alarma
+    const f = artFrame(`silo:${s.f || 0}`), st = s.st; if (f) liveQ.push({ y, f:() => { vctx.drawImage(f, x - f.ax, y - f.height + 2); redrawFront(x - f.ax, x - f.ax + f.width, y - f.height + 2, y + 2);
+      if (st !== 'cerrado') { vctx.fillStyle = `rgba(255,60,40,${.5 + .5 * Math.sin(now / 120)})`; vctx.fillRect(x - 11, y - 10, 2, 2); vctx.fillRect(x + 9, y - 10, 2, 2); } } }); // con las luces de alarma
   }
 }
 function drawMissiles(now){
@@ -104,7 +117,7 @@ function drawMissiles(now){
     vctx.restore();
   }
 }
-{ const blank = document.createElement('canvas'); blank.width = 30; blank.height = 33; blank.ax = 15; const base = artSprite; artSprite = function(o){ if (o && o.key === 'silo:0') return blank; return base.apply(this, arguments); }; } // (el silo se pinta en vivo, con su compuerta)
+{ const blank = document.createElement('canvas'); blank.width = 27; blank.height = 30; blank.ax = 13; const base = artSprite; artSprite = function(o){ if (o && o.key === 'silo:0') return blank; return base.apply(this, arguments); }; } // (el silo se pinta en vivo, con su compuerta)
 { const base = drawInstFlags; drawInstFlags = function(t){ base.apply(this, arguments); drawSilos(performance.now()); }; }
 { const base = drawAir; drawAir = function(t){ base.apply(this, arguments); drawMissiles(performance.now()); }; }
 // ---- Leyes y tratado ----
