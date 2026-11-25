@@ -1128,7 +1128,7 @@ const hasBarracks = g => g && g.barracks != null && !!world.objs[g.barracks];
 const hasLonja = g => g && g.lonja != null && !!world.objs[g.lonja];
 const wallsNear = (g, R) => { for (const i of wallSet) if (Math.hypot((i % W) - g.fx, ((i / W) | 0) - g.fy) < R) return true; return false; };
 function launchSiege(att, def){
-  if (!(att.siege > 0) || !wallsNear(def, 50)) return false;
+  if (!(att.siege > 0) || !(wallsNear(def, 50) || (typeof fortOf === 'function' && fortOf(def)))) return false; // contra murallas o contra un castillo
   att.siege--;
   const dd = Math.hypot(att.fx - def.fx, att.fy - def.fy) || 1, k = Math.min(dd - 1, 11);
   sieges.push({ att:att.id, def:def.id, x:att.fx * T + 2, y:att.fy * T + 8, tx:(def.fx + (att.fx - def.fx) / dd * k) * T + 2, ty:(def.fy + (att.fy - def.fy) / dd * k) * T + 3, hp:1, cool:3, walk:0, dir:def.fx < att.fx ? -1 : 1, fire:0 });
@@ -1139,6 +1139,10 @@ function updateSieges(dt){
   for (const S of sieges) {
     const a = villageById(S.att), d = villageById(S.def), r = a && d && rels.get(relKey(a, d));
     if (S.hp <= 0) { S.dead = true; addEffect(S.x, S.y, 'poof'); if (d) notify(`Los de ${d.name} destruyen una catapulta de ${a ? a.name : 'sus enemigos'}`, { x:S.x, y:S.y }); continue; }
+    // Sin soldados que la protejan, se queda sola: al rato los defensores se la llevan (y la guardan para defenderse)
+    if (!villagers.some(u => !u.dead && u.vid === S.att && u.task && u.task.k === 'asalto' && Math.hypot(u.x - S.x, u.y - S.y) < 40 * T)) {
+      if ((S.alone = (S.alone || 0) + dt) > 20) { S.dead = true; if (d) { d.siege = (d.siege || 0) + 1; notify(`Los de ${d.name} capturan una catapulta abandonada de ${a ? a.name : 'sus enemigos'} y la guardan para defenderse`, { x:S.x, y:S.y }); } continue; }
+    } else S.alone = 0;
     if (!a || !d || !r || !r.war) { S.dead = true; continue; }
     for (const u of villagers) if (!u.dead && u.vid === d.id && u.weapon && Math.hypot(u.x - S.x, u.y - S.y) < (isRanged(u.weapon) ? 32 : 8)) S.hp -= dt * (isRanged(u.weapon) ? .015 : .05); // los defensores la atacan
     // Camino por tierra (como los soldados): hasta cerca del pueblo; si está amurallado, hasta donde se pueda llegar

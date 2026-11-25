@@ -308,7 +308,7 @@ function killAnimal(a, cause){
 }
 // Rejilla de celdas de 8 px con los animales de cada una: buscar al vecino de al lado es inmediato
 // en vez de recorrer todos los animales del mapa por cada animal
-let aGrid = new Map();
+let aGrid = new Map(), aLod = 0;
 const aCell = (x, y) => (Math.floor(y / 8) * 4096 + Math.floor(x / 8));
 function nearAnimal(a){
   const cx = Math.floor(a.x / 8), cy = Math.floor(a.y / 8);
@@ -340,8 +340,12 @@ function updateAnimals(dt){
   for (const a of animals) { const k = aCell(a.x, a.y); let l = aGrid.get(k); if (!l) aGrid.set(k, l = []); l.push(a); }
   const seasonI = seasonInfo().i, counts = {};
   for (const a of animals) counts[a.sp] = (counts[a.sp] || 0) + (a.dead ? 0 : 1);
+  const [lx0, ly0, lx1, ly1] = visibleRect(), half = (aLod = (aLod + 1) & 1), dtAll = dt;
   for (const a of animals) {
     if (a.dead) continue;
+    // Lejos de la vista, los animales salvajes piensan un paso sí y otro no (con el doble de tiempo): lo mismo, con la mitad de trabajo
+    let dt = dtAll;
+    if (!a.dom && !a.lead && (a.x < lx0 - 60 || a.x > lx1 + 60 || a.y < ly0 - 60 || a.y > ly1 + 60)) { if ((a.lod ??= Math.random() < .5 ? 0 : 1) !== half) continue; dt = dtAll * 2; }
     const S = ANIMALS[a.sp], age = (yearT - a.born) / YEAR;
     a.moving = false;
     // Muerte por vejez, lava, hambre, frío o sed

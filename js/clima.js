@@ -123,7 +123,7 @@ function strike(c){
 function strikeAt(gx, gy, top){
   const pts = [[gx + (Math.random() - .5) * 6, top]];
   for (let s = 1; s <= 7; s++) pts.push([gx + (s < 7 ? (Math.random() - .5) * 8 : 0), top + (gy - top) * s / 7]);
-  bolts.push({ pts, life:0 }); snd('thunder', gx, gy);
+  bolts.push({ pts, life:0, born:performance.now() }); snd('thunder', gx, gy);
   if (Math.random() < .3) nearDisaster('rayo', gx, gy, 14);
   const sx = offX + gx * zoom, sy = offY + gy * zoom;
   // Solo algunos rayos iluminan el cielo (uno de cada cuatro, más o menos)
@@ -217,8 +217,6 @@ function updateWeather(dt){
     floodA[i] -= dt * (.003 + Math.max(0, tempAt(i)) * .0011 + droughtAt(i) * .012);
     if (floodA[i] <= 0) { floodA[i] = 0; floodSet.delete(i); groundClear.push(i); }
   }
-  for (const b of bolts) b.life += dt;
-  if (bolts.length) bolts = bolts.filter(b => b.life < .35);
   flash = Math.max(0, flash - dt * 2.5);
 }
 function drawWeather(t){
@@ -256,8 +254,10 @@ function drawWeather(t){
   vctx.globalAlpha = 1;
   drawStorms(t);
   drawDebris();
+  // Los rayos se apagan en tiempo real (aunque el juego esté en pausa o sin la capa del clima: antes se quedaban pintados)
+  const nowB = performance.now(); if (bolts.length) bolts = bolts.filter(b => nowB - (b.born ?? nowB) < 350);
   for (const b of bolts) {
-    const a = 1 - b.life / .35;
+    const a = 1 - (nowB - (b.born ?? nowB)) / 350;
     vctx.beginPath(); b.pts.forEach(([x, y], k) => k ? vctx.lineTo(x, y) : vctx.moveTo(x, y));
     vctx.strokeStyle = `rgba(180,200,255,${a * .4})`; vctx.lineWidth = 3; vctx.stroke();
     vctx.strokeStyle = `rgba(255,250,210,${a})`; vctx.lineWidth = 1.2; vctx.stroke();

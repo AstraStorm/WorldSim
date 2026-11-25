@@ -1856,7 +1856,7 @@ function launchRaid(att, def, r){
   // El ejército sale de todo el país: del pueblo que ataca y de sus ciudades cercanas (los armados primero)
   const nat = nationOf(att), mine = new Set(villages.filter(o => popOf(o) && nationOf(o) === nat && Math.hypot(o.fx - att.fx, o.fy - att.fy) < 70).map(o => o.id));
   const natPop = villages.filter(o => mine.has(o.id)).reduce((a, o) => a + popOf(o), 0);
-  const ps = villagers.filter(v => !v.dead && !v.away && !v.boat && mine.has(v.vid) && (yearT - v.born) / YEAR >= ADULT_H && !villages.some(o => o.leader === v) && (v.hp ?? 1) > .5 && !(v.task && ['asalto', 'detenido'].includes(v.task.k)))
+  const ps = villagers.filter(v => !v.dead && !v.away && !v.boat && mine.has(v.vid) && (yearT - v.born) / YEAR >= ADULT_H && !villages.some(o => o.leader === v) && (v.hp ?? 1) > .5 && v.oficio !== 'obrero' && !(v.task && ['asalto', 'detenido'].includes(v.task.k))) // (los obreros siguen en su fábrica)
     .sort((a, b) => (b.weapon ? 1 : 0) - (a.weapon ? 1 : 0) || (a.vid === att.id ? -1 : 0) - (b.vid === att.id ? -1 : 0)).slice(0, Math.min(18, Math.max(2, Math.floor(natPop / 2.2))));
   if (ps.length < 2) return;
   // Con experiencia, se reúnen antes en un punto a cierta distancia del pueblo enemigo y atacan todos a la vez
@@ -2110,9 +2110,10 @@ function makeParties(g){
   notify(`En ${g.name} nacen los partidos: ${parties.map(p => p.name).join(', ')}`, { x:g.fx * T, y:g.fy * T });
 }
 const artP = p => /^(Ciudadanos|Verdes|Liberales)/.test(p.name) ? 'los' : /^(Unión|Liga|Alianza|Asamblea|Hermandad|Izquierda|Coalición|Acción|Agrupación|Convergencia)/.test(p.name) ? 'la' : 'el'; // «gana la Liga…», «gana el Frente…»
-const lawsOf = g => { const n = nationOf(g); if (REGIME_LAWS[n.regime]) return REGIME_LAWS[n.regime]; let L = n.ruling != null && n.parties && n.parties[n.ruling] ? n.parties[n.ruling].laws : [];
+const lawsOfAll = g => { const n = nationOf(g); if (REGIME_LAWS[n.regime]) return REGIME_LAWS[n.regime]; let L = n.ruling != null && n.parties && n.parties[n.ruling] ? n.parties[n.ruling].laws : [];
   const C = n.coalition != null && n.parties && n.parties[n.coalition]; if (C) L = [...L, ...C.laws.filter(l => !L.includes(l) && !LAW_CLASH.some(([a, b]) => (l === a && L.includes(b)) || (l === b && L.includes(a))))];
   return n.regime === 'socialismo' ? [...new Set(['reparto', 'estatal', 'vivienda_publica', ...L.filter(l => l !== 'mercado_vivienda')])] : L; };
+const lawsOf = g => { const L = lawsOfAll(g); if (typeof lawAwake !== 'function') return L; const c = L._aw; if (c && c.t === yearT && c.n === nationOf(g)) return c.out; const out = L.filter(l => lawAwake(g, l)); try { Object.defineProperty(L, '_aw', { value:{ t:yearT, n:nationOf(g), out }, configurable:true, writable:true }); } catch (e) {} return out; }; // (las leyes sin sentido aún quedan dormidas: leyes.js)
 const hasLaw = (g, l) => lawsOf(g).includes(l);
 const sideTxt = p => p.ideo < -.3 ? 'izquierda' : p.ideo > .3 ? 'derecha' : 'centro';
 // Elecciones: los de toda la nación van a la plaza de su pueblo a votar; luego se cuenta
@@ -2310,15 +2311,16 @@ function politicsTick(g, dt, people){
 function lawLog(g, txt){ (g.lawHist ||= []).push({ d:Math.floor(yearT / DAY_LEN) + 1, txt }); if (g.lawHist.length > 12) g.lawHist.shift(); }
 // Una ley nueva: la propone el gobierno (cercana a sus ideas) y la vota la gente (cada uno, según lo cerca que le quede)
 function proposeLaw(g, adults){
-  const p = g.parties[g.ruling], cand = Object.keys(LAW_LEAN).filter(l => !p.laws.includes(l) && !LAW_CLASH.some(([a, b]) => (l === a && p.laws.includes(b)) || (l === b && p.laws.includes(a))));
+  const p = g.parties[g.ruling], cand = Object.keys(LAW_LEAN).filter(l => !p.laws.includes(l) && lawAwake(g, l) && !LAW_CLASH.some(([a, b]) => (l === a && p.laws.includes(b)) || (l === b && p.laws.includes(a))));
   if (!cand.length || !adults.length) return;
   const w = cand.map(l => Math.exp(-((LAW_LEAN[l] - p.ideo) ** 2) / .2) + .02); let k = Math.random() * w.reduce((a, b) => a + b, 0), law = cand[0];
   for (let j = 0; j < cand.length; j++) if ((k -= w[j]) < 0) { law = cand[j]; break; }
-  const yes = adults.filter(u => langVote(u, g, law) ?? Math.abs((u.ideo || 0) - LAW_LEAN[law]) < .5).length, pct = Math.round(yes / adults.length * 100), at = { x:g.fx * T, y:g.fy * T };
+  const ms = adults.map(u => u.money || 0).sort((a, b) => a - b); g.moneyMed = ms[ms.length >> 1] || 0;
+  const yesSet = new Set(adults.filter(u => lawVote(u, g, law))), yes = yesSet.size, pct = Math.round(yes / adults.length * 100), at = { x:g.fx * T, y:g.fy * T }, who = lawWho(adults, g, law, yesSet); // cada uno vota según sus ideas y lo que le toca (leyes.js)
   if (pct >= 55) {
     const out = p.laws.length >= 4 ? p.laws[Math.floor(Math.random() * p.laws.length)] : null; if (out) p.laws = p.laws.filter(l => l !== out); p.laws.push(law);
-    const txt = `En ${g.name} se aprueba la ley de «${LAW_TXT[law]}» con el ${pct} % de los votos${out ? `; se deroga la de «${LAW_TXT[out]}»` : ''}`; lawLog(g, txt); notify(txt, at);
-  } else { const txt = `En ${g.name} el pueblo rechaza la ley de «${LAW_TXT[law]}» que proponía ${artP(p)} ${p.name} (solo un ${pct} % a favor)`; lawLog(g, txt); notify(txt, at); g.anger = Math.min(100, (g.anger || 0) + 3); }
+    const txt = `En ${g.name} se aprueba la ley de «${LAW_TXT[law]}» con el ${pct} % de los votos${who ? ` (${who})` : ''}${out ? `; se deroga la de «${LAW_TXT[out]}»` : ''}`; lawLog(g, txt); notify(txt, at);
+  } else { const txt = `En ${g.name} el pueblo rechaza la ley de «${LAW_TXT[law]}» que proponía ${artP(p)} ${p.name} (solo un ${pct} % a favor${who ? `; ${who}` : ''})`; lawLog(g, txt); notify(txt, at); g.anger = Math.min(100, (g.anger || 0) + 3); }
 }
 function startProtest(g, adults){
   const gi = govIdeo(g), econ = ['pensiones', 'hambre', 'inflación', 'bancarrota', 'guerra', 'jornada', 'impuestos', 'vivienda', 'presupuestos', 'corrupción', 'profesores', 'medicos', 'bomberos'].includes(g.grief); g.protestT = yearT;

@@ -58,7 +58,7 @@ function devoAdopt(g, at, god){
 // en hilos dorados que dejan rastro), anillo, palmera (pocas ramas gruesas que se curvan), crisantemo de dos colores,
 // carcasa que se divide en cohetillos que vuelven a estallar, crepitante (chispazos blancos) o corazón. Cada estallido
 // da un destello que ilumina el suelo y deja humo; al final del espectáculo, una traca con muchos a la vez
-const canFireworks = g => !!(g && (g.know || {}).pirotecnia);
+const canFireworks = g => !!(g && (g.know || {}).pirotecnia && knowsSci(g, 'polvora')); // sin pólvora no hay cohetes (aunque lo aprendieran antes en otra nación)
 let fireworks = [], fwQueue = [], fwFlash = [], fwClock = 0;
 const FW_KINDS = ['peonia', 'peonia', 'sauce', 'anillo', 'palmera', 'crisantemo', 'divide', 'crepitante', 'corazon'];
 const FW_COLS = ['#ff4040', '#ffd040', '#40c0ff', '#ff60e0', '#60ff80', '#ffffff', '#ff9a30', '#b080ff'];
@@ -69,16 +69,16 @@ function fireworksShow(g, secs, why){
 function fwLaunch(g, cx, cy, big){
   const [r, gg, b] = villageColor(g), cols = [`rgb(${Math.min(255, r + 60)},${Math.min(255, gg + 60)},${Math.min(255, b + 60)})`, ...FW_COLS];
   const kind = FW_KINDS[Math.floor(Math.random() * FW_KINDS.length)];
-  fireworks.push({ x:cx + (Math.random() - .5) * 30, y:cy, vx:(Math.random() - .5) * 14, vy:-(95 + Math.random() * 50) * (big ? 1.2 : 1), fuse:1 + Math.random() * .7, t:0, rocket:true, kind,
-    col:cols[Math.floor(Math.random() * cols.length)], col2:cols[Math.floor(Math.random() * cols.length)], size:(big ? 1.4 : 1) * (.8 + Math.random() * .5) });
+  fireworks.push({ x:cx + (Math.random() - .5) * 30, y:cy, vx:(Math.random() - .5) * 14, vy:-(130 + Math.random() * 60) * (big ? 1.15 : 1), fuse:1.1 + Math.random() * .7, t:0, rocket:true, kind,
+    col:cols[Math.floor(Math.random() * cols.length)], col2:cols[Math.floor(Math.random() * cols.length)], size:(big ? 1.5 : 1) * (1 + Math.random() * .5) });
   snd('arrow', cx, cy);
 }
 // El estallido de una carcasa
 function fwBurst(f){
-  const S = f.size, add = (vx, vy, o = {}) => fireworks.push({ x:f.x, y:f.y, vx, vy, t:0, life:1.3 + Math.random() * .6, col:f.col, drag:1.2, grav:16, ...o });
-  fwFlash.push({ x:f.x, y:f.y, t:0, col:f.col, r:32 * S }); snd('boom', f.x, f.y, .18 + S * .08);
+  const S = f.size, add = (vx, vy, o = {}) => fireworks.push({ x:f.x, y:f.y, vx, vy, t:0, life:1.6 + Math.random() * .7, col:f.col, drag:1.2, grav:16, ...o });
+  fwFlash.push({ x:f.x, y:f.y, t:0, col:f.col, r:70 * S }); snd('boom', f.x, f.y, .18 + S * .08);
   for (let k = 0; k < 6; k++) smoke.push({ x:f.x + (Math.random() - .5) * 14 * S, y:f.y + (Math.random() - .5) * 10 * S, vx:(Math.random() - .5) * 2, vy:-1, r:2 + Math.random() * 2, life:0, max:2.5 + Math.random() * 2 });
-  const sp = 50 * S;
+  const sp = 85 * S;
   switch (f.kind) {
     case 'sauce': for (let k = 0; k < 46; k++) { const a = Math.random() * Math.PI * 2, s = sp * (.4 + Math.random() * .6); add(Math.cos(a) * s, Math.sin(a) * s * .8 - 6, { col:'#ffcf60', life:2.6 + Math.random(), drag:2.2, grav:9, trail:true }); } break;
     case 'anillo': { const tilt = Math.random() * Math.PI; for (let k = 0; k < 40; k++) { const a = k / 40 * Math.PI * 2, s = sp; add(Math.cos(a) * s * Math.cos(tilt) - Math.sin(a) * s * .35 * Math.sin(tilt), Math.sin(a) * s * .35 * Math.cos(tilt) + Math.cos(a) * s * Math.sin(tilt) * .6); } add(0, 0, { col:'#ffffff', life:.4 }); break; }
@@ -130,21 +130,28 @@ function drawFireworks(){
   const [x0, y0, x1, y1] = visibleRect();
   vctx.save(); vctx.globalCompositeOperation = 'lighter';
   for (const l of fwFlash) { // el destello: un halo que se abre y se apaga, y su reflejo en el suelo
-    const k = 1 - l.t / .5, g = vctx.createRadialGradient(l.x, l.y, 0, l.x, l.y, l.r * (1 + l.t * 2));
-    g.addColorStop(0, l.col); g.addColorStop(1, 'rgba(0,0,0,0)'); vctx.globalAlpha = .45 * k; vctx.fillStyle = g; vctx.beginPath(); vctx.arc(l.x, l.y, l.r * (1 + l.t * 2), 0, Math.PI * 2); vctx.fill();
-    vctx.globalAlpha = .12 * k; vctx.fillStyle = l.col; vctx.beginPath(); vctx.ellipse(l.x, l.y + 40, l.r * 2.2, l.r * .7, 0, 0, Math.PI * 2); vctx.fill();
+    const k = 1 - l.t / .5, g = vctx.createRadialGradient(l.x, l.y, 0, l.x, l.y, l.r * (.6 + l.t * 1.4));
+    g.addColorStop(0, l.col); g.addColorStop(1, 'rgba(0,0,0,0)'); const nt = isNight(); vctx.globalAlpha = (nt ? .75 : .28) * k; vctx.fillStyle = g; vctx.beginPath(); vctx.arc(l.x, l.y, l.r * (.6 + l.t * 1.4), 0, Math.PI * 2); vctx.fill();
+    if (nt) { vctx.globalAlpha = .16 * k; vctx.fillStyle = l.col; vctx.beginPath(); vctx.ellipse(l.x, l.y + 90, l.r * 1.6, l.r * .45, 0, 0, Math.PI * 2); vctx.fill(); } // el reflejo en el suelo (de noche)
   }
   for (const f of fireworks) {
     if (f.x < x0 - 30 || f.x > x1 + 30 || f.y < y0 - 60 || f.y > y1 + 30) continue;
     const x = Math.round(f.x), y = Math.round(f.y);
-    if (f.rocket) { vctx.globalAlpha = 1; vctx.fillStyle = '#fff0c0'; vctx.fillRect(x, y, f.mini ? 1 : 2, f.mini ? 1 : 2); continue; }
+    if (f.rocket) { vctx.globalAlpha = .35; vctx.fillStyle = '#ffd890'; vctx.fillRect(x - 2, y - 2, 6, 6); vctx.globalAlpha = 1; vctx.fillStyle = '#fff6d8'; vctx.fillRect(x, y, f.mini ? 1 : 2, f.mini ? 1 : 2); continue; }
     const a = Math.max(0, 1 - f.t / f.life), tw = f.crackle ? (Math.random() < .5 ? 1 : .2) : 1;
-    vctx.globalAlpha = a * tw * (f.ember ? .6 : 1); vctx.fillStyle = f.col; vctx.fillRect(x, y, f.thick ? 2 : 1, f.thick ? 2 : 1);
-    if (!f.ember) { vctx.globalAlpha = a * .25; vctx.fillRect(x - 1, y - 1, 3, 3); } // el brillo alrededor de cada chispa
+    const sz = f.ember ? 1 : f.thick ? 3 : 2; vctx.globalAlpha = a * tw * (f.ember ? .6 : 1); vctx.fillStyle = f.col; vctx.fillRect(x, y, sz, sz);
+    if (!f.ember) { vctx.globalAlpha = a * .3; vctx.fillRect(x - 2, y - 2, sz + 4, sz + 4); vctx.globalAlpha = a * .7; vctx.fillStyle = '#ffffff'; vctx.fillRect(x, y, 1, 1); } // el halo de cada chispa y su centro blanco
   }
   vctx.restore();
 }
 SYSTEMS.push(dt => updateFireworks(dt));
+// De noche, cada estallido ilumina de verdad: abre un hueco de luz de su color en la oscuridad (y las chispas, un poco)
+const fwRGB = c => { if (c[0] === '#') { const n = parseInt(c.slice(1), 16); return `${n >> 16},${(n >> 8) & 255},${n & 255}`; } return c.replace(/[^\d,]/g, ''); };
+{ const base = nightLights; nightLights = function(glow, k){
+  base(glow, k);
+  for (const l of fwFlash) glow(l.x, l.y + 30, l.r * 2.4 * (1 + l.t), (1 - l.t / .5) * 1.1 * k, fwRGB(l.col));
+  let n = 0; for (const f of fireworks) { if (f.rocket || f.ember || f.t > f.life * .7 || (n++ & 3)) continue; glow(f.x, f.y, 10, .25 * k, fwRGB(f.col)); }
+}; }
 // Celebraciones con cohetes: ganar una guerra y firmar la paz
 { const base = conquer; conquer = function(cap, eg, r){ base.apply(this, arguments); fireworksShow(cap, 15, `por la conquista de ${eg.name}`); }; }
 { const base = makePeace; makePeace = function(a, b){ base.apply(this, arguments); fireworksShow(a, 10, 'por la paz'); fireworksShow(b, 10, 'por la paz'); }; }

@@ -68,6 +68,7 @@ function updateLife(dt){
 let lastT = 0, gameSpeed = 1;
 const SYSTEMS = [dt => { updateBallGames(dt); olympicsTick(dt); }, dt => updateSieges(dt), dt => updateVillagers(dt), dt => updateAnimals(dt), dt => updateFires(dt), dt => updateClimate(dt), dt => updateLife(dt), (dt, t) => updateVolcanoes(dt, t),
   dt => updateWeather(dt), dt => { updateStorms(dt); updateWhirls(dt); }, dt => updateSandstorms(dt), dt => updateMeteors(dt), dt => updateBalloons(dt), dt => updateLanguages(dt), dt => clearWallsOverPens(dt), dt => updateCouncil(dt), dt => updatePirates(dt), dt => updateBandits(dt), dt => updateQuakes(dt), (dt, t) => updateWaves(t)];
+const WAVES_SYS = SYSTEMS[SYSTEMS.length - 1]; // el oleaje es solo dibujo: una vez por fotograma aunque el juego vaya rápido (otros módulos añaden sistemas detrás)
 function loop(t){
   const dt = Math.min(.1, (t - (lastT || t)) / 1000); lastT = t;
   if (loadingShown) drawGlobe(t);
@@ -76,7 +77,7 @@ function loop(t){
     // cada sistema por separado: si uno falla en un fotograma, el resto sigue y el juego no se congela
     for (let k = 0; k < gameSpeed; k++) {
       yearT += dt;
-      for (let n = 0; n < SYSTEMS.length; n++) { if (k && n === SYSTEMS.length - 1) continue; try { SYSTEMS[n](dt, t); } catch (err) { console.error(err); } }
+      for (let n = 0; n < SYSTEMS.length; n++) { if (k && SYSTEMS[n] === WAVES_SYS) continue; try { SYSTEMS[n](dt, t); } catch (err) { console.error(err); } }
     }
     updateSeasonHud();
     // Al cambiar de estación los árboles cambian desde varios centros repartidos por el mapa hacia fuera

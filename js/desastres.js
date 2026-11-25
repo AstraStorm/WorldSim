@@ -408,9 +408,9 @@ function updateSandstorms(dt){
     for (let k = 0; k < 40 && sandstorms.length < 4; k++) {
       const i = Math.floor(Math.random() * N); if (!dusty(i) || raining(i) || snowA[i] > .1) continue;
       const x = (i % W) * T, y = ((i / W) | 0) * T, [wx, wy] = windAt(x, y);
-      if (Math.hypot(wx, wy) < SAND_WIND || Math.random() > .35 * disasterF()) continue;
-      const R = 40 + Math.random() * 45, seed = 90 + (Math.random() * 1000 | 0);
-      sandstorms.push({ x, y, R, r:.3, age:0, life:30 + Math.random() * 30, seed, spr:dustSprite(R, seed), spr2:dustSprite(R * .8, seed + 7) });
+      if (Math.hypot(wx, wy) < SAND_WIND || Math.random() > .22 * disasterF()) continue;
+      const R = 70 + Math.random() * 80, seed = 90 + (Math.random() * 1000 | 0);
+      sandstorms.push({ x, y, R, r:.3, age:0, life:40 + Math.random() * 40, seed, spr:dustSprite(R, seed), spr2:dustSprite(R * .8, seed + 7) });
       notify('Se ha levantado una tormenta de arena', { x, y });
       break;
     }
@@ -424,6 +424,20 @@ function updateSandstorms(dt){
     s.r = clamp(s.r + (feed ? .12 : -.18) * dt, 0, 1);
     s.p = Math.min(1, s.age / 3, (s.life - s.age) / 5) * s.r;
     for (const a of animals) if (!a.dead && Math.hypot(a.x - s.x, (a.y - s.y) / .75) < s.R * s.r) a.water = Math.max(0, a.water - dt * .02);
+    // Los pueblos que pilla: la gente se resguarda (y bebe más), el polvo ensucia los pozos y entierra un poco los campos
+    if ((s.hitT = (s.hitT || 0) - dt) <= 0 && s.p > .3) { s.hitT = 2; const RR = s.R * s.r;
+      for (const g of villages) { if (!popOf(g) || Math.hypot(g.fx * T - s.x, (g.fy * T - s.y) / .75) > RR + 30) continue;
+        if (!(s.hit ||= []).includes(g.id)) { s.hit.push(g.id); notify(`Una tormenta de arena azota ${g.name}: la gente se resguarda en casa hasta que pase`, { x:g.fx * T, y:g.fy * T }); }
+        for (const w of wellsOf(g)) if (Math.hypot((w.i % W) * T - s.x, ((w.i / W) | 0) * T - s.y) < RR) w.q = Math.max(0, w.q - .03);
+        for (const [fi, f] of farmMap) if (f.vid === g.id && f.g > 0 && Math.random() < .15 && Math.hypot((fi % W) * T - s.x, ((fi / W) | 0) * T - s.y) < RR) f.g = Math.max(0, f.g - .1);
+      }
+      for (const v of villagers) {
+        if (v.dead || v.away || v.boat || v.sandS === s.seed || Math.hypot(v.x - s.x, (v.y - s.y) / .75) > RR) continue;
+        v.water = Math.max(0, v.water - .03); const g = villageById(v.vid);
+        if (!g || (v.task && ['refugio', 'asalto', 'beber'].includes(v.task.k)) || warmthAt(v, g) > 0) continue;
+        const t2 = shelterTarget(v, g, false); if (t2) { v.sandS = s.seed; releaseTask(v); if (v.actT > 0) { v.actT = 0; v.onDone = null; } v.task = t2; v.lastD = Infinity; }
+      }
+    }
   }
   if (sandstorms.length) sandstorms = sandstorms.filter(s => s.age < s.life && (s.r > .05 || s.age < 3) && s.x > -200 && s.y > -200 && s.x < PW + 200 && s.y < PH + 200);
 }
@@ -435,6 +449,8 @@ function drawSandstorms(t){
     if (s.x + R < x0 || s.x - R > x1 || s.y + R < y0 || s.y - R > y1 || s.p < .02) continue;
     const [wx, wy] = windAt(s.x, s.y), wl = Math.hypot(wx, wy) || 1, ux = wx / wl, uy = wy / wl;
     const sc = Math.max(.3, s.r), drift = Math.sin(ts * .8 + s.seed) * 3;
+    const veil = vctx.createRadialGradient(s.x, s.y, R * .2, s.x, s.y, R * 1.35); veil.addColorStop(0, `rgba(150,104,58,${.42 * s.p})`); veil.addColorStop(1, 'rgba(150,104,58,0)');
+    vctx.fillStyle = veil; vctx.beginPath(); vctx.ellipse(s.x, s.y, R * 1.35, R * 1.0, 0, 0, Math.PI * 2); vctx.fill(); // el velo de polvo
     vctx.globalAlpha = .72 * s.p;
     vctx.drawImage(s.spr, Math.round(s.x - s.spr.width * sc / 2 + ux * drift), Math.round(s.y - s.spr.height * sc / 2 + uy * drift), Math.round(s.spr.width * sc), Math.round(s.spr.height * sc));
     vctx.globalAlpha = .5 * s.p;
