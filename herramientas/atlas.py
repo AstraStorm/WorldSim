@@ -290,6 +290,10 @@ if os.path.exists(os.path.join(SRC, 'planeador6Dir.png')):  # el planeador en 6 
 if os.path.exists(os.path.join(SRC, 'materialPistas.png')):  # el aeródromo: pista con su torre, hangar, manga y luces
     add('air:aerodromo', shrink(box_parts('materialPistas.png', (30, 45, 760, 895)), 56, 40))
 
+if os.path.exists(os.path.join(SRC, 'antenasComunicacion.png')):  # antena de telefonía y antena parabólica
+    add('tele:antena', shrink(box_parts('antenasComunicacion.png', (270, 20, 660, 830)), 11, 40))
+    add('tele:parabolica', shrink(box_parts('antenasComunicacion.png', (1060, 140, 1570, 820)), 15, 40))
+
 if os.path.exists(os.path.join(SRC, 'casino.png')):
     add('casino:casino', shrink(box_parts('casino.png', (380, 190, 1150, 830)), 40, 48))
 

@@ -606,3 +606,6 @@ body.drop-save::after{content:'Suelta aquí la partida .forja para abrirla';posi
 .vcard .tabs button{flex:0 1 auto;padding:4px 10px;font-size:12px;border:1px solid var(--line);border-radius:20px;background:rgba(255,255,255,.04);color:var(--muted)}
 .vcard .tabs button:hover{color:var(--fg);background:rgba(255,255,255,.09)}
 .vcard .tabs button.on{color:#1a1408;background:var(--accent);border-color:var(--accent);font-weight:700}
+
+/* Menú de móviles */
+#phonePanel{width:min(520px,calc(100vw - 24px))}.phones{display:grid;grid-template-columns:1fr 1fr;gap:8px}.phone{display:flex;gap:10px;align-items:center;padding:8px;border:1px solid var(--line);border-radius:9px;background:rgba(255,255,255,.03)}.phone img{width:42px;height:auto;flex:none}.phone div{display:flex;flex-direction:column;font-size:11.5px;min-width:0}.phone b{font-size:13px}.phone .muted{color:var(--muted)}

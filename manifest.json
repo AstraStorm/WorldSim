@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611252120",
- "fecha": "2026-11-25 21:20",
+ "version": "202611252202",
+ "fecha": "2026-11-25 22:02",
  "novedades": [
   {
    "fecha": "2026-11-25",
-   "texto": "Aviación"
+   "texto": "Electrónica"
+  },
+  {
+   "fecha": "2026-11-25",
+   "texto": "Bloque 5 · Aviación: «la aviación» (combustión + aeronáutica); aeródromo con pista, torre, hangar y manga; planeadores en 6 direcciones con hélice girando, carrera de despegue, subida, sombra y aterrizaje; vuelos de reconocimiento (cartografía), de correo (mejor relación) y, en guerra, de bombardeo (y les disparan desde el suelo). Conviven con los dirigibles"
   },
   {
    "fecha": "2026-11-25",
@@ -46,22 +50,18 @@
   {
    "fecha": "2026-11-25",
    "texto": "Armas de fuego: nuevo descubrimiento «la combustión» (pólvora + metalurgia) con mosquetes y pistolas (alcance, daño, recarga lenta, fogonazo, humo y bala); arqueros y ballesteros se pasan al mosquete. Bloques de pisos en la era industrial (14 vecinos donde antes cabían 6) cuando no queda sitio para más casas"
-  },
-  {
-   "fecha": "2026-11-25",
-   "texto": "Seleccionar también la cantera, el registro, el cementerio, el puerto de globos, la plaza sagrada, arboledas, bayales, cercados y el castillo en obras (con su ficha); murallas: nadie se queda dentro del muro ni se cuela en diagonal por las esquinas, no se construye sobre el trazado y se retraza si queda tapado; campos fuera del casco del pueblo"
   }
  ],
  "archivos": {
-  "index.html": "f7b6f9c6d69a528b7a207a46b26b76fab540c06c",
-  "css/estilo.css": "a644b9fd24e235d50e6b68b872db18b62516414e",
+  "index.html": "40f64368f0467778acc71b85e3849d35e72d23b8",
+  "css/estilo.css": "dbe6901f1ca410566dbb3b684b684a83a99705bd",
   "js/aldeanos.js": "9893e512bc3f1e72538dfc1df5b08e979bf06532",
   "js/ambiente.js": "6c96bf777f6cdfc55b648f495836521ee28aeb8f",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "a94b46896cfd10fd688954a3c5b9297e9b693872",
   "js/armas.js": "d4710aa65550aceb06fbdd1d2d290c8085f58e96",
-  "js/arte.js": "4520891f51f2fbeb02111d1f4f6b786261e8e572",
-  "js/arte_mapa.js": "6a5000ea0ee28b6b012e3c553d64215af388443e",
+  "js/arte.js": "7eefae98a1f366e162333b3d400b0fb1689ac7ef",
+  "js/arte_mapa.js": "b53e8d31a9324b26901d62e29144073ce9967cac",
   "js/aviacion.js": "c1c781125edc336263ad16b4a17ab22551fe3590",
   "js/bandidos.js": "bc804375208c5f300e33435e76d16001e8c4daae",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
@@ -89,6 +89,7 @@
   "js/documentos.js": "5b297799cde31f243fdb78a3be57c1209f89b14d",
   "js/edificios.js": "dde752d5265cc8d7a145ef54e73f7d48141f3eb3",
   "js/electricidad.js": "d28e28a6090a347ffc29f39b79fcc544ddc78540",
+  "js/electronica.js": "6127e3dde0bd9a1d237e4aae42abf660eda04d08",
   "js/espionaje.js": "6291557af0a9488f321131fbfb7cdccf50cdbbf1",
   "js/estaciones.js": "e9e2f1194fdb60ca73c007b1cd7e9ae392ce2ad7",
   "js/estrategia.js": "b3ac0d30743ec5665f761208e455cc100e032c46",
@@ -145,7 +146,7 @@
   "js/vista.js": "7b844535f4eefeb3f2a7da05f13f657de285ebfb",
   "js/vivienda.js": "0f3091767a41917156ce106447eb0e9659b69271",
   "js/volcanes.js": "f4aea099226dfe1b064fdfbd4779bddb6ed8a250",
-  "arte/atlas.png": "6b6b0143cd99d3bd05c114ff53cdf896a0b77f46",
+  "arte/atlas.png": "c9d3c8616f14721644ec5ea51a2ad50d2018538b",
   "arte/logo.png": "d18c1e289f646312aeb3ec4087060e60088f0ccd",
   "arte/papeles/contrato.png": "e1625cf1f7bb7b9b5b142d12899265fab2ce7cf0",
   "arte/papeles/dni.png": "6dcfc114b88e629bfed1b2ac368acbfcd1474f34",
