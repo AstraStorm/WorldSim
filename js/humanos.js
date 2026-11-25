@@ -348,6 +348,7 @@ function chooseJob(v, g){
   institutionJobs(v, g, add); // tribunal, cárcel, imprenta, sindicato, parlamento y academia (instituciones.js)
   mineJobs(v, g, add); // abrir la mina y trabajar en ella (minas.js)
   factoryJobs(v, g, add); // fábricas, pozos industriales y extractora (fabricas.js)
+  fortJobs(v, g, add); // castillo: obra, foso y provisiones (castillos.js)
   umbrellaJobs(v, g, add); // coser paraguas (lluvia.js)
   volcanoJobs(v, g, add); // cercar el volcán (volcanes.js)
   sportsJobs(v, g, add); // campo de fútbol, piscina y pista (deportes.js)
@@ -415,6 +416,7 @@ function setupTask(v, g, job){
     case 'investigar': return scienceTarget(v, g, job);
     case 'mina': case 'extraer': return mineTarget(v, g, job);
     case 'fabrica': case 'fabricar': case 'pozo_fab': case 'extractora': case 'mejorar_almacen': return factoryTarget(v, g, job);
+    case 'castillo': case 'foso': case 'abastecer': return fortTarget(v, g, job);
     case 'refugio': return shelterTarget(v, g, v.chill > .3);
     case 'conservar': return seasonTarget(v, g, job);
     case 'chabola': return shackTarget(v, g);
@@ -731,6 +733,7 @@ function runTask(v, g, dt){
     case 'investigar': scienceArrive(v, g, t); break;
     case 'mina': case 'extraer': mineArrive(v, g, t); break;
     case 'fabrica': case 'fabricar': case 'pozo_fab': case 'extractora': case 'mejorar_almacen': factoryArrive(v, g, t); break;
+    case 'castillo': case 'foso': case 'abastecer': fortArrive(v, g, t); break;
     case 'refugio': shelterArrive(v, g, t); break;
     case 'conservar': seasonArrive(v, g, t); break;
     case 'chabola': shackArrive(v, g, t); break;
@@ -1154,7 +1157,9 @@ function updateSieges(dt){
     S.cool = 3.5;
     // Blanco: la muralla más cercana a su alcance; si no queda, un edificio del pueblo
     let best = null, bd = 18 * T;
-    for (const i of wallSet) { const px = (i % W) * T + 2, py = ((i / W) | 0) * T + 2, q = Math.hypot(px - S.x, py - S.y); if (q < bd) { bd = q; best = { wall:i, x:px, y:py }; } }
+    const fo = typeof fortOf === 'function' && fortOf(d); // ¿tienen castillo? Las catapultas van a por él (castillos.js)
+    if (fo) { const px = (fo.i % W) * T + 2, py = ((fo.i / W) | 0) * T - 14, q = Math.hypot(px - S.x, py - S.y); if (q < 22 * T) { best = { bld:fo.i, x:px, y:py }; bd = q; } }
+    if (!best) for (const i of wallSet) { const px = (i % W) * T + 2, py = ((i / W) | 0) * T + 2, q = Math.hypot(px - S.x, py - S.y); if (q < bd) { bd = q; best = { wall:i, x:px, y:py }; } }
     if (!best) for (const b of buildingsOf(d)) { if (!world.objs[b]) continue; const px = (b % W) * T + 2, py = ((b / W) | 0) * T - 4, q = Math.hypot(px - S.x, py - S.y); if (q < bd) { bd = q; best = { bld:b, x:px, y:py }; } }
     if (!best) continue;
     S.fire = .4; S.dir = best.x < S.x ? -1 : 1;

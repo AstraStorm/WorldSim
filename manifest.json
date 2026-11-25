@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611250007",
- "fecha": "2026-11-25 00:07",
+ "version": "202611250111",
+ "fecha": "2026-11-25 01:11",
  "novedades": [
   {
    "fecha": "2026-11-25",
-   "texto": "Obreros, sueldos por oficio, fomento de la industria y almacenes"
+   "texto": "Castillos, jefes de fábrica y huelgas"
+  },
+  {
+   "fecha": "2026-11-25",
+   "texto": "Obreros, sueldos por oficio, fomento de la industria, fábricas que se modernizan y almacenes ampliables"
   },
   {
    "fecha": "2026-11-24",
@@ -46,25 +50,22 @@
   {
    "fecha": "2026-11-24",
    "texto": "Visitas oficiales (visitas.js): el líder visita naciones amigas con escolta, en el mejor transporte (dirigible, globo, barco o por tierra); mejoran las relaciones, hablan de tratados, comercian y hay fuegos artificiales; los espías rivales se enteran y a veces preparan un atentado que la escolta puede frustrar"
-  },
-  {
-   "fecha": "2026-11-24",
-   "texto": "Cultivos, devoción al jugador, pirotecnia, estatuas ordenadas y piratas sin atascos"
   }
  ],
  "archivos": {
-  "index.html": "5e548a9db45df74bd39627ea2df317d05c430b53",
+  "index.html": "f4999ecfd410cbaf3f956e076b2483e5bd6625b3",
   "css/estilo.css": "5102a249d843e933be3be74f960883ba03efd264",
   "js/aldeanos.js": "d9920d364407645d80f1cdfbdcc1baf7fd203032",
   "js/ambiente.js": "6c96bf777f6cdfc55b648f495836521ee28aeb8f",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
-  "js/arte.js": "d9540a39003964bc390ff1dc7e4e0258674dafce",
-  "js/arte_mapa.js": "747a0edc6a2af6f7092adf2d17bccfd9afc839cc",
+  "js/arte.js": "f57321072a9bc4c12730094695e7001d075b0a8c",
+  "js/arte_mapa.js": "373de74c89b7418c4a040aaea0ee2fd64b367b53",
   "js/bandidos.js": "a41a64350dfb0cadc79876bf166b9e56ee1a9962",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
   "js/calendario.js": "03559b1ef711175c3f112ecaa0243a06a44b4b9c",
   "js/cartografia.js": "2ba2e493f521fb4b806f6e4a51ad38cac679351c",
   "js/casino.js": "54ef4165a2e87319bde127f1a42805751316b317",
+  "js/castillos.js": "84d43c35d7bd956bea76746bede41c8627f529b5",
   "js/ciencia.js": "24b5a844a2740abfe0e0d77518cab8fabb211c41",
   "js/ciudades.js": "f18585be779225a53e181a28aef1b7d4879cf2ae",
   "js/civilizacion.js": "4815ea74560602b2c8d44fc5411d642bbe1bb216",
@@ -85,12 +86,12 @@
   "js/espionaje.js": "6291557af0a9488f321131fbfb7cdccf50cdbbf1",
   "js/estaciones.js": "e9e2f1194fdb60ca73c007b1cd7e9ae392ce2ad7",
   "js/estrategia.js": "d0bfc9b82bf35def9101723898375cf61f5b9fb8",
-  "js/fabricas.js": "6d1de01080cec0a24c534241fc460f9b5055189f",
+  "js/fabricas.js": "ccfc523348a4b0755670a98ce463b746576e4bb1",
   "js/fama.js": "1b98918f8d312e237c6f399a43c0a3e278a4604b",
   "js/fauna.js": "ab4d9de4dea1f9f00ee90d76625658f2edd2695c",
   "js/globos.js": "a8829293851b57da087576ad6fb947ff8eca7c86",
   "js/guerra.js": "e900c85fb00f0b77aa2b5d69d50aa0a709cbc3f9",
-  "js/humanos.js": "2fffcdb8a5ba7907eaca32a74f34b76b76300aff",
+  "js/humanos.js": "131ffd13a26f2356139b8123eb58172931a33b1e",
   "js/idiomas.js": "a64e7f699431735d8b20a2eb82d317a02f4bd265",
   "js/impuestos.js": "9820acf00db62b3039fb43433ddcc3f522453daa",
   "js/industria.js": "beb92aac57d833266a64013f2d92b3ee256a6c03",
@@ -119,7 +120,7 @@
   "js/riqueza.js": "4437665e375d993ccfc2bec62225436b8fd03dce",
   "js/rutas.js": "6e12cafc1992e09fc3c2b5b13ca7d7db6416c364",
   "js/sindicatos.js": "f7cb8bf83ff74322a6fc45cc6ac90550425c6d15",
-  "js/sociedad.js": "67445488dfee2ccd58d9d3333234ac779bee634b",
+  "js/sociedad.js": "ffb5a06006885f9a755842103096373d8ec2fd20",
   "js/sonido.js": "25be9d9bda62336aba463c82e31668d0e9b2bc54",
   "js/titulares.js": "0506409e843da939370bb404b894a52cffa68620",
   "js/trabajo.js": "50d504968cee2cd4f5170a8e34cd81f649d6bf04",
@@ -128,10 +129,10 @@
   "js/vegetacion.js": "93f69ea37ed2ba75fb87c037ae6676de3910737a",
   "js/vida.js": "5b036c14fbd1d9fc061f4f98ddd8adcb43134ef0",
   "js/visitas.js": "5cafd3070fdf9de08e0a6eebf6644ad13c46bc1d",
-  "js/vista.js": "eccc23e2e6a4a1b1b839b9faab5c7232a9ad38e8",
+  "js/vista.js": "1cf14d49ecdbfbe171b660d80a2d0d084382c7b5",
   "js/vivienda.js": "0f3091767a41917156ce106447eb0e9659b69271",
   "js/volcanes.js": "f4aea099226dfe1b064fdfbd4779bddb6ed8a250",
-  "arte/atlas.png": "1387d54db9d18169c9c4156954724cb83f977ad9",
+  "arte/atlas.png": "b88705b0ce0855b2988bfcdf32dad28c75d17719",
   "arte/logo.png": "d18c1e289f646312aeb3ec4087060e60088f0ccd",
   "arte/papeles/contrato.png": "e1625cf1f7bb7b9b5b142d12899265fab2ce7cf0",
   "arte/papeles/dni.png": "6dcfc114b88e629bfed1b2ac368acbfcd1474f34",

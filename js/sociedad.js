@@ -137,7 +137,7 @@ let pathMap = new Set(), bridgeSet = new Set(), bridges = [];
 // Desgaste de tanto pisar: hierba gastada y, si se sigue pasando, un camino; si se deja de usar, vuelve la hierba
 let wear = null, wornSet = new Set(), desireSet = new Set();
 const storesOf = g => (g.stores ||= []).filter(i => world.objs[i] && world.objs[i].key === 'store:almacen');
-const buildingsOf = g => [...g.houses, ...(g.wells || []).map(w => w.i), ...(g.mill != null ? [g.mill] : []), ...(g.quarry != null ? [g.quarry] : []), ...(g.hall != null ? [g.hall] : []), ...(g.stores || []), ...(g.towers || []), ...[g.altar, g.temple, g.monument, g.market, g.bank, g.wonder, g.forge, g.hospital, g.barracks, g.lonja, g.theater, g.coliseum, g.tavern, g.cathedral, g.school, g.court, g.prison, g.press, g.unionHall, g.parliament, g.academy, g.mine, g.university, g.councilHall, g.spyHouse, g.granary, g.smokehouse, g.woodshed, g.postHouse, g.pump].filter(b => b != null), ...(g.facs || []).map(f => f.i)];
+const buildingsOf = g => [...g.houses, ...(g.wells || []).map(w => w.i), ...(g.mill != null ? [g.mill] : []), ...(g.quarry != null ? [g.quarry] : []), ...(g.hall != null ? [g.hall] : []), ...(g.stores || []), ...(g.towers || []), ...[g.altar, g.temple, g.monument, g.market, g.bank, g.wonder, g.forge, g.hospital, g.barracks, g.lonja, g.theater, g.coliseum, g.tavern, g.cathedral, g.school, g.court, g.prison, g.press, g.unionHall, g.parliament, g.academy, g.mine, g.university, g.councilHall, g.spyHouse, g.granary, g.smokehouse, g.woodshed, g.postHouse, g.pump, g.fort && g.fort.built ? g.fort.i : null].filter(b => b != null), ...(g.facs || []).map(f => f.i)];
 // Capacidad del almacén: lo que cabe junto a la hoguera, más lo de cada almacén
 const capOf = g => Math.max(20, Math.round(80 * storesOf(g).length * (1 + .5 * (g.storeLv || 0)))); // almacenes ampliados (fabricas.js): +50 % cada nivel // sin almacén, solo lo poco que cabe junto a la hoguera
 let plazaSet = new Set(), holySet = new Map();
@@ -3210,7 +3210,7 @@ function updateVillages(dt){
     // Cuantas más parejas, más nacimientos (antes solo podía tener hijos la primera: los pueblos se estancaban en unos 30)
     const moms = adults.filter(v => v.sex === 'm' && partnerOf(v) && partnerOf(v).sex === 'h' && adults.includes(partnerOf(v)));
     const mom = moms[Math.floor(Math.random() * moms.length)], dad = mom && partnerOf(mom); // de una pareja
-    if (mom && dad && pop < cap && g.food >= pop * 1.5 + 3 && Math.random() < dt * Math.min(.1, .03 + moms.length * .006) * (hasLaw(g, 'natalidad') ? 1.6 : 1)) {
+    if (mom && dad && pop < cap && g.food >= pop * 1.5 + 3 && Math.random() < dt * Math.min(.1, .03 + moms.length * .006) * (hasLaw(g, 'natalidad') ? 1.6 : 1) * (g.fort && g.fort.built && !g.fort.ruined && pop < 45 ? 1.25 : 1)) { // con castillo hacen falta más manos
       const kid = lifeFields({ name:NAMES[nameIdx++ % NAMES.length], x:mom.x, y:mom.y, path:null, wait:1, walk:0, moving:false, dir:1, appear:1,
         pants:pick(PANTS, Math.random), hat:pick(HATS, Math.random), shirt:pick(SHIRT, Math.random), hair:Math.random() < .5 ? mom.hair : dad.hair },
         Math.floor(mom.x / T), Math.floor(mom.y / T), 0, Math.random);

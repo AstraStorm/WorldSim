@@ -36,7 +36,7 @@ const FACS = {
 };
 MAT_JOBS.coal = ['extraer', 'cantear'];
 const FAC_TIER = ['primeras', 'segundas', 'terceras', 'últimas'];
-const PUMP = { name:'Extractora de agua', wood:20, stone:25, iron:6 };
+const PUMP = { name:'Extractora de agua', wood:16, stone:18, iron:3 };
 // Registro en las tablas del juego (huella, nombre, dibujo de reserva, oficio)
 for (const [k, F] of Object.entries(FACS)) { OBJ['fac:' + k] = [F.name, 'house', 0]; SPRITE_ALIAS['fac:' + k] = 'forge:herreria'; }
 OBJ['pump:extractora'] = [PUMP.name, 'house', 0]; SPRITE_ALIAS['pump:extractora'] = 'mill:molino';
@@ -65,7 +65,7 @@ const hasPump = g => g.pump != null && !!world.objs[g.pump] && world.objs[g.pump
 const indWellsOf = g => wellsOf(g).filter(w => w.ind);
 const facCost = (g, F) => { const m = (hasLaw(g, 'libre_industria') ? .75 : 1) * (hasLaw(g, 'fomento_industria') ? .85 : 1), c = {}; for (const [f] of MATS) if (F[f]) c[f] = Math.ceil(F[f] * m); if (facsOf(g).length) { if ((g.coal || 0) >= 4) c.coal = 4; else c.wood = (c.wood || 0) + 12; } return c; }; // la caldera se estrena con carbón (o con leña si no hay); la primera, sin
 const facMissing = (g, c) => [...MATS, ['coal', 'carbón']].map(([f, n]) => [f, n, Math.max(0, (c[f] || 0) - (g[f] || 0))]).filter(m => m[2] > 0);
-const facWaterCap = g => 30 + (hasPump(g) ? 40 : 0);
+const facWaterCap = g => 30 + (hasPump(g) ? 60 : 0);
 const coalReserve = g => 8 + facsOf(g).length * 4 + (g.factory ? 4 : 0);
 // Beber y comer van antes que las fábricas
 const survivalFirst = g => (g.sedAlarm != null && yearT - g.sedAlarm < DAY_LEN * .5) || g.food < popOf(g) * 1.2;
@@ -169,7 +169,7 @@ function factoryJobs(v, g, add){
   // Agua para las fábricas: los pozos que hagan falta y, con muchas fábricas y agua dulce cerca, la extractora
   const wantW = waterWant(g);
   if (wantW === 'pozo' && !busyWith(g, 'pozo_fab') && (g.stone >= 5 || g.wood >= 8)) add('pozo_fab', 5);
-  if (wantW === 'extractora' && !busyWith(g, 'extractora')) { const miss = facMissing(g, { wood:PUMP.wood, stone:PUMP.stone, iron:PUMP.iron }); if (!miss.length) add('extractora', 6); else for (const [f] of miss) for (const j of MAT_JOBS[f] || []) add(j, 2); }
+  if (wantW === 'extractora' && !busyWith(g, 'extractora')) { const miss = facMissing(g, { wood:PUMP.wood, stone:PUMP.stone, iron:PUMP.iron }); if (!miss.length) add('extractora', 14); else { for (const [f] of miss) for (const j of MAT_JOBS[f] || []) add(j, 4); const ask = g.facAsk ||= {}; if (!ask.pump) { ask.pump = true; notify(`En ${g.name} quieren una extractora de agua para las fábricas, pero les falta ${miss.map(m => m[1]).join(' y ')}`, { x:g.fx * T, y:g.fy * T }); } } }
   // Trabajar en las fábricas (no si el pueblo pasa sed o hambre: antes, sobrevivir)
   if (surv || ageOf(v) < ADULT_H) return;
   const f = crewFac(g, v), work = q => q.st !== 'carbon' && q.st !== 'agua' && q.st !== 'material' && q.st !== 'sed';
@@ -181,16 +181,19 @@ const facSlots = g => (popOf(g) >= 40 ? 3 : 2) + (hasLaw(g, 'fomento_industria')
 const workersAt = (g, f) => villagers.filter(u => !u.dead && u.vid === g.id && u.task && (u.task.k === 'fabricar' || u.task.job === 'fabricar') && u.task.i === f.i).length;
 // ¿Hace falta más agua? Solo si las fábricas se han quedado sin ella hace poco y el depósito está bajo
 function waterWant(g){
+  if (!hasPump(g) && facsOf(g).length && pumpSite(g)) return 'extractora'; // en cuanto tienen fábrica
   const dry = (g.facDry || 0) >= 2 && (g.indWater || 0) < facWaterCap(g) * .4; if (!dry) return null;
   const nW = indWellsOf(g).length, nF = facsOf(g).length;
-  if (!hasPump(g) && nF >= 3 && (nW >= 2 || hasLaw(g, 'proteccion_aguas')) && pumpSite(g)) return 'extractora';
-  if (nW < Math.ceil(nF * .8) + (hasPump(g) ? -2 : 0) && nW < 6) return 'pozo';
+  if (!hasPump(g) && pumpSite(g)) return 'extractora'; // la extractora primero: un pozo no da para una fábrica
+  if (nW < Math.ceil(nF * (hasPump(g) ? .4 : .8)) - (hasPump(g) ? 1 : 0) && nW < 6) return 'pozo';
   return null;
 }
 function pumpSite(g){
   const z = g.indZone || g.mineZone; if (!z) return null;
   if (g.pumpSiteT > yearT) return g.pumpSiteC;
-  const p = ringFind(z.x, z.y, 26, (x, y) => zoneFree(x, y, 4, 4) && !buildingClash(x, y, 'extractora') && [[0, 2], [-5, 0], [5, 0], [0, 3], [-5, 1], [5, 1]].some(([dx, dy]) => { const i = (y + dy) * W + x + dx; return FRESH(world.biome[i]) && !dried(i); }));
+  if (!g.indZone && !g.mineZone) return null;
+  const wet = (x, y) => [[0, 2], [-5, 0], [5, 0], [0, 3], [-5, 1], [5, 1]].some(([dx, dy]) => { const i = (y + dy) * W + x + dx; return FRESH(world.biome[i]) && !dried(i); });
+  const p = ringFind(z.x, z.y, 45, (x, y) => wet(x, y) && zoneFree(x, y, 4, 4) && !buildingClash(x, y, 'extractora')); // primero lo barato: ¿hay agua dulce al lado?
   g.pumpSiteT = yearT + DAY_LEN; g.pumpSiteC = p; return p;
 }
 function factoryTarget(v, g, job){
@@ -266,7 +269,7 @@ function facCycle(v, g, i){
   // Lo que deja la fábrica: con la industria nacionalizada, todo al tesoro; si no, un sueldo para quien trabaja y algo al tesoro
   if (ec) ec.treas += Math.round((nat ? 3 : 1) * P) - (hasLaw(g, 'fomento_industria') ? 1 : 0); // (el sueldo lo cobra al acabar la tanda, según su oficio: fabricas.js payWage)
   if (typeof research === 'function') research(g, .12 + (f.lv || 0) * .05); // la industria también hace avanzar: técnicas nuevas
-  facLevelUp(g, f);
+  facLevelUp(g, f); bossCut(g, f);
   g.trades = (g.trades || 0) + (F.out === 'jewels' || F.out === 'leather' ? 1 : 0);
   floats.push({ x:v.x, y:v.y - 16, txt, col:F.col, life:0 });
   if (Math.random() < .3) snd('hammer', v.x, v.y, .3);
@@ -274,6 +277,7 @@ function facCycle(v, g, i){
 // ¿Puede trabajar la fábrica? 'ok' o lo que le falta
 function facState(g, f){
   const F = FACS[f.k];
+  if (f.strike) return 'huelga';
   if (survivalFirst(g)) return 'sed';
   if ((g.coal || 0) < 1 && g.wood < 12) return 'carbon'; // sin carbón, la caldera puede ir con leña (rinde la mitad)
   if ((g.indWater || 0) < 1) return 'agua';
@@ -289,12 +293,12 @@ function factoryTick(g, dt, people){
   g.facs = facs; g.indWater = g.indWater || 0;
   // Agua: la extractora bombea (si tiene carbón); los pozos de la zona sueltan la que les sobra (sin bajar de la reserva
   // para beber, que con la ley de protección de las aguas es la mitad)
-  if (hasPump(g)) { const p = g.pump, wet = freshNear(p, 3); if (wet && (g.coal || 0) >= 1) { g.pumpBurn = (g.pumpBurn || 0) + 1; if (g.pumpBurn >= 3) { g.pumpBurn = 0; g.coal -= 1; } g.pumpOn = true; } else g.pumpOn = false; }
+  if (hasPump(g)) { const p = g.pump, wet = freshNear(p, 3); if (wet && ((g.coal || 0) >= 1 || g.wood >= 8)) { g.pumpBurn = (g.pumpBurn || 0) + 1; if (g.pumpBurn >= 3) { g.pumpBurn = 0; if ((g.coal || 0) >= 1) g.coal -= 1; else g.wood -= 3; } g.pumpOn = true; } else g.pumpOn = false; } // la caldera de la bomba: carbón o, si no hay, leña
   if (surv) { // beber primero: la extractora llena los pozos y los cántaros del pueblo, y las fábricas no gastan agua
     pumpForPeople(g, 10);
     if (!g.facSurvMsg || yearT - g.facSurvMsg > DAY_LEN * 2) { g.facSurvMsg = yearT; notify(`En ${g.name} paran las fábricas: ${g.food >= popOf(g) * 1.2 ? 'el agua es para beber' : 'hace falta gente en el campo, que pasan hambre'}`, at); }
   } else {
-    if (g.pumpOn) g.indWater += 7;
+    if (g.pumpOn) g.indWater += 15; // una extractora da para unas 4 fábricas a pleno; con más, pozos de apoyo
     const keep = hasLaw(g, 'proteccion_aguas') ? .5 : .35;
     for (const w of indWellsOf(g)) { const take = Math.min(w.q - keep, .12); if (take > 0 && g.indWater < cap) { w.q -= take; g.indWater += take * 20; } }
     g.indWater = Math.min(cap, g.indWater);
@@ -310,6 +314,7 @@ function factoryTick(g, dt, people){
   if (dry) g.facDry = (g.facDry || 0) + 1; else if (g.indWater > cap * .6) g.facDry = 0;
   coalShare(g);
   crewTick(g, people, facs, at);
+  laborTick(g, people, facs); // jefe, quejas, despidos y huelgas
   // Peletería: los abrigos, para quien no tiene (los más mayores y los niños primero)
   if ((g.coats || 0) > 0) for (const u of people.filter(u => !u.coat).sort((a, b) => coatNeed(b) - coatNeed(a)).slice(0, g.coats)) { u.coat = true; g.coats--; }
   // El carbón estratégico: el tesoro compra una reserva
@@ -365,14 +370,15 @@ const coalBuyer = g => !industrial(g) && hasMine(g) && villages.some(o => o !== 
 }; }
 // Ficha del edificio
 { const base = bldDesc; bldDesc = function(o){ const p = o.key.split(':'); return p[0] === 'fac' && FACS[p[1]] ? FACS[p[1]].desc : base(o); }; }
-const FAC_ST = { ok:'en marcha', gente:'parada: nadie trabaja ahora', carbon:'parada: sin carbón', agua:'parada: sin agua', material:'parada: le falta materia prima', sed:'parada: el agua y la gente hacen falta para sobrevivir' };
+const FAC_ST = { ok:'en marcha', gente:'parada: nadie trabaja ahora', carbon:'parada: sin carbón', agua:'parada: sin agua', material:'parada: le falta materia prima', sed:'parada: el agua y la gente hacen falta para sobrevivir', huelga:'parada: los obreros están en huelga' };
 function facKv(g, i, kv){
   const o = world.objs[i]; if (!g || !o) return '';
   if (o.key === 'pump:extractora') return kv('Estado', g.pumpOn ? (survivalFirst(g) ? 'bombea agua para beber' : 'bombea agua a las fábricas') : freshNear(i, 3) ? 'parada: sin carbón' : 'parada: el agua se ha secado') + kv('Depósito', `${Math.round(g.indWater || 0)} / ${facWaterCap(g)} de agua`);
   const f = facsOf(g).find(q => q.i === i); if (!f) return '';
   const F = FACS[f.k];
   return kv('Estado', (FAC_ST[f.st] || '—') + (f.st === 'ok' && f.wood ? ' (con leña: rinde la mitad, falta carbón)' : '')) + kv('Produce', F.txt + ' por tanda') + kv('Gasta', ['½ carbón', '1 de agua', ...Object.entries(F.in || {}).map(([r, n]) => `${n} de ${{ stone:'piedra', hides:'pieles', gold:'oro' }[r] || r}`)].join(' · '))
-    + kv('Trabajan', `${workersAt(g, f)} de ${facSlots(g)}`) + kv('Tandas', f.made || 0) + kv('Carbón del pueblo', Math.floor(g.coal || 0)) + kv('Agua para las fábricas', `${Math.round(g.indWater || 0)} / ${facWaterCap(g)}`);
+    + kv('Jefe', f.state ? 'el estado (fábrica nacionalizada)' : bossOf(g, f) ? `${esc(bossOf(g, f).name)} (lleva ganado ${bossOf(g, f).bossEarn || 0})` : 'nadie') + kv('Sueldo de los obreros', `${Math.round((f.pay ?? 1) * 100)} % de lo normal`) + kv('Ánimo de los obreros', `${Math.round(f.mood ?? 60)} / 100${f.strike ? ' · EN HUELGA' : f.mood < 40 ? ' · enfadados' : ''}`)
+    + kv('Obreros', `${(f.crew || []).length}`) + kv('Trabajan', `${workersAt(g, f)} de ${facSlots(g)}`) + kv('Tandas', f.made || 0) + kv('Carbón del pueblo', Math.floor(g.coal || 0)) + kv('Agua para las fábricas', `${Math.round(g.indWater || 0)} / ${facWaterCap(g)}`);
 }
 { const base = bldDetails; bldDetails = function(i, g){ const o = world.objs[i], p = o && o.key.split(':')[0]; return (p === 'fac' || p === 'pump' ? facKv(g, i, (a, b) => `<div class="kv"><span>${a}</span><b>${b}</b></div>`) : '') + base(i, g); }; }
 // Ficha del pueblo: la industria
@@ -442,6 +448,7 @@ function drawFacIcon(x, y, st, now){
     vctx.beginPath(); vctx.arc(x, y, 1.6, 0, Math.PI * 2); vctx.fill(); vctx.fillStyle = '#4caf50'; vctx.fillRect(x - .5, y - .5, 1, 1);
   } else if (st === 'agua') { vctx.fillStyle = '#bfe0ff'; vctx.beginPath(); vctx.moveTo(x, y - 2.6); vctx.lineTo(x + 1.8, y + .6); vctx.arc(x, y + .6, 1.8, 0, Math.PI); vctx.closePath(); vctx.fill(); }
   else if (st === 'carbon') { vctx.fillStyle = '#1c1c20'; vctx.fillRect(x - 2, y - 1, 4, 3); vctx.fillRect(x - 1, y - 2, 2, 1); vctx.fillStyle = '#5a5a62'; vctx.fillRect(x - 1, y - 1, 1, 1); }
+  else if (st === 'huelga') { vctx.fillRect(x - 1, y - 2.5, 3, 3); vctx.fillRect(x - .5, y + .5, 2, 2); } // puño en alto: huelga
   else if (st === 'gente') { vctx.fillRect(x - .5, y - 2.5, 2, 2); vctx.fillRect(x - 1.5, y, 4, 2); }
   else if (st === 'sed') { vctx.fillStyle = '#bfe0ff'; vctx.fillRect(x - 2, y - 1, 1, 2); vctx.fillRect(x + 1, y - 1, 1, 2); vctx.fillStyle = '#fff'; vctx.fillRect(x - 2, y - 2.5, 4, 1); } // pausa: primero beber
   else { vctx.fillRect(x - .5, y - 2.5, 1, 3); vctx.fillRect(x - .5, y + 1.5, 1, 1); } // material: «!»
@@ -449,7 +456,7 @@ function drawFacIcon(x, y, st, now){
 // ---- Obreros: cada fábrica tiene su cuadrilla fija, que va a trabajar en su turno ----
 const crewFac = (g, v) => v.oficio === 'obrero' ? facsOf(g).find(f => f.i === v.facI && (f.crew || []).includes(pidOf(v))) || null : null;
 // ¿Le toca ir a su fábrica? En su turno, si la fábrica puede trabajar y el pueblo no pasa sed ni hambre
-const crewShift = (v, g) => { if (!inShift(g) || survivalFirst(g) || ageOf(v) < ADULT_H) return false; const f = crewFac(g, v); return !!f && !['carbon', 'agua', 'material', 'sed'].includes(f.st); };
+const crewShift = (v, g) => { if (!inShift(g) || survivalFirst(g) || ageOf(v) < ADULT_H) return false; const f = crewFac(g, v); return !!f && !f.strike && !['carbon', 'agua', 'material', 'sed', 'huelga'].includes(f.st); };
 // Dónde se pone cada obrero: delante de la fábrica, repartidos
 function facSpot(f){ const sb = standBy(f.i); if (!sb) return null; const k = Math.floor(Math.random() * 5) - 2; return [sb[0] + k * 3, sb[1] + (Math.random() < .5 ? 0 : 2)]; }
 // Qué oficio se pasa mejor a cada fábrica (si no, el que más abunda)
@@ -465,7 +472,7 @@ function crewTick(g, people, facs, at){
   // Contratar hasta llenar cada cuadrilla, sin dejar el pueblo sin gente en el campo (no más de un 30 %, un 40 % con fomento)
   const max = Math.ceil(adults.length * (fo ? .4 : .3)), cnt = o => adults.filter(u => u.oficio === o).length;
   if (g.food >= popOf(g) * 2.5) for (const f of facs) while (f.crew.length < facSlots(g) && total < max) {
-    const pref = CREW_FROM[f.k], free = adults.filter(u => u.oficio !== 'obrero' && !['maestro', 'curandero', 'sabio', 'bombero', 'sacerdote'].includes(u.oficio));
+    const pref = CREW_FROM[f.k], free = adults.filter(u => u.oficio !== 'obrero' && u.facBoss == null && !(u.fired > yearT - DAY_LEN * 2) && !['maestro', 'curandero', 'sabio', 'bombero', 'sacerdote'].includes(u.oficio));
     const u = free.sort((a, b) => (b.oficio === pref) - (a.oficio === pref) || cnt(b.oficio) - cnt(a.oficio))[0]; if (!u) break;
     u.oldOficio = u.oficio; u.oficio = 'obrero'; u.facI = f.i; f.crew.push(pidOf(u)); total++;
     if (!f.hired) { f.hired = true; notify(`${u.name} deja de ser ${ofW(u.oldOficio, u)} y entra de ${ofW('obrero', u)} en ${FACS[f.k].name.toLowerCase()} de ${g.name}`, { x:(f.i % W) * T, y:((f.i / W) | 0) * T }); }
@@ -489,7 +496,8 @@ const OFICIO_PAY = { sabio:1.6, curandero:1.5, ingeniero:1.5, maestro:1.3, 'cart
 function payMul(v, g){
   if (v.oficio !== 'obrero') return OFICIO_PAY[v.oficio] ?? 1;
   const f = facsOf(g).find(q => q.i === v.facI), base = (f ? FACS[f.k].pay * (1 + (f.lv || 0) * .1) : 1.1) * 1.5; // (cobran por tanda; la jornada entera en la fábrica)
-  return hasLaw(g, 'nacionalizar_industria') ? 1.8 : base * (hasLaw(g, 'fomento_industria') ? 1.1 : 1); // nacionalizada: el mismo sueldo para todos
+  if (f && f.state) return 1.8; // fábrica del estado: sueldo fijo
+  return hasLaw(g, 'nacionalizar_industria') ? 1.8 : (f ? f.pay ?? 1 : 1) * base * (hasLaw(g, 'fomento_industria') ? 1.1 : 1); // nacionalizada: el mismo sueldo para todos
 }
 { const base = payWage; payWage = function(v, g, n){ base(v, g, g ? n * payMul(v, g) : n); }; }
 function wageCard(g){
@@ -546,4 +554,98 @@ function drawClothes(v, x, y, s, lift, drop){
     if (v.cold) { const ty = y - 8 - lift - drop; vctx.fillStyle = '#5a3a22'; vctx.fillRect(x - 2, ty, 5, 6); vctx.fillStyle = '#8a5c36'; vctx.fillRect(x - 1, ty + 1, 3, 4); vctx.fillStyle = '#f0e6d2'; vctx.fillRect(x - 2, ty, 5, 1); vctx.fillRect(x, ty + 1, 1, 4); }
   }
   if (v.oficio === 'obrero' && v.born !== undefined && (yearT - v.born) / YEAR >= ADULT_H) { vctx.fillStyle = '#2e2e34'; vctx.fillRect(x - 2, top, 4, 1); vctx.fillRect(x + (v.dir < 0 ? -3 : 2), top + 1, 2, 1); } // gorra con visera
+}
+// ---- El jefe de la fábrica y los obreros: sueldos, quejas, despidos, huelgas, dimisiones y el gobierno ----
+// · Cada fábrica tiene un jefe (el patrón): se lleva una parte del beneficio y decide cuánto cobran los obreros
+//   (f.pay: 1 = lo normal). Un jefe avaricioso paga menos y gana más
+// · El ánimo de los obreros (f.mood) sube con buen sueldo y jornada corta y baja con sueldos bajos, jornada larga y despidos
+// · Si se enfadan, protestan delante de la fábrica; el jefe sube el sueldo, despide a los que más gritan o no hace nada
+// · Muy enfadados, van a la huelga (la prohibición de huelgas lo frena; con derecho a huelga y sindicato aguantan más)
+// · Una huelga larga hace dimitir al jefe; si se alarga y hace daño al país, el líder de la nación interviene:
+//   nacionaliza la fábrica, manda a los soldados o media un acuerdo, según su régimen
+const FAC_SLOGANS = ['¡Sueldos dignos!', '¡Abajo el patrón!', '¡Menos horas!', '¡Ni un despido más!', '¡Huelga!', '¡Pan y trabajo!'];
+function bossOf(g, f){ return f.state || f.boss == null ? null : peopleByPid(g).get(f.boss) || null; }
+function pickBoss(g, f, people){
+  if (f.state) return;
+  const cand = people.filter(u => ageOf(u) >= ADULT_H && !u.dead && !u.away && !u.slave && u.oficio !== 'obrero' && u !== g.leader && u.facBoss == null)
+    .sort((a, b) => ((b.edu || 0) * 40 + (b.money || 0)) - ((a.edu || 0) * 40 + (a.money || 0)))[0];
+  if (!cand) return;
+  f.boss = pidOf(cand); cand.facBoss = f.i; cand.greed ??= Math.random();
+  f.pay = clamp(1.15 - cand.greed * .4, .7, 1.2);
+  notify(`${cand.name} es ${cand.sex === 'm' ? 'la nueva jefa' : 'el nuevo jefe'} de ${FACS[f.k].name.toLowerCase()} de ${g.name} (${cand.greed > .6 ? 'tiene fama de agarrad' + (cand.sex === 'm' ? 'a' : 'o') : cand.greed < .3 ? 'tiene fama de justo' : 'nadie sabe aún cómo será'})`, { x:(f.i % W) * T, y:((f.i / W) | 0) * T });
+}
+function facProtest(g, f, people, strike){
+  const crew = people.filter(u => (f.crew || []).includes(pidOf(u)) && !u.sleep && !u.boat && !(u.task && ['asalto', 'protesta', 'refugio'].includes(u.task.k)));
+  const sb = standBy(f.i); if (!sb || !crew.length) return 0;
+  const [cx, cy] = sb, pts = [[cx - 10, cy + 2], [cx + 10, cy + 2], [cx + 10, cy + 7], [cx - 10, cy + 7]];
+  crew.forEach((u, k) => { releaseTask(u); if (u.actT > 0) { u.actT = 0; u.onDone = null; } u.task = { k:'protesta', pts, idx:k % 4, until:yearT + (strike ? 40 : 25), slogan:FAC_SLOGANS[(k + (strike ? 4 : 0)) % FAC_SLOGANS.length], col:strike ? '#f08a7a' : '#f2efe6', fac:f.i }; u.lastD = Infinity; });
+  if (Math.random() < .7) { const u = crew[0]; floats.push({ x:u.x, y:u.y - 16, txt:u.task.slogan, col:'#f8f0d8', life:0 }); }
+  return crew.length;
+}
+function fireWorkers(g, f, people, n, why){
+  const crew = people.filter(u => (f.crew || []).includes(pidOf(u))).sort((a, b) => Math.abs(b.ideo || 0) - Math.abs(a.ideo || 0)).slice(0, n);
+  for (const u of crew) { f.crew = f.crew.filter(p => p !== pidOf(u)); u.oficio = u.oldOficio || pickOficio(g); u.facI = null; u.fired = yearT; if (u.task && u.task.fac === f.i) u.task = null; }
+  if (crew.length) { f.firedT = yearT; g.anger = (g.anger || 0) + 2 * crew.length; notify(`${bossOf(g, f) ? bossOf(g, f).name : 'El jefe'} despide a ${crew.map(u => u.name).join(' y ')} de ${FACS[f.k].name.toLowerCase()} de ${g.name}${why ? ': ' + why : ''}`, { x:(f.i % W) * T, y:((f.i / W) | 0) * T }); }
+}
+function endStrike(g, f, txt){ f.strike = null; for (const u of villagers) if (!u.dead && u.task && u.task.k === 'protesta' && u.task.fac === f.i) u.task = null; if (txt) notify(txt, { x:(f.i % W) * T, y:((f.i / W) | 0) * T }); }
+function laborTick(g, people, facs){
+  const at = f => ({ x:(f.i % W) * T, y:((f.i / W) | 0) * T }), n = nationOf(g), L = n && n.leader && !n.leader.dead ? n.leader : g.leader;
+  const ws = wageStats(g), poorPay = g.coin && ws.n && ws.avg < ws.cost;
+  for (const f of facs) {
+    f.mood ??= 60; f.pay ??= 1;
+    let boss = bossOf(g, f);
+    if (!f.state && (!boss || boss.dead || boss.vid !== g.id)) { if (boss) boss.facBoss = null; f.boss = null; pickBoss(g, f, people); boss = bossOf(g, f); }
+    if (!(f.crew || []).length) continue;
+    // Ánimo: hacia lo que pide su situación
+    const want = 52 + (f.pay - 1) * 90 + (f.lv || 0) * 3 + (hasLaw(g, 'jornada_corta') ? 8 : 0) - (hasLaw(g, 'jornada_larga') ? 15 : 0) - (yearT - (f.firedT ?? -1e9) < DAY_LEN ? 12 : 0) - (poorPay ? 10 : 0) + (f.state ? 6 : 0);
+    if (!f.strike) f.mood += clamp(want - f.mood, -2, 2);
+    if (yearT < (f.evT ?? 0)) continue;
+    // En huelga: cada poco, ¿ceden?, ¿dimite el jefe?, ¿interviene el gobierno?
+    if (f.strike) {
+      const days = (yearT - f.strike.since) / DAY_LEN; f.evT = yearT + 20;
+      if (inShift(g)) facProtest(g, f, people, true);
+      if (boss && Math.random() < .06 + days * .05 * (1 - (boss.greed || .5))) { f.pay = Math.min(1.5, f.pay + .25); f.mood = 68; endStrike(g, f, `Fin de la huelga en ${FACS[f.k].name.toLowerCase()} de ${g.name}: ${boss.name} sube los sueldos y los obreros vuelven al trabajo`); continue; }
+      if (boss && days > 1.2 && Math.random() < .3) { boss.facBoss = null; f.boss = null; notify(`${boss.name} dimite como ${boss.sex === 'm' ? 'jefa' : 'jefe'} de ${FACS[f.k].name.toLowerCase()} de ${g.name}, desbordad${boss.sex === 'm' ? 'a' : 'o'} por la huelga`, at(f)); pickBoss(g, f, people); f.pay = Math.max(f.pay, 1.15); f.mood = 60; endStrike(g, f, `Con ${bossOf(g, f) ? bossOf(g, f).name : 'el jefe nuevo'} al frente, los obreros de ${g.name} vuelven a la fábrica`); continue; }
+      if (!f.strike.broke && days > 2 - (hasLaw(g, 'derecho_huelga') ? -1 : 0) && !g.union && Math.random() < .3) { f.strike.broke = true; f.mood += 15; endStrike(g, f, `Sin sindicato ni caja de resistencia, los huelguistas de ${g.name} no aguantan más sin cobrar y vuelven a la fábrica`); continue; }
+      const striking = villages.filter(o => nationOf(o) === n).reduce((a, o) => a + facsOf(o).filter(q => q.strike).length, 0);
+      if (!f.strike.gov && L && (days > 2 || (striking >= 2 && days > 1))) { f.strike.gov = true; govSteps(g, f, L, people); }
+      continue;
+    }
+    // Quejas: protesta delante de la fábrica, y el jefe decide
+    if (f.mood < 40 && yearT - (f.protT ?? -1e9) > DAY_LEN * .8) {
+      f.protT = yearT; f.evT = yearT + 30; const nP = facProtest(g, f, people, false); if (!nP) continue;
+      notify(`Los obreros de ${FACS[f.k].name.toLowerCase()} de ${g.name} protestan delante de la fábrica: ${f.pay < .95 ? 'piden mejores sueldos' : hasLaw(g, 'jornada_larga') ? 'piden menos horas' : 'están hartos'}`, at(f));
+      const greed = boss ? boss.greed || .5 : .3, r = Math.random();
+      if (r < (1 - greed) * .55) { f.pay = Math.min(1.5, f.pay + .15); f.mood += 18; notify(`${boss ? boss.name : 'La dirección'} cede y sube un poco los sueldos de ${FACS[f.k].name.toLowerCase()} de ${g.name}`, at(f)); }
+      else if (boss && r < (1 - greed) * .55 + greed * .45) fireWorkers(g, f, people, 1 + (Math.random() < .4 ? 1 : 0), 'por montar la protesta');
+      continue;
+    }
+    // Huelga
+    if (f.mood < 25 && (!hasLaw(g, 'prohibir_huelgas') || Math.random() < .25)) {
+      f.strike = { since:yearT, illegal:hasLaw(g, 'prohibir_huelgas') }; f.evT = yearT + 20; facProtest(g, f, people, true);
+      notify(`¡Huelga${f.strike.illegal ? ' ilegal' : ''} en ${FACS[f.k].name.toLowerCase()} de ${g.name}! Los obreros no entran a trabajar hasta que les suban el sueldo`, at(f));
+      if (f.strike.illegal && boss) fireWorkers(g, f, people, 2, 'la huelga está prohibida');
+    }
+  }
+}
+// El gobierno interviene en una huelga que se alarga: cada régimen a su manera
+function govSteps(g, f, L, people){
+  const reg = regimeOf(nationOf(g)), name = FACS[f.k].name.toLowerCase(), boss = bossOf(g, f), at = { x:(f.i % W) * T, y:((f.i / W) | 0) * T };
+  if (['comunismo', 'socialismo'].includes(reg) || hasLaw(g, 'estatal') || hasLaw(g, 'nacionalizar_industria')) {
+    if (boss) boss.facBoss = null; f.boss = null; f.state = true; f.pay = 1.2; f.mood = 70;
+    endStrike(g, f, `${L.name} nacionaliza ${name} de ${g.name} para acabar con la huelga: ahora es del estado y los obreros cobran un sueldo fijo`);
+  } else if (['fascismo', 'dictadura'].includes(reg) || hasLaw(g, 'orden')) {
+    fireWorkers(g, f, people, 2, 'cabecillas de la huelga'); f.mood = 35; g.anger = (g.anger || 0) + 8;
+    endStrike(g, f, `${L.name} manda a los soldados a ${name} de ${g.name}: rompen la huelga, echan a los cabecillas y los demás vuelven al trabajo a regañadientes`);
+  } else {
+    f.pay = Math.max(f.pay, 1.2); f.mood = 62; if (boss && (boss.greed || 0) > .6) { boss.facBoss = null; f.boss = null; pickBoss(g, f, people); }
+    endStrike(g, f, `${L.name} media en la huelga de ${name} de ${g.name}: acuerdo con subida de sueldo${boss && !bossOf(g, f) ? ' y cambio de jefe' : ''}`);
+  }
+  snd('bell', at.x, at.y, .5);
+}
+// El jefe se lleva su parte de cada tanda (más cuanto menos paga); con la fábrica del estado, va al tesoro
+function bossCut(g, f){
+  const ec = ecOf(g); if (!ec || !g.coin) return;
+  const cut = Math.max(1, Math.round(wageOf(g, 3) * (1.7 - (f.pay ?? 1)) * (FACS[f.k].pay || 1)));
+  const b = bossOf(g, f); if (b) { b.money = (b.money || 0) + cut; b.bossEarn = (b.bossEarn || 0) + cut; } else ec.treas += cut;
 }

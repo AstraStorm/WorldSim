@@ -259,6 +259,12 @@ if os.path.exists(os.path.join(SRC, 'fabricas.png')):
 if os.path.exists(os.path.join(SRC, 'extractoraagua.png')):
     add('pump:extractora', shrink(box_parts('extractoraagua.png', (300, 70, 1240, 930)), 38, 48))
 
+# ---- Castillos (castillos.png: 3 arriba y 3 abajo) ----
+if os.path.exists(os.path.join(SRC, 'castillos.png')):
+    for k, (name, w) in enumerate([('empalizada', 54), ('torre', 52), ('concentrico', 62), ('foso', 60), ('roca', 56), ('palacio', 64)]):
+        c, r = k % 3, k // 3
+        add('castle:' + name, shrink(box_parts('castillos.png', (c * 512, 80 + r * 450, (c + 1) * 512, 500 + r * 470)), w, 56))
+
 # ---- Atlas: en filas, con 1 píxel de separación ----
 keys = list(S); W = 512; x = y = rowh = 0; pos = {}
 for k in sorted(keys, key=lambda k: -S[k]['img'].height):
