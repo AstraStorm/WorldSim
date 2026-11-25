@@ -27,12 +27,12 @@ function cityTick(g, dt, people){
   setTimeout(() => notify(`${g.name} funda una ciudad nueva en su territorio: ${c.name}. ${crew.length} personas se mudan allí${cities + 1 >= 2 ? `; ya son ${cities + 2} ciudades` : ''}`, { x:c.fx * T, y:c.fy * T }), 3500);
   if (typeof addHero === 'function') setTimeout(() => addHero(g, lead, `fundó la ciudad de ${c.name}`), 4000);
 }
-// Dónde: tierra firme a 22-45 casillas de la capital, lejos de otros pueblos, sin cruzar el mar (se llega andando)
+// Dónde: tierra firme a 40-64 casillas de la capital, lejos de otros pueblos, sin cruzar el mar (se llega andando)
 function citySite(g){
   for (let k = 0; k < 120; k++) {
-    const a = Math.random() * Math.PI * 2, d = 22 + Math.random() * 23, x = Math.round(g.fx + Math.cos(a) * d), y = Math.round(g.fy + Math.sin(a) * d * .85);
+    const a = Math.random() * Math.PI * 2, d = 40 + Math.random() * 24, x = Math.round(g.fx + Math.cos(a) * d), y = Math.round(g.fy + Math.sin(a) * d * .85);
     if (x < 10 || y < 10 || x >= W - 10 || y >= H - 10 || !tileFree(x, y) || volcDanger(x, y, 8)) continue;
-    if (villages.some(o => popOf(o) && Math.hypot(o.fx - x, o.fy - y) < 20)) continue;
+    if (!townSpace(x, y)) continue; // lejos de todos los pueblos (humanos.js)
     let land = 0; for (let yy = y - 5; yy <= y + 5; yy++) for (let xx = x - 5; xx <= x + 5; xx++) if (!WATER[world.biome[yy * W + xx]]) land++; if (land < 100) continue;
     let sea = false; for (let j = 1; j < 20 && !sea; j++) { const f = j / 20, i = Math.round(g.fy + (y - g.fy) * f) * W + Math.round(g.fx + (x - g.fx) * f); if (world.biome[i] === B.SEA || world.biome[i] === B.DEEP) sea = true; }
     if (sea) continue;

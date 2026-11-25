@@ -56,6 +56,9 @@ function lifeFields(v, tx, ty, ageYears, r){
   v.ideo = clamp((r() + r() + r() - 1.5) * .7, -1, 1); // ideas políticas: -1 izquierda, +1 derecha
   return v;
 }
+// ¿Queda sitio para un pueblo nuevo aquí? Lejos de los que ya hay (más cuanto más grandes): si no, crecen el uno
+// dentro del otro y las calles, campos y murallas se pisan
+const townSpace = (x, y) => !villages.some(o => !o.dead && popOf(o) > 0 && Math.hypot(o.fx - x, o.fy - y) < Math.max(34, (o.houses.length && typeof townRadius === 'function' ? townRadius(o) : 8) + 24));
 function makeVillage(tx, ty){
   if (volcDanger(tx, ty, 6)) return null; // nadie se asienta al pie de un volcán (volcanes.js)
   let fi = -1;
@@ -65,7 +68,7 @@ function makeVillage(tx, ty){
     const x = tx + dx, y = ty + dy; if (!tileFree(x, y) || farmMap.has(y * W + x) || !dryAround(x, y)) continue;
     fi = y * W + x; break;
   }
-  if (fi < 0) return null;
+  if (fi < 0 || !townSpace(fi % W, (fi / W) | 0)) return null;
   const g = { faith:null, id:++vidSeq, name:villageName(), freshName:true, fx:fi % W, fy:(fi / W) | 0, food:14, meat:4, wood:10, stone:0, houses:[], wells:[], mill:null, know:{}, cut:0, planted:0, pen:null, learn:{}, born:yearT };
   world.objs[fi] = { key:'fire:camp', v:0, ox:0, oy:0, vid:g.id };
   makePlaza(g);
@@ -318,21 +321,21 @@ function chooseJob(v, g){
   add('arboleda', !g.grove && houses >= 2 && pop >= 6 && !busyWith(g, 'arboleda') ? ((g.treesNear ?? 99) < 20 ? 4 : 1.5) : 0);
   add('bayal', !g.berryPlot && houses >= 1 && pop >= 5 && !busyWith(g, 'bayal') ? (berriesNear < pop ? 4 : 1.2) : 0);
   add('minar', ((g.know || {}).mineria || g.quarry != null || g.stone >= 20) && (g.oresNear || 0) > 0 && busyWith(g, 'minar') < 2 ? (hasForge(g) ? 3 : 1.8) : 0);
-  add('hospital', !hasHosp(g) && g.hall != null && pop >= 14 && g.stone >= 15 && g.wood >= 12 && !busyWith(g, 'hospital') ? (L.includes('sanidad') ? 7 : 2.5) : 0);
+  add('hospital', !hasHosp(g) && g.hall != null && pop >= 20 && g.stone >= 15 && g.wood >= 12 && !busyWith(g, 'hospital') ? (L.includes('sanidad') ? 7 : 2.5) : 0);
   add('cuartel', !hasBarracks(g) && g.hall != null && pop >= 12 && g.stone >= 12 && g.wood >= 10 && (atWarJ || soldiersJ >= 3 || L.includes('ejercito')) && !busyWith(g, 'cuartel') ? (atWarJ ? 8 : 3) : 0);
   add('instruir', v.weapon && hasBarracks(g) && (v.vet || 0) < 3 && busyWith(g, 'instruir') < 4 ? (atWarJ ? 4 : 1.5) : 0);
   add('asedio', hasBarracks(g) && hasForge(g) && (g.siege || 0) < 2 && g.wood >= 12 && (g.iron || 0) >= 2 && (atWarJ || L.includes('ejercito')) && !busyWith(g, 'asedio') ? (atWarJ ? 5 : 1.5) : 0);
   add('lonja', g.port && g.market != null && !hasLonja(g) && g.wood >= 12 && g.stone >= 6 && !busyWith(g, 'lonja') ? 4 : 0);
   add('bolsa', wantsBolsa(v, g) ? 2 : 0); // ir al banco a invertir en bolsa (bolsa.js)
   add('vender', g.market != null && world.objs[g.market] && busyWith(g, 'vender') < 3 ? (v.oficio === 'mercader' ? 3 : .3) : 0);
-  add('taberna', !hasTavern(g) && houses >= 3 && pop >= 10 && g.wood >= 12 && g.stone >= 4 && !busyWith(g, 'taberna') ? 3.5 : 0);
+  add('taberna', !hasTavern(g) && houses >= 4 && pop >= 16 && wellsOf(g).length && g.wood >= 12 && g.stone >= 4 && !busyWith(g, 'taberna') ? 3.5 : 0);
   // El gran templo: con templo ya hecho, mucha fe y mucha piedra (más si es teocracia)
-  add('escuela', !hasSchool(g) && (g.know || {}).escritura && g.hall != null && pop >= 10 && (g.wood >= 12 && g.stone >= 6 || g.wood >= 22) && !busyWith(g, 'escuela') ? (hasLaw(g, 'educacion') ? 9 : pop >= 20 ? 8 : 4.5) : 0); // un pueblo grande sin escuela se queda atrás (sin escuela no hay universidad) // (sin piedra, toda de madera: más cara) // con la ley de educación, con más prisa
+  add('escuela', !hasSchool(g) && (g.know || {}).escritura && g.hall != null && pop >= 16 && (g.wood >= 12 && g.stone >= 6 || g.wood >= 22) && !busyWith(g, 'escuela') ? (hasLaw(g, 'educacion') ? 9 : pop >= 20 ? 8 : 4.5) : 0); // un pueblo grande sin escuela se queda atrás (sin escuela no hay universidad) // (sin piedra, toda de madera: más cara) // con la ley de educación, con más prisa
   add('enseñar', hasSchool(g) && v.oficio === 'maestro' && !isFreeDay(g) && villagers.some(u => !u.dead && u.vid === g.id && u.task && u.task.k === 'clase') ? 6 : 0);
   add('catedral', g.faith && g.temple != null && world.objs[g.temple] && !hasCathedral(g) && pop >= 20 && g.stone >= 30 && g.wood >= 15 && (g.devotion || 0) >= 3 && !busyWith(g, 'catedral') ? (2 + Math.min(4, (g.devotion || 0) * .2)) * (regimeOf(g) === 'teocracia' ? 2 : 1) : 0);
   add('explorar', hasPaper(g) && pop >= 8 && !(g.noExplore > yearT) && !travelers.some(t => t.kind === 'expedicion' && t.from === g.id) && !busyWith(g, 'explorar') ? (v.oficio === 'cartógrafo' ? 4 : 1) * ((g.expeditions || 0) < 3 ? 2 : 1) : 0);
   add('tazas', g.market != null && world.objs[g.market] && (g.cups || 0) < 6 + pop && g.wood >= 4 && !busyWith(g, 'tazas') ? ((g.cups || 0) < 3 ? 3 : 1.2) : 0);
-  add('teatro', !hasTheater(g) && g.hall != null && pop >= 16 && g.stone >= 8 && g.wood >= 15 && !busyWith(g, 'teatro') ? 3 : 0);
+  add('teatro', !hasTheater(g) && g.hall != null && pop >= 22 && g.stone >= 8 && g.wood >= 15 && !busyWith(g, 'teatro') ? 3 : 0);
   add('coliseo', !hasColiseum(g) && g.hall != null && pop >= 24 && g.stone >= 18 && g.wood >= 10 && !busyWith(g, 'coliseo') ? (['monarquia', 'dictadura', 'fascismo'].includes(regimeOf(g)) ? 3 : 1.5) : 0);
   const sickN = villagers.filter(u => !u.dead && u.vid === g.id && u.sick).length;
   add('curar', sickN && busyWith(g, 'curar') < 2 ? (v.oficio === 'curandero' ? 8 : 1.5) : 0);
@@ -384,9 +387,9 @@ function chooseJob(v, g){
   add('altar', g.faith && g.holy && pop >= 5 && (g.altar == null || !world.objs[g.altar]) && g.stone >= 4 && !busyWith(g, 'altar') ? 3 : 0);
   add('templo', g.faith && houses >= 4 && (g.hall != null || pop >= 14) && (g.temple == null || !world.objs[g.temple]) && g.stone >= 15 && spare >= 10 && !busyWith(g, 'templo') ? 3 + (g.devotion || 0) * .3 : 0);
   add('monumento', g.temple != null && world.objs[g.temple] && pop >= 18 && g.stone >= 25 && (g.monument == null || !world.objs[g.monument]) && !busyWith(g, 'monumento') ? 2 + (g.devotion || 0) * .2 : 0);
-  add('banco', g.coin && g.hall != null && pop >= 12 && !hasBank(g) && g.stone >= 12 && g.wood >= 8 && !busyWith(g, 'banco') ? 3 : 0);
-  add('maravilla', nationOf(g) === g && regimeOf(g) !== 'tribu' && g.hall != null && pop >= 14 && (g.wonder == null || !world.objs[g.wonder]) && g.stone >= 30 && g.wood >= 15 && yearT - (g.regimeT || 0) > DAY_LEN * .3 && !busyWith(g, 'maravilla') ? 3 : 0);
-  add('mercado', houses >= 3 && pop >= 10 && (g.market == null || !world.objs[g.market]) && spare >= 12 && !busyWith(g, 'mercado') ? (pop >= 20 ? 5 : 3) : 0);
+  add('banco', g.coin && g.hall != null && pop >= 20 && !hasBank(g) && g.stone >= 12 && g.wood >= 8 && !busyWith(g, 'banco') ? 3 : 0);
+  add('maravilla', nationOf(g) === g && regimeOf(g) !== 'tribu' && g.hall != null && pop >= 24 && (g.wonder == null || !world.objs[g.wonder]) && g.stone >= 30 && g.wood >= 15 && yearT - (g.regimeT || 0) > DAY_LEN * .3 && !busyWith(g, 'maravilla') ? 3 : 0);
+  add('mercado', houses >= 4 && pop >= 14 && (g.market == null || !world.objs[g.market]) && spare >= 12 && !busyWith(g, 'mercado') ? (pop >= 20 ? 5 : 3) : 0);
   add('encender', g.fireOut && !raining(g.fy * W + g.fx) && !(floodA && floodA[g.fy * W + g.fx] > .3) && !busyWith(g, 'encender') ? 12 : 0);
   add('comerciar', g.market != null && world.objs[g.market] ? (L.includes('comercio') ? 2.5 : 1.2) : 0);
   const dark = isNight() || dayT() > .42, unlit = torchesOf(g).some(tc => !tc.lit && !raining(tc.i));
@@ -1055,7 +1058,7 @@ function runTask(v, g, dt){
     case 'ir_taberna': v.actT = 8 + Math.random() * 6; v.dir = Math.random() < .5 ? -1 : 1; v.onDone = () => {
       const kid = ageOf(v) < ADULT_H, d = kid ? 'zumo' : DRINKS[Math.floor(Math.random() * DRINKS.length)];
       v.water = 1; v.fun = yearT; v.hot = Math.max(0, (v.hot || 0) - .4);
-      const pr = Math.min(v.money || 0, Math.max(1, Math.round(priceOf(g) * .5))); if (pr > 0) { v.money -= pr; ecOf(g).treas += pr * .3; }
+      const pr = Math.min(v.money || 0, Math.max(1, Math.round(priceOf(g) * .5))); if (pr > 0) { v.money -= pr; const ec = ecOf(g); if (ec) ec.treas += pr * .3; }
       if (!kid && d !== 'agua fresca' && Math.random() < .15) v.tipsy = yearT + 8; // alguno sale achispado
       if (Math.random() < .5) floats.push({ x:v.x, y:v.y - 12, txt:Math.random() < .5 ? '¡Salud!' : d, col:'#f0c878', life:0 });
       if (Math.random() < .06) snd('cheer', v.x, v.y);

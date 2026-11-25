@@ -71,7 +71,7 @@ const coalReserve = g => 8 + facsOf(g).length * 4 + (g.factory ? 4 : 0);
 const survivalFirst = g => (g.sedAlarm != null && yearT - g.sedAlarm < DAY_LEN * .5) || g.food < popOf(g) * 1.2;
 // ¿Pasan sed de verdad? Mucha gente con el agua muy baja o alguien que ha muerto de sed hace poco
 function thirstCheck(g, people){
-  const dry = people.filter(u => u.water < .25).length, sed = (g.deaths || {}).sed || 0;
+  const dry = people.filter(u => u.water < .25 && !u.away).length, sed = g.sedHome || 0; // (los que mueren de sed de viaje o en campaña no dicen nada de los pozos)
   if ((people.length && dry / people.length > .25) || sed > (g.sedSeen ?? sed)) g.sedAlarm = yearT;
   g.sedSeen = sed;
 }

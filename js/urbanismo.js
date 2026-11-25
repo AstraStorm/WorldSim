@@ -165,13 +165,13 @@ function streetsNear(g){
   }
   list.sort((a, b) => a[2] - b[2]); streetCache.set(g.id, { t:now, list }); return list;
 }
-function frontOk(g, kind, x, y, towns){
+function frontOk(g, kind, x, y, towns, farmOk){
   const [hw, hh] = KIND_DIMS[kind] || [4, 6], i = y * W + x;
-  if (x <= hw || y <= hh + 1 || x >= W - hw - 1 || y >= H - 3 || farmMap.has(i) || bridgeSet.has(i)) return false;
+  if (x <= hw || y <= hh + 1 || x >= W - hw - 1 || y >= H - 3 || (farmMap.has(i) && !farmOk) || bridgeSet.has(i)) return false;
   if (x - hw <= g.fx + 1 && x + hw >= g.fx - 1 && Math.abs(y - g.fy) <= 50) return false; // la calle mayor norte-sur queda libre
   if (otherTown(g, x, y, towns)) return false;
-  return !penOverlap(g, x - hw, y - hh, x + hw, y + 1) && !plazaIn(x - hw, y - hh, x + hw, y) && !hallIn(g, x - hw, y - hh, x + hw, y + 1) && !farmIn(x - hw, y - hh, x + hw, y + 1)
-    && !hardIn(x - hw, y - hh, x + hw, y) && !wallIn(x - hw, y - hh, x + hw, y + 1) && !plotIn(x - hw, y - hh, x + hw, y + 1) && clearable(x - hw, y - hh, x + hw, y + 1) && !buildingClash(x, y, kind);
+  return !penOverlap(g, x - hw, y - hh, x + hw, y + 1) && !plazaIn(x - hw, y - hh, x + hw, y) && !hallIn(g, x - hw, y - hh, x + hw, y + 1) && (farmOk || !farmIn(x - hw, y - hh, x + hw, y + 1))
+    && !hardIn(x - hw, y - hh, x + hw, y) && !gridStreetIn(g, x - hw, y - hh, x + hw, y) && !wallIn(x - hw, y - hh, x + hw, y + 1) && !plotIn(x - hw, y - hh, x + hw, y + 1) && clearable(x - hw, y - hh, x + hw, y + 1) && !buildingClash(x, y, kind);
 }
 // El mejor solar con la puerta a una calle: cerca de la plaza, en fila con los vecinos y, si hay muralla, dentro
 function frontSite(g, kind){
@@ -283,5 +283,82 @@ SYSTEMS.push(dt => {
   urbT = 1.5;
   const towns = liveTowns(); if (!towns.length) return;
   for (const g of towns) if (!g.wallV2 && (g.wallPlan || g.wallPlan1)) wallMigrate(g);
-  const g = towns[urbIdx++ % towns.length]; clearTrails(g); if (g.hall != null || popOf(g) >= 6) linkTick(g);
+  const g = towns[urbIdx++ % towns.length]; clearTrails(g);
+  g.houses = [...new Set(g.houses.filter(i => !world.objs[i] || world.objs[i].key.startsWith('house')))]; // (una casa en cuyo solar ya se levantó otra cosa deja de contar como casa) if (g.hall != null || popOf(g) >= 6) linkTick(g);
 });
+
+// ---- Trama en cuadrícula: manzanas y calles rectas ----
+// Calles este-oeste cada 9 filas a partir de la plaza (la casa, al norte de la suya con la puerta a ella, y una fila de
+// patio detrás); parcelas de 10 casillas de ancho a cada lado de la calle mayor (que baja recta desde la plaza) y una
+// calle transversal cada tres parcelas. Los edificios de hasta 7 casillas de alto ocupan una parcela (o dos, los anchos);
+// los más altos, el ayuntamiento, los pozos, molinos y demás siguen buscando sitio como antes
+const GRID_KINDS = new Set(['casa', 'taberna', 'herreria', 'almacen', 'hospital', 'banco', 'cuartel', 'lonja', 'teatro', 'coliseo', 'tribunal', 'carcel', 'imprenta', 'sindicato', 'espias', 'granero', 'ahumadero', 'lenera', 'postas', 'templo']);
+const GRID_ROW = 9, GRID_LOT = 10;
+const gridRow = (g, y) => (((y - g.fy - 4) % GRID_ROW) + GRID_ROW) % GRID_ROW === 0; // ¿es una calle de la trama?
+// Centro de la parcela j (0, 1, 2…) del lado s (+1 este, -1 oeste); entre la 3.ª y la 4.ª de cada tramo pasa una calle
+const gridLotX = (g, s, j) => g.fx + s * (6 + j * GRID_LOT);
+function gridStreetIn(g, x0, y0, x1, y1){ // ¿tapa una calle de la trama ya abierta?
+  for (let y = y0; y <= y1; y++) { if (!gridRow(g, y)) continue; for (let x = x0; x <= x1; x++) if (pathMap.has(y * W + x) && !desireSet.has(y * W + x)) return true; }
+  return false;
+}
+function gridSite(g, kind){
+  const [hw, hh] = KIND_DIMS[kind] || [4, 6]; if (hh > 7 || hw > 6) return null;
+  const lots = hw <= 4 ? 1 : 2, towns = liveTowns().filter(o => o !== g && Math.hypot(o.fx - g.fx, o.fy - g.fy) < 100), R = g.wallRect;
+  const Rmax = Math.min(64, townRadius(g) + 22), cand = [];
+  const own = new Set(buildingsOf(g));
+  for (let k = -7; k <= 7; k++) {
+    const s0 = g.fy + 4 + k * GRID_ROW, y = s0 - 1; if (y <= hh + 1 || s0 >= H - 3) continue;
+    for (const s of [1, -1]) for (let j = 0; j < 7; j++) {
+      if (lots === 2 && j % 3 === 2) continue; // un edificio ancho no se come la calle transversal
+      const x = gridLotX(g, s, j) + (lots === 2 ? s * GRID_LOT / 2 : 0), d = Math.hypot(x - g.fx, (y - g.fy) * 1.2);
+      if (d > Rmax) continue;
+      let sc = d + (farmIn(x - hw, y - hh, x + hw, y + 1) ? 14 : 0); // mejor en suelo libre; si no queda, el pueblo se come algún campo
+      sc += lotRock(x - hw, y - hh, x + hw, y + 1) * 4; // (con piedras, después: primero hay que picarlas)
+      for (const dx of [-GRID_LOT, GRID_LOT]) if (own.has(y * W + x + dx)) sc -= 5; // pegada a las casas vecinas: la manzana se llena seguida
+      if (kind !== 'casa' && kind !== 'chabola') sc -= 4; // los edificios públicos, algo más al centro
+      if (R && (x < R.x0 + 4 || x > R.x1 - 4 || y < R.y0 + 7 || y > R.y1 - 2)) sc += 12;
+      cand.push([sc, x, y]);
+    }
+  }
+  cand.sort((a, b) => a[0] - b[0]);
+  const farmOk = GRID_FARM.has(kind) && houseCap(g) < popOf(g) + 2; // casas que faltan de verdad: pueden ir sobre un campo
+  for (const [, x, y] of cand) if (frontOk(g, kind, x, y, towns, farmOk)) return [x, y];
+  return null;
+}
+const GRID_FARM = new Set(['casa', 'almacen', 'granero']);
+const lotRock = (x0, y0, x1, y1) => { let n = 0; for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const o = world.objs[y * W + x]; if (o && ['stone', 'mineral'].includes(OBJ[o.key][1])) n++; } return n; };
+// Una casilla por la que puede ir una calle recta (los árboles y matas se talan al abrirla)
+function streetFree(i){
+  const x = i % W, y = (i / W) | 0; if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1) return false;
+  if (URB_NET(i)) return true;
+  if (WATER[world.biome[i]] || world.biome[i] === B.LAVA || wallSet.has(i)) return false;
+  const o = world.objs[i]; if (o && !['tree', 'berry'].includes(OBJ[o.key][1])) return false;
+  return !villages.some(q => underBuilding(q, x, y) || inPen(q, x, y));
+}
+// Abre la calle por esas casillas, en orden: 'red' si llega a las calles del pueblo, 'fin' si se acaban, 'estorbo' si algo la corta
+function paveTile(g, i, net){
+  const o = world.objs[i]; if (o) { if (OBJ[o.key][1] === 'tree') fallObj(i); world.objs[i] = null; g.wood += 1; }
+  farmMap.delete(i); desireSet.delete(i); pathMap.add(i); net.add(i);
+}
+function paveLine(g, tiles, net){
+  for (const i of tiles) { if (net.has(i)) return 'red'; if (!streetFree(i)) return 'estorbo'; paveTile(g, i, net); }
+  return 'fin';
+}
+{ const base = planSite; planSite = function(g, kind){
+  if (GRID_KINDS.has(kind)) { const p = gridSite(g, kind); if (p) return p; }
+  return base.apply(this, arguments);
+}; }
+// Al acabar un edificio de la trama: la calle delante de su fachada y, recta, hasta la calle mayor y por ella a la plaza
+{ const base = connect; connect = function(g, x, y){
+  const s = y + 1, o = world.objs[y * W + x];
+  if (o && isBuilding(o)) { const [hw, hh] = BUILD_DIMS[o.key.split(':')[0]] || [4, 6]; for (let yy = y - hh; yy <= y; yy++) for (let xx = x - hw; xx <= x + hw; xx++) farmMap.delete(yy * W + xx); } // el campo que había en el solar
+  if (!g || !o || !isBuilding(o) || !gridRow(g, s) || Math.abs(s - g.fy) > 70 || Math.abs(x - g.fx) > 70) return base.apply(this, arguments);
+  const [hw] = BUILD_DIMS[o.key.split(':')[0]] || [4, 6], net = townNet(g), side = x >= g.fx ? 1 : -1;
+  for (let a = x - hw - 1; a <= x + hw + 1; a++) { const i = s * W + a; if (!net.has(i) && streetFree(i)) paveTile(g, i, net); } // la acera de la fachada
+  const row = []; for (let a = x - side * (hw + 2); side > 0 ? a >= g.fx : a <= g.fx; a -= side) row.push(s * W + a);
+  let r = net.has(s * W + x) && row.length && net.has(row[0]) ? 'red' : paveLine(g, row, net);
+  if (r === 'fin') { const dy = Math.sign(g.fy - s), col = []; if (dy) for (let b = s + dy; b !== g.fy; b += dy) col.push(b * W + g.fx); r = col.length ? paveLine(g, col, net) : 'red'; } // por la calle mayor, hacia la plaza
+  streetCache.delete(g.id);
+  composeRegion(Math.min(x, g.fx) - 8, Math.min(s, g.fy) - 12, Math.max(x, g.fx) + 8, Math.max(s, g.fy) + 2);
+  if (r !== 'red') return base.apply(this, arguments); // algo en medio: el camino de siempre (A*) cierra el hueco
+}; }

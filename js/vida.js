@@ -5,7 +5,7 @@ const DIS_A = ['Fiebre', 'Peste', 'Tos', 'Viruela', 'Gripe', 'Mal'], DIS_B = ['r
 function newDisease(){ return { name:`${DIS_A[Math.floor(Math.random() * DIS_A.length)]} ${DIS_B[Math.floor(Math.random() * DIS_B.length)]}`, sev:.6 + Math.random() * .9, spread:.6 + Math.random() * .8 }; }
 function infect(v, dz, g){
   if (v.dead || v.sick || (v.immune || []).includes(dz.name)) return false;
-  v.sick = { name:dz.name, sev:dz.sev, spread:dz.spread, t:0, dur:40 + Math.random() * 60 };
+  v.sick = { name:dz.name, sev:dz.sev, spread:dz.spread, t:0, dur:35 + Math.random() * 50 };
   if (g) { const ep = epidemics.find(e => e.name === dz.name && e.vid === g.id && !e.over); if (ep) ep.cases++; else { epidemics.push({ name:dz.name, vid:g.id, cases:1, deaths:0, start:yearT, over:false }); notify(`¡Brota la ${dz.name.toLowerCase()} en ${g.name}!`, { x:v.x, y:v.y }); misfortune(g, 'enfermedad'); } }
   return true;
 }
@@ -20,7 +20,7 @@ function diseaseTick(g, dt, people){
     const s = v.sick; if (!s) continue;
     s.t += dt;
     for (const u of people) if (u !== v && !u.sick && (Math.hypot(u.x - v.x, u.y - v.y) < 18 || (u.home != null && u.home === v.home)) && Math.random() < dt * (u.home != null && u.home === v.home ? .035 : .022) * s.spread * (quarantine ? .35 : 1) * (crowd > 1 ? 1.5 : 1)) infect(u, s, g); // de cerca, o en la misma casa
-    v.hp = (v.hp ?? 1) - dt * .007 * s.sev * (ageOf(v) < ADULT_H || ageOf(v) > v.life * .75 ? 1.6 : 1) * (hosp ? .4 : 1) * (sanidad ? .6 : 1) * (v.cared > yearT ? .3 : 1);
+    v.hp = (v.hp ?? 1) - dt * .006 * s.sev * (ageOf(v) < ADULT_H || ageOf(v) > v.life * .75 ? 1.6 : 1) * (hosp ? .4 : 1) * (sanidad ? .6 : 1) * (v.cared > yearT ? .3 : 1);
     if (v.hp <= 0) { const ep = epidemics.find(e => e.name === s.name && e.vid === g.id && !e.over); if (ep) ep.deaths++; releaseTask(v); killVillager(v, 'enfermedad'); continue; }
     if (s.t > s.dur) { (v.immune ||= []).push(s.name); v.sick = null; floats.push({ x:v.x, y:v.y - 12, txt:'curado', col:'#a8e0a8', life:0 }); }
   }

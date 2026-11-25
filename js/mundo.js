@@ -470,7 +470,7 @@ function burntOf(s0){
   x.drawImage(s0, 0, 0); x.globalAlpha = .78; x.drawImage(charred(s0), 0, 0); x.globalAlpha = 1;
   x.globalCompositeOperation = 'destination-out';
   for (let k = 0; k < 6; k++) { const px = Math.floor(((k * 37) % 97) / 97 * c.width), py = Math.floor(((k * 53) % 89) / 89 * c.height * .45); x.fillRect(px, py, 2 + (k % 3), 2); }
-  burntCache.set(s0, c); return c;
+  c.ax = s0.ax; burntCache.set(s0, c); return c;
 }
 function ruinedOf(s0){
   let c = ruinCache.get(s0); if (c) return c;
@@ -480,7 +480,7 @@ function ruinedOf(s0){
   for (let k = 0; k < 5; k++) { const px = Math.floor(((k * 41 + 7) % 89) / 89 * (c.width - 4)), py = Math.floor(((k * 29 + 3) % 61) / 61 * c.height * .4); x.fillRect(px, py, 3 + (k % 3), 2 + (k % 2)); }
   x.globalCompositeOperation = 'source-atop'; x.fillStyle = 'rgba(30,22,16,.85)'; // grietas
   for (let k = 0; k < 3; k++) { let px = Math.floor(c.width * (.25 + k * .25)), py = Math.floor(c.height * .45); for (let n = 0; n < 6; n++) { x.fillRect(px, py, 1, 1); py++; px += (n + k) % 3 - 1; } }
-  ruinCache.set(s0, c); return c;
+  c.ax = s0.ax; ruinCache.set(s0, c); return c;
 }
 // vig (vigor, 0..1): la "fuerza" del árbol. Se hereda de la planta madre con pequeñas mutaciones;
 // cuanto más vigor, más probable que sobreviva al crecer, más vive y más semillas deja

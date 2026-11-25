@@ -217,8 +217,8 @@ function bestSite(v, g, kind){
   return best || planSite(g, kind);
 }
 // Tamaño de cada edificio (medio ancho y alto en casillas, por encima de su base): para que no se monten
-const BUILD_DIMS = { altar:[1, 2], temple:[4, 7], obelisk:[1, 4], market:[4, 4], house:[4, 6], hall:[5, 7], mill:[3, 8], well:[2, 4], store:[4, 5], tower:[2, 7], quarry:[4, 4], fire:[1, 1], bank:[4, 5], wonder:[6, 10], forge:[3, 5], hospital:[4, 5], barracks:[5, 6], tradehall:[5, 6], theater:[6, 6], coliseum:[6, 6], tavern:[5, 5], cathedral:[6, 13], school:[5, 9], court:[4, 7], jail:[4, 6], press:[4, 6], union:[4, 6], parliament:[6, 8], academy:[4, 8], mine:[4, 5], university:[5, 9], council:[6, 9], spy:[4, 6], granary:[4, 6], smoke:[3, 5], woodshed:[3, 4], post:[4, 6] };
-const KIND_DIMS = { altar:[1, 2], templo:[4, 7], mercado:[4, 4], casa:[4, 6], ayuntamiento:[5, 7], molino:[3, 8], pozo:[2, 4], almacen:[4, 5], torre:[2, 7], cantera:[4, 4], banco:[4, 5], maravilla:[6, 10], herreria:[3, 5], hospital:[4, 5], cuartel:[5, 6], lonja:[5, 6], teatro:[6, 6], coliseo:[6, 6], taberna:[5, 5], catedral:[6, 13], escuela:[5, 9], tribunal:[4, 7], carcel:[4, 6], imprenta:[4, 6], sindicato:[4, 6], parlamento:[6, 8], academia:[4, 8], mina:[4, 5], universidad:[5, 9], consejo:[6, 9], espias:[4, 6], granero:[4, 6], ahumadero:[3, 5], lenera:[3, 4], postas:[4, 6], chabola:[2, 4] };
+const BUILD_DIMS = { altar:[1, 2], temple:[4, 7], obelisk:[1, 4], market:[4, 4], house:[4, 6], hall:[5, 8], mill:[3, 8], well:[2, 4], store:[4, 5], tower:[2, 7], quarry:[4, 4], fire:[1, 1], bank:[4, 5], wonder:[6, 10], forge:[3, 5], hospital:[4, 5], barracks:[5, 6], tradehall:[5, 6], theater:[6, 6], coliseum:[6, 6], tavern:[5, 5], cathedral:[6, 13], school:[5, 9], court:[4, 7], jail:[4, 6], press:[4, 6], union:[4, 6], parliament:[6, 8], academy:[4, 8], mine:[5, 6], university:[5, 9], council:[6, 9], spy:[4, 6], granary:[4, 6], smoke:[3, 5], woodshed:[3, 4], post:[4, 6] };
+const KIND_DIMS = { altar:[1, 2], templo:[4, 7], mercado:[4, 4], casa:[4, 6], ayuntamiento:[5, 8], molino:[3, 8], pozo:[2, 4], almacen:[4, 5], torre:[2, 7], cantera:[4, 4], banco:[4, 5], maravilla:[6, 10], herreria:[3, 5], hospital:[4, 5], cuartel:[5, 6], lonja:[5, 6], teatro:[6, 6], coliseo:[6, 6], taberna:[5, 5], catedral:[6, 13], escuela:[5, 9], tribunal:[4, 7], carcel:[4, 6], imprenta:[4, 6], sindicato:[4, 6], parlamento:[6, 8], academia:[4, 8], mina:[5, 6], universidad:[5, 9], consejo:[6, 9], espias:[4, 6], granero:[4, 6], ahumadero:[3, 5], lenera:[3, 4], postas:[4, 6], chabola:[2, 4] };
 const TASK_KIND = { templo:'templo', mercado:'mercado', construir:'casa', ayuntamiento:'ayuntamiento', molino:'molino', pozo:'pozo', almacen:'almacen', torre:'torre', cantera:'cantera', banco:'banco', maravilla:'maravilla', herreria:'herreria', hospital:'hospital', cuartel:'cuartel', lonja:'lonja', teatro:'teatro', coliseo:'coliseo', taberna:'taberna', catedral:'catedral', escuela:'escuela', tribunal:'tribunal', carcel:'carcel', imprenta:'imprenta', sindicato:'sindicato', parlamento:'parlamento', academia:'academia', mina:'mina', universidad:'universidad', consejo:'consejo', espias:'espias', granero:'granero', ahumadero:'ahumadero', lenera:'lenera', postas:'postas', chabola:'chabola' };
 // ¿Choca con un edificio ya hecho o con uno que alguien está a punto de levantar? (skip: el propio solar)
 // Todos los edificios (y las hogueras) de todos los pueblos, una vez por paso: buildingClash se pregunta muchísimo
@@ -1575,7 +1575,7 @@ function diploTick(){
     // Guerra: con mucha enemistad (y gente para luchar)
     const warAt = (hasLaw(a, 'ejercito') || hasLaw(b, 'ejercito') ? -45 : -58) - (hasLaw(a, 'paz') && hasLaw(b, 'paz') ? 25 : hasLaw(a, 'paz') || hasLaw(b, 'paz') ? 10 : 0);
     const warsOf = g => { let n = 0; for (const o of rels.values()) if (o.war && (o.war.att === g.id || o.war.def === g.id)) n++; return n; };
-    if (!r.war && r.v < warAt && !(hasTreaty(r, 'fronteras') && (r.reason || 'territorio') === 'territorio' && r.v > -85) && (!(hasTreaty(r, 'noagresion') || hasTreaty(r, 'paz')) || r.v < -85) && warsOf(a) + warsOf(b) === 0 && popOf(a) >= 10 && popOf(b) >= 10 && yearT > DAY_LEN * 5 && yearT - (r.peaceT ?? -1e9) > DAY_LEN * 8) { // tras una paz, una tregua larga
+    if (!r.war && r.v < warAt && !(hasTreaty(r, 'fronteras') && (r.reason || 'territorio') === 'territorio' && r.v > -85) && (!(hasTreaty(r, 'noagresion') || hasTreaty(r, 'paz')) || r.v < -85) && warsOf(a) + warsOf(b) === 0 && popOf(a) >= 14 && popOf(b) >= 14 && yearT > DAY_LEN * 8 && yearT - (r.peaceT ?? -1e9) > DAY_LEN * 8) { // tras una paz, una tregua larga
       const armed = g => villagers.filter(v => !v.dead && v.vid === g.id && v.weapon).length;
       const att = armed(a) + popOf(a) * .3 >= armed(b) + popOf(b) * .3 ? a : b, def = att === a ? b : a;
       r.war = { att:att.id, def:def.id, reason:r.reason || 'territorio', start:yearT, raidT:yearT - 40, dead:0 }; breakTreaties(att, def, r); mutualDefense(att, def); warCamp(att, def, r); // (tratados.js, guerra.js)
@@ -2212,7 +2212,7 @@ function secede(g, party){
   const goers = villagers.filter(u => !u.dead && !u.away && u.vid === g.id && u !== g.leader && Math.abs((u.ideo || 0) - party.ideo) < .35).slice(0, Math.floor(popOf(g) * .4));
   if (goers.length < 6) return;
   for (let k = 0; k < 60; k++) {
-    const a = Math.random() * Math.PI * 2, d = 35 + Math.random() * 25, x = Math.round(g.fx + Math.cos(a) * d), y = Math.round(g.fy + Math.sin(a) * d * .8);
+    const a = Math.random() * Math.PI * 2, d = 42 + Math.random() * 26, x = Math.round(g.fx + Math.cos(a) * d), y = Math.round(g.fy + Math.sin(a) * d * .8);
     if (x < 8 || y < 8 || x >= W - 8 || y >= H - 8 || !tileFree(x, y) || !freshNear(y * W + x, 10)) continue;
     const ng = makeVillage(x, y); if (!ng) continue;
     for (const u of goers) { releaseTask(u); u.vid = ng.id; u.home = null; if (u === g.leader) g.leader = null; }
@@ -2836,7 +2836,7 @@ function killVillager(v, cause){
     c.graves.set(i, { name:v.name, cause, d:Math.floor(yearT / DAY_LEN) + 1, t:yearT, cross:gc.faith ? Math.random() < .5 : false, age:Math.floor((yearT - v.born) / YEAR) });
   } }
   for (const u of [...(v.parents || []), ...(v.kids || []), ...(v.partners || [])]) if (u && !u.dead) u.mourn = { t:yearT, who:v.name };
-  { const g = villageById(v.vid); if (g) { (g.deaths ||= {})[cause] = (g.deaths[cause] || 0) + 1; if (cause !== 'vejez') (g.log ||= []).push({ d:Math.floor(yearT / DAY_LEN) + 1, txt:`Murió ${v.name} (${cause})` }); } }
+  { const g = villageById(v.vid); if (g) { (g.deaths ||= {})[cause] = (g.deaths[cause] || 0) + 1; if (cause === 'sed' && !v.away && Math.hypot(g.fx - v.x / T, g.fy - v.y / T) < 35) g.sedHome = (g.sedHome || 0) + 1; if (cause !== 'vejez') (g.log ||= []).push({ d:Math.floor(yearT / DAY_LEN) + 1, txt:`Murió ${v.name} (${cause})` }); } }
   misfortune(villageById(v.vid), cause);
   funeral(v, villageById(v.vid)); // el entierro (civilizacion.js)
   if (v.boat) { const g = villageById(v.vid); if (g) g.boatOut = false; }
@@ -2902,7 +2902,7 @@ function updateVillagers(dt){
       const tx = Math.floor(v.x / T), ty = Math.floor(v.y / T);
       let best = null, bd = 40;
       for (const h of villages) { const d = Math.hypot(h.fx - tx, h.fy - ty); if (d < bd && world.objs[h.fx + h.fy * W]) { bd = d; best = h; } }
-      g = best || makeVillage(tx, ty); if (!g) { v.wait = 1; continue; }
+      g = best || makeVillage(tx, ty) || liveTowns().sort((a, b) => Math.hypot(a.fx - tx, a.fy - ty) - Math.hypot(b.fx - tx, b.fy - ty))[0]; if (!g) { v.wait = 1; continue; } // (sin sitio para fundar: con los del pueblo más cercano)
       v.vid = g.id;
     }
     // Si el hambre aprieta de verdad y no llega a la hoguera, tira de las provisiones de la aldea

@@ -8,23 +8,23 @@
 // · Academia de la lengua: donde hay ley de reforma o de pureza de la lengua; con ella la ley se nota de verdad
 const INSTS = {
   tribunal: { key:'court:tribunal', field:'court', wood:8, stone:12, flag:[.5, 0], t:12, name:'un tribunal', why:'ya pueden juzgar a quien se salte las leyes',
-    want:g => (g.know || {}).escritura && g.hall != null && popOf(g) >= 12, w:g => 6 },
+    want:g => (g.know || {}).escritura && g.hall != null && popOf(g) >= 20, w:g => 6 },
   carcel: { key:'jail:carcel', field:'prison', wood:4, stone:12, iron:3, flag:[.79, 0], t:10, name:'una cárcel', why:'los condenados cumplirán allí',
-    want:g => hasCourt(g) && (prisonersOf(g).length > 0 || popOf(g) >= 18), w:g => prisonersOf(g).length ? 8 : 3 },
+    want:g => hasCourt(g) && (prisonersOf(g).length > 0 || popOf(g) >= 30), w:g => prisonersOf(g).length ? 8 : 3 },
   imprenta: { key:'press:imprenta', field:'press', wood:10, stone:4, iron:2, t:10, name:'una imprenta', why:'pronto saldrá su primer periódico',
-    want:g => hasPaper(g) && (g.know || {}).escritura && popOf(g) >= 10, w:g => 5 },
+    want:g => hasPaper(g) && (g.know || {}).escritura && popOf(g) >= 24, w:g => 5 },
   sindicato: { key:'union:sindicato', field:'unionHall', wood:10, stone:4, t:10, name:'la casa del sindicato', why:'los trabajadores tienen dónde reunirse',
-    want:g => !!g.union, w:g => 4 },
+    want:g => !!g.union && g.hall != null && popOf(g) >= 20, w:g => 4 },
   parlamento: { key:'parliament:parlamento', field:'parliament', wood:12, stone:25, gold:2, flag:[.5, 0], t:16, name:'el parlamento', why:'allí se sentarán los diputados de todos los partidos',
-    want:g => PARLIAMENT.includes(regimeOf(g)) && nationOf(g) === g && popOf(g) >= 12, w:g => 6 },
+    want:g => PARLIAMENT.includes(regimeOf(g)) && nationOf(g) === g && popOf(g) >= 20, w:g => 6 },
   academia: { key:'academy:academia', field:'academy', wood:10, stone:15, flag:[.76, 0], t:14, name:'una academia de la lengua', why:'decidirá cómo se habla y se escribe',
-    want:g => (hasLaw(g, 'reforma_lengua') || hasLaw(g, 'pureza_lengua')) && (g.know || {}).escritura && popOf(g) >= 12, w:g => 5 },
+    want:g => (hasLaw(g, 'reforma_lengua') || hasLaw(g, 'pureza_lengua')) && (g.know || {}).escritura && popOf(g) >= 24, w:g => 5 },
   universidad: { key:'university:universidad', field:'university', wood:15, stone:25, t:16, name:'una universidad', why:'sus sabios investigarán y harán descubrimientos', flag:[.5, 0],
-    want:g => (g.know || {}).escritura && hasSchool(g) && popOf(g) >= 14, w:g => 7 },
+    want:g => (g.know || {}).escritura && hasSchool(g) && popOf(g) >= 30, w:g => 7 },
   consejo: { key:'council:consejo', field:'councilHall', wood:15, stone:30, gold:3, t:18, name:'el palacio del Consejo de las Naciones', why:'allí se reunirán los delegados de todo el mundo', flag:[.5, 0],
     want:g => !!(world.council && world.council.seat === g.id), w:g => 7 },
   espias: { key:'spy:espias', field:'spyHouse', wood:10, stone:8, t:10, name:'una casa discreta (de espías, aunque nadie lo dice)', why:'sus espías saldrán más a menudo y con más éxito',
-    want:g => nationOf(g) === g && (g.know || {}).escritura && popOf(g) >= 14 && hasRival(g), w:g => 3 },
+    want:g => nationOf(g) === g && (g.know || {}).escritura && popOf(g) >= 24 && hasRival(g), w:g => 3 },
 };
 const hasInst = (g, k) => { const f = INSTS[k].field; return g[f] != null && !!world.objs[g[f]] && world.objs[g[f]].key === INSTS[k].key; };
 const hasPress = g => hasInst(g, 'imprenta');
