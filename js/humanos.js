@@ -216,6 +216,7 @@ function vGo(v, x, y, dt, run){
     if (pass === 0 && pref && o * pref < 0) continue;
     const a = base + o, nx = v.x + Math.cos(a) * sp, ny = v.y + Math.sin(a) * sp;
     if (!walkable(nx, ny) || ((pass < 2 || v.swims === false || v.mount) && !swim && inWater(nx, ny))) continue; // quien no sabe nadar no se mete
+    { const cx = Math.floor(v.x / T), cy = Math.floor(v.y / T), qx = Math.floor(nx / T), qy = Math.floor(ny / T); if (qx !== cx && qy !== cy && tileCost(qx, cy) === Infinity && tileCost(cx, qy) === Infinity) continue; } // sin colarse en diagonal entre dos tramos de muralla (o dos muros) que se tocan por la esquina
     v.x = nx; v.y = ny; moved = true;
     if (o) { v.side = Math.sign(o); v.sideT = 1.2; }
     const nd = Math.cos(a) < 0 ? -1 : 1;
@@ -478,9 +479,9 @@ function setupTask(v, g, job){
     case 'campo': {
       // Una parcela rectangular (de 5×3 a 8×5 casillas) de tierra buena (junto al agua dulce o de secano)
       for (let k = 0; k < 120; k++) {
-        const w = 5 + Math.floor(Math.random() * 4), h = 3 + Math.floor(Math.random() * 3), a = Math.random() * Math.PI * 2, d = 12 + Math.random() * (16 + Math.min(20, popOf(g) / 2)); // el centro queda para las casas; con más gente, más afuera
+        const w = 5 + Math.floor(Math.random() * 4), h = 3 + Math.floor(Math.random() * 3), a = Math.random() * Math.PI * 2, d = 12 + Math.random() * (26 + Math.min(30, popOf(g) / 2)); // el centro queda para las casas; con más gente, más afuera
         const x0 = Math.round(g.fx + Math.cos(a) * d - w / 2), y0 = Math.round(g.fy + Math.sin(a) * d * .8 - h / 2);
-        let ok = x0 > 1 && y0 > 1 && x0 + w < W - 1 && y0 + h < H - 1;
+        let ok = x0 > 1 && y0 > 1 && x0 + w < W - 1 && y0 + h < H - 1 && !(typeof inTownCore === 'function' && inTownCore(g, x0, y0, x0 + w - 1, y0 + h - 1)); // ni en el casco del pueblo (urbanismo.js)
         for (let y = y0; ok && y < y0 + h; y++) for (let x = x0; ok && x < x0 + w; x++) if (!farmable(g, x, y, y * W + x)) ok = false;
         if (ok) return { k:job, rect:{ x0, y0, w, h }, x:(x0 + (w >> 1)) * T + 2, y:(y0 + h) * T + 3 };
       }

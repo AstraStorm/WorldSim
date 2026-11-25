@@ -226,6 +226,8 @@ let abC = null, abT = -1;
 function allBuildings(){ if (abT !== yearT || !abC) { abT = yearT; abC = []; for (const g of villages) { for (const b of buildingsOf(g)) abC.push(b); abC.push(Math.round(g.fy) * W + Math.round(g.fx)); } } return abC; }
 const ZONE_OK = new Set(['altar', 'templo', 'catedral', 'mercado', 'maravilla', 'ayuntamiento']);
 const zoneHit = (x0, y0, x1, y1) => villages.some(o => [o.holy, o.marketRect, o.plaza].some(q => q && !(x1 < q.x0 || x0 > q.x1 || y1 < q.y0 || y0 > q.y1)));
+let pwC = null, pwT = -1;
+function plannedWalls(){ if (pwT !== yearT || !pwC) { pwT = yearT; pwC = new Set(); for (const o of villages) { if (!popOf(o)) continue; for (const i of [...(o.wallPlan || []), ...(o.wallPlan1 || [])]) if (!wallSet.has(i) && !gateSet.has(i)) pwC.add(i); } } return pwC; }
 function buildingClash(x, y, kind, skip){
   if (volcDanger(x, y)) return true; // ni en las faldas de un volcán ni sobre la lava (volcanes.js)
   const [hw, hh] = KIND_DIMS[kind] || [4, 5];
@@ -236,6 +238,7 @@ function buildingClash(x, y, kind, skip){
   }
   if (penOverlap(null, x - hw, y - hh, x + hw, y + 1) || plotIn(x - hw, y - hh, x + hw, y + 1)) return true;
   if (!ZONE_OK.has(kind) && zoneHit(x - hw, y - hh, x + hw, y)) return true;
+  { const P = plannedWalls(); if (P.size) for (let yy = y - hh; yy <= y + 1; yy++) for (let xx = x - hw; xx <= x + hw; xx++) if (P.has(yy * W + xx)) return true; } // ni sobre el trazado de una muralla aún por hacer (si no, la muralla queda a trozos)
   for (const o of villages) { const R = o.reserve; if (R && R.until > yearT && R.kind !== kind && hit(R.x, R.y, KIND_DIMS[R.kind] || [4, 6])) return true; } // el solar que se despejó para otro edificio (urbanismo.js) // ni dentro de una plaza, la plaza sagrada o el mercado (la puerta sí puede dar a ellas)
   if (wallSet.size) for (let yy = y - 1; yy <= y + 1; yy++) for (let xx = x - hw; xx <= x + hw; xx++) if (wallSet.has(yy * W + xx)) return true; // ni encima de la muralla // ni encima de un cercado ni de una arboleda o bayal
   for (const v of villagers) {

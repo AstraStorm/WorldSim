@@ -92,3 +92,57 @@ document.getElementById('vcard').addEventListener('click', e => {
   selectBuilding(l[k], true);
 });
 setInterval(() => { if (selBld != null) renderBldCard(); }, 1000);
+
+// ---- Recintos: también se pueden seleccionar (registro, cementerio, puerto de globos, plaza sagrada, arboleda,
+// bayal, cercados y el castillo mientras se construye), con su ficha y su marco en el mapa ----
+BLD.add('quarry');
+let selZone = null; // { vid, k, i? }
+const ZONE_INFO = {
+  registry:['Servicios', 'Registro civil', 'La oficina del registro: aquí hacen el DNI a cada habitante y el pasaporte a quien quiere viajar'],
+  cemetery:['Religión', 'Cementerio', 'Aquí descansan los que murieron en el pueblo, cada uno en su tumba'],
+  aero:['Transporte', 'Puerto de globos', 'Desde aquí despegan los globos y dirigibles: a cartografiar, comerciar, visitar o, en guerra, a bombardear'],
+  holy:['Religión', 'Plaza sagrada', 'El lugar sagrado del pueblo: aquí rezan, hacen ofrendas y celebran sus ritos'],
+  grove:['Trabajo', 'Arboleda', 'Árboles plantados para tener madera sin dejar pelado el bosque'],
+  berryPlot:['Trabajo', 'Bayal', 'Matas de bayas plantadas junto al pueblo: comida a mano'],
+  pen:['Trabajo', 'Cercado', 'Aquí guardan sus animales'],
+  fort:['Defensa', 'Castillo en obras', 'El castillo que están levantando: cuando esté hecho, el pueblo podrá refugiarse dentro'],
+};
+const zoneRect = z => { const g = villageById(z.vid); if (!g) return null; if (z.k === 'pen') return pensOf(g)[z.n] || null; if (z.k === 'fort') { const f = g.fort; if (!f || f.built) return null; const x = f.i % W, y = (f.i / W) | 0; return { x0:x - 6, y0:y - 9, x1:x + 6, y1:y }; } const q = g[z.k]; return q ? (q.x1 != null ? q : { x0:q.x0, y0:q.y0, x1:q.x0 + q.w - 1, y1:q.y0 + q.h - 1 }) : null; };
+function zoneAt(sx, sy){
+  const tx = Math.floor((sx - offX) / zoom / T), ty = Math.floor((sy - offY) / zoom / T), inR = r => r && tx >= r.x0 && tx <= r.x1 && ty >= r.y0 && ty <= r.y1;
+  for (const g of liveTowns()) {
+    for (const k of ['registry', 'aero', 'cemetery', 'holy', 'grove', 'berryPlot']) if (inR(zoneRect({ vid:g.id, k }))) return { vid:g.id, k };
+    const ps = pensOf(g); for (let n = 0; n < ps.length; n++) if (inR(ps[n])) return { vid:g.id, k:'pen', n };
+    if (inR(zoneRect({ vid:g.id, k:'fort' }))) return { vid:g.id, k:'fort' };
+  }
+  return null;
+}
+function zoneDetails(z, g){
+  const kv = (a, b) => `<div class="kv"><span>${a}</span><b>${b}</b></div>`;
+  if (z.k === 'registry') { const ps = villagers.filter(u => !u.dead && u.vid === g.id); return kv('Con DNI', `${ps.filter(u => u.dni).length} de ${ps.length}`) + kv('Con pasaporte', ps.filter(u => u.pass != null).length) + kv('Sin papeles', ps.filter(u => u.irreg).length); }
+  if (z.k === 'cemetery') { const gr = [...g.cemetery.graves.values()].sort((a, b) => b.t - a.t); return kv('Tumbas', `${gr.length} de ${g.cemetery.slots.length}`) + (gr.length ? `<h4>Últimos enterrados</h4><ul class="log">${gr.slice(0, 6).map(e => `<li><span class="d">día ${e.d}</span>${esc(e.name)} · ${esc(e.cause)}${e.age != null ? ` · ${e.age} años` : ''}</li>`).join('')}</ul>` : ''); }
+  if (z.k === 'aero') { const bs = balloonsOf(g); return kv('Globos', bs.length ? bs.map(b => `${b.cap} plazas (${b.state})`).join(' · ') : 'ninguno todavía') + kv('Manga de viento', hasSock(g) ? 'sí' : 'aún no'); }
+  if (z.k === 'holy') return (g.faith ? kv('Fe', esc(g.faith.name)) + kv('Dios', esc(g.faith.god)) : '') + kv('Devoción', Math.round((g.devotion || 0) * 10) / 10) + kv('Ira de los dioses', Math.round((g.wrath || 0) * 10) / 10);
+  if (z.k === 'pen') { const a = penAnimals(g).filter(x => (x.penK || 0) === z.n), c = {}; for (const x of a) c[x.sp] = (c[x.sp] || 0) + 1; return kv('Animales', a.length ? Object.entries(c).map(([s, n]) => `${n} ${s}`).join(' · ') : 'vacío'); }
+  if (z.k === 'fort') { const f = g.fort; return kv('Tipo', esc((FORTS[f.type] || {}).name || f.type)) + kv('Obra', `${Math.round((f.prog || 0) * 100)} %`); }
+  if (z.k === 'grove' || z.k === 'berryPlot') { const q = g[z.k], n = (q.slots || []).filter(i => world.objs[i]).length; return kv('Plantado', `${n} de ${(q.slots || []).length}`); }
+  return '';
+}
+function renderZoneCard(){
+  let el = document.getElementById('bcard'); if (!el) { const z = selZone; selZone = null; renderBldCard(); selZone = z; el = document.getElementById('bcard'); }
+  if (!el._zoneX) { el._zoneX = true; el.addEventListener('click', e => { if (e.target.closest('.x')) selZone = null; }, true); } // (cerrar también vale para los recintos)
+  const g = selZone && villageById(selZone.vid), r = selZone && zoneRect(selZone);
+  if (!g || !r) { selZone = null; el.hidden = true; return; }
+  const [type, name, desc] = ZONE_INFO[selZone.k], n = nationOf(g);
+  el.innerHTML = el._html = `<div class="bh"><div><span class="btype">${type}</span><h3>${name}</h3><button class="lnk" data-vid="${g.id}">${n && n.flagUrl ? `<img src="${n.flagUrl}" alt="">` : ''}${esc(g.name)}</button></div><button class="x" aria-label="Cerrar">×</button></div><p>${desc}</p><div class="sec">${zoneDetails(selZone, g)}</div>`;
+  el.hidden = false;
+}
+function selectZone(z){ selBld = null; selZone = z; renderZoneCard(); }
+{ const base = selectBuilding; selectBuilding = function(i, go){ selZone = null; return base.apply(this, arguments); }; }
+{ const base = renderBldCard; renderBldCard = function(){ if (selZone && selBld == null) { renderZoneCard(); return; } return base.apply(this, arguments); }; }
+{ const base = drawSelBuilding; drawSelBuilding = function(t){
+  base.apply(this, arguments); const r = selZone && zoneRect(selZone); if (!r) return;
+  const a = .55 + .35 * Math.sin(t / 220), g = villageById(selZone.vid), c = g ? villageColor(nationOf(g)) : [233, 185, 73];
+  vctx.strokeStyle = `rgba(${c.join(',')},${a})`; vctx.lineWidth = 1; vctx.strokeRect(r.x0 * T - .5, r.y0 * T - .5, (r.x1 - r.x0 + 1) * T + 1, (r.y1 - r.y0 + 1) * T + 1);
+  vctx.strokeStyle = `rgba(255,255,255,${a * .8})`; vctx.strokeRect(r.x0 * T - 1.5, r.y0 * T - 1.5, (r.x1 - r.x0 + 1) * T + 3, (r.y1 - r.y0 + 1) * T + 3);
+}; }

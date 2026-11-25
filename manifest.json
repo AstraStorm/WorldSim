@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611251913",
- "fecha": "2026-11-25 19:13",
+ "version": "202611251929",
+ "fecha": "2026-11-25 19:29",
  "novedades": [
   {
    "fecha": "2026-11-25",
-   "texto": "Mapas Titánico, Continental y Planetario"
+   "texto": "Recintos seleccionables, murallas"
+  },
+  {
+   "fecha": "2026-11-25",
+   "texto": "Tres mapas más grandes que el colosal (Titánico 900×562, Continental 1080×675, Planetario 1280×800); animales mucho más ligeros (presas, caza y pareja por celdas vecinas en vez de recorrer todos; fuera de la vista, uno de cada cuatro pasos); dibujos de nube reutilizados; oleaje más espaciado con todo el mapa a la vista"
   },
   {
    "fecha": "2026-11-25",
@@ -46,20 +50,16 @@
   {
    "fecha": "2026-11-25",
    "texto": "Ciencia en árbol: requisitos entre descubrimientos y ventana «Ciencia» con el árbol, el progreso de la nación, los saberes de sus pueblos y la comparación entre naciones; imperios sin nombre ya no salen como «undefined»"
-  },
-  {
-   "fecha": "2026-11-25",
-   "texto": "Por mar, en carabela: viajeros, flotas, colonos y diplomáticos de pueblos con barcas o puerto van en galeón (uno por cada 10, con la gente en cubierta) en vez de en barcas"
   }
  ],
  "archivos": {
-  "index.html": "438ec2988a5d099b789e45f6933228ac5885ed4b",
+  "index.html": "09b2071de7d813ec9e4060813e4ffdd054a2d1c1",
   "css/estilo.css": "86812acfbb924fad43a3c902badb4761868990b5",
   "js/aldeanos.js": "d9920d364407645d80f1cdfbdcc1baf7fd203032",
   "js/ambiente.js": "6c96bf777f6cdfc55b648f495836521ee28aeb8f",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "a94b46896cfd10fd688954a3c5b9297e9b693872",
-  "js/arte.js": "f25dc9d51057efcb068d7a49f37fab5802d266ef",
+  "js/arte.js": "815177a17208aab083ecc543d617cbf108cad2de",
   "js/arte_mapa.js": "373de74c89b7418c4a040aaea0ee2fd64b367b53",
   "js/bandidos.js": "bc804375208c5f300e33435e76d16001e8c4daae",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
@@ -84,7 +84,7 @@
   "js/desastres.js": "d3e703f394b38f456594d7301e04feaca87061f7",
   "js/devocion.js": "ead2ae212c4a3118764213abe00f4b6424a6760b",
   "js/documentos.js": "5b297799cde31f243fdb78a3be57c1209f89b14d",
-  "js/edificios.js": "217476a6fd1617cf12ba3dc9e9918ebec987a85a",
+  "js/edificios.js": "dde752d5265cc8d7a145ef54e73f7d48141f3eb3",
   "js/espionaje.js": "6291557af0a9488f321131fbfb7cdccf50cdbbf1",
   "js/estaciones.js": "e9e2f1194fdb60ca73c007b1cd7e9ae392ce2ad7",
   "js/estrategia.js": "5aa33d384476a46fa53ee6adf7d7b72360c8fd0e",
@@ -94,12 +94,12 @@
   "js/globos.js": "955b67ce3b9dd8c36b7ee965f9f05f4fb8bd9d39",
   "js/grafica.js": "d548461632882f80f4077d9e5754c70c5319331e",
   "js/guerra.js": "0d922c7dec10df8302532c3f3ae65587845edbbd",
-  "js/humanos.js": "c80884339737130565832ccd7dc327160ad2b3d7",
+  "js/humanos.js": "99289d87cc55f85fd248e3dcea2828aed4021945",
   "js/idiomas.js": "a64e7f699431735d8b20a2eb82d317a02f4bd265",
   "js/impuestos.js": "9820acf00db62b3039fb43433ddcc3f522453daa",
   "js/industria.js": "45344548ba566b198096e11e73952483dfb1b864",
   "js/instituciones.js": "0efca47be64b6fd263864fb8b5c3f0c732d457d3",
-  "js/interfaz.js": "a1a5da654e71c84daab4ac5868a5dc1b6e6214c8",
+  "js/interfaz.js": "264f79022342a4de1191bf70a0ba7260c69b56f5",
   "js/islas.js": "d65159562d188788176b02cca6001d0abcb20629",
   "js/justicia.js": "100314d7858fe651a4e7b6d0d9530dab4bdaa99e",
   "js/leyes.js": "ef8a179ecd2f195493f87d8b2124de0e3e644084",
@@ -124,13 +124,13 @@
   "js/riqueza.js": "4437665e375d993ccfc2bec62225436b8fd03dce",
   "js/rutas.js": "6e12cafc1992e09fc3c2b5b13ca7d7db6416c364",
   "js/sindicatos.js": "f7cb8bf83ff74322a6fc45cc6ac90550425c6d15",
-  "js/sociedad.js": "eb5ba8e511d9d6a247872acc7b9439820dc1bb1d",
+  "js/sociedad.js": "fe3b3d43e6befb4374a01233d97ff02ef9aeb022",
   "js/sonido.js": "25be9d9bda62336aba463c82e31668d0e9b2bc54",
   "js/titulares.js": "0506409e843da939370bb404b894a52cffa68620",
   "js/trabajo.js": "6337df3b06ff54f44790b7a744c363a098833c07",
   "js/tratados.js": "c7221ac52158a928a77489448ca7f1ce45ade8e2",
   "js/ui.js": "87256f0f01b8aa2a5b9d282c0a2a538dce73cf85",
-  "js/urbanismo.js": "6f83c37472a4e051b8bd96da6764bd20c0cc9f2b",
+  "js/urbanismo.js": "1b4a23737d90a685d2206dfa8d96d61f32f55720",
   "js/vegetacion.js": "440be3b609ce5146ed024c3c0ea0ec694344c592",
   "js/vida.js": "e70bc2e79a09c6b46317c8aec7fc5c6bf476264a",
   "js/visitas.js": "5cafd3070fdf9de08e0a6eebf6644ad13c46bc1d",

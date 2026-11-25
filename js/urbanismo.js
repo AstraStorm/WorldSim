@@ -40,7 +40,7 @@ function ownPlots(g){
   const club = wallCluster(g);
   if (wallLeader(g) !== g) { g.wallPlan = []; g.wallIdx = 0; g.wallRing = 2; g.wallMsg = g.wall2Msg = true; g.gateTiles = new Set(); g.gateKey = 'v2'; g.wallV2 = true; g.wallRect = null; g.wallCoreN = 0; return g.wallPlan; } // la muralla es la de la ciudad
   const m = g.wallRing === 2 ? 6 : 2, cx = Math.round(g.fx), cy = Math.round(g.fy), rects = club.map(o => ({ x0:Math.round(o.fx) - 6, y0:Math.round(o.fy) - 11, x1:Math.round(o.fx) + 6, y1:Math.round(o.fy) + 4 })), force = [];
-  const core = coreBuildings(g), near = club.flatMap(o => buildingsOf(o).filter(h => Math.hypot(h % W - o.fx, ((h / W) | 0) - o.fy) <= 60));
+  const core = coreBuildings(g), near = club.flatMap(o => buildingsOf(o).filter(h => Math.hypot(h % W - o.fx, ((h / W) | 0) - o.fy) <= 90));
   // Cada edificio con su huella entera (la de underBuilding: 5 a cada lado, 7 por encima) y unos pasos de margen
   const foot = (h, e) => { const o = world.objs[h], d = (o && BUILD_DIMS[o.key.split(':')[0]]) || [4, 6], x = h % W, y = (h / W) | 0, hw = Math.max(5, d[0]), hh = Math.max(7, d[1]); return { x0:x - hw - e, y0:y - hh - e, x1:x + hw + e, y1:y + 1 + e }; };
   for (const h of near) force.push(foot(h, 1));
@@ -104,6 +104,7 @@ function placeWall(g, i, stone){
   if (midGate(g, i)) { gateSet.add(i); gateOwner.set(i, g.id); return true; }
   if (o && (isBuilding(o) || o.key.startsWith('fire') || o.vid != null)) return false;
   if (underBuilding(g, x, y) || plotIn(x, y, x, y) || villages.some(q => inPen(q, x, y, 1))) return false;
+  if (villagers.some(u => !u.dead && !u.away && Math.floor(u.x / T) === x && Math.floor(u.y / T) === y)) return false; // (nunca encima de nadie)
   if (o) { world.objs[i] = null; composeRegion(x - 7, y - 11, x + 7, y + 12); }
   farmMap.delete(i); pathMap.delete(i); wallSet.add(i); if (stone) wallStone.add(i);
   return true;
@@ -287,6 +288,8 @@ SYSTEMS.push(dt => {
   g.houses = [...new Set(g.houses.filter(i => !world.objs[i] || world.objs[i].key.startsWith('house')))]; // (una casa en cuyo solar ya se levantó otra cosa deja de contar como casa)
   if (g.hall != null || popOf(g) >= 6) linkTick(g);
   if (wallSet.size) wallUnderFix(g);
+  { const P = [...(g.wallPlan || []), ...(g.wallPlan1 || [])], hid = P.filter(i => !wallSet.has(i) && !gateSet.has(i) && underBuilding(g, i % W, (i / W) | 0)).length; // trazado tapado por edificios: se vuelve a trazar
+    if (P.length && hid > Math.max(6, P.length * .06) && !(g.wallReplanT > yearT - DAY_LEN)) { g.wallReplanT = yearT; g.wallCoreN = -999; } }
   overlapFix(g); danglingFix(g);
 });
 
@@ -315,7 +318,7 @@ function gridSite(g, kind){
       if (lots === 2 && j % 3 === 2) continue; // un edificio ancho no se come la calle transversal
       const x = gridLotX(g, s, j) + (lots === 2 ? s * GRID_LOT / 2 : 0), d = Math.hypot(x - g.fx, (y - g.fy) * 1.2);
       if (d > Rmax) continue;
-      let sc = d + (farmIn(x - hw, y - hh, x + hw, y + 1) ? 14 : 0); // mejor en suelo libre; si no queda, el pueblo se come algún campo
+      let sc = d + (farmIn(x - hw, y - hh, x + hw, y + 1) && !inTownCore(g, x - hw, y - hh, x + hw, y) ? 14 : 0); // mejor en suelo libre; si no queda, el pueblo se come algún campo
       sc += lotRock(x - hw, y - hh, x + hw, y + 1) * 4; // (con piedras, después: primero hay que picarlas)
       for (const dx of [-GRID_LOT, GRID_LOT]) if (own.has(y * W + x + dx)) sc -= 5; // pegada a las casas vecinas: la manzana se llena seguida
       if (kind !== 'casa' && kind !== 'chabola') sc -= 4; // los edificios públicos, algo más al centro
@@ -324,11 +327,15 @@ function gridSite(g, kind){
     }
   }
   cand.sort((a, b) => a[0] - b[0]);
-  const farmOk = GRID_FARM.has(kind) && houseCap(g) < popOf(g) + 2; // casas que faltan de verdad: pueden ir sobre un campo
-  for (const [, x, y] of cand) if (frontOk(g, kind, x, y, towns, farmOk)) return [x, y];
+  const short = GRID_FARM.has(kind) && houseCap(g) < popOf(g) + 2; // casas que faltan de verdad: pueden ir sobre un campo (y en el casco, siempre)
+  for (const [, x, y] of cand) if (frontOk(g, kind, x, y, towns, short || (GRID_FARM.has(kind) && inTownCore(g, x - 4, y - 6, x + 4, y)))) return [x, y];
   return null;
 }
 const GRID_FARM = new Set(['casa', 'almacen', 'granero']);
+// El casco del pueblo: las primeras manzanas alrededor de la plaza, que crecen con la gente. Ahí no se siembra (los campos,
+// alrededor) y, si quedó algún campo de antes, las casas pueden ocuparlo
+const coreOf = g => { const p = popOf(g); return { x0:g.fx - Math.min(52, 22 + p * .5), x1:g.fx + Math.min(52, 22 + p * .5), y0:g.fy - Math.min(34, 14 + p * .3), y1:g.fy + Math.min(34, 14 + p * .3) }; };
+const inTownCore = (g, x0, y0, x1, y1) => { const c = coreOf(g); return !(x1 < c.x0 || x0 > c.x1 || y1 < c.y0 || y0 > c.y1); };
 const lotRock = (x0, y0, x1, y1) => { let n = 0; for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const o = world.objs[y * W + x]; if (o && ['stone', 'mineral'].includes(OBJ[o.key][1])) n++; } return n; };
 // Una casilla por la que puede ir una calle recta (los árboles y matas se talan al abrirla)
 function streetFree(i){
@@ -388,7 +395,7 @@ function bldRects(){
   return out;
 }
 function overlapFix(g){
-  let n = 0; const B0 = bldRects(), zones = [g.pitch, g.pool, g.track, g.holy, g.marketRect, g.plaza].filter(Boolean).map(rectOf);
+  let n = 0; const B0 = bldRects(), zones = [g.pitch, g.pool, g.track, g.holy, g.marketRect, g.plaza, g.cemetery, g.registry, g.aero].filter(Boolean).map(rectOf);
   for (const z of zones) for (let y = z.y0; y <= z.y1; y++) for (let x = z.x0; x <= z.x1; x++) {
     const i = y * W + x, o = world.objs[i]; if (!o || isBuilding(o)) continue;
     if (o.key.startsWith('quarry') && z === g.holy && villages.every(q => q.quarry !== i || q.dead || !popOf(q))) { world.objs[i] = null; n++; continue; } // cantera abandonada dentro de la plaza sagrada
@@ -450,3 +457,20 @@ function renewalSite(g, kind){
   const p = base.apply(this, arguments); if (p || kind === 'casa' || kind === 'pozo' || kind === 'chabola' || !KIND_DIMS[kind]) return p;
   return renewalSite(g, kind);
 }; }
+
+// ---- Nadie dentro del muro: quien acaba sobre un tramo de muralla (le construyeron encima, lo dejaron ahí detenido...)
+// sale al lado de dentro de su pueblo; si no, desde ahí podía salir hacia cualquier lado y la muralla no servía ----
+let unstickT = 0;
+SYSTEMS.push(dt => {
+  if (!world || !wallSet.size || (unstickT -= dt) > 0) return; unstickT = .5;
+  for (const v of villagers) {
+    if (v.dead || v.away || v.boat) continue;
+    const tx = Math.floor(v.x / T), ty = Math.floor(v.y / T); if (!wallSet.has(ty * W + tx)) continue;
+    const g = villageById(v.vid); let best = null, bd = Infinity;
+    for (let r = 1; r <= 5 && !best; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+      const x = tx + dx, y = ty + dy; if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1 || tileCost(x, y) === Infinity || inWater(x * T + 2, y * T + 3)) continue;
+      const d = g ? Math.hypot(x - g.fx, y - g.fy) : Math.hypot(dx, dy); if (d < bd) { bd = d; best = [x, y]; }
+    }
+    if (best) { v.x = best[0] * T + 2; v.y = best[1] * T + 3; v.route = null; v.routeKey = null; }
+  }
+});
