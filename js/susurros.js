@@ -90,10 +90,12 @@ function ideasTick(dt){
   // Cada creyente, de vez en cuando, se lo cuenta a alguien
   for (const b of bel) {
     if (b.away || b.sleep || b.boat || (b.task && b.task.k === 'detenido')) continue;
-    if (Math.random() > step * .05 * (.5 + trait(b, 'sociable'))) continue;
+    if (Math.random() > step * .05 * (.5 + trait(b, 'sociable')) * (typeof netBoost === 'function' ? netBoost(b) : 1)) continue; // (con redes sociales, mucho más: redes.js)
     const I = ideaById(b.idea.id); if (!I) continue;
     let pool = byVid.get(b.vid) || [];
-    if (Math.random() < .15) { // a otro pueblo: con quien comercian o un vecino cercano
+    const netPick = typeof netPool === 'function' ? netPool(b, byVid) : null; // (por las redes, a cualquier pueblo conectado del mundo)
+    if (netPick) pool = netPick;
+    else if (Math.random() < .15) { // a otro pueblo: con quien comercian o un vecino cercano
       const g = villageById(b.vid), near = g && villages.filter(o => o !== g && popOf(o) && (Math.hypot(o.fx - g.fx, o.fy - g.fy) < 60 || yearT - (relOf(g, o).tradeT ?? -1e9) < DAY_LEN));
       if (near && near.length) pool = byVid.get(near[Math.floor(Math.random() * near.length)].id) || pool;
     }
@@ -134,7 +136,7 @@ if (typeof GRIEF_TXT !== 'undefined') GRIEF_TXT[GRIEF_ENGANO] = 'que el gobierno
 function ideaLands(I, g, share){
   if (!g) return;
   const at = { x:g.fx * T, y:g.fy * T }, pct = Math.round(share * 100), quote = quoted(ideaSay(I)), tv = I.tgt != null ? villageById(I.tgt) : null;
-  const head = `En ${g.name} ha calado la idea de que ${quote.replace(/^([«“])(.)/, (m, q, c) => q + c.toLowerCase())} (la cree el ${pct} % de los adultos)`;
+  const head = `En ${g.name} ha calado ${I.bulo ? 'el bulo' : 'la idea'} de que ${quote.replace(/^([«“])(.)/, (m, q, c) => q + c.toLowerCase())} (la cree el ${pct} % de los adultos)`;
   const adults = villagers.filter(u => !u.dead && u.vid === g.id && ageOf(u) >= ADULT_H);
   let what = '';
   switch (I.k) {
@@ -231,7 +233,7 @@ function whisperRender(){
   const el = $('whisper'), v = whisperV; if (!el || !v) return;
   const g = villageById(v.vid); if (!g) { whisperClose(); return; }
   const mood = moodOf(v), adults = villagers.filter(u => !u.dead && u.vid === g.id && ageOf(u) >= ADULT_H), cur = v.idea && ideaById(v.idea.id);
-  const sel = whisperSel || {}, active = ideasOf().filter(I => I.st !== 'fin').length;
+  const sel = whisperSel || {}, active = ideasOf().filter(I => I.st !== 'fin' && !I.bulo).length; // (los bulos de las redes no cuentan)
   const cards = Object.entries(IDEAS).map(([k, D]) => {
     let tgt = sel.k === k ? sel.tgt : undefined; if (tgt === undefined) tgt = whisperDefault(k, g, v);
     const opts = D.tgt === 'pueblo' ? whisperTargets(g) : D.tgt === 'ley' ? whisperLaws(g) : null;
@@ -292,12 +294,12 @@ function ideaTrackRender(force){
     const hits = Object.keys(I.hit).map(id => (villageById(+id) || {}).name).filter(Boolean);
     const st = I.st === 'fin' ? `<span class="it-st fin">Se ha olvidado${I.peak ? ` (llegó a ${I.peak})` : ''}</span>` : hits.length ? `<span class="it-st ok">¡Ha calado en ${esc(hits.slice(0, 3).join(', '))}${hits.length > 3 ? '…' : ''}!</span>` : `<span class="it-st">Se extiende</span>`;
     return `<div class="it-row${I.st === 'fin' ? ' fin' : ''}" style="--c:${D.col}"><span class="it-ic">${D.ic}</span><div class="it-b"><b>${esc(quoted(ideaSay(I)))}</b>
-      <span class="muted">se la susurraste a ${esc(I.who)} · ${esc((villageById(I.vid) || {}).name || '')}</span>
+      <span class="muted">${I.bulo ? `📱 bulo viral de las redes (empezó con ${esc(I.who)})` : `se la susurraste a ${esc(I.who)}`} · ${esc((villageById(I.vid) || {}).name || '')}</span>
       ${I.st === 'fin' ? '' : `<span class="it-bar" title="${pct} % en ${esc(g ? g.name : '')}: cala al ${Math.round(IDEA_CALA * 100)} %"><i style="width:${Math.round(fill * 100)}%"></i></span>
       <span class="it-n">${I.n || 0} la creen${I.towns > 1 ? ` en ${I.towns} pueblos` : ''} · ${pct} % en ${esc(g ? g.name : '?')}</span>`}${st}</div>
       <div class="it-act">${I.st === 'fin' ? '' : `<button data-ifollow="${I.id}" title="Ver a alguien que la cree" aria-label="Ver a alguien que la cree">👁</button>`}<button data-idrop="${I.id}" title="${I.st === 'fin' ? 'Quitar de la lista' : 'Que la olviden'}" aria-label="Quitar">×</button></div></div>`;
   }).join('');
-  const html = `<div class="it-h"><b>💭 Ideas en marcha</b><span class="muted">${L.filter(I => I.st !== 'fin').length}/${IDEA_MAX}</span><button class="it-min" data-itog aria-expanded="${ideaTrackOpen}" title="${ideaTrackOpen ? 'Plegar' : 'Desplegar'}">${ideaTrackOpen ? '–' : '+'}</button></div>${ideaTrackOpen ? `<div class="it-list">${rows}</div>` : ''}`;
+  const html = `<div class="it-h"><b>💭 Ideas en marcha</b><span class="muted">${L.filter(I => I.st !== 'fin' && !I.bulo).length}/${IDEA_MAX}</span><button class="it-min" data-itog aria-expanded="${ideaTrackOpen}" title="${ideaTrackOpen ? 'Plegar' : 'Desplegar'}">${ideaTrackOpen ? '–' : '+'}</button></div>${ideaTrackOpen ? `<div class="it-list">${rows}</div>` : ''}`;
   if (force || el._html !== html) { el.innerHTML = html; el._html = html; }
 }
 function ideaTrackClick(e){

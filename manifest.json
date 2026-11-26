@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611262327",
- "fecha": "2026-11-26 23:27",
+ "version": "202611262348",
+ "fecha": "2026-11-26 23:48",
  "novedades": [
   {
    "fecha": "2026-11-26",
-   "texto": "Radio, televisión, cine y famosos"
+   "texto": "Encuestas y redes sociales"
+  },
+  {
+   "fecha": "2026-11-26",
+   "texto": "Medios y espectáculos: radio, televisión, cine y famosos"
   },
   {
    "fecha": "2026-11-26",
@@ -46,22 +50,18 @@
   {
    "fecha": "2026-11-26",
    "texto": "Partidas guardadas comprimidas: de ~80 MB a ~8,5 MB cada una"
-  },
-  {
-   "fecha": "2026-11-26",
-   "texto": "Sed: nadie se queda quieto sin beber"
   }
  ],
  "archivos": {
-  "index.html": "92da184ad6e0a7983f4b97702fa4d633de1e4ba7",
-  "css/estilo.css": "c1865c77bb0fb5c4e667d4e195ce0f5e55809f8b",
+  "index.html": "68765384f6a41d29fa2b135818976e653e93dac4",
+  "css/estilo.css": "bc4b77308f727dc906c33c15d8e1ce29cc64536d",
   "js/agencia.js": "dd15e5ae8fa08af254622aba102dafae859910b9",
   "js/aldeanos.js": "9fc48c835e3cf5baaebb07594aa0624275287f1d",
   "js/ambiente.js": "6c96bf777f6cdfc55b648f495836521ee28aeb8f",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "a94b46896cfd10fd688954a3c5b9297e9b693872",
   "js/armas.js": "d4710aa65550aceb06fbdd1d2d290c8085f58e96",
-  "js/arte.js": "866aae53e5d3a68775fcf56b0192b9a36c18b100",
+  "js/arte.js": "3473e8fcbf4caabef1f7018a313344727b16d520",
   "js/arte_mapa.js": "a92d6a3c48ca112990a90102d27322fe8879ec53",
   "js/aviacion.js": "2bceeb5a9a59332b96ad69d19b5f6e39da71af42",
   "js/bandidos.js": "bc804375208c5f300e33435e76d16001e8c4daae",
@@ -93,6 +93,7 @@
   "js/edificios.js": "42aba0b10b2a9ae0f5b87d3af949c04f53c4483b",
   "js/electricidad.js": "5e67c3d67ba2019941002f00829efa3d95fa1db0",
   "js/electronica.js": "d16687a33090b324490ea4369a67d994e495f161",
+  "js/encuestas.js": "6d57dc9138e29d6b879e123d70e6e820163928be",
   "js/eras.js": "491c0126d7b3eaadbf2e2aecbc13f73f64ac2f67",
   "js/espacio.js": "b02dc94a3dacc519fba45225e77e4e8ab78c0f1e",
   "js/espionaje.js": "6291557af0a9488f321131fbfb7cdccf50cdbbf1",
@@ -103,7 +104,7 @@
   "js/fauna.js": "f9955feca793b4c39fb033e8dd56d59e0054b693",
   "js/fichas.js": "0142e3c8551d34a5ccfebad79dfd9e8d01070047",
   "js/globos.js": "955b67ce3b9dd8c36b7ee965f9f05f4fb8bd9d39",
-  "js/gobierno.js": "35cfd5647c94372dc8309e75d0ab98cf7af00d1a",
+  "js/gobierno.js": "f3ea02f6aa17d3f1c44aeaf17d5f3b5a3f14b6e1",
   "js/grafica.js": "d548461632882f80f4077d9e5754c70c5319331e",
   "js/guerra.js": "2aab88f346ccb8117f2fd463cb66b8189034b083",
   "js/humanos.js": "d83a287536531a2bab23b7bff9514793cf42e4cf",
@@ -139,15 +140,16 @@
   "js/prensa.js": "61134ccce4b95a026605717fa5ab37600850af2a",
   "js/presupuestos.js": "5bd5fa9bc828e654be315514b98118fa82ebda6d",
   "js/puertos.js": "affa01683a0e078054babe79033142ed55a05a43",
+  "js/redes.js": "218c16e9fffa5fde1b9391e6d48d212e81c4d357",
   "js/regimenes.js": "7573d0d69c7a331715b2c4ee302711d39a47490a",
   "js/renovables.js": "7f3d36c46afb3bed99dc3e25a0b96d34efd934dd",
   "js/rescate.js": "d21e0bb80c7639eb13d89dace4a5553c498a6853",
   "js/riqueza.js": "6e0afe4ee16977f7f9b9bb2987844ad104f54f6a",
   "js/rutas.js": "6e12cafc1992e09fc3c2b5b13ca7d7db6416c364",
   "js/sindicatos.js": "f7cb8bf83ff74322a6fc45cc6ac90550425c6d15",
-  "js/sociedad.js": "4a7336040a4284bf3a3b6ccd05d913aa9fb8c4c3",
+  "js/sociedad.js": "ae570c0c2471e721120dc9d7316417fed269c131",
   "js/sonido.js": "25be9d9bda62336aba463c82e31668d0e9b2bc54",
-  "js/susurros.js": "e7db716c1776171d2e8b1620544357844646ddcc",
+  "js/susurros.js": "b0ba6a2875dd5c5416a0c2e796721c8b70881546",
   "js/terrorismo.js": "a2285a3dfa1180fc7b7922eadf05f9f189970d6e",
   "js/titulares.js": "0506409e843da939370bb404b894a52cffa68620",
   "js/trabajo.js": "8a8074684a5610b247700d4dbe7620b254c50cb7",

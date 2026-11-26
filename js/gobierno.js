@@ -318,7 +318,7 @@ function govSummary(n){
     ${alerts.length ? `<div class="gv-alerts">${alerts.slice(0, 6).map(a => `<div>${a}</div>`).join('')}</div>` : '<div class="gv-ok">Todo tranquilo por ahora.</div>'}
     <div class="gv-2"><div><h4>Lo que más les preocupa</h4>${M.bad.length ? M.bad.map(([t, f]) => `<div class="gv-why bad"><span>${esc(t)}</span><b>${pctTxt(f)}</b></div>`).join('') : '<div class="muted">Nada en especial</div>'}</div>
       <div><h4>Lo que les gusta</h4>${M.good.length ? M.good.map(([t, f]) => `<div class="gv-why good"><span>${esc(t)}</span><b>${pctTxt(f)}</b></div>`).join('') : '<div class="muted">Poca cosa</div>'}</div></div>
-    ${typeof hemicycle === 'function' && seatsOf(n) ? `<h4>Parlamento</h4>${hemicycle(n, 360)}` : ''}
+    ${typeof hemicycle === 'function' && seatsOf(n) ? `<h4>Parlamento</h4>${hemicycle(n, 360)}` : ''}${typeof pollChart === 'function' && pollChart(n, 360) ? `<h4>Encuestas</h4>${pollChart(n, 360)}` : ''}
     <h4>Ciencia</h4><div class="gv-row">${goal ? `<span>Investigando <b>${esc(capFirst(goal.txt))}</b> · ${Math.round(Math.min(1, (n.research || 0) / goal.cost) * 100)} %</span>` : `<span class="muted">${hasInst(n, 'universidad') ? 'Nada que investigar ahora' : 'Sin universidad apenas se investiga: lo que sepan lo aprenden de otros'}</span>`}<button class="gv-btn" data-gact="ciencia">🔬 Elegir qué investigar</button></div>
     <p class="muted gv-note">Tu gente vive a su aire: tú marcas el rumbo. Si la aprobación cae mucho, habrá protestas e incluso golpes de estado.</p>`;
 }

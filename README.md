@@ -131,6 +131,8 @@ Sin dependencias ni compilación: cada archivo es un script normal y se cargan e
 | `js/parlamento.js` | Elecciones una vez al año, escaños por D'Hondt, hemiciclo en la ficha y mociones de censura entre elecciones |
 | `js/cortes.js` | Leyes votadas en las Cortes (debate de los líderes, votos por escaños y pactos), referéndums para leyes y régimen, y partidos que nacen o se fusionan |
 | `js/medios.js` | Radio y televisión (públicas, oficiales o afines a un partido: noticias, audiencia que mueve el voto, debates electorales, Juegos en directo), cine con películas sobre hechos reales, taquilla y premios Estrella de Oro, y famosos (fans, escándalos, política) |
+| `js/encuestas.js` | Encuestas de intención de voto y aprobación cada medio día, con su gráfica en la ficha y en el gobierno |
+| `js/redes.js` | Redes sociales (internet + móviles + cobertura): las ideas corren más y entre naciones, influencers con seguidores y bulos virales que funcionan como ideas susurradas |
 | `js/eras.js` | Las eras del mundo (Antigüedad, Hierro, Pólvora, Revolución Industrial, Eléctrica, Aire, Espacial, Digital): pantalla al empezar cada una |
 | `js/gobierno.js` | Menú de inicio con dos modos: modo dios o «Gobierna una nación» (fundas tu tribu en el mapa y decides régimen, leyes, impuestos, prioridades de trabajo, obras, ciencia, guerra, paz, diplomáticos, regalos, embargos y colonias; la gente puede enfadarse y protestar) |
 | `js/ui.js` | Pestañas del panel y de la barra de abajo, y el resumen del mundo |
