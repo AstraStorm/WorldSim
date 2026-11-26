@@ -25,6 +25,7 @@ function colonySite(n){
     if (villages.some(o => popOf(o) && Math.hypot(o.fx - x, o.fy - y) < 30)) continue;
     let land = 0; for (let yy = y - 4; yy <= y + 4; yy++) for (let xx = x - 4; xx <= x + 4; xx++) if (!WATER[world.biome[yy * W + xx]]) land++; if (land < 50) continue;
     const route = waterRoute(L, wn); if (!route || route.length < 8 || route.length > 220) continue;
+    if (!seaRouteKnown(n, route)) continue; // solo a costas que tienen en el mapa
     return { x, y, route };
   }
   return null;

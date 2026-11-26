@@ -126,7 +126,8 @@ function langUnderstand(v, g){
   return .3;
 }
 // Quién va de viaje: los diplomáticos, a poder ser, que se hagan entender; las caravanas, mejor un mercader
-const travelerScore = (u, kind, to) => (kind === 'mensajero' && u.oficio === 'mensajero' ? 3 : 0) + (kind === 'rescate' ? (u.weapon ? 3 : 0) : 0) + (kind === 'espia' ? (u.edu || 0) * 2 + (speaks(u, to ? villageLang(to) : -1) ? 1 : 0) : 0) + (u.oficio === 'mercader' && kind === 'caravana' ? 1 : 0) + (kind === 'diplomatico' && to ? langUnderstand(u, to) * 2 + (speaks(u, LANG_COMMON) ? .5 : 0) : 0);
+const travelerScore = (u, kind, to) => (kind === 'mensajero' && u.oficio === 'mensajero' ? 3 : 0) + (kind === 'rescate' ? (u.weapon ? 3 : 0) : 0) + (kind === 'espia' ? (u.edu || 0) * 2 + (speaks(u, to ? villageLang(to) : -1) ? 1 : 0) : 0) + (u.oficio === 'mercader' && kind === 'caravana' ? 1 : 0) + (kind === 'diplomatico' && to ? langUnderstand(u, to) * 2 + (speaks(u, LANG_COMMON) ? .5 : 0) : 0) - (STAY_OFICIOS.has(u.oficio) ? 4 : 0); // (los cartógrafos, sabios, maestros... se quedan a lo suyo)
+const STAY_OFICIOS = new Set(['cartógrafo', 'sabio', 'maestro', 'curandero', 'ingeniero']);
 // Lengua oficial y ley de lenguas de cada nación: «oficial» (en la escuela, solo la oficial) o «todas»
 function nationLangLaw(n){
   if (n.offLang == null || !langList()[n.offLang] || langList()[n.offLang].dead) n.offLang = villageLang(n);

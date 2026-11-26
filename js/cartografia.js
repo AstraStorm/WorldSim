@@ -42,7 +42,8 @@ function chartTick(g, dt, people){
   if ((g.chartT = (g.chartT || 0) - dt) > 0) return;
   g.chartT = 3;
   const ch = chartOf(g), conf = Math.min(250, cartoConf(g) + 30); let fresh = 0;
-  for (const v of people) if (!v.away) fresh += chartMark(ch, v.x, v.y, v.boat ? 2 : 1, conf);
+  const near = townRadius(g) + 12; // la gente solo apunta lo de alrededor del pueblo: lo lejano, los cartógrafos (y los vuelos)
+  for (const v of people) if (!v.away && Math.hypot(v.x / T - g.fx, v.y / T - g.fy) < near) fresh += chartMark(ch, v.x, v.y, v.boat ? 2 : 1, conf);
   if (fresh) g.chartVer++;
   for (const t of travelers) if (t.kind === 'expedicion' && t.from === g.id && t.sketch) chartMark(t.sketch, t.x, t.y, t.sea ? 3 : 2, cartoConf(g) * (.75 + Math.random() * .25));
 }
@@ -58,18 +59,19 @@ function launchExpedition(v, g){
       out.push([x, y, d]);
     }
     return out.sort((p, q) => p[2] - q[2]); };
+  const reach = Math.min(230, 85 + (g.expeditions || 0) * 5); // cuantas más expediciones llevan, más lejos se atreven
   let mode = g.port && openWater(g.port.launch) && Math.random() < .55 ? 'mar' : 'tierra', t = null;
   for (let tries = 0; tries < 2 && !t; tries++, mode = mode === 'mar' ? 'tierra' : 'mar') {
     if (mode === 'mar') {
       if (!g.port || !openWater(g.port.launch)) continue;
-      for (const [x, y] of unknown('mar', 25, 110).slice(0, 4)) {
-        const route = waterRoute(g.port.launch, y * W + x); if (!route || route.length < 6 || route.length > 160) continue;
+      for (const [x, y] of unknown('mar', 25, reach * 1.3).slice(0, 4)) {
+        const route = waterRoute(g.port.launch, y * W + x); if (!route || route.length < 6 || route.length > reach * .5 + 100) continue;
         const home = [(g.port.launch % W) * T + 2, ((g.port.launch / W) | 0) * T + 3], path = route.slice(), first = path.shift();
         t = { kind:'expedicion', mode, v, from:g.id, to:g.id, x:home[0], y:home[1], tx:first[0], ty:first[1], path, back:[...route].reverse().slice(1).concat([home]), hx:home[0], hy:home[1], sea:true, phase:'ida', dir:1 };
         break;
       }
     } else {
-      const c = unknown('tierra', 22, 85)[0]; if (!c) continue;
+      const c = unknown('tierra', 22, reach)[0]; if (!c) continue;
       // Un rodeo de un par de puntos: no van en línea recta, van mirando
       const [x, y] = c, mid = k => [((g.fx + (x - g.fx) * k) + (Math.random() - .5) * 18) * T, ((g.fy + (y - g.fy) * k) + (Math.random() - .5) * 18) * T];
       const path = [mid(.4), mid(.75), [x * T + 2, y * T + 3]], first = path.shift();
@@ -105,6 +107,22 @@ function shareCharts(a, b){
   const key = relKey(a, b), r = rels.get(key); if ((na + nb) > 30 && r && !r.mapMsg) { r.mapMsg = true; notify(`${a.name} y ${b.name} intercambian sus mapas`, { x:(a.fx + b.fx) / 2 * T, y:(a.fy + b.fy) / 2 * T }); }
 }
 
+// ---- Para qué sirve el mapa ----
+// Sin mapa de un sitio no se va allí: no se navega hacia costas que no tienen dibujadas (flotas, colonos), y dos pueblos
+// lejanos solo se conocen si uno tiene al otro en su mapa. Lo de alrededor del pueblo lo conocen siempre (sin papel, solo eso)
+function chartAt(g, tx, ty){
+  if (Math.hypot(tx - g.fx, ty - g.fy) < townRadius(g) + 14) return 255;
+  if (!hasPaper(g)) return 0;
+  const cw = chartW(), x = Math.floor(tx / CZ), y = Math.floor(ty / CZ); if (x < 0 || y < 0 || x >= cw || y >= chartH()) return 0;
+  return chartOf(g)[y * cw + x];
+}
+const mapSees = (a, b) => chartAt(a, b.fx, b.fy) >= 40; // ¿tiene a ese pueblo en su mapa?
+// ¿Conocen la ruta por mar? (casi todos sus tramos, dibujados en el mapa; route son puntos en píxeles, como waterRoute)
+function seaRouteKnown(g, route){
+  if (!route || !route.length) return true;
+  let ok = 0; for (const [px, py] of route) if (chartAt(g, px / T, py / T) >= 30) ok++;
+  return ok >= route.length * .85;
+}
 // ---- Dibujo del mapa en pergamino ----
 const INK = { [B.DEEP]:[96, 128, 148], [B.SEA]:[118, 148, 162], [B.SHALLOW]:[150, 176, 178], [B.LAKE]:[104, 140, 168], [B.RIVER]:[104, 140, 168],
   [B.SAND]:[226, 204, 150], [B.DESERT]:[222, 196, 136], [B.DRY]:[208, 190, 140], [B.GRASS]:[190, 186, 126], [B.PLAINS]:[200, 190, 130], [B.DIRT]:[196, 176, 130],
@@ -180,11 +198,11 @@ function chartImage(g){
 }
 const PARCH_CSS = `rgb(${PARCH.join(',')})`;
 function chartCard(g){
-  if (!hasPaper(g)) return `<div class="muted">Aún no conocen el papel: no tienen mapas. Lo descubren con el ayuntamiento y madera de sobra, o aprendiéndolo de quien ya lo tiene al comerciar.</div>`;
+  if (!hasPaper(g)) return `<div class="muted">Aún no conocen el papel: no tienen mapas, así que no se alejan de su tierra (ni por mar). Lo descubren con el ayuntamiento y madera de sobra, o aprendiéndolo de quien ya lo tiene al comerciar.</div>`;
   const im = chartImage(g), sk = g.cartoSkill || 0, prec = sk >= 6 ? 'muy precisos' : sk >= 3 ? 'bastante fieles' : sk >= 1 ? 'aproximados' : 'toscos';
   const exp = travelers.filter(t => t.kind === 'expedicion' && t.from === g.id);
   const carto = villagers.filter(v => !v.dead && v.vid === g.id && v.oficio === 'cartógrafo').length;
   return `<div class="chart"><img src="${im.url}" alt="Mapa de ${esc(g.name)}"></div>
     <div class="chart-meta"><span>Conocen el <b>${Math.round(im.known * 100)} %</b> del mundo</span><span>Mapas ${prec}</span><span>${g.expeditions || 0} expediciones${exp.length ? ` · <b>${exp.length} en camino</b>` : ''}</span>${carto ? `<span>${carto} cartógrafo${carto > 1 ? 's' : ''}</span>` : ''}</div>
-    <p class="muted chart-note">Así ven el mundo los de ${esc(g.name)}: lo que mejor conocen está nítido; lo lejano o poco visitado, borroso, torcido y a veces inventado.</p>`;
+    <p class="muted chart-note">Así ven el mundo los de ${esc(g.name)}: lo que mejor conocen está nítido; lo lejano o poco visitado, borroso, torcido y a veces inventado. Solo navegan hacia costas que tienen dibujadas y solo conocen los pueblos lejanos que aparecen en su mapa: lo amplían sus cartógrafos (y los globos y aviones de reconocimiento).</p>`;
 }

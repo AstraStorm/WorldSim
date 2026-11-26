@@ -1571,7 +1571,7 @@ function diploTick(){
       }
     }
     if (!r.known) {
-      if (dist < 200 && yearT > DAY_LEN * .5) {
+      if ((dist < 70 || mapSees(a, b) || mapSees(b, a)) && yearT > DAY_LEN * .5) { // vecinos, o lejos pero en el mapa de uno de los dos (cartografia.js)
         r.known = true; r.v = a.faith && b.faith && allGods(a.faith).some(d => allGods(b.faith).some(e => e.god === d.god)) ? 15 : 0;
         notify(`Los de ${a.name} y los de ${b.name} se han encontrado`, { x:(a.fx + b.fx) / 2 * T, y:(a.fy + b.fy) / 2 * T });
       }
@@ -1703,6 +1703,7 @@ function launchNavalRaid(att, def, r){
   const L = landingOf(def); if (!L) return false;
   const home = [(att.port.launch % W) * T + 2, ((att.port.launch / W) | 0) * T + 3];
   const route = waterRoute(att.port.launch, pxTile(L.water)); if (!route || !route.length || route.length > 120) return false; // sin paso por agua (o demasiado lejos)
+  if (!seaRouteKnown(att, route)) return false; // sin esa costa en el mapa no saben llegar
   const ps = villagers.filter(v => !v.dead && !v.away && v.vid === att.id && (yearT - v.born) / YEAR >= ADULT_H && v !== att.leader && (v.hp ?? 1) > .5 && !v.boat).sort((a, b) => (b.weapon ? 1 : 0) - (a.weapon ? 1 : 0)).slice(0, Math.min(6, Math.max(2, Math.floor(popOf(att) / 3))));
   if (ps.length < 2) return false;
   const mode = Math.random() < .5 ? 'saqueo' : 'desembarco';
