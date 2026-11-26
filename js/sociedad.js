@@ -2915,7 +2915,10 @@ function updateVillagers(dt){
     const tough = v.task && v.task.k === 'asalto' ? .6 : 1; // los soldados en campaña aguantan más el hambre y la sed
     v.food = Math.max(0, v.food - dt * (v.mal ? 1.4 : nut < .15 ? .9 : 1) * (v.sleep ? .5 : 1) * tough / (child ? 190 : 160)); v.water = Math.max(0, v.water - dt * (v.sleep ? .5 : 1) * (tHere > 28 ? 1.3 : 1) * tough / (child ? 190 : 200)); // (beber les dura algo más de un día; antes, dos tercios, y media aldea estaba siempre yendo a por agua)
     if (v.food <= 0) { v.starve += dt; if (v.starve > 25) { killVillager(v, 'hambre'); continue; } } else v.starve = 0;
-    if (v.water <= 0) { v.thirst += dt; if (v.thirst > 50) { killVillager(v, 'sed'); continue; } } else v.thirst = 0; // (sin beber nada, un buen rato: no al primer momento de sed)
+    if (v.water <= 0) { v.thirst += dt;
+      // (en su pueblo, con pozos, cántaros o nieve, nadie se muere de sed en casa: beben de la reserva de casa y a los niños les dan de beber sus padres)
+      if (v.thirst > 20 && g && !v.away && !v.boat && Math.hypot(v.x / T - g.fx, v.y / T - g.fy) < 25 && (wellsOf(g).length || (g.jars || 0) >= 1 || (typeof snowA !== 'undefined' && snowA))) { v.water = .35; v.thirst = 0; if ((g.jars || 0) >= 1) g.jars -= 1; floats.push({ x:v.x, y:v.y - 12, txt:ageOf(v) < ADULT_H ? 'le dan de beber' : 'bebe de la tinaja', col:'#9cc8f0', life:0 }); }
+      else if (v.thirst > 50) { killVillager(v, 'sed'); continue; } } else v.thirst = 0; // (sin beber nada, un buen rato: no al primer momento de sed)
     // El abrigo (hoguera, casa) solo calienta cuando hace frío, hasta unos 18 °C; con calor, la casa da algo de sombra
     // Lejos de cualquier refugio y helándose: se paran y encienden una fogata donde están (si no llueve)
     if (v.fogata && (yearT > v.fogata.t || Math.hypot(v.fogata.x - v.x, v.fogata.y - v.y) > 10)) v.fogata = null;
@@ -2923,7 +2926,7 @@ function updateVillagers(dt){
       v.fogata = { x:v.x + v.dir * 4, y:v.y + 1, t:yearT + 14 }; if (!(v.task && v.task.k === 'asalto')) { releaseTask(v); v.task = null; } v.actT = 12; v.onDone = null; // (el soldado en campaña se calienta y sigue la marcha: antes dejaba la guerra)
       floats.push({ x:v.x, y:v.y - 12, txt:'¡qué frío! una fogata', col:'#ffb060', life:0 });
     }
-    const out = tHere, roof = out >= 18 && underRoof(v), shelter = out < 18 ? warmthAt(v, g) > 0 || !!v.fogata : roof, shade = out > 24 && inForest(v), temp = shelter ? (out < 18 ? Math.min(18, out + WARMTH) : out - 8) : shade ? out - 5 : out; // con calor, la sombra de una casa no depende de la leña ni la da la hoguera // la casa (gruesa) y la sombra refrescan // los árboles también dan sombra
+    const out = tHere, roof = out >= 18 && underRoof(v), shelter = out < 18 ? warmthAt(v, g) > 0 || !!v.fogata : roof, shade = out > 24 && inForest(v), temp = shelter ? (out < 18 ? Math.min(18, g && !g.noFirewood ? Math.max(out + WARMTH, 6) : out + WARMTH) : out - 8) : shade ? out - 5 : out; // con calor, la sombra de una casa no depende de la leña ni la da la hoguera // la casa (gruesa) y la sombra refrescan // los árboles también dan sombra
     const cold = H_COLD + v.ad + (child ? 4 : 0), hot = H_HEAT + v.ad;
     v.chill = temp < cold ? v.chill + dt * (cold - temp) / (300 * (1 + (v.fit || 0) * .4) * (v.coat ? 1.8 : 1)) : Math.max(0, v.chill - dt * .1);
     // El golpe de calor llega sobre todo a quien está sediento y trabajando al sol: bien bebido y a la sombra se aguanta mucho más
@@ -3306,7 +3309,7 @@ function updateVillages(dt){
     // Cada madre, como mucho un hijo cada año y pico (embarazo y crianza): unos cinco o seis en toda su vida, no uno cada poco
     const moms = adults.filter(v => v.sex === 'm' && partnerOf(v) && partnerOf(v).sex === 'h' && adults.includes(partnerOf(v)) && yearT - (v.lastBirth ?? -1e9) > YEAR * .6);
     const mom = moms[Math.floor(Math.random() * moms.length)], dad = mom && partnerOf(mom); // de una pareja
-    if (mom && dad && pop < cap && g.food >= pop * 1.5 + 3 && Math.random() < dt * Math.min(.12, moms.length / (YEAR * .7)) * (hasLaw(g, 'natalidad') ? 1.6 : 1) * (g.fort && g.fort.built && !g.fort.ruined && pop < 45 ? 1.25 : 1)) { // con castillo hacen falta más manos
+    if (mom && dad && pop < cap && g.food >= pop * (pop < 20 ? .8 : 1.5) + 3 && Math.random() < dt * Math.min(.12, moms.length / (YEAR * .7)) * (hasLaw(g, 'natalidad') ? 1.6 : 1) * (g.fort && g.fort.built && !g.fort.ruined && pop < 45 ? 1.25 : 1)) { // con castillo hacen falta más manos
       const kid = lifeFields({ name:NAMES[nameIdx++ % NAMES.length], x:mom.x, y:mom.y, path:null, wait:1, walk:0, moving:false, dir:1, appear:1,
         pants:pick(PANTS, Math.random), hat:pick(HATS, Math.random), shirt:pick(SHIRT, Math.random), hair:Math.random() < .5 ? mom.hair : dad.hair },
         Math.floor(mom.x / T), Math.floor(mom.y / T), 0, Math.random);

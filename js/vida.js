@@ -28,7 +28,7 @@ function diseaseTick(g, dt, people){
 }
 // ================= Migraciones =================
 function migrationTick(g, people){
-  const pop = people.length; if (pop < 6) return;
+  const pop = people.length; if (pop < 3) return; // (también las aldeas pequeñas pueden irse)
   const cap = houseCap(g) + 4, hungry = g.food < pop * .3, crowded = pop > cap + 3, angry = (g.anger || 0) > 60, war = [...rels.values()].some(r => r.war && r.war.def === g.id && r.war.dead > 3), sick = people.filter(u => u.sick).length > pop * .3;
   const why = hungry ? 'el hambre' : war ? 'la guerra' : sick ? 'la epidemia' : crowded ? 'la falta de casas' : angry ? 'el gobierno' : null;
   if (!why || Math.random() > .35) return;
@@ -49,6 +49,26 @@ function migrationTick(g, people){
   for (const v of goers) { releaseTask(v); dismount(v); v.task = { k:'viaje' }; v.away = true; travelers.push({ kind:'emigrante', v, from:g.id, to:best.id, x:v.x, y:v.y, tx:best.fx * T + 2 + (Math.random() - .5) * 20, ty:best.fy * T + 10, hx:v.x, hy:v.y, sea:false, phase:'ida', dir:1 }); }
   notify(`Huyendo ${why.startsWith('el ') ? 'del ' + why.slice(3) : 'de ' + why}, ${goers.length} personas de ${g.name} emigran a ${best.name}`, { x:g.fx * T, y:g.fy * T });
 }
+// ---- Ayuda alimentaria: un pueblo con hambre recibe comida de los de su nación o de un pueblo amigo que le sobre ----
+// (sin ella, una mala cosecha o la ceniza de un volcán acababan con aldeas enteras mientras al lado sobraba comida)
+let aidT = 0;
+addEventListener('DOMContentLoaded', () => SYSTEMS.push(dt => { // (este archivo se carga antes que la lista de sistemas)
+  if (!world || (aidT -= dt) > 0) return; aidT = 15;
+  for (const g of liveTowns()) {
+    const pop = popOf(g); if (pop < 3 || g.food >= pop * 1.2 || (g.aidT || 0) > yearT) continue;
+    let best = null, bs = -1e9;
+    for (const o of liveTowns()) {
+      if (o === g) continue; const r = rels.get(relKey(g, o)), same = sameNation(o, g); if (!same && (!r || !r.known || r.war || r.v < 25)) continue;
+      const op = popOf(o), spare = o.food - (op * 5 + 20), d = Math.hypot(o.fx - g.fx, o.fy - g.fy); if (spare < 10 || d > 160) continue;
+      const sc = spare / 10 + (same ? 8 : 0) + ((r && r.v) || 0) / 15 - d / 25; if (sc > bs) { bs = sc; best = o; }
+    }
+    if (!best) continue;
+    const n = Math.round(Math.min((best.food - (popOf(best) * 5 + 20)) * .35, pop * 3)); if (n < 5) continue;
+    best.food -= n; g.food += n; g.aidT = yearT + DAY_LEN * .5; const r = relOf(g, best); r.v = clamp(r.v + 3, -100, 100);
+    floats.push({ x:g.fx * T, y:g.fy * T - 14, txt:`+${n} de comida de ${best.name}`, col:'#c8e0a0', life:0 });
+    const k = g.id + '>' + best.id; if (!(world.aidMsg ||= {})[k]) { world.aidMsg[k] = true; notify(`${best.name} envía ${n} de comida a ${g.name}, que pasa hambre`, { x:g.fx * T, y:g.fy * T }); }
+  }
+}));
 // ================= Historia y estadísticas =================
 let worldHist = { t:[], n:{} }, histT = 0;
 function recordHistory(){
