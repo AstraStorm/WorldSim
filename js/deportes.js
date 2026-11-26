@@ -255,8 +255,16 @@ function sportResult(g, delta, why){
   for (const o of villages) if (popOf(o) && nationOf(o) === n) o.anger = Math.max(0, (o.anger || 0) - delta * .5);
 }
 // (desde socialMood, convivencia.js)
+function sportCare(v, g){
+  const local = g.pitch || g.track || g.pool || g.club ? 1 : nationOf(g) && villages.some(o => o !== g && popOf(o) && nationOf(o) === nationOf(g) && Math.hypot(o.fx - g.fx, o.fy - g.fy) < 60 && (o.pitch || o.track)) ? .55 : .2;
+  const own = typeof olymp !== 'undefined' && olymp.cur && (olymp.cur.athletes || []).some(a => a.v === v) ? 1.5 : 1; // (si ha competido él, le toca de lleno)
+  return local * (.3 + trait(v, 'fan') * 1.1) * own;
+}
 function sportMoodAdd(v, g, add){
-  const n = nationOf(g), M = n && n.sportMood; if (M && M.until > yearT && M.v) add(Math.round(M.v), M.why);
+  // Cuánto le importa depende de la persona (afición) y de si en su pueblo se hace deporte: sin campo ni pista, los
+  // Juegos o la liga le quedan lejos (antes se entristecía toda la nación por igual)
+  const n = nationOf(g), M = n && n.sportMood;
+  if (M && M.until > yearT && M.v) { const k = sportCare(v, g), d = Math.round(M.v * k); if (k >= .35) add(d, M.why); }
   if (g.ticketGrief > yearT && (v.money || 0) < ticketPrice(g) * 4) add(-5, 'no se puede pagar la entrada para ver deporte');
   else if ((g.pitch || g.track) && g.coin && ticketLvl(g) === 0) add(2, 'ver deporte es gratis');
 }

@@ -1226,6 +1226,10 @@ const ofW = (o, v) => !o ? '' : v.sex !== 'm' ? o : /or$/.test(o) ? o + 'a' : /o
 const oficioTxt = v => ofW(v.oficio, v);
 function doingOf(v){ const s0 = villagerInfo(v), m = s0.match(/años · ([^·]+) ·/); return m ? m[1].trim() : ''; }
 function partyOf(v){ const n = nationOf(villageById(v.vid) || {}); if (!n || !n.parties) return null; let best = null, bd = Infinity; for (const p of n.parties) { const d = Math.abs((v.ideo || 0) - p.ideo); if (d < bd) { bd = d; best = p; } } return best; }
+// Rasgos de cada persona (0..1), fijos para toda su vida: salen de su identificador. fan = afición al deporte,
+// ambicion = cuánto le importa el dinero, sociable = cuánto necesita a los demás y el tiempo libre, aguante = lo que soporta frío, calor y penurias
+const TRAIT_K = { fan:11, ambicion:23, sociable:37, aguante:53 };
+const trait = (v, k) => h2(Math.floor((v.pid || 0) * 1e6), TRAIT_K[k] || 7, 911);
 // Ánimo: lo que le pasa a esa persona (hambre, sed, salud, luto, dinero, hogar) y a su pueblo (descontento, fe, gobierno)
 function moodOf(v){
   const g = villageById(v.vid), f = [];
@@ -1235,10 +1239,10 @@ function moodOf(v){
   if ((v.hp ?? 1) < .9) add(((v.hp ?? 1) - 1) * 50, 'está herido');
   if (v.mourn && yearT - v.mourn.t < DAY_LEN * 2) add(-25, `está de luto por ${v.mourn.who}`);
   if (g) {
-    if ((g.anger || 0) > 20) add(-(g.anger || 0) * .3, `le preocupa ${GRIEF_TXT[g.grief] || 'cómo van las cosas'}`);
+    if ((g.anger || 0) > 20) { const gt = GRIEF_TXT[g.grief] || 'cómo van las cosas'; add(-(g.anger || 0) * .3, `le preocupa${/^(los|las) /.test(gt) ? 'n' : ''} ${gt}`); }
     if (ageOf(v) >= ADULT_H && (nationOf(g).parties)) { const gap = Math.abs((v.ideo || 0) - govIdeo(g)); add(gap < .3 ? 8 : -(gap - .3) * 25, gap < .3 ? 'le gusta el gobierno' : 'no le gusta el gobierno'); }
     if (g.faith && pietyOf(v) > .6) add((g.wrath || 0) > 3 ? -10 : 8, (g.wrath || 0) > 3 ? `teme la ira de ${g.faith.god}` : 'su fe le da paz');
-    if (g.coin && ageOf(v) >= ADULT_H) add((v.money || 0) >= priceOf(g) * 5 ? 6 : -8, (v.money || 0) >= priceOf(g) * 5 ? 'tiene ahorros' : 'anda sin dinero');
+    if (g.coin && ageOf(v) >= ADULT_H) add(((v.money || 0) >= priceOf(g) * 5 ? 6 : -8) * (.5 + trait(v, 'ambicion')), (v.money || 0) >= priceOf(g) * 5 ? 'tiene ahorros' : 'anda sin dinero');
     socialMood(v, g, add);
     if (g.coin && v.wage != null) { const c = costOfLiving(g), w = wageDay(v); add(w >= c * 1.4 ? 7 : w >= c ? 2 : -12, w >= c * 1.4 ? 'gana un buen sueldo' : w >= c ? 'el sueldo le da para vivir' : 'su sueldo no le llega'); }
     if ([...rels.values()].some(r => r.war && (r.war.att === nationOf(g).id || r.war.def === nationOf(g).id))) add(-8, 'su pueblo está en guerra');
@@ -1247,7 +1251,12 @@ function moodOf(v){
   if (g) { housingMood(v, g, add); stockMood(v, g, add); }
   if (v.task && v.task.k === 'detenido') add(-30, 'está detenido');
   if (g && ageOf(v) >= ADULT_H) { if (hasLaw(g, 'jornada_larga')) add(-8, 'trabaja demasiadas horas'); else if (hasLaw(g, 'jornada_corta')) add(5, 'tiene una jornada corta'); }
-  if (v.fun && yearT - v.fun < DAY_LEN) add(6, 'ha tenido tiempo libre');
+  if (v.fun && yearT - v.fun < DAY_LEN) add(6 * (.5 + trait(v, 'sociable')), 'ha tenido tiempo libre');
+  else if (ageOf(v) >= ADULT_H && trait(v, 'sociable') > .6 && yearT - (v.fun || v.born || 0) > DAY_LEN * 3) add(-4 - trait(v, 'sociable') * 4, 'se aburre: hace días que no se distrae');
+  // Necesidades del cuerpo, según el aguante de cada cual
+  const tough = 1.4 - trait(v, 'aguante') * .8;
+  if ((v.chill || 0) > .15) add(-v.chill * 40 * tough, 'pasa frío'); else if ((v.hot || 0) > .3) add(-v.hot * 25 * tough, 'pasa calor');
+  if (v.sick) add(-10 * tough, 'está enfermo');
   if (g && hasHosp(g) && ((v.hp ?? 1) < .9 || ageOf(v) > v.life * .7)) add(5, 'tiene un hospital cerca');
   if (v.task && v.task.k === 'protesta') add(-8, 'está protestando');
   const kids = (v.kids || []).filter(k => !k.dead).length; if (kids) add(6, `tiene ${kids} hij${kids > 1 ? 'os' : 'o'}`);
@@ -2199,7 +2208,11 @@ function countVotes(cap){
   const ps = cap.parties, votes = ps.map(() => 0), voters = villagers.filter(u => !u.dead && (yearT - u.born) / YEAR >= ADULT_H && nationOf(villageById(u.vid)) === cap);
   for (const u of voters) {
     let best = 0, bd = Infinity;
-    ps.forEach((p, k) => { let d = Math.abs((u.ideo || 0) - p.ideo) + Math.random() * .35 - (k === cap.ruling ? .05 : 0); if (p.laws.includes('fe') && (cap.wrath || 0) > 3) d -= .2; if (p.laws.includes('ejercito') && [...rels.values()].some(r => r.war)) d -= .15; if (d < bd) { bd = d; best = k; } });
+    // Además de su ideología: cómo le va (quien está mal castiga al que gobierna; quien está bien lo premia) y lo que
+    // necesita (las leyes que promete cada partido, según su situación: lawNeed, leyes.js)
+    const ug = villageById(u.vid), ms = moodOf(u).score, swing = ms < 35 ? .3 : ms < 45 ? .12 : ms > 70 ? -.1 : 0;
+    ps.forEach((p, k) => { let d = Math.abs((u.ideo || 0) - p.ideo) + Math.random() * .35 - (k === cap.ruling ? .05 : 0) + (k === cap.ruling ? swing : 0);
+      if (ug && typeof lawNeed === 'function') for (const l of p.laws || []) { const nd = lawNeed(u, ug, l); if (nd) d -= clamp(nd, -1, 1) * .12; } if (p.laws.includes('fe') && (cap.wrath || 0) > 3) d -= .2; if (p.laws.includes('ejercito') && [...rels.values()].some(r => r.war)) d -= .15; if (d < bd) { bd = d; best = k; } });
     votes[best]++;
   }
   const tot = Math.max(1, voters.length), win = votes.indexOf(Math.max(...votes)), p = ps[win];
