@@ -234,19 +234,23 @@ function townNet(g){ // las calles unidas a la plaza (hasta un poco más allá d
   }
   return seen;
 }
-function linkRoute(g, start, net){
+// C (opcional, compartido en un mismo linkTick): coste ya calculado de cada casilla, cercados de todos los pueblos y
+// presupuesto de casillas que quedan por explorar (en ciudades grandes las puertas sin salida costaban segundos)
+function linkRoute(g, start, net, C){
   const hx = g.fx, hy = g.fy, gs = new Map([[start, 0]]), par = new Map(), heap = [[0, start]];
-  const cost = i => {
+  if (!C) C = linkCtx();
+  const cost = i => { let c = C.cost.get(i); if (c === undefined) { c = cost0(i); C.cost.set(i, c); } return c; };
+  const cost0 = i => {
     const x = i % W, y = (i / W) | 0; if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1) return Infinity;
     if (URB_NET(i)) return wallSet.has(i) ? Infinity : .3;
     if (WATER[world.biome[i]] || world.biome[i] === B.LAVA || wallSet.has(i)) return Infinity;
     const o = world.objs[i]; if (o && !['tree', 'berry'].includes(OBJ[o.key][1])) return Infinity;
-    if (underBuilding(g, x, y) || villages.some(q => inPen(q, x, y))) return Infinity; // ni por debajo de un edificio ni cruzando un cercado
+    if (underBuilding(g, x, y) || C.pen.has(i)) return Infinity; // ni por debajo de un edificio ni cruzando un cercado
     return (o ? 4 : 1) + (farmMap.has(i) ? 6 : 0) + (plotIn(x, y, x, y) ? 20 : 0);
   };
   const push = (f, i) => { heap.push([f, i]); let k = heap.length - 1; while (k) { const p = (k - 1) >> 1; if (heap[p][0] <= heap[k][0]) break; [heap[p], heap[k]] = [heap[k], heap[p]]; k = p; } };
   const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let k = 0; for (;;) { const l = 2 * k + 1, r = l + 1; let m = k; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === k) break; [heap[m], heap[k]] = [heap[k], heap[m]]; k = m; } } return top; };
-  for (let n = 0; heap.length && n < 7000; n++) {
+  for (let n = 0; heap.length && n < 4000 && C.left > 0; n++, C.left--) {
     const [, i] = pop();
     if (i !== start && net.has(i)) { const out = []; for (let j = i; j !== undefined; j = par.get(j)) out.push(j); return out; }
     for (const j of [i - 1, i + 1, i - W, i + W]) {
@@ -256,6 +260,11 @@ function linkRoute(g, start, net){
   }
   return null;
 }
+function linkCtx(){
+  const pen = new Set();
+  for (const q of villages) for (const p of pensOf(q)) for (let y = p.y0; y <= p.y1; y++) for (let x = p.x0; x <= p.x1; x++) pen.add(y * W + x);
+  return { cost:new Map(), pen, left:6000 };
+}
 function townDoors(g){
   const L = buildingsOf(g).filter(i => world.objs[i]);
   if (fortOf(g)) L.push(g.fort.i);
@@ -264,15 +273,16 @@ function townDoors(g){
   return [...new Set(L)];
 }
 function linkTick(g){
-  const net = townNet(g), now = yearT; let made = 0;
+  const net = townNet(g), now = yearT, C = linkCtx(); let made = 0;
   g.linkFail ||= {};
   for (const b of townDoors(g)) {
     const door = b + W; if (net.has(door) || net.has(door - 1) || net.has(door + 1) || net.has(door + W)) continue;
     if ((g.linkFail[b] || -1e9) > now) continue;
     if (WATER[world.biome[door]]) continue;
-    const r = linkRoute(g, door, net);
-    if (!r) { g.linkFail[b] = now + DAY_LEN; continue; }
-    for (const i of r) if (!URB_NET(i) && !WATER[world.biome[i]]) { farmMap.delete(i); pathMap.add(i); net.add(i); }
+    if (C.left <= 0) break; // sin presupuesto: las demás puertas, en la próxima vuelta
+    const r = linkRoute(g, door, net, C);
+    if (!r) { if (C.left > 0) g.linkFail[b] = now + DAY_LEN; continue; }
+    for (const i of r) if (!URB_NET(i) && !WATER[world.biome[i]]) { farmMap.delete(i); pathMap.add(i); net.add(i); C.cost.delete(i); }
     if (!pathMap.has(door) && !WATER[world.biome[door]]) pathMap.add(door);
     if (++made >= 2) break;
   }
