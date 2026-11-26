@@ -29,8 +29,9 @@ function cityTick(g, dt, people){
 }
 // Dónde: tierra firme a 40-64 casillas de la capital, lejos de otros pueblos, sin cruzar el mar (se llega andando)
 function citySite(g){
-  for (let k = 0; k < 120; k++) {
-    const a = Math.random() * Math.PI * 2, d = 40 + Math.random() * 24, x = Math.round(g.fx + Math.cos(a) * d), y = Math.round(g.fy + Math.sin(a) * d * .85);
+  const d0 = Math.max(40, (g.houses.length && typeof townRadius === 'function' ? townRadius(g) : 8) + 26); // (más lejos cuanto mayor es la ciudad: si no, una capital grande ya no encontraba sitio nunca)
+  for (let k = 0; k < 160; k++) {
+    const a = Math.random() * Math.PI * 2, d = d0 + Math.random() * 26, x = Math.round(g.fx + Math.cos(a) * d), y = Math.round(g.fy + Math.sin(a) * d * .85);
     if (x < 10 || y < 10 || x >= W - 10 || y >= H - 10 || !tileFree(x, y) || volcDanger(x, y, 8)) continue;
     if (!townSpace(x, y)) continue; // lejos de todos los pueblos (humanos.js)
     let land = 0; for (let yy = y - 5; yy <= y + 5; yy++) for (let xx = x - 5; xx <= x + 5; xx++) if (!WATER[world.biome[yy * W + xx]]) land++; if (land < 100) continue;

@@ -50,5 +50,5 @@ function seasonArrive(v, g, t){
 }
 function seasonsCard(g){
   const t = Math.round(villageTemp(g));
-  return `<div class="muted" style="font-size:12px;margin:4px 0">${t}°C en el pueblo · la comida se estropea ${t > 22 ? 'deprisa' : t > 12 ? 'algo' : 'poco'}${hasInst(g, 'granero') ? ' (con granero, mucho menos)' : ''}${g.preserved ? ` · conservas: ${Math.round(g.preserved)}` : ''}${t < 10 ? ` · queman leña para calentarse${g.noFirewood ? ' · <b style="color:#e8a838">¡sin leña!</b>' : ''}` : ''}</div>`;
+  return `<h4>Clima y comida</h4><div class="muted" style="font-size:12px;margin:4px 0">${t}°C en el pueblo · la comida se estropea ${t > 22 ? 'deprisa' : t > 12 ? 'algo' : 'poco'}${hasInst(g, 'granero') ? ' (con granero, mucho menos)' : ''}${g.preserved ? ` · conservas: ${Math.round(g.preserved)}` : ''}${t < 10 ? ` · queman leña para calentarse${g.noFirewood ? ' · <b style="color:#e8a838">¡sin leña!</b>' : ''}` : ''}</div>`;
 }

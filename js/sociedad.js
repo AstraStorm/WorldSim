@@ -1371,6 +1371,8 @@ function renderVillageCard(force){
       <h4>Relaciones</h4><div class="chips rel">${villages.filter(o => o !== g && popOf(o) && rels.get(relKey(g, o)) && rels.get(relKey(g, o)).known).map(o => { const r = rels.get(relKey(g, o)), w = relWord(r), c = r.war ? '#d8483a' : r.v > 40 ? '#7ab04a' : r.v > 0 ? '#a8c060' : r.v > -30 ? '#d8b848' : '#e08a3a'; return `<button class="relb" data-vid="${o.id}" style="border-color:${c}" title="Ver la ficha de ${esc(o.name)}">${o.flagUrl ? `<img src="${o.flagUrl}" alt="">` : ''}${esc(o.name)} · <b style="color:${c}">${r.war ? 'en guerra' : w}</b></button>`; }).join('') || 'Aún no conocen a nadie'}</div>`;
   } else if (cardTab === 'ciencia') {
     body = scienceTab(g);
+  } else if (cardTab === 'espacio' && typeof spaceTab === 'function') {
+    body = spaceTab(g);
   } else if (cardTab === 'deportes') {
     body = sportsTab(g);
   } else if (cardTab === 'calendario') {
@@ -1383,7 +1385,7 @@ function renderVillageCard(force){
   setCardHTML(el, `<div class="vh">${n.flagUrl ? `<img class="flag" src="${n.flagUrl}" alt="">` : '<span class="flag none"></span>'}<div><h3>${esc(g.name)}</h3>
       <div class="pills"><span>${regimeName(g)}</span><span>${status}</span>${al ? `<span class="ally">${esc(al.abbr)}</span>` : ''}${g.coin ? `<span class="coin">${esc(g.coin)}</span>` : ''}</div></div>
       <div class="vbtns"><button class="go" data-go="${g.id}" title="Llevar la cámara al pueblo">Ir</button><button class="x" aria-label="Cerrar">×</button></div></div>
-    <div class="tabs">${CARD_TABS.map(([k, t]) => `<button data-tab="${k}"${cardTab === k ? ' class="on"' : ''}>${t}</button>`).join('')}</div>
+    <div class="tabs">${CARD_TABS.filter(([k]) => k !== 'espacio' || n.agency).map(([k, t]) => `<button data-tab="${k}"${cardTab === k ? ' class="on"' : ''}>${t}</button>`).join('')}</div>
     <div class="cbody">${body}</div>`, force);
 }
 // ---- Daños en los edificios: tormentas, terremotos, tsunamis y fuego ----
@@ -2231,7 +2233,7 @@ function secede(g, party){
   const goers = villagers.filter(u => !u.dead && !u.away && u.vid === g.id && u !== g.leader && Math.abs((u.ideo || 0) - party.ideo) < .35).slice(0, Math.floor(popOf(g) * .4));
   if (goers.length < 6) return;
   for (let k = 0; k < 60; k++) {
-    const a = Math.random() * Math.PI * 2, d = 42 + Math.random() * 26, x = Math.round(g.fx + Math.cos(a) * d), y = Math.round(g.fy + Math.sin(a) * d * .8);
+    const a = Math.random() * Math.PI * 2, d = Math.max(42, (typeof townRadius === 'function' && g.houses.length ? townRadius(g) : 8) + 26) + Math.random() * 26, x = Math.round(g.fx + Math.cos(a) * d), y = Math.round(g.fy + Math.sin(a) * d * .8);
     if (x < 8 || y < 8 || x >= W - 8 || y >= H - 8 || !tileFree(x, y) || !freshNear(y * W + x, 10)) continue;
     const ng = makeVillage(x, y); if (!ng) continue;
     for (const u of goers) { releaseTask(u); u.vid = ng.id; u.home = null; if (u === g.leader) g.leader = null; }
@@ -2731,7 +2733,7 @@ function econCard(g){
     ${budgetCard(g)}
     ${marketCard(g)}
     ${housingCard(g)}
-    ${fx.length ? `<h4>Cambio de moneda</h4><div class="sec">${fx.map(o => `<div class="kv"><span>1 ${esc(g.coin)} =</span><b>${(ecOf(o).P / ec.P).toFixed(2)} ${coinPl(o)} <span class="muted">(${esc(o.name)})</span></b></div>`).join('')}</div>` : ''}`;
+    ${fx.length ? `<h4>Cambio de moneda</h4><div class="sec">${fx.map(o => `<div class="kv"><span>100 ${esc(coinPl(g))} =</span><b>${Math.round(ecOf(o).P / ec.P * 100)} ${coinPl(o)} <span class="muted">(${esc(o.name)})</span></b></div>`).join('')}</div>` : ''}`;
 }
 function allyCard(g){
   const al = allianceOf(g); if (!al) return '';

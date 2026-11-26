@@ -89,5 +89,5 @@ function instCard(g){
   const rows = Object.entries(INSTS).filter(([k, I]) => !hasInst(g, k) && I.want(g));
   if (!rows.length) return '';
   return `<h4>Instituciones por construir</h4><div>${rows.map(([k, I]) => { const miss = instMissing(g, I);
-    return `<div>${esc(capFirst(I.name.replace(/^(un|una|el|la) /, '')))}: <span class="muted">${MATS.filter(([f]) => I[f]).map(([f, n]) => `${I[f]} de ${n}`).join(', ')}</span> ${miss.length ? `<span style="color:#e8a838">· faltan ${miss.map(([, n, d]) => `${d} de ${n}`).join(', ')}</span>` : '<span style="color:#7ab04a">· listo para empezar</span>'}</div>`; }).join('')}</div>`;
+    return `<div>${esc(capFirst(I.name.replace(/^(un|una|el|la) /, '')))}: <span class="muted">${MATS.filter(([f]) => I[f]).map(([f, n]) => `${I[f]} de ${n}`).join(', ')}</span> ${miss.length ? `<span style="color:#e8a838">· faltan ${miss.map(([, n, d]) => `${Math.ceil(d)} de ${n}`).join(', ')}</span>` : '<span style="color:#7ab04a">· listo para empezar</span>'}</div>`; }).join('')}</div>`;
 }

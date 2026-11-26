@@ -88,5 +88,5 @@ function classCard(g){
   if (!rows.length) return '';
   const word = C.gini > .6 ? 'muy desigual' : C.gini > .45 ? 'desigual' : C.gini > .3 ? 'algo desigual' : 'bastante igualitario';
   return `<h4>Clases sociales</h4><div class="cls-pyr">${rows.map(c => { const n = cnt.get(c[0]), f = n / tot; return `<div class="cls-row"><span>${esc(c[1])}</span><span class="cls-bar"><i style="width:${Math.max(3, Math.round(f * 100))}%;background:${CLASS_COL[c[2]]}"></i></span><b>${n}</b></div>`; }).join('')}</div>
-    <div class="muted" style="font-size:12px;margin-top:4px">Reparto del dinero: ${word} (índice de Gini ${C.gini.toFixed(2)})</div>`;
+    <div class="muted" style="font-size:12px;margin-top:4px">Reparto del dinero: ${word} (desigualdad ${Math.round(C.gini * 100)} de 100)</div>`;
 }

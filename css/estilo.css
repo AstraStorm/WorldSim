@@ -626,3 +626,15 @@ body.drop-save::after{content:'Suelta aquí la partida .forja para abrirla';posi
 #sideCards .sc.ms{border-color:#e0503c;animation:scBlink 1s steps(2) infinite}#sideCards .sc.ms .t{color:#ff7a62}#sideCards .sc.ms .n{font-size:18px;color:#ffd0c0}
 @keyframes scBlink{50%{border-color:#7a2418}}
 @media (prefers-reduced-motion:reduce){#sideCards .sc.ms{animation:none}}
+
+/* ---- Fichas: secciones plegables (fichas.js) ---- */
+.vcard details.fold,.pcard details.fold{margin:0}
+.vcard details.fold>summary,.pcard details.fold>summary{list-style:none;cursor:pointer;user-select:none;margin:12px 0 5px;font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:6px;padding:3px 0;border-radius:4px}
+.vcard details.fold>summary::-webkit-details-marker,.pcard details.fold>summary::-webkit-details-marker{display:none}
+.vcard details.fold>summary::before,.pcard details.fold>summary::before{content:"";width:0;height:0;border-left:5px solid currentColor;border-top:4px solid transparent;border-bottom:4px solid transparent;transition:transform .15s;flex:none}
+.vcard details.fold[open]>summary::before,.pcard details.fold[open]>summary::before{transform:rotate(90deg)}
+.vcard details.fold>summary::after,.pcard details.fold>summary::after{content:"";flex:1;height:1px;background:var(--line);order:9}
+.vcard details.fold>summary .cnt,.pcard details.fold>summary .cnt{order:10;font-size:10.5px;letter-spacing:0;color:var(--fg);opacity:.7;background:rgba(255,255,255,.07);border-radius:9px;padding:0 7px;line-height:17px}
+.vcard details.fold>summary:hover,.pcard details.fold>summary:hover{color:var(--fg)}
+.vcard details.fold:not([open])>summary,.pcard details.fold:not([open])>summary{opacity:.85}
+.vcard details.fold>*:last-child{margin-bottom:6px}

@@ -44,5 +44,5 @@ function wealthCard(g){
   if (!g.coin) return '';
   const ps = villagers.filter(u => !u.dead && u.vid === g.id && ageOf(u) >= ADULT_H), rich = ps.filter(u => isRich(u, g)).length, poor = ps.filter(u => (u.money || 0) < wealthLines(g).poor).length;
   const man = housesOf(g).filter(i => world.objs[i].key === 'house:mansion').length, sh = housesOf(g).filter(i => world.objs[i].key === 'house:chabola').length;
-  return `<div class="muted" style="font-size:12px">${rich} ricos y ${poor} pobres${man ? ` · ${man} ${man === 1 ? 'mansión' : 'mansiones'}` : ''}${sh ? ` · ${sh} ${sh === 1 ? 'chabola' : 'chabolas'}` : ''}</div>`;
+  return `<h4>Riqueza</h4><div class="muted" style="font-size:12px">${rich} ricos y ${poor} pobres${man ? ` · ${man} ${man === 1 ? 'mansión' : 'mansiones'}` : ''}${sh ? ` · ${sh} ${sh === 1 ? 'chabola' : 'chabolas'}` : ''}</div>`;
 }

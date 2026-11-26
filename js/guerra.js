@@ -74,7 +74,7 @@ function civilWarTick(g, people, dt){
   const gi = govIdeo(g), side = gi >= 0 ? -1 : 1, rebels = adults.filter(u => u !== g.leader && ((u.ideo || 0) * side > .15 || (tyr && moodOf(u).score < 40))).slice(0, Math.floor(adults.length * .45));
   if (rebels.length < 8) return;
   for (let k = 0; k < 80; k++) {
-    const a = Math.random() * Math.PI * 2, d = 42 + Math.random() * 24, x = Math.round(g.fx + Math.cos(a) * d), y = Math.round(g.fy + Math.sin(a) * d * .8);
+    const a = Math.random() * Math.PI * 2, d = Math.max(42, (typeof townRadius === 'function' && g.houses.length ? townRadius(g) : 8) + 26) + Math.random() * 24, x = Math.round(g.fx + Math.cos(a) * d), y = Math.round(g.fy + Math.sin(a) * d * .8);
     if (x < 8 || y < 8 || x >= W - 8 || y >= H - 8 || !tileFree(x, y) || !freshNear(y * W + x, 10)) continue;
     const ng = makeVillage(x, y); if (!ng) continue;
     for (const u of rebels) { releaseTask(u); u.vid = ng.id; u.home = null; if (!u.weapon && Math.random() < .5) u.weapon = 'lanza'; }

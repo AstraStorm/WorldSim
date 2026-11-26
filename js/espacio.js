@@ -79,7 +79,7 @@ SYSTEMS.push(dt => {
     R.try = ((g.rocketTry || {})[k] || 0) + 1;
     if (Math.random() < rocketRisk(g, k, R.liquid)) R.failAt = Math.random() < .25 ? 3 + Math.random() * 8 : 40 + Math.random() * 300; // (a veces estalla nada más encender, en la plataforma)
     R.dir = Math.random() < .5 ? -1 : 1; rockets.push(R); sendBarge(g, R);
-    notify(`¡Lanzamiento en ${g.name}! Un ${ROCKETS[k].n.toLowerCase()} despega con una misión de ${MISSION_TXT[m]}: cuenta atrás desde 10`, { x, y });
+    notify(`¡Lanzamiento${g.agency ? ` de la ${g.agency.abbr}` : ''} en ${typeof padTown === 'function' ? (padTown(g) || g).name : g.name}! Un ${ROCKETS[k].n.toLowerCase()} ${m === 'motores' ? 'enciende los motores sin despegar' : 'despega'} con una misión de ${MISSION_TXT[m]}: cuenta atrás desde 10`, { x, y });
   }
 });
 const MISSION_TXT = { investigacion:'investigación', satelite:'poner un satélite en órbita', estacion:'montar la estación espacial', hidroponia:'cultivos hidropónicos', defensa:'defensa planetaria', luna:'llevar colonos a la Luna', marte:'llevar colonos a Marte' };
@@ -104,7 +104,7 @@ function bannerTick(){
   for (const R of rockets) {
     const g = villageById(R.g); if (!g || R.alt > 700) continue; R.key ||= 'r' + Math.random().toString(36).slice(2);
     const n = R.phase === 'cuenta' && R.barge && !R.barge.ready ? '<span class="n" style="font-size:13px">esperando al carguero…</span>' : R.phase === 'cuenta' ? `<span class="n">${Math.max(0, Math.ceil(R.t))}</span>` : '<span class="n go">¡DESPEGUE!</span>';
-    sideCard(R.key, 'rk', `<div class="t">🚀 LANZAMIENTO · ${esc(g.name)}</div>${n}<div class="m">${esc(ROCKETS[R.k].n)} · ${esc(MISSION_TXT[R.m])}</div>`, () => [R.x, R.y0 - R.alt]);
+    sideCard(R.key, 'rk', `<div class="t">🚀 LANZAMIENTO · ${esc(g.agency ? g.agency.abbr : g.name)}</div>${n}<div class="m">${esc(ROCKETS[R.k].n)} · ${esc(MISSION_TXT[R.m])}</div>`, () => [R.x, R.y0 - R.alt]);
   }
 }
 // ---- El vuelo ----
@@ -116,6 +116,11 @@ SYSTEMS.push(dt => {
       R.holdT = (R.holdT || 0) + dt; if (!R.barge.done && R.holdT < 120) continue;
       bargeHome(R.barge); R.barge = null; } // (si no llega, la fase volverá a la base)
     if (R.phase === 'cuenta') { R.t -= dt; if (R.t <= 3 && Math.random() < dt * 20) smokePuff(R.x0 + (Math.random() - .5) * 14, R.y0 + 2, 1); if (R.t <= 0) { R.phase = 'sube'; snd('boom', R.x0, R.y0, .5); } continue; }
+    if (R.phase === 'sube' && R.m === 'motores') { // prueba de motores en tierra: encienden, rugen unos segundos sin despegar y se apagan (agencia.js)
+      R.burnT = (R.burnT || 0) + dt; R.alt = 0; R.v = 0; if (Math.random() < dt * 30) smokePuff(R.x0 + (Math.random() - .5) * 20, R.y0 + 2, 1.4);
+      if (R.failAt && R.burnT > Math.min(4.5, R.failAt / 60)) { rocketBoom(R, g); continue; }
+      if (R.burnT > 5) { R.done = true; rocketSuccess(R, g); } continue;
+    }
     if (R.phase === 'sube') {
       if (R.coastT > -1) R.coastT -= dt; if (!(R.coastT > 0)) R.v += dt * (R.liquid ? 26 : 32); R.alt += R.v * dt; R.x = R.x0 + (R.dir || 1) * Math.max(0, R.alt - 60) * .12 + (R.sepDX || 0); // (tras soltar una fase, un momento sin motor: se separan poco a poco) // se inclina un poco hacia donde va (giro de gravedad; cada vuelo, a un lado)
       if (R.alt < 80 && Math.random() < dt * 30) smokePuff(R.x0 + (Math.random() - .5) * 18, R.y0 + 2, 1.4); // la nube del despegue
@@ -193,7 +198,7 @@ function rocketBoom(R, g){
 function rocketSuccess(R, g){
   g.rocketXP = (g.rocketXP || 0) + 1; const at = { x:R.x0, y:R.y0 }; (g.rocketTry ||= {})[R.k] = (g.rocketTry[R.k] || 0) + 1;
   if (!(g.rocketOk ||= {})[R.k] && rocketRisk(g, R.k, R.liquid) <= .1) { g.rocketOk[R.k] = true; notify(`El ${ROCKETS[R.k].n.toLowerCase()} de ${g.name} ya es fiable: lo han perfeccionado en ${g.rocketTry[R.k]} intentos`, at); }
-  else if (!(R.try > 1) || !g.rocketOk[R.k]) notify(`¡Éxito! El ${ROCKETS[R.k].n.toLowerCase()} de ${g.name} llega al espacio${R.try > 1 ? ` al ${R.try}.º intento` : ' a la primera'}`, at);
+  else if ((!(R.try > 1) || !g.rocketOk[R.k]) && !(typeof isSpaceTest === 'function' && isSpaceTest(R.m))) notify(`¡Éxito! El ${ROCKETS[R.k].n.toLowerCase()} de ${g.name} llega al espacio${R.try > 1 ? ` al ${R.try}.º intento` : ' a la primera'}`, at);
   if (R.m === 'investigacion') { research(g, 220); notify(`El cohete de ${g.name} llega al espacio: sus sabios aprenden muchísimo`, at); }
   else if (R.m === 'satelite') { g.sats = (g.sats || 0) + 1; world.sats = (world.sats || 0) + 1; notify(`${g.name} pone en órbita su satélite número ${g.sats}: mejor cobertura para toda la nación`, at); }
   else if (R.m === 'estacion') { g.station = true; notify(`¡${g.name} monta su estación espacial en órbita! Sus sabios investigarán más deprisa`, at); }
