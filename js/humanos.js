@@ -625,7 +625,7 @@ function setupTask(v, g, job){
     }
     case 'muralla': {
       const pl = wallPlan(g); let k = g.wallIdx || 0;
-      while (k < pl.length && WATER[world.biome[pl[k]]]) k++;
+      while (k < pl.length && WATER[world.biome[pl[k]]] && world.biome[pl[k]] !== B.RIVER) k++;
       if (k >= pl.length) return null;
       const i = pl[k], x = i % W, y = (i / W) | 0, sb = tileFree(x, y + 1) ? [x * T + 2, (y + 1) * T + 3] : tileFree(x, y - 1) ? [x * T + 2, (y - 1) * T + 3] : [x * T + 2, y * T + 3];
       return { k:job, from:k, x:sb[0], y:sb[1] };
@@ -934,7 +934,7 @@ function runTask(v, g, dt){
       const stretch = wallStretch(g), cost = wallCost(g); // con la ley de fortificación, el doble y a mitad de precio (defensa.js)
       while (k < pl.length && built < stretch && (g.wood >= 1 || g.stone >= 10)) { // (lo que se gasta abajo: piedra solo con 10 o más; si no, madera)
         const i = pl[k], o = world.objs[i]; k++;
-        if (WATER[world.biome[i]] || bridgeSet.has(i) || plazaSet.has(i)) continue;
+        if ((WATER[world.biome[i]] && world.biome[i] !== B.RIVER) || bridgeSet.has(i) || plazaSet.has(i)) continue; // (los ríos se cruzan con una reja)
         if (midGate(g, i)) { gateSet.add(i); gateOwner.set(i, g.id); continue; } // una puerta por lado, donde pasa el camino principal (defensa.js); los demás caminos los corta la muralla
         if (o && (isBuilding(o) || o.key.startsWith('fire') || o.vid != null)) continue; // rocas, flores y matas se quitan; los edificios no
         if (underBuilding(g, i % W, (i / W) | 0) || plotIn(i % W, (i / W) | 0, i % W, (i / W) | 0) || villages.some(o => inPen(o, i % W, (i / W) | 0, 1))) continue; // ni a través de un edificio, una parcela o un cercado

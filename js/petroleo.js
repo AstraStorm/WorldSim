@@ -222,7 +222,7 @@ function drawOil(now){
   const [x0, y0, x1, y1] = visibleRect(), known = oilKnown();
   for (const d of oilDeposits()) {
     const wi = d.well != null && world.objs[d.well] ? d.well : d.i, x = (wi % W) * T + 2, y = ((wi / W) | 0) * T + 3; if (x < x0 - 30 || x > x1 + 30 || y < y0 - 40 || y > y1 + 20) continue;
-    if (d.well == null || !world.objs[d.well]) { drawOilSeep(d, x, y, now); continue; } // (sin pozo: la mancha negra que delata el petróleo)
+    if (d.well == null || !world.objs[d.well]) continue; // (la mancha sin pozo es del suelo: drawOilGround)
     if (!d.sea) { // el balancín, en marcha (8 fotogramas) mientras quede petróleo
       const f = d.amt > 0 ? Math.floor(now / 140 + d.i) % 8 : 0, s = artFrame(`oil:pozo${f}`); if (s) liveQ.push({ y, f:() => { vctx.drawImage(s, x - s.ax, y - s.height + 1); redrawFront(x - s.ax, x - s.ax + s.width, y - s.height + 1, y + 1); } });
     }
@@ -237,6 +237,15 @@ function drawOil(now){
   }
 }
 { const base = drawInstFlags; drawInstFlags = function(t){ base.apply(this, arguments); drawOil(performance.now()); }; }
+// La mancha negra que delata el petróleo es del suelo (o del agua): se pinta antes que la capa de árboles y edificios
+function drawOilGround(now){
+  const [x0, y0, x1, y1] = visibleRect();
+  for (const d of oilDeposits()) {
+    if (d.well != null && world.objs[d.well]) continue; const x = (d.i % W) * T + 2, y = ((d.i / W) | 0) * T + 3; if (x < x0 - 30 || x > x1 + 30 || y < y0 - 40 || y > y1 + 20) continue;
+    drawOilSeep(d, x, y, now);
+  }
+}
+{ const base = drawCracks; drawCracks = function(){ base.apply(this, arguments); drawOilGround(performance.now()); }; }
 // El pozo de tierra se pinta en vivo (animado): en la capa fija, nada
 { const blank = document.createElement('canvas'); blank.width = 22; blank.height = 22; blank.ax = 11;
   const base = artSprite; artSprite = function(o){ if (o && o.key === 'oil:pozo') return blank; return base.apply(this, arguments); }; }

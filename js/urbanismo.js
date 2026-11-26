@@ -70,6 +70,9 @@ function ownPlots(g){
     for (const r of ownPlots(o)) fill({ x0:r.x0 - 1, y0:r.y0 - 1, x1:r.x1 + 1, y1:r.y1 + 1 }, 0, false);
   }
   for (const h of near) fill(foot(h, 1), 1, false); // donde los dos pueblos se mezclan, primero lo suyo (sin margen)
+  // Mar y lagos no se amurallan: la muralla va por la orilla (por tierra) y el agua cierra el resto; un estanque que
+  // queda dentro del pueblo vuelve a ser pueblo abajo. Los ríos sí se cruzan (con un tramo enrejado sobre el agua)
+  for (let y = Y0; y <= Y1; y++) for (let x = X0; x <= X1; x++) if (seaWater(y * W + x)) blob[at(x, y)] = 0;
   // Los huecos que quedan dentro (patios entre manzanas) también son pueblo
   const out = new Uint8Array(bw * bh), q = [0]; out[0] = 1;
   while (q.length) { const k = q.pop(), x = k % bw, y = (k / bw) | 0; for (const [dx, dy] of STREETS) { const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= bw || ny >= bh) continue; const j = ny * bw + nx; if (!out[j] && !blob[j]) { out[j] = 1; q.push(j); } } }
@@ -97,10 +100,12 @@ function ownPlots(g){
   return plan;
 }; }
 { const base = wallGates; wallGates = function(g){ return g.wallV2 ? (g.gateTiles || new Set()) : base.call(this, g); }; }
+// ¿Agua donde no se levanta muralla? Mar y lagos sí; un río no (se cruza con una reja)
+const seaWater = i => WATER[world.biome[i]] && world.biome[i] !== B.RIVER;
 // Un tramo puesto sin obra (al cambiar la muralla vieja por la nueva): las mismas reglas que al levantarla
 function placeWall(g, i, stone){
   const x = i % W, y = (i / W) | 0, o = world.objs[i];
-  if (WATER[world.biome[i]] || bridgeSet.has(i) || plazaSet.has(i)) return false;
+  if (seaWater(i) || bridgeSet.has(i) || plazaSet.has(i)) return false;
   if (midGate(g, i)) { gateSet.add(i); gateOwner.set(i, g.id); return true; }
   if (o && (isBuilding(o) || o.key.startsWith('fire') || o.vid != null)) return false;
   if (underBuilding(g, x, y) || plotIn(x, y, x, y) || villages.some(q => inPen(q, x, y, 1))) return false;
@@ -294,6 +299,7 @@ SYSTEMS.push(dt => {
   urbT = 1.5;
   const towns = liveTowns(); if (!towns.length) return;
   for (const g of towns) if (!g.wallV2 && (g.wallPlan || g.wallPlan1)) wallMigrate(g);
+  for (const g of towns) if (!g.wallSea && g.wallV2) { g.wallSea = true; if ((g.wallPlan || []).some(seaWater)) g.wallCoreN = -999; } // (trazados viejos por el mar: se rehacen por la orilla)
   const g = towns[urbIdx++ % towns.length]; clearTrails(g);
   g.houses = [...new Set(g.houses.filter(i => !world.objs[i] || world.objs[i].key.startsWith('house')))]; // (una casa en cuyo solar ya se levantó otra cosa deja de contar como casa)
   if (g.hall != null || popOf(g) >= 6) linkTick(g);

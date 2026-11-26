@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611261853",
- "fecha": "2026-11-26 18:53",
+ "version": "202611261902",
+ "fecha": "2026-11-26 19:02",
  "novedades": [
   {
    "fecha": "2026-11-26",
-   "texto": "x5 más rápido: sin parones de calles en ciudades grandes"
+   "texto": "Murallas por la orilla y rejas en los ríos, puertas verticales, esquinas y mancha de petróleo"
+  },
+  {
+   "fecha": "2026-11-26",
+   "texto": "Velocidad x3-x5: pasos adaptativos y sin parones al conectar calles en ciudades grandes"
   },
   {
    "fecha": "2026-11-26",
@@ -46,14 +50,10 @@
   {
    "fecha": "2026-11-25",
    "texto": "Revisión visual de la revolución industrial"
-  },
-  {
-   "fecha": "2026-11-25",
-   "texto": "Arregla el brillo de la central cuando no tiene sitio: rompía el dibujado del mapa (gradiente con NaN)"
   }
  ],
  "archivos": {
-  "index.html": "b7a069f61f62dee01e99d9cbef9108f8e5a631b4",
+  "index.html": "d4dbe6a795fbacf0935299cfdf8b5e238f520a2b",
   "css/estilo.css": "88324f7069e2f60231723d2f96c606f134224554",
   "js/agencia.js": "dd15e5ae8fa08af254622aba102dafae859910b9",
   "js/aldeanos.js": "9fc48c835e3cf5baaebb07594aa0624275287f1d",
@@ -61,7 +61,7 @@
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "a94b46896cfd10fd688954a3c5b9297e9b693872",
   "js/armas.js": "d4710aa65550aceb06fbdd1d2d290c8085f58e96",
-  "js/arte.js": "d06e193a544502daefbead66c2436767a825d6df",
+  "js/arte.js": "0e897a19521cfab96a7f6081f026327d19986c0c",
   "js/arte_mapa.js": "a92d6a3c48ca112990a90102d27322fe8879ec53",
   "js/aviacion.js": "d1577602368a206110f98ecb150d9ecb4f716aba",
   "js/bandidos.js": "bc804375208c5f300e33435e76d16001e8c4daae",
@@ -84,7 +84,7 @@
   "js/credos.js": "2c9349a62f485ee953ea7e58c09de270a73b45c0",
   "js/cultivos.js": "e0abec05946f771bbc71cd29ff7b744673c79a7a",
   "js/cultura.js": "47cf34d577fd24ee5efdc7d7df63c0b8d82d099a",
-  "js/defensa.js": "6eb44512ad9225edc587ea78d2bd3fab351568c9",
+  "js/defensa.js": "91cdc6da347cbc9e6255b720650340dbbb919808",
   "js/deportes.js": "f66d2ff28df83a1e0699d8aa37c6677e89abf810",
   "js/desastres.js": "02b0486e61c6944b63b5d09c6a1fc5bbb0883577",
   "js/devocion.js": "ead2ae212c4a3118764213abe00f4b6424a6760b",
@@ -103,7 +103,7 @@
   "js/globos.js": "955b67ce3b9dd8c36b7ee965f9f05f4fb8bd9d39",
   "js/grafica.js": "d548461632882f80f4077d9e5754c70c5319331e",
   "js/guerra.js": "1153940b77fd53d54b2cb9fb5083e85282bc93fe",
-  "js/humanos.js": "abb210dcf327526abeed4a8a38064231da3bb7b5",
+  "js/humanos.js": "c76c15412a7a52a5b58fd0f9c13687b66ebe341e",
   "js/idiomas.js": "6fcf8b439467c9bba4c533f86710240f477c5b5b",
   "js/impuestos.js": "9820acf00db62b3039fb43433ddcc3f522453daa",
   "js/industria.js": "45344548ba566b198096e11e73952483dfb1b864",
@@ -125,7 +125,7 @@
   "js/okupas.js": "8bf7e443dddd18ca6dca6ccfbe64b9cbb772f040",
   "js/papeles.js": "659a0c8c296ebc6139916e3f4227b1e4b846a3dc",
   "js/partidas.js": "553141f6090a43484d8a82d8a025a6f21ada8bd9",
-  "js/petroleo.js": "e32753e5ee1c000bc38cb85934d9fbf813dc0a62",
+  "js/petroleo.js": "7b30905d4f3a32fd4fa029f30e0159aaab79b236",
   "js/piratas.js": "beb3854b289db488d51425c3ab8bbff0d2546f00",
   "js/pontones.js": "8de37aa4831746fa922e201c5dbbc75704c2a7b8",
   "js/potencias.js": "92f95b1429ed22221248d46e587f32f7bbcf9e54",
@@ -145,7 +145,7 @@
   "js/trabajo.js": "8a8074684a5610b247700d4dbe7620b254c50cb7",
   "js/tratados.js": "c7221ac52158a928a77489448ca7f1ce45ade8e2",
   "js/ui.js": "87256f0f01b8aa2a5b9d282c0a2a538dce73cf85",
-  "js/urbanismo.js": "498426eb6c4bb575706218cb1891a81fcd2011fa",
+  "js/urbanismo.js": "4b05db20311e9e6fbbcc67c77ec3b824299c80cf",
   "js/vegetacion.js": "a16ee8265cdcfd9d8db099c289f40a53d8695413",
   "js/vida.js": "2fca663a0d538b7d713ddf84ee9c89d69dcf6b66",
   "js/visitas.js": "5cafd3070fdf9de08e0a6eebf6644ad13c46bc1d",

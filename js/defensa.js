@@ -89,8 +89,19 @@ function wallTower(px, py, stone){ // torre de esquina (o torreón de la puerta)
 function paintWallTile(i){
   const on = j => wallSet.has(j) || gateSet.has(j), px = (i % W) * T, py = ((i / W) | 0) * T;
   const L = on(i - 1), Rt = on(i + 1), U = on(i - W), D = on(i + W), stn = wallStone.has(i);
-  if (gateSet.has(i - 1) || gateSet.has(i + 1)) return; // ahí va el torreón de la puerta
-  if ((L || Rt) && (U || D)) { wallTower(px, py, stn); return; } // esquina: torre
+  if ((gateSet.has(i - 1) && !gateVert(i - 1)) || (gateSet.has(i + 1) && !gateVert(i + 1))) return; // ahí va el torreón de la puerta
+  if ((gateSet.has(i - W) && gateVert(i - W)) || (gateSet.has(i + W) && gateVert(i + W))) { wallTower(px, py, stn); return; } // (puerta en un tramo de arriba abajo)
+  // Esquina de verdad (tramos rectos de dos o más a cada lado): torre si es de piedra, un poste gordo si es empalizada.
+  // Los escalones de un tramo en diagonal no son esquinas: se pintan como muro corrido
+  const run = (a, b) => on(i + a) && on(i + b);
+  const corner = (L || Rt) && (U || D), real = corner && (run(-1, -2) || run(1, 2)) && (run(-W, -2 * W) || run(W, 2 * W));
+  if (real && stn) { wallTower(px, py, stn); return; }
+  if (world.biome[i] === B.RIVER) { // sobre el río, una reja: el agua pasa, la gente no
+    vctx.fillStyle = 'rgba(0,0,0,.25)'; vctx.fillRect(px, py + T - 1, T, 1);
+    vctx.fillStyle = stn ? '#8a867e' : '#7a5030'; vctx.fillRect(px - (L ? 0 : 1), py - 6, T + (L ? 0 : 1) + (Rt ? 0 : 1), 2); // el arco de arriba
+    vctx.fillStyle = '#3a3836'; for (let k = 0; k < T; k += 2) vctx.fillRect(px + k, py - 4, 1, T + 3); vctx.fillRect(px, py, T, 1); // barrotes y travesaño
+    return;
+  }
   const Hh = stn ? 8 : 7;
   if ((U || D) && !L && !Rt) { // tramo de arriba abajo: se ve el adarve desde arriba y un costado
     vctx.fillStyle = 'rgba(0,0,0,.25)'; vctx.fillRect(px + T, py - 2, 2, T + 2);
@@ -108,8 +119,11 @@ function paintWallTile(i){
   } else {
     for (let k = 0; k < T; k++) { vctx.fillStyle = k % 2 ? '#7a5030' : '#9a6a3e'; vctx.fillRect(px + k, py - Hh + 1, 1, Hh + T - 1); vctx.fillStyle = '#4a3018'; vctx.fillRect(px + k, py - Hh + (k % 2), 1, 1); } // estacas afiladas
     vctx.fillStyle = '#5a3a20'; vctx.fillRect(px, py - 2, T, 1); vctx.fillRect(px, py + 2, T, 1); // travesaños
+    if (real) { vctx.fillStyle = '#5a3a20'; vctx.fillRect(px + 1, py - Hh - 1, T - 2, Hh + T); vctx.fillStyle = '#7a5030'; vctx.fillRect(px + 1, py - Hh - 1, 1, Hh + T); vctx.fillStyle = '#3a2614'; vctx.fillRect(px + 2, py - Hh - 2, T - 4, 1); } // poste de la esquina
   }
 }
+// ¿La puerta corta un tramo de arriba abajo? (muro encima o debajo y no a los lados)
+function gateVert(i){ const w = j => wallSet.has(j); return (w(i - W) || w(i + W)) && !w(i - 1) && !w(i + 1); }
 // La capa de objetos se rehace donde la muralla ha cambiado (tramos nuevos, derribados, puertas)
 let wallShadow = new Set(), wallSyncT = 0;
 function syncWallLayer(){
@@ -126,6 +140,13 @@ function syncWallLayer(){
 function paintGateTile(i){ // la puerta: dos torreones y el arco, con las hojas cerradas (noche, alarma o guerra) o abiertas
   const px = (i % W) * T, py = ((i / W) | 0) * T;
   const go = villageById(gateOwner.get(i)), shut = gateShut(go), stn = [i - 1, i + 1, i - W, i + W].some(j => wallStone.has(j));
+  if (gateVert(i)) { // en un tramo de arriba abajo: el paso se ve de lado, entre la torre de arriba y la de abajo (las pinta el muro)
+    vctx.fillStyle = 'rgba(20,14,10,.45)'; vctx.fillRect(px, py - 3, T, T + 3); // la sombra del paso
+    vctx.fillStyle = stn ? '#7a766e' : '#6a4428'; vctx.fillRect(px, py - 9, 2, T + 9); vctx.fillRect(px + T - 2, py - 9, 2, T + 9); // las jambas
+    vctx.fillStyle = stn ? '#9a968c' : '#9a6a3e'; vctx.fillRect(px, py - 9, T, 2); // el arco por arriba
+    if (shut) { vctx.fillStyle = '#6a4426'; vctx.fillRect(px + 2, py - 7, T - 4, T + 7); vctx.fillStyle = '#9aa0a8'; vctx.fillRect(px + 2, py - 3, T - 4, 1); vctx.fillRect(px + 2, py + 1, T - 4, 1); }
+    return;
+  }
   wallTower(px - T, py, stn); wallTower(px + T, py, stn);
   vctx.fillStyle = stn ? '#7a766e' : '#6a4428'; vctx.fillRect(px - 1, py - 9, T + 2, 4); // el dintel
   vctx.fillStyle = stn ? '#9a968c' : '#9a6a3e'; vctx.fillRect(px - 1, py - 9, T + 2, 1);
