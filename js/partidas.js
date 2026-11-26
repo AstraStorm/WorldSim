@@ -17,7 +17,8 @@ async function saveGame(slot = 'partida', quiet, name){
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (err) {} // que el navegador no la borre al hacer limpieza
   try {
     const old = await getMeta(slot), meta = { ...snap.data.meta, when:snap.data.when, name:(name || (old && old.name) || defaultSaveName()).slice(0, 48), thumb:saveThumb(), auto:AUTO_SLOTS.includes(slot) };
-    await idbDo('readwrite', st => { st.put(snap.data, slot); return st.put(meta, metaKey(slot)); });
+    const rec = await packSnap(snap); // comprimida (gzip): unas 10 veces menos que guardarla tal cual
+    await idbDo('readwrite', st => { st.put(rec, slot); return st.put(meta, metaKey(slot)); });
     lastSaveAt = Date.now(); if (!meta.auto) lastSlot = slot;
     if (!quiet) sysToast(`Partida guardada: «${meta.name}» (${((performance.now() - t0) / 1000).toFixed(1).replace('.', ',')} s)`);
     return true;
@@ -42,6 +43,7 @@ function takeSnap(){
 }
 async function loadGame(slot = 'partida'){
   let snap; try { snap = await idbDo('readonly', st => st.get(slot)); } catch (err) { snap = null; }
+  if (snap && snap.z) try { snap = await unpackSnap(snap); } catch (err) { sysToast('Esa partida está dañada y no se puede abrir'); return; }
   if (!snap) { sysToast('No hay ninguna partida guardada'); return; }
   await applySnap(snap); if (!AUTO_SLOTS.includes(slot)) lastSlot = slot;
 }
@@ -88,10 +90,21 @@ function graphDecode(pk){
     if (e.A) for (const x of e.A) o.push(dec(x)); else if (e.M) for (const [a, b] of e.M) o.set(dec(a), dec(b)); else if (e.S) for (const x of e.S) o.add(dec(x)); else if (e.O) for (const key in e.O) o[key] = dec(e.O[key]); });
   return dec(pk.root);
 }
+// Partidas guardadas en el navegador: el mismo formato que los archivos .forja (graphEncode) comprimido con gzip, y al
+// lado la ficha (meta, when) para la lista. Las de antes (la partida tal cual, sin comprimir) se siguen abriendo
+async function packSnap(snap){
+  let txt; try { txt = JSON.stringify(graphEncode(snap.data)); } finally { snap.restore(); snap.restore = () => {}; } // (las tareas pendientes, de vuelta enseguida)
+  const z = typeof CompressionStream === 'function' ? await new Response(new Blob([txt]).stream().pipeThrough(new CompressionStream('gzip'))).blob() : new Blob([txt]);
+  return { z, gz:typeof CompressionStream === 'function', v:2, when:snap.data.when, meta:snap.data.meta };
+}
+async function unpackSnap(rec){
+  const txt = rec.gz ? await new Response(rec.z.stream().pipeThrough(new DecompressionStream('gzip'))).text() : await rec.z.text();
+  return graphDecode(JSON.parse(txt));
+}
 // Descarga la partida actual (o la de una ranura) en un archivo .forja comprimido
 async function downloadSave(slot){
   let data, restore = () => {};
-  if (slot) { data = await idbDo('readonly', st => st.get(slot)); if (!data) return; const m = await getMeta(slot); if (m) data.meta = { ...data.meta, name:m.name }; }
+  if (slot) { data = await idbDo('readonly', st => st.get(slot)); if (!data) return; if (data.z) data = await unpackSnap(data); const m = await getMeta(slot); if (m) data.meta = { ...data.meta, name:m.name }; }
   else { const snap = takeSnap(); if (!snap) return; data = snap.data; restore = snap.restore; }
   let txt; try { txt = JSON.stringify(graphEncode(data)); } finally { restore(); }
   let blob = new Blob([txt], { type:'application/json' });
@@ -161,3 +174,15 @@ async function renameSave(k, name){
 }
 // Guardado rápido (Ctrl+S): encima de la partida abierta o, si no hay, como una nueva
 function quickSave(){ if (busy || !world) return; saveGame(lastSlot || 'p' + Date.now(), false); }
+// Las partidas guardadas antes sin comprimir (unos 80 MB cada una) se comprimen poco a poco, una cada medio minuto,
+// sin tocar la partida en juego: se lee, se codifica igual que al descargarla y se vuelve a guardar en su sitio
+async function compactOldSaves(){
+  let keys = []; try { keys = await idbDo('readonly', st => st.getAllKeys()); } catch (err) { return; }
+  for (const k of keys.filter(k => typeof k === 'string' && !k.startsWith('meta:'))) {
+    let rec; try { rec = await idbDo('readonly', st => st.get(k)); } catch (err) { continue; }
+    if (!rec || rec.z || !rec.world) continue;
+    try { const packed = await packSnap({ data:rec, restore:() => {} }); rec = null; await idbDo('readwrite', st => st.put(packed, k)); } catch (err) { console.error(err); }
+    setTimeout(compactOldSaves, 30000); return; // (de una en una)
+  }
+}
+setTimeout(compactOldSaves, 45000);
