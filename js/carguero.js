@@ -87,7 +87,7 @@ SYSTEMS.push(dt => {
   for (const c of cargos) {
     const g = villageById(c.g); if (!g || !popOf(g)) { c.done = true; continue; }
     if (c.wait > 0) { // en puerto: se ve cómo lo descargan (se queda vacío) y, si hay, cómo lo vuelven a cargar
-      c.wait -= dt; for (const e of c.ev || []) if (!e.done && c.wait <= e.at) { e.done = true; c.full = e.full; c.label = e.label; addEffect(c.x, c.y - 8, 'poof'); }
+      c.wait -= dt; for (const e of c.ev || []) if (!e.done && c.wait <= e.at) { e.done = true; c.full = e.full; c.label = e.label; if (e.drop) c.stageCv = null; addEffect(c.x, c.y - 8, 'poof'); }
       if (c.wait <= 0) c.label = null; continue; }
     const tgt = c.pts[c.k];
     if (!tgt) { // fin de tramo
@@ -102,6 +102,7 @@ SYSTEMS.push(dt => {
       }
       if (c.kind === 'petroleo') { const r = (typeof hasRefinery === 'function' && hasRefinery(g) ? g : nearestRefinery(c.d)) || g; r.oilStock = (r.oilStock || 0) + (c.load || 0); } // (a la refinería de la nación)
       else if (c.backGood) g[c.backGood] = (g[c.backGood] || 0) + c.backN;
+      if (c.stageCv) { c.ev = [{ at:1.2, full:false, label:'Vacío', drop:true }]; c.label = 'Descargan la fase del cohete'; c.wait = 4; c.pts = [c.home]; c.k = 1; continue; } // (la grúa la baja a puerto)
       if (c.full) { c.ev = [{ at:1.5, full:false, label:'Vacío' }]; c.label = 'Descargando'; c.wait = 3.5; c.pts = [c.home]; c.k = 1; c.backGood = null; c.load = 0; c.kind = 'fin'; continue; } // en casa: lo descargan y se queda vacío
       c.done = true; continue;
     }
@@ -128,7 +129,7 @@ function drawCargos(now){
     liveQ.push({ y:y + 4, f:() => { // (por altura: lo que está en la orilla de delante lo tapa)
     vctx.fillStyle = 'rgba(0,0,0,.22)'; vctx.fillRect(x - (s.width >> 1), y + 1, s.width, 2);
     vctx.save(); vctx.translate(x, y + 4); vctx.rotate(front ? 0 : tilt); if (left) vctx.scale(-1, 1); vctx.drawImage(s, -s.ax, -s.height); vctx.restore(); // navega: sube, baja y cabecea con las olas
-    if (c.stageCv && c.full && typeof drawCv === 'function') drawCv(c.stageCv, x + (left ? 6 : -6), y - 8, 0); // la fase del cohete, de pie sobre la cubierta
+    if (c.stageCv && typeof drawCv === 'function') drawCv(c.stageCv, x + (left ? 6 : -6), y - 8, 0); // la fase del cohete, de pie sobre la cubierta
     if (c.label) { vctx.save(); vctx.font = `bold ${Math.max(4, 11 / zoom)}px system-ui`; vctx.textAlign = 'center'; vctx.lineWidth = 2 / zoom; vctx.strokeStyle = 'rgba(0,0,0,.75)'; vctx.fillStyle = '#fff'; vctx.strokeText(c.label, x, y - s.height - 2); vctx.fillText(c.label, x, y - s.height - 2); vctx.restore(); }
     const g = villageById(c.g), n = g && nationOf(g); if (n && !front) { const fx = left ? x + (s.width >> 1) - 6 : x - (s.width >> 1) + 5, fy = y - s.height + 2; vctx.fillStyle = '#3a3a3a'; vctx.fillRect(fx, fy, 1, 5); if (n.flag) for (let a = 0; a < 4; a++) for (let b = 0; b < 3; b++) { vctx.fillStyle = flagColor(n.flag, (a + .5) / 4, (b + .5) / 3); vctx.fillRect(fx + 1 + a, fy + b, 1, 1); } }
     redrawFront(x - (s.width >> 1), x + (s.width >> 1), y - s.height, y + 4); } });

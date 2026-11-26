@@ -109,17 +109,17 @@ SYSTEMS.push(dt => {
       bargeHome(R.barge); R.barge = null; } // (si no llega, la fase volverá a la base)
     if (R.phase === 'cuenta') { R.t -= dt; if (R.t <= 3 && Math.random() < dt * 20) smokePuff(R.x0 + (Math.random() - .5) * 14, R.y0 + 2, 1); if (R.t <= 0) { R.phase = 'sube'; snd('boom', R.x0, R.y0, .5); } continue; }
     if (R.phase === 'sube') {
-      R.v += dt * (R.liquid ? 26 : 32); R.alt += R.v * dt; R.x = R.x0 + (R.dir || 1) * Math.max(0, R.alt - 60) * .12; // se inclina un poco hacia donde va (giro de gravedad; cada vuelo, a un lado)
+      if (R.coastT > -1) R.coastT -= dt; if (!(R.coastT > 0)) R.v += dt * (R.liquid ? 26 : 32); R.alt += R.v * dt; R.x = R.x0 + (R.dir || 1) * Math.max(0, R.alt - 60) * .12 + (R.sepDX || 0); // (tras soltar una fase, un momento sin motor: se separan poco a poco) // se inclina un poco hacia donde va (giro de gravedad; cada vuelo, a un lado)
       if (R.alt < 80 && Math.random() < dt * 30) smokePuff(R.x0 + (Math.random() - .5) * 18, R.y0 + 2, 1.4); // la nube del despegue
       if (Math.random() < dt * 14) smokePuff(R.x, R.y0 - R.alt + 8, .7); // la estela
       if (R.failAt && R.alt >= R.failAt) { rocketBoom(R, g); continue; }
       // Separación de fases
       const Rk = ROCKETS[R.k];
-      if (Rk.fases === 3 && R.parts === 3 && R.alt > 110) { R.parts = 2; const S = stageCv(R.k); // primero, los propulsores laterales
-        if (S) for (const [cv, cx, sg] of [[S.boostL, S.blx, -1], [S.boostR, S.brx, 1]]) rocketBits.push({ cv, x:R.x + cx, y:R.y0 - R.alt, vx:sg * (6 + Math.random() * 4) + (R.dir || 1) * 5, vy:-R.v * .45, rot:0, vr:sg * .7, sea:true, burn:.6, gy:R.y0 + 20 + Math.random() * 60 });
+      if (Rk.fases === 3 && R.parts === 3 && R.alt > 170) { R.parts = 2; const S = stageCv(R.k); // primero, los propulsores laterales
+        if (S) for (const [cv, cx, sg] of [[S.boostL, S.blx, -1], [S.boostR, S.brx, 1]]) rocketBits.push({ cv, x:R.x + cx, y:R.y0 - R.alt, vx:sg * (4 + Math.random() * 3) + (R.dir || 1) * 5, vy:-R.v * .8, gr:45, rot:rotOf(R), vr:sg * .35, sea:true, burn:.6, gy:R.y0 + 20 + Math.random() * 60 });
         notify(`Se separan los propulsores laterales del cohete de ${g.name}`, { x:R.x, y:R.y0 - R.alt }); }
-      if (Rk.fases >= 2 && R.parts === 2 && R.alt > 210) { R.parts = 1; const S = stageCv(R.k); // luego, la primera fase (la de abajo); la de arriba sigue sola
-        if (S) { const b = { cv:S.core, x:R.x, y:R.y0 - R.alt, rot:0 }; if (R.auto) Object.assign(b, { vx:0, vy:0, vr:0, land:true, g:R.g, barge:R.barge || null }); else Object.assign(b, { vx:4 * (R.dir || 1), vy:-R.v * .35, vr:.4 * (R.dir || 1), sea:true, gy:R.y0 + 40 + Math.random() * 60 }); rocketBits.push(b); R.alt += S.lowH; }
+      if (Rk.fases >= 2 && R.parts === 2 && R.alt > 400) { R.parts = 1; const S = stageCv(R.k); // luego, la primera fase (la de abajo); la de arriba sigue sola
+        if (S) { const r0 = rotOf(R), b = { cv:S.core, x:R.x + S.coreX, y:R.y0 - R.alt, rot:r0 }; for (let n = 0; n < 8; n++) smokePuff(R.x + Math.sin(r0) * S.lowH + (Math.random() - .5) * 8, R.y0 - R.alt - Math.cos(r0) * S.lowH, .5); R.coastT = .9; if (R.auto) Object.assign(b, { vx:(R.dir || 1) * Math.sin(r0) * R.v, vy:-R.v * .92, vr:0, land:true, g:R.g, barge:R.barge || null, ph:'coast', t:0 }); else Object.assign(b, { vx:4 * (R.dir || 1), vy:-R.v * .9, gr:45, vr:.25 * (R.dir || 1), sea:true, gy:R.y0 + 40 + Math.random() * 60 }); rocketBits.push(b); R.alt += Math.cos(r0) * S.lowH; R.sepDX = (R.sepDX || 0) + Math.sin(r0) * S.lowH; } // (la de arriba sigue justo desde donde se cortó, con la misma inclinación)
         notify(`Se separa la primera fase del cohete de ${g.name}${R.auto ? ': da la vuelta para aterrizar' : ''}`, { x:R.x, y:R.y0 - R.alt }); }
       if (R.alt > 900) { R.done = true; rocketSuccess(R, g); } // fuera de la pantalla: ya está en el espacio
     }
@@ -129,20 +129,26 @@ SYSTEMS.push(dt => {
     if (b.land) { // la fase que vuelve: cae, da la vuelta y frena con el motor hasta posarse
       const g = villageById(b.g), bg = b.barge && !b.barge.done ? b.barge : null; if (b.barge && !bg) b.barge = null;
       const [tx, ty] = bg ? [bg.x, bg.y - 4] : g && padOf(g) ? padSpot(g) : [b.x, b.y + 300]; // (en el carguero, sobre la cubierta; en la base, en el centro del círculo)
-      const dy = ty - b.y, dx = tx - b.x; b.rot += (0 - b.rot) * Math.min(1, dt * 2);
-      b.vy = Math.min(dy * .6, 50) * clamp(1 - Math.abs(dx) / 200, 0, 1); if (dy < 50 && Math.abs(dx) < 30) b.vy = Math.max(5, dy * .7); b.vx = clamp(dx * 1.2, -130, 130); // vuela hacia el carguero (o la base) y baja frenando con el motor, centrándose
-      b.x += b.vx * dt; b.y += b.vy * dt; b.burn = dy < 80 || Math.abs(dx) > 40; if (b.burn && Math.random() < dt * 20) smokePuff(b.x, b.y + 6, .6);
+      const dy = ty - b.y, dx = tx - b.x; b.t = (b.t || 0) + dt;
+      // Como el misil, pero al revés: se da la vuelta y vuela con el motor por delante, apuntando a donde va a aterrizar
+      // (arriba, en arco); encima del sitio se endereza, baja frenando con el motor y se posa
+      if (b.ph === 'coast') { b.vy += 70 * dt; b.vx *= 1 - dt; b.burn = false; if (b.t > 2.4) b.ph = 'vuelo'; }
+      else if (b.ph === 'vuelo') { const ax = tx, ay = ty - Math.min(160, Math.abs(dx) * .45), ex = ax - b.x, ey = ay - b.y, d = Math.hypot(ex, ey) || 1, sp = clamp(Math.hypot(dx, dy) * .7, 30, 115);
+        b.vx += (ex / d * sp - b.vx) * Math.min(1, dt * 1.4); b.vy += (ey / d * sp - b.vy) * Math.min(1, dt * 1.4); b.burn = .8; if (Math.abs(dx) < 18) b.ph = 'baja'; }
+      else { b.vy = Math.min(dy * .6, 50); if (dy < 50) b.vy = Math.max(5, dy * .7); b.vx = clamp(dx * 1.5, -30, 30); b.burn = dy < 90; }
+      const want = b.ph === 'vuelo' ? Math.atan2(-b.vx, b.vy) : b.ph === 'coast' ? b.rot + (b.t > .8 ? Math.min(1, (b.t - .8) / 1.6) : 0) * (Math.atan2(-dx, Math.max(1, dy)) - b.rot) : 0; let da = want - b.rot; while (da > Math.PI) da -= Math.PI * 2; while (da < -Math.PI) da += Math.PI * 2; b.rot += da * Math.min(1, dt * 2.5);
+      b.x += b.vx * dt; b.y += b.vy * dt; if (b.burn && Math.random() < dt * 20) smokePuff(b.x - Math.sin(b.rot) * -6, b.y + Math.cos(b.rot) * 6, .6);
       if (Math.abs(dy) < 1.5 && Math.abs(dx) < 1.5) { b.done = true; const xp = g ? g.rocketXP || 0 : 0;
         if (Math.random() < Math.max(.08, .45 - xp * .06)) { rocketBoomAt(tx, ty); if (bg) bargeHome(bg); if (g) notify(`La primera fase del cohete de ${g.name} se estrella al aterrizar${bg ? ' en el carguero' : ''}. La próxima vez irá mejor`, { x:tx, y:ty }); }
         else if (g) { g.reusable = true;
-          if (bg) { bg.stageCv = b.cv; bg.full = true; bg.kind = 'fin'; bg.wait = 2; bg.label = 'Trae la fase del cohete'; bg.phase = 'vuelta'; bg.pts = seaPath([bg.x, bg.y], bg.home) || [bg.home]; bg.k = 0; } // el carguero se la lleva a puerto
+          if (bg) { bg.stageCv = b.cv; bg.full = false; bg.kind = 'fin'; bg.wait = 2; bg.label = 'Trae la fase del cohete'; bg.phase = 'vuelta'; bg.pts = seaPath([bg.x, bg.y], bg.home) || [bg.home]; bg.k = 0; } // el carguero se la lleva a puerto
           else rocketBits.push({ cv:b.cv, x:tx, y:ty, rot:0, parked:true, t:0 }); // se queda de pie en la plataforma
           notify(`¡La primera fase del cohete de ${g.name} aterriza ${bg ? 'en un carguero en pleno mar! El barco la trae a puerto' : 'en el centro de la base!'} Se podrá reutilizar`, { x:tx, y:ty }); } }
       continue;
     }
     if (b.parked) { b.t += dt; if (b.t > 70) { b.x += dt * 6; b.alpha = Math.max(0, 1 - (b.t - 70) / 8); if (b.t > 78) b.done = true; } continue; } // de pie en la plataforma un buen rato; luego se la llevan al hangar
     // lo que se suelta cae despacio (aún lleva impulso), dando vueltas, hasta el suelo o el mar
-    b.vy += 16 * dt; b.x += b.vx * dt; b.y += b.vy * dt; b.rot += b.vr * dt; b.t = (b.t || 0) + dt; if (b.t > 1.6) b.burn = 0; if (Math.random() < dt * 10) smokePuff(b.x, b.y - 4, .6);
+    b.vy += (b.vy < 0 ? (b.gr || 16) : 16) * dt; b.x += b.vx * dt; b.y += b.vy * dt; b.rot += b.vr * dt; b.t = (b.t || 0) + dt; if (b.t > 1.6) b.burn = 0; if (Math.random() < dt * 10) smokePuff(b.x, b.y - 4, .6);
     if (b.y >= b.gy || b.t > 14) { b.done = true; const i = Math.floor(b.y / T) * W + Math.floor(b.x / T); if (i >= 0 && i < N && WATER[world.biome[i]]) { addEffect(b.x, b.y, 'poof'); for (let n = 0; n < 14; n++) chips.push({ x:b.x, y:b.y, vx:(Math.random() - .5) * 30, vy:-10 - Math.random() * 20, life:0, max:.9, col:'rgba(230,245,255,.85)' }); } else rocketBoomAt(b.x, b.y, .6); } // al mar (chapuzón) o donde caiga
   }
   rocketBits = rocketBits.filter(b => !b.done);
@@ -191,6 +197,7 @@ if (typeof launchMeteor === 'function') { const base = launchMeteor; launchMeteo
 // Las fases se recortan del mismo dibujo del cohete entero (así no cambian de tamaño al separarse): la de arriba, la de
 // abajo (el núcleo) y los dos propulsores laterales
 const stageC = {};
+const rotOf = R => (R.dir || 1) * Math.min(.2, Math.max(0, R.alt - 60) / 1500); // (la inclinación del cohete al subir)
 function stageCv(k){
   if (stageC[k]) return stageC[k]; const s = artFrame(`rocket:${k}`), Rk = ROCKETS[k]; if (!s || !Rk.low) return null;
   const w = s.width, h = s.height, lowH = Math.round(h * Rk.low), cut = (x, y, cw, chh) => { const c = document.createElement('canvas'); c.width = Math.max(1, cw); c.height = Math.max(1, chh); c.getContext('2d').drawImage(s, x, y, cw, chh, 0, 0, cw, chh); return c; };
@@ -207,17 +214,17 @@ function drawCv(cv, x, y, rot, cx = 0){ vctx.save(); vctx.translate(Math.round(x
 function flame(x, y, k){ const f = .7 + Math.random() * .6; vctx.fillStyle = 'rgba(255,240,180,.95)'; vctx.fillRect(x - 1, y, 3, Math.round(3 * f * k)); vctx.fillStyle = 'rgba(255,160,60,.85)'; vctx.fillRect(x - 2, y + 2, 5, Math.round(5 * f * k)); vctx.fillStyle = 'rgba(255,90,30,.6)'; vctx.fillRect(x - 1, y + 6, 3, Math.round(6 * f * k)); }
 function drawRockets(now){
   for (const R of rockets) {
-    const Rk = ROCKETS[R.k], y = R.y0 - R.alt, rot = Math.min(.2, Math.max(0, R.alt - 60) / 1500), s = artFrame(`rocket:${R.k}`), S = stageCv(R.k); if (!s) continue;
+    const Rk = ROCKETS[R.k], y = R.y0 - R.alt, rot = rotOf(R), s = artFrame(`rocket:${R.k}`), S = stageCv(R.k); if (!s) continue;
     if (R.phase === 'cuenta') { vctx.save(); vctx.font = `bold ${Math.max(6, 14 / zoom)}px system-ui`; vctx.textAlign = 'center'; vctx.fillStyle = '#ffe070'; vctx.strokeStyle = 'rgba(0,0,0,.8)'; vctx.lineWidth = 2 / zoom; const t = String(Math.max(0, Math.ceil(R.t))); vctx.strokeText(t, R.x0, R.y0 - s.height - 8); vctx.fillText(t, R.x0, R.y0 - s.height - 8); vctx.restore(); }
     const fire = R.phase !== 'cuenta', big = R.alt < 30 ? 1.6 : 1.2;
     if (!S || R.parts === 1 && Rk.fases === 1) { if (fire) flame(Math.round(R.x), Math.round(y + 1), big); drawCv(s, R.x, y, rot); }
     else if (R.parts === 3) { if (fire) for (const cx of [S.coreX, S.blx, S.brx]) flame(Math.round(R.x + cx), Math.round(y + 1), cx === S.coreX ? big : big * .8); drawCv(s, R.x, y, rot); } // los laterales también echan fuego
     else if (R.parts === 2) { if (fire) flame(Math.round(R.x + S.coreX), Math.round(y + 1), big); drawCv(S.noBoost || s, R.x, y, rot); }
-    else { if (fire) flame(Math.round(R.x), Math.round(y + 1), 1.1); drawCv(S.upper, R.x, y, rot); }
+    else { if (fire && !(R.coastT > 0)) { vctx.save(); vctx.translate(Math.round(R.x), Math.round(y)); vctx.rotate(rot); flame(0, 1, R.coastT > -.4 ? .6 : 1.1); vctx.restore(); } drawCv(S.upper, R.x, y, rot); }
     const g = villageById(R.g); if (R.alt < 50 && g && g.spacePad != null) redrawFront(R.x - s.width / 2, R.x + s.width / 2, y - s.height, ((g.spacePad / W) | 0) * T + 4); // lo que está delante de la plataforma (no ella misma) lo tapa
   }
   for (const b of rocketBits) {
-    if (b.burn) flame(Math.round(b.x), Math.round(b.y + 1), b.burn === true ? 1 : b.burn);
+    if (b.burn) { vctx.save(); vctx.translate(Math.round(b.x), Math.round(b.y)); if (b.rot) vctx.rotate(b.rot); flame(0, 1, b.burn === true ? 1 : b.burn); vctx.restore(); } // (la llama, en el motor: gira con la fase)
     if (b.alpha != null) vctx.globalAlpha = b.alpha; drawCv(b.cv, b.x, b.y, b.rot); vctx.globalAlpha = 1;
   }
 }
