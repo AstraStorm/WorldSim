@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611262159",
- "fecha": "2026-11-26 21:59",
+ "version": "202611262229",
+ "fecha": "2026-11-26 22:29",
  "novedades": [
   {
    "fecha": "2026-11-26",
-   "texto": "Susurrar ideas y mercancías con efecto"
+   "texto": "Menú de inicio y modo Gobierna una nación"
+  },
+  {
+   "fecha": "2026-11-26",
+   "texto": "Susurrar ideas a los aldeanos y mercancías que sirven para algo"
   },
   {
    "fecha": "2026-11-26",
@@ -46,26 +50,22 @@
   {
    "fecha": "2026-11-26",
    "texto": "Guerras solo entre naciones de cierto tamaño"
-  },
-  {
-   "fecha": "2026-11-26",
-   "texto": "Ayuda alimentaria entre pueblos, casas que abrigan y sin muertes de sed en casa"
   }
  ],
  "archivos": {
-  "index.html": "4bd834696e69bb5e11b9b1ec4b2eab25ffc88399",
-  "css/estilo.css": "b0fda3aca49da803ea1fb797b5bf1e266d43d509",
+  "index.html": "c5c95e2f6ed2f53d26a0d4e5afe800178591fe0f",
+  "css/estilo.css": "ff3d1c3fae9c42d7c90f654ab4b24b330f3784f6",
   "js/agencia.js": "dd15e5ae8fa08af254622aba102dafae859910b9",
   "js/aldeanos.js": "9fc48c835e3cf5baaebb07594aa0624275287f1d",
   "js/ambiente.js": "6c96bf777f6cdfc55b648f495836521ee28aeb8f",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "a94b46896cfd10fd688954a3c5b9297e9b693872",
   "js/armas.js": "d4710aa65550aceb06fbdd1d2d290c8085f58e96",
-  "js/arte.js": "19e6919ac3c3a8a21034832b76aed8659ba4c113",
+  "js/arte.js": "e7ea80b0814a74f90809bd29e2a705ca4afa116d",
   "js/arte_mapa.js": "a92d6a3c48ca112990a90102d27322fe8879ec53",
   "js/aviacion.js": "2bceeb5a9a59332b96ad69d19b5f6e39da71af42",
   "js/bandidos.js": "bc804375208c5f300e33435e76d16001e8c4daae",
-  "js/barrios.js": "b148572bfff01be3d04c84b64b79ab7dab3707dd",
+  "js/barrios.js": "6080e504032cd128ae1af9291b8ad403e33f4e66",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
   "js/calendario.js": "03559b1ef711175c3f112ecaa0243a06a44b4b9c",
   "js/carguero.js": "2b2c93469c9e6cb18adf22910a0ff0ac54b3a659",
@@ -78,7 +78,7 @@
   "js/clases.js": "d492b674481b1fba29d3b594d2a65a9bb2d75029",
   "js/clima.js": "e545e861b32b69714cf334b67d1a6308503596c7",
   "js/colonias.js": "f23380da6b0ba72188b0d28a9b185517b505bd50",
-  "js/comercio.js": "0e39cd9f5878bfef1fc778c6e0b19c74c219827d",
+  "js/comercio.js": "de92c0de9e42903b2b8bea742dd05f59748c3b66",
   "js/consejo.js": "3ed73b3dcc91de9bb3f1c23c7caec240114f61e4",
   "js/convivencia.js": "81be8970d88a47871bd4e45796c00a51f56287f8",
   "js/credos.js": "2c9349a62f485ee953ea7e58c09de270a73b45c0",
@@ -101,11 +101,12 @@
   "js/fauna.js": "f9955feca793b4c39fb033e8dd56d59e0054b693",
   "js/fichas.js": "0142e3c8551d34a5ccfebad79dfd9e8d01070047",
   "js/globos.js": "955b67ce3b9dd8c36b7ee965f9f05f4fb8bd9d39",
+  "js/gobierno.js": "431407e12542efe821a32cc849c0be1d05218407",
   "js/grafica.js": "d548461632882f80f4077d9e5754c70c5319331e",
   "js/guerra.js": "2aab88f346ccb8117f2fd463cb66b8189034b083",
-  "js/humanos.js": "8fc7fc20c03da780cceff7e6f649c27ecd8c067c",
+  "js/humanos.js": "f113e74768e7936d64d9a1063d530ca3a13cd3b7",
   "js/idiomas.js": "d96704e486f9430e4c6e1e6c91f462b6d7be2411",
-  "js/impuestos.js": "9820acf00db62b3039fb43433ddcc3f522453daa",
+  "js/impuestos.js": "30a39fbfba11c9245a09cf6e54504337272a2fb6",
   "js/industria.js": "45344548ba566b198096e11e73952483dfb1b864",
   "js/instituciones.js": "27040afa33169a2eff011b1481c00e8491c9775e",
   "js/interfaz.js": "33331b35465a7d1e527f0e10e6d5744527a2a1e0",
@@ -139,7 +140,7 @@
   "js/riqueza.js": "6e0afe4ee16977f7f9b9bb2987844ad104f54f6a",
   "js/rutas.js": "6e12cafc1992e09fc3c2b5b13ca7d7db6416c364",
   "js/sindicatos.js": "f7cb8bf83ff74322a6fc45cc6ac90550425c6d15",
-  "js/sociedad.js": "2f872bde740fca237a178dbc12864386f8693ba3",
+  "js/sociedad.js": "022f82712a3e6caeabfdfbc7f4e35ba408cfaffd",
   "js/sonido.js": "25be9d9bda62336aba463c82e31668d0e9b2bc54",
   "js/susurros.js": "e7db716c1776171d2e8b1620544357844646ddcc",
   "js/terrorismo.js": "a2285a3dfa1180fc7b7922eadf05f9f189970d6e",

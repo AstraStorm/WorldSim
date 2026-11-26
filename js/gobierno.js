@@ -1,0 +1,324 @@
+// World Sim · Modos de juego: modo dios o gobernar tu propia nación
+// ================= Menú y modo nación =================
+// Al abrir el juego sale un menú: «Modo dios» (mirar el mundo y jugar con él, como siempre) o «Gobierna una nación».
+// En el modo nación eliges en el mapa dónde fundar tu tribu (con su nombre) y desde el botón «Gobierno» decides lo que
+// decide un gobierno: las leyes, los impuestos, en qué se trabaja más, qué obras se encargan, qué se investiga, la
+// guerra y la paz, los diplomáticos, los regalos y los embargos. La gente sigue viviendo a su aire: si lo que haces
+// no le gusta, se enfada, protesta, vota en contra o da un golpe. Sin victoria ni derrota: si tu nación cae, puedes
+// seguir mirando o fundar otra. world.player = { vid, nid, t0, name, embargo:[ids], peaceT:{}, giftT:{}, dipT:{} }
+const playerOn = () => !!(world && world.player);
+const playerNat = () => { const P = world && world.player; if (!P) return null; const n = villageById(P.nid); return n && popOf(n) && nationOf(n) === n ? n : null; };
+const isPlayerG = g => { if (!g || !world || !world.player) return false; const n = playerNat(); return !!n && nationOf(g) === n; };
+const playerTowns = () => { const n = playerNat(); return n ? villages.filter(o => popOf(o) && nationOf(o) === n) : []; };
+const embargoed = (a, b) => { const P = world && world.player; if (!P || !P.embargo || !P.embargo.length) return false; const n = playerNat(); if (!n) return false; const na = nationOf(a), nb = nationOf(b); return (na === n && P.embargo.includes(nb.id)) || (nb === n && P.embargo.includes(na.id)); };
+// ---- Prioridades de trabajo (desde chooseJob) ----
+const FOCUS = {
+  normal:{ ic:'⚖', txt:'Equilibrado', jobs:[] },
+  comida:{ ic:'🌾', txt:'Comida', jobs:['sembrar', 'arar', 'cosechar', 'campo', 'pescar', 'barca', 'cazar', 'bayas', 'bayal', 'conservar', 'capturar', 'cercar'] },
+  madera:{ ic:'🪵', txt:'Madera', jobs:['talar', 'plantar', 'arboleda'] },
+  piedra:{ ic:'🪨', txt:'Piedra y minas', jobs:['picar', 'cantear', 'cantera', 'minar', 'extraer', 'mina'] },
+  obras:{ ic:'🏗', txt:'Obras', jobs:['construir', 'ampliar', 'pozo', 'almacen', 'puente', 'mercado', 'molino', 'herreria', 'escuela', 'hospital', 'teatro', 'taberna', 'muelle', 'empedrar', 'granero', 'ahumadero', 'lenera', 'universidad', 'tribunal', 'carcel', 'imprenta', 'banco', 'lonja', 'ayuntamiento', 'reparar'] },
+  defensa:{ ic:'🛡', txt:'Defensa', jobs:['muralla', 'torre', 'arma', 'equipar', 'cuartel', 'instruir', 'asedio', 'guardia'] },
+  fe:{ ic:'✨', txt:'Fe', jobs:['orar', 'templo', 'altar', 'ofrenda', 'catedral', 'monumento', 'ritual'] },
+  saber:{ ic:'📚', txt:'Saber', jobs:['escuela', 'enseñar', 'investigar', 'universidad', 'imprenta', 'clase'] },
+};
+const BASIC_WORKS = ['granero', 'ahumadero', 'lenera', 'postas'];
+const FOCUS_SET = Object.fromEntries(Object.entries(FOCUS).map(([k, F]) => [k, new Set(F.jobs)]));
+const focusMul = (g, k) => g.pFocus && g.pFocus !== 'normal' ? (FOCUS_SET[g.pFocus].has(k) ? 2.6 : .8) : 1;
+// ---- Obras encargadas: si el jugador encarga algo, el pueblo se pone a ello (y a por el material que falte) ----
+{ const base = institutionJobs; institutionJobs = function(v, g, add){
+  base.apply(this, arguments);
+  const k = g.pOrder; if (!k || !INSTS[k]) return;
+  if (hasInst(g, k)) { g.pOrder = null; return; }
+  const I = INSTS[k]; if (instAfford(g, I)) add(k, !busyWith(g, k) ? 30 : 0); else for (const [f] of instMissing(g, I)) for (const j of MAT_JOBS[f]) add(j, 9);
+}; }
+{ const base = institutionArrive; institutionArrive = function(v, g, t){ const r = base.apply(this, arguments); if (g.pOrder === t.k && hasInst(g, t.k)) g.pOrder = null; return r; }; }
+// ---- Leyes del jugador ----
+const LAW_OPP = [['jornada_corta', 'jornada_larga'], ['impuestos_altos', 'impuestos_bajos'], ['derecho_huelga', 'prohibir_huelgas'], ['lengua_unica', 'plurilinguismo'], ['reforma_lengua', 'pureza_lengua'],
+  ['fronteras_abiertas', 'fronteras_cerradas'], ['libertad_religiosa', 'persecucion_religiosa'], ['fe', 'laicidad'], ['proteger_okupas', 'desalojo_okupas'], ['deportaciones', 'regularizacion'], ['paz', 'expansion'], ['segregacion', 'derechos_humanos']];
+const lawOpp = l => { for (const [a, b] of LAW_OPP) { if (a === l) return b; if (b === l) return a; } return null; };
+const P_LAWS_MAX = 12;
+// Quién apoya una ley: lo que le toca (lawNeed) y si va con sus ideas
+function lawSupport(g, l){
+  const ads = villagers.filter(u => !u.dead && ageOf(u) >= ADULT_H && isPlayerG(villageById(u.vid))); if (!ads.length) return .5;
+  const S = ads.length > 80 ? ads.filter((u, i) => i % Math.ceil(ads.length / 80) === 0) : ads, lean = LAW_LEAN[l] || 0;
+  let yes = 0; for (const u of S) { const s = (typeof lawNeed === 'function' ? lawNeed(u, villageById(u.vid) || g, l) : 0) * .7 + (lean ? .45 - Math.abs((u.ideo || 0) - lean) * .5 : .1); if (s > 0) yes++; }
+  return yes / S.length;
+}
+let lawSupC = new Map();
+const lawSup = (g, l) => { const c = lawSupC.get(l); if (c && yearT - c.t < 15 && yearT >= c.t) return c.v; const v = lawSupport(g, l); lawSupC.set(l, { t:yearT, v }); return v; };
+function setPlayerLaw(l, on){
+  const n = playerNat(); if (!n) return; const L = n.pLaws ||= [];
+  if (on === L.includes(l)) return;
+  const sup = lawSup(n, l), at = { x:n.fx * T, y:n.fy * T };
+  if (on) { const o = lawOpp(l); if (o && L.includes(o)) L.splice(L.indexOf(o), 1); L.push(l); } else L.splice(L.indexOf(l), 1);
+  n.pIdeo = L.length ? clamp(L.reduce((a, k) => a + (LAW_LEAN[k] || 0), 0) / Math.max(2, L.length) * 1.4, -1, 1) : 0;
+  lawSupC.clear();
+  const pct = Math.round((on ? sup : 1 - sup) * 100), txt = `En ${n.name} ${on ? 'se aprueba' : 'se deroga'} la ley de «${LAW_TXT[l] || l}» por decisión del gobierno (la apoya${on ? '' : 'ba'} el ${Math.round(sup * 100)} % de la gente)`;
+  lawLog(n, txt); notify(txt, at);
+  // Lo que la mayoría no quiere, enfada; lo que pide, calma
+  for (const g of playerTowns()) {
+    if (pct < 35) { g.anger = Math.min(100, (g.anger || 0) + (35 - pct) * .6); if ((g.anger || 0) > 20) g.grief = 'imposicion'; }
+    else if (pct > 60) g.anger = Math.max(0, (g.anger || 0) - 6);
+  }
+}
+if (typeof GRIEF_TXT !== 'undefined') { GRIEF_TXT.imposicion = 'las leyes que les impone el gobierno'; GRIEF_TXT.guerra_impuesta = 'una guerra que nadie quería'; }
+if (typeof REASON_TXT !== 'undefined') REASON_TXT.gobierno = 'la decisión de su gobierno';
+// ---- Impuestos del jugador ----
+function setPlayerTax(k, on){
+  const n = playerNat(); if (!n) return;
+  for (const g of playerTowns().filter(o => o.coin)) { if (on) addTax(g, k, 'por decisión del gobierno'); else dropTax(g, k, 'por decisión del gobierno'); }
+}
+// ---- Guerra, paz y diplomacia ----
+function playerWar(def){
+  const att = playerNat(); if (!att || !def) return;
+  const D = nationOf(def), r = relOf(att, D); if (r.war || !warReachC(r, att, D)) return;
+  const friends = r.v > 10;
+  r.war = { att:att.id, def:D.id, reason:'gobierno', start:yearT, raidT:yearT - 40, dead:0 }; breakTreaties(att, D, r); mutualDefense(att, D); warCamp(att, D, r);
+  att.danger = D.danger = 120;
+  const sol = g0 => villagers.filter(v => !v.dead && v.vid === g0.id && v.weapon).length;
+  notify(`¡${att.name} declara la guerra a ${D.name} por decisión de su gobierno! ${att.name} tiene ${sol(att)} soldados y ${popOf(att)} habitantes; ${D.name}, ${sol(D)} soldados y ${popOf(D)} habitantes`, { x:D.fx * T, y:D.fy * T });
+  sendNews(att, `${att.name} ha declarado la guerra a ${D.name}`);
+  callAllies(att, D);
+  if (friends) for (const g of playerTowns()) { g.anger = Math.min(100, (g.anger || 0) + 20); g.grief = 'guerra_impuesta'; }
+}
+function playerPeace(o){
+  const n = playerNat(), P = world.player; if (!n) return;
+  const D = nationOf(o), r = warRel(n, D); if (!r || !r.war) return;
+  if ((P.peaceT ||= {})[D.id] > yearT) return;
+  const days = (yearT - r.war.start) / DAY_LEN, armed = g0 => villagers.filter(v => !v.dead && v.weapon && nationOf(villageById(v.vid) || {}) === g0).length;
+  const mine = armed(n), theirs = armed(D), chance = clamp(.12 + days * .07 + (mine > theirs * 1.3 ? .25 : mine < theirs * .7 ? -.1 : .05) + (r.war.dead || 0) * .01, .05, .9);
+  if (Math.random() < chance) { const A = villageById(r.war.att), B2 = villageById(r.war.def); makePeace(A || n, B2 || D, r, `a propuesta de ${n.name}`); }
+  else { P.peaceT[D.id] = yearT + DAY_LEN * .5; notify(`${D.name} rechaza la paz que le propone ${n.name}: aún cree que puede ganar`, { x:D.fx * T, y:D.fy * T }); }
+}
+function playerDiplomat(o){ const n = playerNat(), P = world.player; if (!n || ((P.dipT ||= {})[o.id] > yearT)) return; P.dipT[o.id] = yearT + DAY_LEN * .5; sendTraveler('diplomatico', n, nationOf(o)); notify(`${n.name} manda un diplomático a ${nationOf(o).name}`, { x:n.fx * T, y:n.fy * T }); }
+const GIFT_FOOD = 25;
+function playerGift(o){
+  const n = playerNat(), P = world.player; if (!n || n.food < GIFT_FOOD + popOf(n) || ((P.giftT ||= {})[o.id] > yearT)) return;
+  const D = nationOf(o), r = relOf(n, D); n.food -= GIFT_FOOD; D.food += GIFT_FOOD; r.v = clamp(r.v + 12, -100, 100); P.giftT[o.id] = yearT + DAY_LEN * .5;
+  notify(`${n.name} regala ${GIFT_FOOD} de comida a ${D.name}: la relación mejora`, { x:D.fx * T, y:D.fy * T });
+}
+function playerEmbargo(o, on){
+  const n = playerNat(), P = world.player; if (!n) return; const D = nationOf(o), E = P.embargo ||= [];
+  if (on && !E.includes(D.id)) { E.push(D.id); relOf(n, D).v = clamp(relOf(n, D).v - 15, -100, 100); notify(`${n.name} corta el comercio con ${D.name}: ni caravanas ni barcos`, { x:D.fx * T, y:D.fy * T }); }
+  else if (!on && E.includes(D.id)) { E.splice(E.indexOf(D.id), 1); notify(`${n.name} levanta el embargo a ${D.name}`, { x:D.fx * T, y:D.fy * T }); }
+}
+// ---- Fundar la tribu ----
+let founding = null; // { name }
+function foundOk(tx, ty){
+  if (tx < 4 || ty < 4 || tx >= W - 4 || ty >= H - 4) return 'fuera del mapa';
+  const i = ty * W + tx; if (WATER[world.biome[i]] || world.biome[i] === B.LAVA) return 'ahí hay agua';
+  if (!tileFree(tx, ty)) return 'ahí no se puede construir';
+  if (villages.some(g => popOf(g) && Math.hypot(g.fx - tx, g.fy - ty) < 30)) return 'demasiado cerca de otro pueblo';
+  if (typeof volcDanger === 'function' && volcDanger(tx, ty, 6)) return 'al pie de un volcán';
+  return null;
+}
+// Consejos sobre el sitio (no impiden fundar)
+function foundHint(tx, ty){ const i = ty * W + tx, t = tempAt(i), h = []; if (!freshNear(i, 6)) h.push('lejos del agua dulce'); if (t < 0) h.push('mucho frío'); else if (t > 30) h.push('mucho calor'); return h.length ? h.join(' y ') : 'buen sitio'; }
+function foundTribe(tx, ty, name){
+  const g = makeVillage(tx, ty); if (!g) return null;
+  if (name) { g.name = name.slice(0, 22); g.freshName = false; }
+  const r = Math.random;
+  for (let n = 0, tries = 0; n < 12 && tries < 500; tries++) {
+    const x = g.fx + Math.floor(r() * 9) - 4, y = g.fy + Math.floor(r() * 9) - 4; if (!tileFree(x, y)) continue;
+    const v = makeVillager(x, y, r, n < 8 ? 3 + r() * 6 : r() * 2, n < 8 ? (n % 2 ? 'm' : 'h') : undefined); v.vid = g.id; villagers.push(v); n++;
+  }
+  g.pOwn = true; const n = nationOf(g);
+  world.player = { vid:g.id, nid:n.id, t0:yearT, name:g.name, embargo:[], peaceT:{}, giftT:{}, dipT:{} };
+  n.pLaws = []; n.pIdeo = 0;
+  updateVillagePanel(); centerOn(g.fx * T, g.fy * T, 5);
+  notify(`Nace ${g.name}, tu tribu: doce personas y todo por hacer. Desde «Gobierno» decides cómo crece`, { x:g.fx * T, y:g.fy * T });
+  govSync(); govOpen('resumen');
+  return g;
+}
+function foundStart(){
+  if (!world || busy) { setTimeout(foundStart, 300); return; }
+  founding = { name:'' }; params.tool = 'move';
+  let el = $('foundBar'); if (!el) { el = document.createElement('div'); el.id = 'foundBar'; el.className = 'foundbar'; $('pcard').parentElement.appendChild(el);
+    el.addEventListener('click', e => { if (e.target.closest('[data-fcancel]')) { foundEnd(); menuOpen(); } });
+    el.addEventListener('input', e => { if (e.target.id === 'foundName') founding.name = e.target.value; }); }
+  el.innerHTML = `<div class="fb-ic">👑</div><div class="fb-t"><b>Elige dónde fundar tu tribu</b><span>Pulsa en tierra firme, mejor cerca de agua dulce y de bosque. Puedes moverte por el mapa antes de elegir.</span></div>
+    <label class="fb-name"><span>Nombre</span><input id="foundName" maxlength="22" placeholder="(lo eligen ellos)" autocomplete="off" spellcheck="false"></label><button data-fcancel type="button">Volver al menú</button><div class="fb-why" id="foundWhy" aria-live="polite"></div>`;
+  el.hidden = false; zoom = Math.max(1.2, Math.min(zoom, 2));
+}
+function foundEnd(){ founding = null; const el = $('foundBar'); if (el) el.hidden = true; }
+// Clic en el mapa mientras se elige sitio (antes que el resto de clics del mapa)
+{ let down = null;
+  $('view').addEventListener('pointerdown', e => { if (founding) down = { x:e.clientX, y:e.clientY }; }, true);
+  $('view').addEventListener('click', e => {
+    if (!founding) return; e.stopImmediatePropagation(); e.preventDefault();
+    if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) return; // (era arrastrar el mapa)
+    const rc = $('view').getBoundingClientRect(), wx = (e.clientX - rc.left - offX) / zoom, wy = (e.clientY - rc.top - offY) / zoom, tx = Math.floor(wx / T), ty = Math.floor(wy / T);
+    const why = foundOk(tx, ty); if (why) { const w = $('foundWhy'); if (w) { w.textContent = `Ahí no: ${why}`; w.classList.remove('shake'); void w.offsetWidth; w.classList.add('shake'); } return; }
+    const name = founding.name.trim(); foundEnd(); foundTribe(tx, ty, name);
+  }, true);
+}
+// El círculo donde caería la tribu
+{ const base = drawWarIcons; drawWarIcons = function(){
+  const r = base.apply(this, arguments);
+  if (founding && mouse) {
+    const tx = Math.floor((mouse.x - offX) / zoom / T), ty = Math.floor((mouse.y - offY) / zoom / T), why = foundOk(tx, ty), sx = offX + (tx * T + 2) * zoom, sy = offY + (ty * T + 2) * zoom, now = performance.now();
+    vctx.strokeStyle = why ? 'rgba(232,90,70,.9)' : `rgba(240,208,112,${.7 + .3 * Math.sin(now / 200)})`; vctx.lineWidth = 2;
+    vctx.beginPath(); vctx.arc(sx, sy, 12 * Math.max(1, zoom / 2), 0, Math.PI * 2); vctx.stroke();
+    vctx.setLineDash([4, 6]); vctx.beginPath(); vctx.arc(sx, sy, 30 * T * zoom, 0, Math.PI * 2); vctx.stroke(); vctx.setLineDash([]); // (a esta distancia no puede haber otro pueblo)
+    vctx.font = '600 12px system-ui, sans-serif'; vctx.textAlign = 'center'; vctx.fillStyle = why ? '#ffb0a0' : '#f8e0a0'; vctx.strokeStyle = 'rgba(10,10,14,.85)'; vctx.lineWidth = 3;
+    const t = why ? `✕ ${why}` : `👑 Fundar aquí · ${foundHint(tx, ty)}`; vctx.strokeText(t, sx, sy - 18 * Math.max(1, zoom / 2)); vctx.fillText(t, sx, sy - 18 * Math.max(1, zoom / 2)); vctx.textAlign = 'start';
+  }
+  return r;
+}; }
+// ---- El menú de inicio ----
+let menuFresh = true; // (al abrir el juego, el mundo recién creado sirve; luego, cada opción crea uno nuevo)
+function menuOpen(){
+  let el = $('gameMenu');
+  if (!el) {
+    el = document.createElement('div'); el.id = 'gameMenu'; el.className = 'gmenu'; document.body.appendChild(el);
+    el.addEventListener('click', e => {
+      const b = e.target.closest('[data-mode]'); if (!b) return;
+      const m = b.dataset.mode;
+      if (m === 'seguir') { menuClose(); return; }
+      if (m === 'cargar') { menuClose(); $('saveBtn').click(); return; }
+      const fresh = menuFresh && !playerOn(); menuClose(); menuFresh = false;
+      if (m === 'dios') { if (!fresh) regenerate(true); return; }
+      if (m === 'nacion') { if (!fresh) { regenerate(true).then(() => foundStart()); } else foundStart(); }
+    });
+    el.addEventListener('keydown', e => { if (e.key === 'Escape' && !menuFresh) menuClose(); });
+  }
+  const inGame = !menuFresh;
+  el.innerHTML = `<div class="gm-card" role="dialog" aria-modal="true" aria-labelledby="gmTitle">
+    <div class="gm-logo"><span class="gm-globe">🌍</span><div><h1 id="gmTitle">World Sim</h1><p>Simulador de civilizaciones</p></div></div>
+    <div class="gm-modes">
+      <button class="gm-mode" data-mode="dios" type="button"><span class="gm-ic">✨</span><b>Modo dios</b><span>Mira cómo nace y crece un mundo, y juega con él: crea vida, desata catástrofes y susurra ideas a la gente.</span><em>${inGame ? 'Mundo nuevo' : 'Empezar'}</em></button>
+      <button class="gm-mode gold" data-mode="nacion" type="button"><span class="gm-ic">👑</span><b>Gobierna una nación</b><span>Funda tu tribu donde quieras y gobiérnala: leyes, impuestos, obras, ciencia, guerra y paz. Tu gente vive a su aire… y puede ponerse en tu contra.</span><em>${inGame ? 'Mundo nuevo' : 'Empezar'}</em></button>
+    </div>
+    <div class="gm-foot">${inGame ? '<button data-mode="seguir" type="button">Seguir jugando</button>' : ''}<button data-mode="cargar" type="button">📂 Cargar partida</button></div></div>`;
+  el.hidden = false; const f = el.querySelector('.gm-mode'); if (f) f.focus();
+}
+function menuClose(){ const el = $('gameMenu'); if (el) el.hidden = true; }
+// ---- El panel de gobierno ----
+let govTab = 'resumen', govT = 0, govArm = null;
+function govSync(){ const b = $('govBtn'); if (b) b.hidden = !playerOn(); if (!playerOn()) { const p = $('govPanel'); if (p) p.hidden = true; } }
+function govOpen(tab){ if (tab) govTab = tab; const el = $('govPanel'); if (!el) return; el.hidden = false; govRender(true); }
+const flagOf = n => n.flagUrl ? `<img class="gv-fl" src="${n.flagUrl}" alt="">` : `<i class="gv-fl" style="background:rgb(${villageColor(n).join(',')})"></i>`;
+const pctTxt = x => `${Math.round(x * 100)} %`;
+function govRender(force){
+  const el = $('govPanel'); if (!el || el.hidden) return;
+  const n = playerNat(), body = el.querySelector('.hp-body');
+  let h;
+  if (!n) h = `<div class="gv-fallen"><div class="gv-big">🏚</div><h3>Tu nación ha caído</h3><p class="muted">Ya no queda nadie de ${esc(world.player ? world.player.name : 'tu tribu')} gobernando. Puedes seguir mirando el mundo o fundar una tribu nueva.</p>
+    <div class="gv-row"><button class="gv-btn gold" data-gact="refundar">👑 Fundar otra tribu</button><button class="gv-btn" data-gact="dios">✨ Seguir en modo dios</button></div></div>`;
+  else h = ({ resumen:govSummary, leyes:govLaws, economia:govEconomy, trabajo:govWork, diplomacia:govDiplo })[govTab](n);
+  const tabs = [['resumen', '🏛 Resumen'], ['leyes', '📜 Leyes'], ['economia', '💰 Economía'], ['trabajo', '🏗 Trabajo y obras'], ['diplomacia', '🤝 Diplomacia']];
+  const html = `${n ? `<div class="cl-f gv-tabs">${tabs.map(([k, t]) => `<button data-gtab="${k}" class="${govTab === k ? 'on' : ''}">${t}</button>`).join('')}</div>` : ''}<div class="gv">${h}</div>`;
+  if (!force && (el.matches(':hover') && performance.now() - (el._t || 0) < 1200)) return;
+  if (body._html !== html) { const top = body.scrollTop; body.innerHTML = html; body._html = html; body.scrollTop = top; el._t = performance.now(); }
+}
+// Cómo está la gente (la aprobación es su ánimo medio) y qué les preocupa
+function govMood(n){
+  const ads = villagers.filter(u => !u.dead && ageOf(u) >= ADULT_H && nationOf(villageById(u.vid) || {}) === n);
+  const S = ads.length > 120 ? ads.filter((u, i) => i % Math.ceil(ads.length / 120) === 0) : ads, bad = new Map(), good = new Map(); let sum = 0;
+  for (const u of S) { const m = moodOf(u); sum += m.score; for (const b of m.bad) bad.set(b, (bad.get(b) || 0) + 1); for (const b of m.good) good.set(b, (good.get(b) || 0) + 1); }
+  const top = M => [...M.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([t, c]) => [t, c / Math.max(1, S.length)]);
+  return { n:ads.length, app:S.length ? sum / S.length / 100 : .5, bad:top(bad), good:top(good) };
+}
+function govSummary(n){
+  const T0 = playerTowns(), M = govMood(n), pop = T0.reduce((a, g) => a + popOf(g), 0), col = moodCol(M.app * 100);
+  const sum = f => T0.reduce((a, g) => a + (g[f] || 0), 0), ec = n.coin && typeof ecOf === 'function' ? ecOf(n) : null;
+  const wars = [...rels.values()].filter(r => r.war && (r.war.att === n.id || r.war.def === n.id)).map(r => villageById(r.war.att === n.id ? r.war.def : r.war.att)).filter(Boolean);
+  const alerts = [];
+  for (const g of T0) { if ((g.anger || 0) > 35) alerts.push(`😠 En ${esc(g.name)} la gente está muy enfadada${g.grief && GRIEF_TXT[g.grief] ? ` por ${esc(GRIEF_TXT[g.grief])}` : ''}`); if (g.protestT && yearT - g.protestT < DAY_LEN * .5) alerts.push(`✊ Protestas en ${esc(g.name)}`); if (g.food < popOf(g) * .6) alerts.push(`🍞 En ${esc(g.name)} queda poca comida`); }
+  for (const w of wars) alerts.push(`⚔ En guerra con ${esc(nationOf(w).name)}`);
+  const goal = typeof sciGoal === 'function' ? sciGoal(n) : null;
+  return `<div class="gv-head">${flagOf(n)}<div><h3>${esc(n.name)}</h3><span class="muted">${esc(REGIMES[regimeOf(n)] || regimeOf(n))} · fundada el día ${Math.floor((world.player.t0 || 0) / DAY_LEN) + 1} · ${T0.length} pueblo${T0.length > 1 ? 's' : ''} · ${pop} habitantes</span></div></div>
+    <div class="gv-app"><span>Aprobación</span><span class="gv-meter"><i style="width:${Math.round(M.app * 100)}%;background:${col}"></i></span><b style="color:${col}">${Math.round(M.app * 100)} %</b></div>
+    <div class="gv-tiles">${[['🍞', 'Comida', sum('food')], ['🪵', 'Madera', sum('wood')], ['🪨', 'Piedra', sum('stone')], ['⛏', 'Hierro', sum('iron')], ['🪙', 'Oro', sum('gold')], ec ? ['💰', 'Tesoro', ec.treas] : ['🔬', 'Ciencia', n.sciTotal || 0]].map(([i, t, v]) => `<div><span>${i} ${t}</span><b>${Math.round(v)}</b></div>`).join('')}</div>
+    ${alerts.length ? `<div class="gv-alerts">${alerts.slice(0, 6).map(a => `<div>${a}</div>`).join('')}</div>` : '<div class="gv-ok">Todo tranquilo por ahora.</div>'}
+    <div class="gv-2"><div><h4>Lo que más les preocupa</h4>${M.bad.length ? M.bad.map(([t, f]) => `<div class="gv-why bad"><span>${esc(t)}</span><b>${pctTxt(f)}</b></div>`).join('') : '<div class="muted">Nada en especial</div>'}</div>
+      <div><h4>Lo que les gusta</h4>${M.good.length ? M.good.map(([t, f]) => `<div class="gv-why good"><span>${esc(t)}</span><b>${pctTxt(f)}</b></div>`).join('') : '<div class="muted">Poca cosa</div>'}</div></div>
+    <h4>Ciencia</h4><div class="gv-row">${goal ? `<span>Investigando <b>${esc(capFirst(goal.txt))}</b> · ${Math.round(Math.min(1, (n.research || 0) / goal.cost) * 100)} %</span>` : `<span class="muted">${hasInst(n, 'universidad') ? 'Nada que investigar ahora' : 'Sin universidad apenas se investiga: lo que sepan lo aprenden de otros'}</span>`}<button class="gv-btn" data-gact="ciencia">🔬 Elegir qué investigar</button></div>
+    <p class="muted gv-note">Tu gente vive a su aire: tú marcas el rumbo. Si la aprobación cae mucho, habrá protestas e incluso golpes de estado.</p>`;
+}
+function govLaws(n){
+  const L = n.pLaws ||= [], all = Object.keys(LAW_TXT).filter(l => typeof lawAwake !== 'function' || lawAwake(n, l));
+  const row = l => { const on = L.includes(l), s = lawSup(n, l), lean = LAW_LEAN[l] || 0, opp = lawOpp(l);
+    return `<div class="gv-law${on ? ' on' : ''}"><div class="gv-lt"><b>${esc(capFirst(LAW_TXT[l] || l))}</b><span class="gv-lean ${lean < -.15 ? 'l' : lean > .15 ? 'r' : 'c'}">${lean < -.15 ? 'izquierda' : lean > .15 ? 'derecha' : 'de centro'}</span>${opp && L.includes(opp) && !on ? `<span class="muted">· quitaría «${esc(LAW_TXT[opp] || opp)}»</span>` : ''}</div>
+      <div class="gv-sup"><span class="gv-meter sm"><i style="width:${Math.round(s * 100)}%;background:${s > .55 ? '#7ab04a' : s > .35 ? '#d8b848' : '#d8583a'}"></i></span><span>la apoya el ${pctTxt(s)}</span></div>
+      <button class="gv-btn${on ? '' : ' gold'}" data-glaw="${l}" data-on="${on ? 0 : 1}" ${!on && L.length >= P_LAWS_MAX ? 'disabled title="Ya tienes demasiadas leyes"' : ''}>${on ? 'Derogar' : 'Aprobar'}</button></div>`; };
+  const act = all.filter(l => L.includes(l)), rest = all.filter(l => !L.includes(l)).sort((a, b) => lawSup(n, b) - lawSup(n, a));
+  return `<p class="muted gv-note">Tú decides las leyes de ${esc(n.name)} (como mucho ${P_LAWS_MAX}). Aprobar lo que la mayoría rechaza enfada a la gente; lo que pide, la calma. Solo salen las leyes que ya tienen sentido aquí.</p>
+    <h4>En vigor (${act.length})</h4>${act.length ? act.map(row).join('') : '<div class="muted">Ninguna todavía.</div>'}
+    <h4>Se pueden aprobar</h4>${rest.map(row).join('')}`;
+}
+function govEconomy(n){
+  const T0 = playerTowns(), coin = T0.filter(g => g.coin), ec = n.coin && typeof ecOf === 'function' ? ecOf(n) : null;
+  let h = `<h4>Mercancías</h4>${typeof goodsUseHtml === 'function' ? goodsUseHtml(n) || '<div class="muted">Aún no producen nada que vender.</div>' : ''}`;
+  if (!coin.length) return h + `<h4>Impuestos</h4><div class="muted">Aún no tenéis moneda: con ella llegarán el tesoro, los sueldos y los impuestos.</div>`;
+  const has = k => coin.some(g => hasTax(g, k)), ideoAvg = (() => { const ads = villagers.filter(u => !u.dead && ageOf(u) >= ADULT_H && isPlayerG(villageById(u.vid))); return ads.length ? ads.reduce((a, u) => a + (u.ideo || 0), 0) / ads.length : 0; })();
+  h += ec ? `<div class="gv-tiles">${[['💰', 'Tesoro', ec.treas], ['🏦', 'Deuda', ec.debt || 0], ['📈', 'Precio', ec.P || 1]].map(([i, t, v]) => `<div><span>${i} ${t}</span><b>${Math.round(v * (t === 'Precio' ? 10 : 1)) / (t === 'Precio' ? 10 : 1)}</b></div>`).join('')}</div>` : '';
+  h += `<h4>Impuestos</h4><p class="muted gv-note">Hay siempre uno sobre lo que tiene cada uno (según el régimen y las leyes de impuestos altos o bajos). Los de guerra y deuda se ponen solos mientras duran. Los demás, los decides tú.</p>`;
+  h += Object.entries(TAXES).filter(([k]) => !['guerra', 'deuda'].includes(k)).map(([k, d]) => { const on = has(k), like = 1 - Math.min(1, Math.abs(d.lean - ideoAvg));
+    return `<div class="gv-law${on ? ' on' : ''}"><div class="gv-lt"><b>${esc(d.name)}</b><span class="muted">${esc(d.what)}</span></div><div class="gv-sup"><span class="gv-meter sm"><i style="width:${Math.round(like * 100)}%;background:${like > .6 ? '#7ab04a' : like > .4 ? '#d8b848' : '#d8583a'}"></i></span><span>${like > .6 ? 'lo aceptan' : like > .4 ? 'a regañadientes' : 'no lo quieren'}</span></div>
+      <button class="gv-btn${on ? '' : ' gold'}" data-gtax="${k}" data-on="${on ? 0 : 1}">${on ? 'Quitar' : 'Crear'}</button></div>`; }).join('');
+  if (typeof budgetShares === 'function' && budgetOn(n)) { const s = budgetShares(n, false), tot = Object.values(s).reduce((a, b) => a + b, 0);
+    h += `<h4>En qué se gasta</h4><p class="muted gv-note">El presupuesto se reparte según tus leyes (sanidad, educación, ejército, obras públicas, reparto, fe oficial).</p>${Object.entries(s).map(([k, v]) => `<div class="gv-why"><span>${esc(BUDGET_TXT[k] || k)}</span><span class="gv-meter sm"><i style="width:${Math.round(v / tot * 100)}%;background:#e0b850"></i></span><b>${pctTxt(v / tot)}</b></div>`).join('')}`; }
+  return h;
+}
+function govWork(n){
+  const T0 = playerTowns(), cur = T0[0] && T0[0].pFocus || 'normal', sel = T0.find(g => g.id === govWork.vid) || n;
+  let h = `<h4>En qué se trabaja más</h4><p class="muted gv-note">La gente sigue eligiendo sus tareas, pero hará mucho más de lo que marques (en todos tus pueblos).</p>
+    <div class="gv-focus">${Object.entries(FOCUS).map(([k, F]) => `<button data-gfocus="${k}" class="${cur === k ? 'on' : ''}" aria-pressed="${cur === k}"><span>${F.ic}</span>${F.txt}</button>`).join('')}</div>`;
+  const rows = Object.entries(INSTS).filter(([k, I]) => !hasInst(sel, k) && k !== 'consejo' && (I.want(sel) || (BASIC_WORKS.includes(k) && popOf(sel) >= 8))); // (solo lo que ya tiene sentido allí)
+  h += `<h4>Encargar obras</h4>${T0.length > 1 ? `<select class="wh-sel gv-town" aria-label="Pueblo">${T0.map(g => `<option value="${g.id}"${g === sel ? ' selected' : ''}>${esc(g.name)}</option>`).join('')}</select>` : ''}
+    <p class="muted gv-note">Lo encargado pasa delante de todo: si falta material, la gente sale a por él.</p>`;
+  h += rows.map(([k, I]) => { const miss = instMissing(sel, I), ord = sel.pOrder === k, want = I.want(sel);
+    return `<div class="gv-law${ord ? ' on' : ''}"><div class="gv-lt"><b>${esc(capFirst(I.name))}</b><span class="muted">${esc(I.why)}${want ? '' : ' · ellos aún no lo pedirían'}</span></div>
+      <div class="gv-sup"><span>${['wood', 'stone', 'iron', 'gold'].filter(f => I[f]).map(f => `${{ wood:'🪵', stone:'🪨', iron:'⛏', gold:'🪙' }[f]} ${I[f]}`).join(' ')}</span>${miss.length ? `<span class="gv-miss">falta ${miss.map(m => `${Math.ceil(m[2])} de ${m[1]}`).join(', ')}</span>` : '<span class="gv-okk">hay material</span>'}</div>
+      <button class="gv-btn${ord ? '' : ' gold'}" data-gorder="${k}" data-vid="${sel.id}">${ord ? 'Cancelar' : 'Encargar'}</button></div>`; }).join('') || '<div class="muted">Ahora mismo no hay nada que encargar aquí: con más gente, escritura o moneda irán saliendo más obras.</div>';
+  return h;
+}
+function govDiplo(n){
+  const P = world.player, mine = playerTowns(), others = villages.filter(o => popOf(o) && nationOf(o) === o && o !== n && mine.some(g => relOf(g, o).known || villages.some(x => nationOf(x) === o && relOf(g, x).known)));
+  if (!others.length) return `<div class="muted gv-note">Aún no conocéis a ninguna otra nación. Se conocen al encontrarse los viajeros, o con mapas de cartógrafos que lleguen lejos.</div>`;
+  return `<p class="muted gv-note">Las naciones que conocéis. Para declarar la guerra hace falta poder llegar hasta ellas (por tierra, o por mar con muelle y ruta en el mapa).</p>` + others.sort((a, b) => relOf(n, a).v - relOf(n, b).v).map(o => {
+    const r = relOf(n, o), wr = warRel(n, o), war = wr && wr.war, reach = warReachC(r, n, o), emb = (P.embargo || []).includes(o.id), v = Math.round(r.v);
+    const armed = g0 => villagers.filter(u => !u.dead && u.weapon && nationOf(villageById(u.vid) || {}) === g0).length;
+    const arm = govArm === `w${o.id}`, cdP = (P.peaceT || {})[o.id] > yearT, cdD = (P.dipT || {})[o.id] > yearT, cdG = (P.giftT || {})[o.id] > yearT;
+    return `<div class="gv-nat${war ? ' war' : ''}"><div class="gv-nh">${flagOf(o)}<div><b>${esc(o.name)}</b><span class="muted">${esc(REGIMES[regimeOf(o)] || regimeOf(o))} · ${villages.filter(x => popOf(x) && nationOf(x) === o).reduce((a, x) => a + popOf(x), 0)} hab. · ${armed(o)} armados (tú, ${armed(n)})</span></div>
+      <span class="gv-rel ${war ? 'war' : v > 20 ? 'good' : v < -20 ? 'bad' : ''}">${war ? '⚔ en guerra' : esc(relWord(r))}</span></div>
+      <div class="gv-relbar"><i style="left:${(v + 100) / 2}%"></i></div>
+      <div class="gv-acts">${war ? `<button class="gv-btn gold" data-gdip="paz" data-id="${o.id}" ${cdP ? 'disabled title="Acaban de rechazarla"' : ''}>🕊 Proponer la paz</button>`
+        : `<button class="gv-btn danger${arm ? ' armed' : ''}" data-gdip="guerra" data-id="${o.id}" ${reach ? '' : 'disabled title="No podéis llegar hasta allí"'}>${arm ? '⚔ ¿Seguro? Pulsa otra vez' : '⚔ Declarar la guerra'}</button>`}
+        <button class="gv-btn" data-gdip="diplo" data-id="${o.id}" ${cdD || war ? 'disabled' : ''}>🎩 Diplomático</button>
+        <button class="gv-btn" data-gdip="regalo" data-id="${o.id}" ${cdG || n.food < GIFT_FOOD + popOf(n) ? `disabled title="${cdG ? 'Ya le habéis regalado hace poco' : 'No os sobra comida'}"` : ''}>🎁 Regalo (${GIFT_FOOD} 🍞)</button>
+        <button class="gv-btn${emb ? ' on' : ''}" data-gdip="embargo" data-id="${o.id}">${emb ? '✓ Embargo (quitar)' : '🚫 Embargo'}</button></div></div>`;
+  }).join('');
+}
+// Clics del panel
+function govClick(e){
+  if (e.target.closest('.x')) { $('govPanel').hidden = true; return; }
+  const t = e.target.closest('[data-gtab]'); if (t) { govTab = t.dataset.gtab; govArm = null; govRender(true); return; }
+  const a = e.target.closest('[data-gact]'); if (a) { const k = a.dataset.gact;
+    if (k === 'ciencia') { const n = playerNat(); if (n) openSciTree(n.id); }
+    if (k === 'refundar') { $('govPanel').hidden = true; foundStart(); }
+    if (k === 'dios') { world.player = null; govSync(); }
+    return; }
+  const l = e.target.closest('[data-glaw]'); if (l) { setPlayerLaw(l.dataset.glaw, l.dataset.on === '1'); govRender(true); return; }
+  const x = e.target.closest('[data-gtax]'); if (x) { setPlayerTax(x.dataset.gtax, x.dataset.on === '1'); govRender(true); return; }
+  const f = e.target.closest('[data-gfocus]'); if (f) { for (const g of playerTowns()) g.pFocus = f.dataset.gfocus === 'normal' ? null : f.dataset.gfocus; const F = FOCUS[f.dataset.gfocus]; const n = playerNat(); if (n) notify(`${n.name} pone a su gente a trabajar sobre todo en: ${F.txt.toLowerCase()}`, { x:n.fx * T, y:n.fy * T }); govRender(true); return; }
+  const o = e.target.closest('[data-gorder]'); if (o) { const g = villageById(+o.dataset.vid), k = o.dataset.gorder; if (g && isPlayerG(g)) { g.pOrder = g.pOrder === k ? null : k; if (g.pOrder) notify(`El gobierno encarga ${INSTS[k].name} en ${g.name}`, { x:g.fx * T, y:g.fy * T }); } govRender(true); return; }
+  const d = e.target.closest('[data-gdip]'); if (d && !d.disabled) { const k = d.dataset.gdip, tg = villageById(+d.dataset.id); if (!tg) return;
+    if (k === 'guerra') { if (govArm === `w${tg.id}`) { govArm = null; playerWar(tg); } else { govArm = `w${tg.id}`; setTimeout(() => { if (govArm === `w${tg.id}`) { govArm = null; govRender(true); } }, 4000); } }
+    else if (k === 'paz') playerPeace(tg); else if (k === 'diplo') playerDiplomat(tg); else if (k === 'regalo') playerGift(tg); else if (k === 'embargo') playerEmbargo(tg, !(world.player.embargo || []).includes(tg.id));
+    govRender(true); }
+}
+// Montaje: el panel (como el de Historia), el botón de arriba y el menú al empezar
+{
+  const p = document.createElement('div'); p.className = 'chron gvp'; p.id = 'govPanel'; p.hidden = true;
+  p.innerHTML = `<div class="ch-h"><b>👑 Gobierno</b><button class="x" aria-label="Cerrar gobierno">×</button></div><div class="hp-body"></div>`;
+  $('histPanel').parentElement.appendChild(p); p.addEventListener('click', govClick);
+  p.addEventListener('change', e => { const s = e.target.closest('.gv-town'); if (s) { govWork.vid = +s.value; govRender(true); } });
+  document.addEventListener('click', e => { if (e.target.closest('#govBtn')) { const el = $('govPanel'); if (el.hidden) govOpen(); else el.hidden = true; } if (e.target.closest('#menuBtn')) menuOpen(); });
+  SYSTEMS.push(dt => { if ((govT -= dt) > 0) return; govT = 1; govSync(); try { govRender(); } catch (err) { console.error(err); } });
+  // Al cargar una partida o crear un mundo nuevo, el botón aparece o desaparece según el modo
+  setInterval(() => { try { govSync(); } catch (e) {} }, 1500);
+  menuOpen();
+}

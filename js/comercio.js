@@ -60,7 +60,7 @@ const atWarG = g => { const n = nationOf(g); for (const r of rels.values()) if (
 function goodsUse(g){
   const G = goodsOf(g), pop = popOf(g); if (!pop) return;
   const K = goodsKnown(), at = { x:g.fx * T, y:g.fy * T };
-  g.lacks = pop >= 12 ? BASIC_GOODS.filter(k => K.has(k) && !goodOk(g, k)) : [];
+  g.lacks = pop >= 25 ? BASIC_GOODS.filter(k => K.has(k) && !goodOk(g, k)) : [];
   g.enjoys = LUXURY_GOODS.filter(k => goodOk(g, k));
   const people = villagers.filter(u => !u.dead && !u.away && u.vid === g.id);
   // Abrigos: con frío, de pieles (2) o de telas (3)

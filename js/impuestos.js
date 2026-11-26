@@ -50,6 +50,7 @@ function taxDay(g, people, ec){
   else if (!war && hasTax(g, 'guerra')) dropTax(g, 'guerra', 'ya no hay guerra');
   if (ec.debt > 20 * P && !hasTax(g, 'deuda')) addTax(g, 'deuda', `para devolver los ${Math.round(ec.debt)} ${coinPl(g)} que deben al banco`);
   else if (ec.debt < 5 * P && hasTax(g, 'deuda')) dropTax(g, 'deuda', 'ya han pagado casi toda la deuda');
+  if (typeof isPlayerG === 'function' && isPlayerG(g)) return; // (en tu nación, los impuestos los pones y quitas tú: gobierno.js)
   // Déficit o superávit de los últimos días
   // Déficit: el tesoro está casi vacío o la deuda con el banco ha crecido desde ayer
   const deficit = ec.treas < 5 * P || ec.debt > (g.debtPrev ?? ec.debt) + P; g.debtPrev = ec.debt;

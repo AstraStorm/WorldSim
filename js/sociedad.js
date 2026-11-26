@@ -1614,6 +1614,7 @@ function diploTick(){
       const armed = g => villagers.filter(v => !v.dead && v.vid === g.id && v.weapon).length;
       let att = armed(a) + popOf(a) * .3 >= armed(b) + popOf(b) * .3 ? a : b, def = att === a ? b : a;
       if (!warReachC(r, att, def)) { if (warReachC(r, def, att)) [att, def] = [def, att]; } // (ataca el que puede llegar)
+      if (typeof isPlayerG === 'function' && isPlayerG(att)) [att, def] = [def, att]; // (tu nación no declara guerras sola: eso lo decides tú; si acaso, te la declaran)
       if (warReachC(r, att, def)) {
       r.war = { att:att.id, def:def.id, reason:r.reason || 'territorio', start:yearT, raidT:yearT - 40, dead:0 }; breakTreaties(att, def, r); mutualDefense(att, def); warCamp(att, def, r); // (tratados.js, guerra.js)
       att.danger = def.danger = 120;
@@ -1635,7 +1636,7 @@ function diploTick(){
     }
     // Caravanas de comercio y diplomáticos
     if (hasLaw(a, 'fronteras_abiertas') && hasLaw(b, 'fronteras_abiertas')) r.v = Math.min(100, r.v + .3);
-    const closed = (hasLaw(a, 'fronteras_cerradas') || hasLaw(b, 'fronteras_cerradas')) && !(a.port && b.port && (hasLonja(a) || hasLonja(b)));
+    const closed = (typeof embargoed === 'function' && embargoed(a, b)) || (hasLaw(a, 'fronteras_cerradas') || hasLaw(b, 'fronteras_cerradas')) && !(a.port && b.port && (hasLonja(a) || hasLonja(b)));
     if (!closed && !sanctionedPair(a, b) && r.v > -15 && (a.market != null || b.market != null) && yearT - (r.tradeT ?? -1e9) > DAY_LEN * (hasLaw(a, 'comercio') || hasLaw(b, 'comercio') ? .3 : .6) * (hasLonja(a) || hasLonja(b) ? .5 : 1) * (hasTreaty(r, 'comercio') ? .5 : 1) * (hasLaw(a, 'fronteras_abiertas') || hasLaw(b, 'fronteras_abiertas') ? .7 : 1)) { r.tradeT = yearT; const from = a.market != null && Math.random() < .5 ? a : b.market != null ? b : a; sendTraveler('caravana', from, from === a ? b : a); }
     if (r.v < 30 && yearT - (r.dipT ?? -1e9) > DAY_LEN * (hasLaw(a, 'paz') || hasLaw(b, 'paz') ? 1 : 2) && Math.random() < .5 && !travelers.some(t => t.kind === 'diplomatico' && !t.done && (t.from === a.id || t.from === b.id))) { /* (un diplomático por pueblo a la vez) */ r.dipT = yearT; const from = (a.hall != null) !== (b.hall != null) ? (a.hall != null ? a : b) : Math.random() < .5 ? a : b; sendTraveler('diplomatico', from, from === a ? b : a); }
   }
@@ -2193,7 +2194,7 @@ function makeParties(g){
   notify(`En ${g.name} nacen los partidos: ${parties.map(p => p.name).join(', ')}`, { x:g.fx * T, y:g.fy * T });
 }
 const artP = p => /^(Ciudadanos|Verdes|Liberales)/.test(p.name) ? 'los' : /^(Unión|Liga|Alianza|Asamblea|Hermandad|Izquierda|Coalición|Acción|Agrupación|Convergencia)/.test(p.name) ? 'la' : 'el'; // «gana la Liga…», «gana el Frente…»
-const lawsOfAll = g => { const n = nationOf(g); if (REGIME_LAWS[n.regime]) return REGIME_LAWS[n.regime]; let L = n.ruling != null && n.parties && n.parties[n.ruling] ? n.parties[n.ruling].laws : [];
+const lawsOfAll = g => { const n = nationOf(g); if (n.pLaws) return n.pLaws; if (REGIME_LAWS[n.regime]) return REGIME_LAWS[n.regime]; /* (n.pLaws: las leyes que pone el jugador, gobierno.js) */ let L = n.ruling != null && n.parties && n.parties[n.ruling] ? n.parties[n.ruling].laws : [];
   const C = n.coalition != null && n.parties && n.parties[n.coalition]; if (C) L = [...L, ...C.laws.filter(l => !L.includes(l) && !LAW_CLASH.some(([a, b]) => (l === a && L.includes(b)) || (l === b && L.includes(a))))];
   return n.regime === 'socialismo' ? [...new Set(['reparto', 'estatal', 'vivienda_publica', ...L.filter(l => l !== 'mercado_vivienda')])] : L; };
 const lawsOf = g => { const L = lawsOfAll(g); if (typeof lawAwake !== 'function') return L; const c = L._aw; if (c && c.t === yearT && c.n === nationOf(g)) return c.out; const out = L.filter(l => lawAwake(g, l)); try { Object.defineProperty(L, '_aw', { value:{ t:yearT, n:nationOf(g), out }, configurable:true, writable:true }); } catch (e) {} return out; }; // (las leyes sin sentido aún quedan dormidas: leyes.js)
@@ -2290,7 +2291,7 @@ function leaderTitle(g){
   return { oligarquia:f ? 'jefa de las familias' : 'jefe de las familias', tecnocracia:f ? 'jefa de gobierno' : 'jefe de gobierno', anarquia:'portavoz de la asamblea', democracia:f ? 'primera ministra' : 'primer ministro', partitocracia:f ? 'presidenta del consejo' : 'presidente del consejo', monarquia_parlamentaria:f ? 'primera ministra' : 'primer ministro', socialismo:f ? 'presidenta' : 'presidente', teocracia:f ? 'suma sacerdotisa' : 'sumo sacerdote', tribu:f ? 'jefa' : 'jefe', republica:f ? 'presidenta' : 'presidente', monarquia:f ? 'reina' : 'rey', dictadura:f ? 'dictadora' : 'dictador', comunismo:f ? 'secretaria general' : 'secretario general', fascismo:f ? 'caudilla' : 'caudillo' }[regimeOf(g)];
 }
 const leaderRef = g => g.leader && !g.leader.dead ? `${g.leader.sex === 'm' ? 'la' : 'el'} ${leaderTitle(g)} ${g.leader.name}` : 'el gobierno';
-const govIdeo = g => { const n = nationOf(g), r = n.ruling != null && n.parties ? n.parties[n.ruling].ideo : 0; return regimeOf(g) === 'socialismo' ? Math.min(r, -.3) : REGIME_IDEO[regimeOf(g)] ?? r; };
+const govIdeo = g => { if (nationOf(g).pLaws) return nationOf(g).pIdeo || 0; const n = nationOf(g), r = n.ruling != null && n.parties ? n.parties[n.ruling].ideo : 0; return regimeOf(g) === 'socialismo' ? Math.min(r, -.3) : REGIME_IDEO[regimeOf(g)] ?? r; };
 const ONE_PARTY = { comunismo:['Partido de los Trabajadores', 'Partido de la Estrella Roja', 'Partido del Pueblo Unido', 'Partido Comunal'], fascismo:['Movimiento del Orden Nuevo', 'Frente de la Espada de Hierro', 'Guardia de la Antorcha', 'Movimiento de la Sangre y el Suelo'] };
 const capFirst = s => s[0].toUpperCase() + s.slice(1);
 function setRegime(g, reg, chief){

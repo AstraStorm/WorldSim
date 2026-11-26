@@ -28,7 +28,7 @@ let barrios = [], barrioT = -1e9, barrioCv = null, barrioLabels = [];
 function computeBarrios(){
   barrios = []; const own = new Int32Array(W * H).fill(-1), kind = new Int8Array(W * H).fill(-1), K = Object.keys(BARRIO), dist = new Uint8Array(W * H).fill(255);
   const q = [];
-  const mark = (i, k, gid, d) => { if (i < 0 || i >= W * H || WATER[world.biome[i]]) return; if (dist[i] <= d) return; dist[i] = d; kind[i] = k; own[i] = gid; q.push(i); };
+  const mark = (i, k, gid, d) => { i = Math.round(i); /* (medidas de edificio con medias casillas: sin redondear, la búsqueda de barrios no acababa nunca) */ if (i < 0 || i >= W * H || WATER[world.biome[i]]) return; if (dist[i] <= d) return; dist[i] = d; kind[i] = k; own[i] = gid; q.push(i); };
   for (const g of liveTowns()) {
     for (const b of buildingsOf(g)) {
       const o = world.objs[b]; if (!o || !isBuilding(o)) continue; const p = o.key.split(':')[0];
