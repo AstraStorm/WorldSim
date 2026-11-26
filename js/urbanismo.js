@@ -441,6 +441,7 @@ function renewalSite(g, kind){
   for (const [, x, y] of cand.slice(0, 60)) {
     const r = { x0:x - hw, y0:y - hh, x1:x + hw, y1:y + 1 }, hits = B0.filter(b => rectHit(b, r));
     if (!hits.length || hits.length > 2 || hits.some(b => !own.has(b.i) || b.k !== 'house')) continue;
+    if (houseCap(g) - hits.reduce((a, b) => a + houseRoom(b.i), 0) < popOf(g) + 2) continue; // (sin dejar a nadie en la calle)
     const saved = hits.map(b => [b.i, world.objs[b.i]]); for (const [i] of saved) world.objs[i] = null; abT = -1; ubT = -1;
     const ok = clearable(x - hw, y - hh, x + hw, y + 1) && !buildingClash(x, y, kind) && !wallIn(x - hw, y - hh, x + hw, y + 1) && !farmIn(x - hw, y - hh, x + hw, y + 1);
     for (const [i, o] of saved) world.objs[i] = o; abT = -1; ubT = -1;

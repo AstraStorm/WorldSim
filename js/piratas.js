@@ -262,7 +262,7 @@ function raid(p, t){
 }
 // Dibujo: galeones (oscuros los piratas, con la bandera de su nación las armadas), con barra de vida al recibir daño,
 // y escorándose al hundirse
-const SHIP_K = 1.6; // los barcos de guerra, bastante más grandes que una barca
+const SHIP_K = 1.9; // los barcos de guerra, bastante más grandes que una barca
 function drawWarShip(s, now, pirate){
   const x = Math.round(s.x), y = Math.round(s.y), k = s.sink != null ? Math.min(1, s.sink / SINK_T) : 0, K = SHIP_K;
   const moving = Math.hypot(s.x - (s.lx ?? s.x), s.y - (s.ly ?? s.y)) > .01; s.lx = s.x; s.ly = s.y;
@@ -301,3 +301,19 @@ function drawPirates(now){
     vctx.fillStyle = '#1a1a1a'; vctx.fillRect(Math.round(x) - 1, Math.round(y) - 1, 2, 2);
   }
 }
+
+// Los barcos no se montan unos encima de otros: si dos (de guerra, piratas o carabelas de viajeros) se acercan
+// demasiado, se apartan un poco hacia donde siga habiendo agua
+const SHIP_GAP = 30 * SHIP_K;
+addEventListener('DOMContentLoaded', () => SYSTEMS.push(dt => { // (este archivo se carga antes que la lista de sistemas)
+  if (!world) return;
+  const L = [...pirates(), ...navies()].filter(s => s.sink == null);
+  for (const t of travelers) if (t.sea && !t.done && seaTile(t.x, t.y)) L.push(t);
+  if (L.length < 2) return;
+  for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) {
+    const a = L[i], b = L[j], dx = b.x - a.x, dy = (b.y - a.y) * 1.4, d = Math.hypot(dx, dy); // (de lado son más largos que altos)
+    if (d >= SHIP_GAP || d < .01) { if (d < .01) b.x += 1; continue; }
+    const push = Math.min(SHIP_GAP - d, 40 * dt), ux = dx / d, uy = dy / d / 1.4;
+    for (const [o, sg] of [[a, -1], [b, 1]]) { const nx = o.x + ux * push * sg * .5, ny = o.y + uy * push * sg * .5; if (seaTile(nx, ny)) { o.x = nx; o.y = ny; if (o.v && o.crew) for (const u of [o.v, ...o.crew]) if (u && !u.dead) { u.x = nx; u.y = ny; } } }
+  }
+}));

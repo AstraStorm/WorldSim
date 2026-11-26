@@ -39,10 +39,17 @@ const ROCKETS = {
   d:{ n:'Cohete con propulsores', fases:3, low:.524, split:[.3, .7], need:['cohete_2fases', 'combustible_liquido'], pad:2, xp:7 },
   e:{ n:'Cohete de carga pesada', fases:3, low:.596, split:[.26, .74], need:['cohete_2fases', 'combustible_liquido', 'estacion_espacial'], pad:3, xp:10 },
 };
+// Cada modelo nuevo sale mal casi siempre las primeras veces: explota en la plataforma o en el aire. Cada intento (sobre todo
+// los fallidos) enseña algo, y el riesgo baja hasta que el modelo es fiable (unos 6-8 intentos)
+const ROCKET_RISK = { a:.75, b:.7, c:.8, d:.85, e:.85 };
+const rocketRisk = (g, k, liquid) => Math.max(.03, (ROCKET_RISK[k] || .75) * Math.pow(.68, (g.rocketTry || {})[k] || 0) - (liquid ? .04 : 0));
 const PAD_DX = { 1:0, 2:0, 3:1 }; // el centro del círculo de la plataforma, en cada lanzadera (11 px por encima de la base)
 const padSpot = g => { const lv = padOf(g); return [(g.spacePad % W) * T + 2 + (PAD_DX[lv] || 0), ((g.spacePad / W) | 0) * T + 3 - 11]; };
 const padOf = g => g.spacePad != null && world.objs[g.spacePad] && world.objs[g.spacePad].key.startsWith('space:') ? +world.objs[g.spacePad].key.slice(-1) : 0;
-const bestRocket = g => { const lv = padOf(g), xp = g.rocketXP || 0; let best = null; for (const [k, R] of Object.entries(ROCKETS)) if (R.need.every(s => knowsSci(g, s)) && (R.pad || 1) <= lv && xp >= R.xp) best = k; return best; };
+// (no se pasa a un modelo más grande hasta que el anterior es fiable: primero perfeccionan el que tienen)
+const bestRocket = g => { const lv = padOf(g), xp = g.rocketXP || 0; let best = null;
+  if (!g.rocketOk && xp > 0) { g.rocketOk = {}; for (const [k, R] of Object.entries(ROCKETS)) if (R.xp + 2 <= xp) g.rocketOk[k] = true; } /* (partidas de antes: lo que ya volaban, ya lo dominan) */
+  for (const [k, R] of Object.entries(ROCKETS)) { if (best && !(g.rocketOk || {})[best]) break; if (R.need.every(s => knowsSci(g, s)) && (R.pad || 1) <= lv && xp >= R.xp) best = k; } return best; };
 let rockets = [], rocketBits = [];
 let spaceT = 0;
 SYSTEMS.push(dt => {
@@ -66,10 +73,11 @@ SYSTEMS.push(dt => {
     if ((g.iron || 0) < cost.iron || !fuelOk || (ec && ec.treas < cost.money)) continue;
     const m = rocketMission(g, k); if (!m) continue;
     g.iron -= cost.iron; if ((g.fuel || 0) >= cost.fuel) g.fuel -= cost.fuel; else g.coal -= cost.fuel * 2; if (ec) ec.treas -= cost.money; g.reusable = false;
-    g.launchT = yearT + DAY_LEN * 3;
+    g.launchT = yearT + DAY_LEN * ((g.rocketOk || {})[k] ? 3 : 2); // (mientras lo perfeccionan, lanzan más a menudo)
     const [x, y] = padSpot(g);
     const R = { g:g.id, k, m, x, y, x0:x, y0:y, alt:0, v:0, t:10, phase:'cuenta', parts:ROCKETS[k].fases === 3 ? 3 : ROCKETS[k].fases, liquid:knowsSci(g, 'combustible_liquido'), auto:knowsSci(g, 'aterrizaje_auto') };
-    const fail = Math.max(.03, .28 - xp * .03 - (R.liquid ? .06 : 0)); if (Math.random() < fail) R.failAt = 40 + Math.random() * 240;
+    R.try = ((g.rocketTry || {})[k] || 0) + 1;
+    if (Math.random() < rocketRisk(g, k, R.liquid)) R.failAt = Math.random() < .25 ? 3 + Math.random() * 8 : 40 + Math.random() * 300; // (a veces estalla nada más encender, en la plataforma)
     R.dir = Math.random() < .5 ? -1 : 1; rockets.push(R); sendBarge(g, R);
     notify(`¡Lanzamiento en ${g.name}! Un ${ROCKETS[k].n.toLowerCase()} despega con una misión de ${MISSION_TXT[m]}: cuenta atrás desde 10`, { x, y });
   }
@@ -176,11 +184,16 @@ function bargeHome(bg){ bg.wait = 0; bg.label = null; bg.phase = 'vuelta'; bg.ki
 function smokePuff(x, y, s){ chips.push({ x, y, vx:(Math.random() - .5) * 14 * s, vy:-2 - Math.random() * 6, life:0, max:1.5 + s, col:`rgba(${200 + Math.floor(Math.random() * 40)},${200 + Math.floor(Math.random() * 40)},${205 + Math.floor(Math.random() * 40)},.6)` }); }
 function rocketBoomAt(x, y, k = 1){ addEffect(x, y, 'poof'); snd('boom', x, y, .6 * k); for (let n = 0; n < 30 * k; n++) chips.push({ x, y, vx:(Math.random() - .5) * 60, vy:(Math.random() - .7) * 50, life:0, max:.8 + Math.random(), col:n % 3 ? '#ff9a3a' : '#ffe080' }); for (let n = 0; n < 12 * k; n++) smokePuff(x + (Math.random() - .5) * 10, y, 1.5); }
 function rocketBoom(R, g){
-  R.done = true; rocketBoomAt(R.x, R.y0 - R.alt, 1.4); g.rocketXP = (g.rocketXP || 0) + 1;
-  notify(`¡El cohete de ${g.name} explota en pleno vuelo! Han aprendido de sus errores para la próxima`, { x:R.x, y:R.y0 - R.alt });
+  R.done = true; rocketBoomAt(R.x, R.y0 - R.alt, 1.4); g.rocketXP = (g.rocketXP || 0) + 1; (g.rocketTry ||= {})[R.k] = (g.rocketTry[R.k] || 0) + 1;
+  g.launchT = Math.min(g.launchT || 0, yearT + DAY_LEN); // (vuelven a intentarlo antes)
+  const pad = R.alt < 20, n = R.try || 1;
+  if (pad) for (const v of villagers) if (!v.dead && Math.hypot(v.x - R.x0, v.y - R.y0) < 14 && Math.random() < .5) killVillager(v, 'explosión'); // (en la plataforma pilla a quien esté cerca)
+  notify(`¡El ${ROCKETS[R.k].n.toLowerCase()} de ${g.name} explota ${pad ? 'en la plataforma, nada más encender los motores' : 'en pleno vuelo'}! Es su intento número ${n}: estudian qué ha fallado y lo volverán a probar`, { x:R.x, y:R.y0 - R.alt });
 }
 function rocketSuccess(R, g){
-  g.rocketXP = (g.rocketXP || 0) + 1; const at = { x:R.x0, y:R.y0 };
+  g.rocketXP = (g.rocketXP || 0) + 1; const at = { x:R.x0, y:R.y0 }; (g.rocketTry ||= {})[R.k] = (g.rocketTry[R.k] || 0) + 1;
+  if (!(g.rocketOk ||= {})[R.k] && rocketRisk(g, R.k, R.liquid) <= .1) { g.rocketOk[R.k] = true; notify(`El ${ROCKETS[R.k].n.toLowerCase()} de ${g.name} ya es fiable: lo han perfeccionado en ${g.rocketTry[R.k]} intentos`, at); }
+  else if (!(R.try > 1) || !g.rocketOk[R.k]) notify(`¡Éxito! El ${ROCKETS[R.k].n.toLowerCase()} de ${g.name} llega al espacio${R.try > 1 ? ` al ${R.try}.º intento` : ' a la primera'}`, at);
   if (R.m === 'investigacion') { research(g, 220); notify(`El cohete de ${g.name} llega al espacio: sus sabios aprenden muchísimo`, at); }
   else if (R.m === 'satelite') { g.sats = (g.sats || 0) + 1; world.sats = (world.sats || 0) + 1; notify(`${g.name} pone en órbita su satélite número ${g.sats}: mejor cobertura para toda la nación`, at); }
   else if (R.m === 'estacion') { g.station = true; notify(`¡${g.name} monta su estación espacial en órbita! Sus sabios investigarán más deprisa`, at); }

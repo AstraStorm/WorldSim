@@ -49,7 +49,7 @@ function workTick(g, dt, people){
   const cnt = o => adults.filter(v => v.oficio === o).length, ok = Object.keys(OFICIO_MIX).filter(o => oficioOk(g, o));
   let need = null, nd = .9, over = null, ov = .9;
   for (const o of ok) { const d = OFICIO_MIX[o] * n - cnt(o); if (d > nd) { nd = d; need = o; } }
-  const missing = ['maestro', 'bombero', 'curandero', 'cartógrafo', 'mercader'].find(o => ok.includes(o) && cnt(o) === 0); if (missing) need = missing; // uno al menos, si hay para qué
+  const missing = ['maestro', 'sabio', 'bombero', 'curandero', 'cartógrafo', 'mercader'].find(o => ok.includes(o) && cnt(o) === 0); if (missing) need = missing; // uno al menos, si hay para qué
   for (const o of new Set(adults.map(v => v.oficio))) { const d = cnt(o) - (ok.includes(o) ? OFICIO_MIX[o] * n : 0); if (d > ov) { ov = d; over = o; } }
   if (need && (!over || over === need)) { const common = [...new Set(adults.map(v => v.oficio))].filter(o => o !== need && o !== 'soldado').sort((a, b) => cnt(b) - cnt(a))[0]; if (common && cnt(common) >= 2) over = common; } // el que más abunda cede a alguien
   if (!need || !over || need === over || ((g.staffKeep || {})[over] || 0) > yearT) return; // los que se prometieron tras una protesta, se quedan

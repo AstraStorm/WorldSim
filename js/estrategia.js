@@ -223,9 +223,12 @@ function centralPlan(g, kind){ {
   const c = ring(4, 14); if (c) return c;
   // Lleno: se derriba la cabaña más céntrica para hacer sitio (si sobran casas o es un edificio de mucho peso)
   const huts = housesOf(g).filter(h => world.objs[h].key === 'house:hut').sort((a, b) => Math.hypot(a % W - g.fx, ((a / W) | 0) - g.fy) - Math.hypot(b % W - g.fx, ((b / W) | 0) - g.fy));
-  const h = huts[0], spare = housesOf(g).length * 4 > popOf(g) + 4;
-  if (h != null && Math.hypot(h % W - g.fx, ((h / W) | 0) - g.fy) < 14 && (spare || popOf(g) >= 15) && !(g.demolishT > yearT)) { // (la familia se hará otra casa más afuera)
-    const x = h % W, y = (h / W) | 0; g.demolishT = yearT + DAY_LEN;
+  // (solo si sobra sitio para vivir sin ella: antes derribaban casas aunque la gente durmiera al raso, y la ciudad se quedaba sin casas)
+  const h = huts[0], spare = houseCap(g) - (h != null ? houseRoom(h) : 0) >= popOf(g) + 2, heavy = !['almacen', 'granero', 'escuela'].includes(kind);
+  if (h != null && Math.hypot(h % W - g.fx, ((h / W) | 0) - g.fy) < 14 && (spare || (heavy && houseCap(g) >= popOf(g) + 6)) && !(g.demolishT > yearT)) { // (la familia se hará otra casa más afuera)
+    const x = h % W, y = (h / W) | 0, o = world.objs[h]; world.objs[h] = null; const fits = centralFits(g, kind, x, y); world.objs[h] = o;
+    if (!fits) return ring(15, 24); // (si ni quitándola cabe, no se derriba en balde)
+    g.demolishT = yearT + DAY_LEN;
     world.objs[h] = null; g.houses = g.houses.filter(i => i !== h); for (const u of villagers) if (u.home === h) u.home = null;
     g.wood += 3; composeRegion(x - 8, y - 12, x + 8, y + 12); addEffect(x * T + 2, y * T + 3, 'poof');
     notify(`En ${g.name} derriban una cabaña del centro para hacer sitio a ${kind === 'almacen' ? 'un almacén nuevo' : `el ${kind}`}: lo importante, protegido en el centro`, { x:x * T, y:y * T });

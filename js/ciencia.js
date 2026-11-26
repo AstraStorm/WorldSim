@@ -36,8 +36,11 @@ function spreadScience(a, b){
 }
 // Trabajos: investigar en la universidad (los sabios, sobre todo)
 // Cuántos pueden investigar a la vez (más cuanto mayor es el pueblo) y cuánto rinde (la imprenta y la academia ayudan)
-const sciSlots = g => Math.min(8, 3 + Math.floor(popOf(g) / 15));
-const sciBoost = g => 1.5 * (hasInst(g, 'imprenta') ? 1.25 : 1) * (hasInst(g, 'academia') ? 1.2 : 1);
+// (cada descubrimiento abre la puerta a los siguientes, y con luz eléctrica y ordenadores se investiga mucho más deprisa:
+//  antes, al ritmo de la Edad Media, el árbol entero pedía unos 270 días y nadie llegaba a los cohetes)
+const sciSlots = g => Math.min(12, 3 + Math.floor(popOf(g) / 12));
+const sciBoost = g => 1.5 * (hasInst(g, 'imprenta') ? 1.25 : 1) * (hasInst(g, 'academia') ? 1.2 : 1) * (1 + Object.keys(sciOf(g)).length / 18)
+  * (typeof powered === 'function' && knowsSci(g, 'electricidad') && powered(g).town ? 1.3 : 1) * (knowsSci(g, 'ordenadores') ? 1.3 : 1);
 function scienceJobs(v, g, add){ if (hasInst(g, 'universidad') && ageOf(v) >= ADULT_H) add('investigar', busyWith(g, 'investigar') < sciSlots(g) ? (v.oficio === 'sabio' ? 8 : (v.edu || 0) > .3 ? 3 : 1) : 0); }
 function scienceTarget(v, g, job){ const sb = hasInst(g, 'universidad') && standBy(g.university); return sb ? { k:job, x:sb[0] + (Math.random() - .5) * 8, y:sb[1] } : null; }
 function scienceArrive(v, g, t){

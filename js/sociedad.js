@@ -278,6 +278,7 @@ function planSite(g, kind){
   if (near) return near;
   for (let k = Math.max(3, k0); k < 6; k++) { const p = streetSlot(k); if (p) return p; } // más lejos ya no se llega andando
   if (kind !== 'casa' && kind !== 'pozo') return siteNear(g, rMax, rMax + 12, ok); // los edificios grandes, a las afueras si hace falta
+  if (kind === 'casa' && popOf(g) >= 40) return siteNear(g, rMax, rMax + 14, ok); // y una ciudad grande sin sitio dentro crece en barrios de las afueras (antes se quedaba sin casas para siempre y dejaba de nacer gente)
   return null;
 }
 // Camino de tierra de la puerta (debajo del edificio) a la hoguera: por la fila de la puerta y luego en vertical
@@ -1825,8 +1826,8 @@ const seaShip = (g, t) => !!g && !!t.sea && ((g.know || {}).barca || !!g.port ||
 function drawCarabelas(t, x, y, g, now, people){
   const n = Math.max(1, people.length), ships = Math.ceil(n / 10), steam = knowsSci(g, 'vapor'), col = villageColor(nationOf(g)), f = ART_MAP[steam ? 'ship:vapor' : 'ship:galeon'];
   for (let k = 0; k < ships; k++) {
-    const crew = people.slice(k * 10, k * 10 + 10), K = crew.length >= 6 ? 1.6 : crew.length >= 3 ? 1.45 : 1.3; // como los barcos de guerra (1,6) cuando va llena
-    const sx = x - t.dir * k * 30, sy = y + (k % 2 ? 7 : 0);
+    const crew = people.slice(k * 10, k * 10 + 10), K = crew.length >= 6 ? 1.9 : crew.length >= 3 ? 1.7 : 1.5; // como los barcos de guerra (1,9) cuando va llena
+    const sx = x - t.dir * k * 34 * K, sy = y + (k % 2 ? 9 : 0); // (en fila, sin pisarse)
     drawShip(sx, sy, t.dir, steam, col, now, K, true);
     // La gente en cubierta: cabeza y hombros asomando por la borda
     const w = f ? f[2] * K * .55 : 12, deck = sy - (f ? Math.round(f[3] * .93 * K * .42) : 5);

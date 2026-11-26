@@ -39,7 +39,8 @@ const houseCap = g => housesOf(g).reduce((a, i) => a + houseRoom(i), 0);
 // Bloques de pisos: de 2 a 6 plantas (house:bloque1..5); cuánto se puede subir depende de la técnica
 const BLOQUE_ROOM = { 'house:bloque1':12, 'house:bloque2':18, 'house:bloque3':24, 'house:bloque4':30, 'house:bloque5':36, 'house:bloque':18 };
 const bloqueTier = k => k === 'house:piedra' ? 0 : k && k.startsWith('house:bloque') ? +(k.slice(12) || 2) : -1;
-const bloqueMax = g => Math.min(5, (knowsSci(g, 'dirigible') ? 5 : knowsSci(g, 'ferrocarril') ? 4 : 3) + (hasLaw(g, 'edificacion_altura') ? 1 : 0)); // (con la ley de edificación en altura, una planta más)
+const bloqueMax = g => typeof industrial === 'function' && !industrial(g) ? (popOf(g) >= 60 ? 1 : 0) : Math.min(5, (knowsSci(g, 'dirigible') ? 5 : knowsSci(g, 'ferrocarril') ? 4 : 3) + (hasLaw(g, 'edificacion_altura') ? 1 : 0)); // (con la ley de edificación en altura, una planta más)
+// (antes del vapor, una ciudad grande sin solares ya levanta casas de vecinos de dos plantas: si no, se estancaba en unos 150)
 // Casas que pueden ganar una planta (de piedra a bloque, o un bloque que sube): las más cercanas a la plaza primero
 // Un bloque de pisos solo donde hay calle delante (o al lado): la casa tiene que dar a un camino
 const onStreet = i => { const x = i % W, y = (i / W) | 0; for (let yy = y - 1; yy <= y + 2; yy++) for (let xx = x - 4; xx <= x + 4; xx++) if (pathMap.has(yy * W + xx)) return true; return false; };
@@ -320,7 +321,7 @@ function chooseJob(v, g){
   const huts = housesOf(g).filter(i => world.objs[i].key === 'house:hut');
   add('ampliar', needHouse && huts.length && g.stone >= 7 && g.wood >= 1 && busyWith(g, 'ampliar') < 2 ? (g.noSite ? 12 : 3) : 0);
   // Sin sitio para más casas y ya en la era industrial: las casas de piedra del centro se cambian por bloques de pisos
-  const pisoOk = typeof industrial === 'function' && industrial(g) && needHouse && g.stone >= 16 && g.wood >= 4 && (g.iron || 0) >= 1 && busyWith(g, 'pisos') < 2;
+  const pisoOk = bloqueMax(g) > 0 && needHouse && g.stone >= 16 && g.wood >= 4 && ((g.iron || 0) >= 1 || !industrial(g)) && busyWith(g, 'pisos') < 2;
   add('pisos', pisoOk && pisoCands(g).length ? (g.noSite > yearT ? 15 : houseCap(g) < pop + 2 ? 6 : 0) : 0);
   const canHouses = Math.floor(g.wood / 4) + (g.wood >= 1 ? Math.floor(g.stone / 10) : 0); // de madera, o de piedra con un poco de madera
   add('construir', needHouse && !(g.noSite > yearT) && canHouses > busyWith(g, 'construir') ? (9 + Math.min(12, (canHouses - busyWith(g, 'construir')) * 2)) * (housingOn(g) && hasLaw(g, 'vivienda_publica') ? 1.6 : 1) : 0); // con material de sobra, más gente a construir (y con vivienda pública, aún más)
@@ -357,7 +358,9 @@ function chooseJob(v, g){
   add('herreria', !hasForge(g) && (g.iron || 0) >= 5 && g.wood >= 10 && g.stone >= 10 && g.hall != null && !busyWith(g, 'herreria') ? 5 : 0);
   const noTala = ((g.taboo || {}).talar || 0) > yearT;
   const wantHall = g.hall == null && pop >= 8 && houses >= 2;
-  add('talar', noTala ? (g.wood < 8 ? 2.5 : .2) : g.wood < 6 ? 7 : wantHall && g.wood < 10 ? 5 : needHouse && g.wood < 4 + busyWith(g, 'construir') * 4 + 4 ? 6 : g.wood < 12 + Math.max(0, pop / 4 + 1 - houses) * 6 ? 3 : .4);
+  // (la reserva crece con el pueblo: una ciudad grande gasta 12-30 de madera en cada edificio público; con 12 no llegaba nunca)
+  const woodGoal = 12 + Math.max(0, pop / 4 + 1 - houses) * 6 + pop * .3;
+  add('talar', noTala ? (g.wood < 8 ? 2.5 : .2) : g.wood < 6 ? 7 : wantHall && g.wood < 10 ? 5 : needHouse && g.wood < 4 + busyWith(g, 'construir') * 4 + 4 ? 6 : g.wood < woodGoal * .5 ? 4.5 : g.wood < woodGoal ? 3 : .4);
   const hungry = g.food < pop * 4, share = g.food > 0 ? (g.meat || 0) / g.food : 0, want = g.diet ?? .5;
   const needMeat = share < want - .1, needVeg = share > want + .1;
   add('talar', g.pontWant > yearT - DAY_LEN && g.wood < 40 ? 4 : 0); // madera para el puente de troncos de la guerra (pontones.js)
@@ -375,9 +378,9 @@ function chooseJob(v, g){
   add('pozo', know.pozo && houses >= 1 && (g.stone >= 5 || g.wood >= 8) && wellsOf(g).length < 1 + Math.floor(pop / 14) + (sedNow(g) ? 1 + Math.floor(pop / 20) : 0) && !busyWith(g, 'pozo') ? (sedNow(g) ? 14 : 4) : 0); // (con sed de verdad, no por el aviso de siempre)
   add('molino', know.molino && houses >= 3 && (g.mill == null || !world.objs[g.mill]) && spare >= 10 && g.stone >= 3 && farms.length >= 8 && !busyWith(g, 'molino') ? 4 : 0);
   const quarry = g.quarry != null && world.objs[g.quarry] && world.objs[g.quarry].key === 'quarry:cantera';
-  const wantStone = g.stone < (g.temple != null && world.objs[g.temple] && !hasCathedral(g) ? 40 : 20); // con templo, ahorran para el grande
+  const wantStone = g.stone < Math.max(g.temple != null && world.objs[g.temple] && !hasCathedral(g) ? 40 : 20, 20 + pop * .35); // con templo, ahorran para el grande; y más cuanto mayor es el pueblo (universidad 25, catedral 30…)
   add('cantera', know.cantera && houses >= 2 && !quarry && spare >= 6 && !busyWith(g, 'cantera') ? 4 : 0);
-  add('cantear', quarry && busyWith(g, 'cantear') < 4 ? (wantStone || g.stone < 30 ? 3.5 : .5) : 0);
+  add('cantear', quarry && busyWith(g, 'cantear') < 4 + Math.floor(pop / 30) ? (wantStone || g.stone < 30 ? 3.5 : .5) : 0);
   add('puente', know.puente && houses >= 2 && spare >= 8 && bridges.filter(b => b.vid === g.id && !b.pier).length < 1 + Math.floor(pop / 6) && !busyWith(g, 'puente') ? (g.crossings && [...g.crossings.values()].some(n => n >= 4) ? 7 : 3.5) : 0);
   add('muelle', know.barca && houses >= 3 && !g.port && spare >= 8 && !busyWith(g, 'muelle') ? 3.5 : 0);
   balloonJobs(v, g, add); // tela, manga de viento, globo, cesta y vuelos (globos.js)
@@ -849,8 +852,8 @@ function runTask(v, g, dt){
       f.crop = bestCrop(g, f.i); /* lo que mejor rinde en este campo ahora, de las semillas que tienen (cultivos.js) */ const kc = (g.crops ||= {}); if (!kc[f.crop]) { kc[f.crop] = true; if (Object.keys(kc).length > 1) notify(`En ${g.name} empiezan a sembrar ${CROPS[f.crop].n}: es lo que mejor crece en ${['primavera', 'verano', 'otoño', 'invierno'][seasonInfo().i]}`, { x:v.x, y:v.y }); } } }; break;
     case 'cosechar': v.actT = 2; v.onDone = () => { const f = t.farm; f.claim = false; if (farmMap.get(f.i) === f && f.st === 'madura') { f.st = 'arada'; const C = CROPS[f.crop || 'trigo']; v.carry = { k:'comida', t:'veg', n:C.y + (C.mill && g.mill != null && world.objs[g.mill] ? 3 : 0) + (hasForge(g) ? 2 : 0) }; if (C.cash) { const ec = ecOf(g); if (ec) ec.treas += Math.round(C.cash * ec.P); } } }; break; // (la uva: el vino se vende)
     case 'pisos': v.actT = 14; v.onDone = () => {
-      const o = world.objs[t.i], tier = o ? bloqueTier(o.key) : -1; if (tier < 0 || tier >= bloqueMax(g) || g.stone < 16 || g.wood < 4 || (g.iron || 0) < 1) return;
-      o.key = `house:bloque${tier + 1}`; o.dmg = 0; g.stone -= 16; g.wood -= 4; g.iron -= 1; const x = t.i % W, y = (t.i / W) | 0;
+      const o = world.objs[t.i], tier = o ? bloqueTier(o.key) : -1; if (tier < 0 || tier >= bloqueMax(g) || g.stone < 16 || g.wood < 4 || ((g.iron || 0) < 1 && industrial(g))) return;
+      o.key = `house:bloque${tier + 1}`; o.dmg = 0; g.stone -= 16; g.wood -= 4; if ((g.iron || 0) >= 1) g.iron -= 1; const x = t.i % W, y = (t.i / W) | 0;
       composeRegion(x - 8, y - 16, x + 8, y + 12); addEffect(x * T + 2, y * T + 3, 'poof');
       if (!g.pisoMsg) { g.pisoMsg = true; notify(`En ${g.name} ya no cabe nada más: levantan el primer bloque de pisos, dos plantas de vecinos donde antes vivía una familia`, { x:x * T, y:y * T }); }
       else if (tier + 1 === bloqueMax(g) && !(g.pisoTop >= tier + 1)) { g.pisoTop = tier + 1; notify(`En ${g.name} levantan un bloque de ${tier + 2} plantas: la ciudad crece hacia arriba`, { x:x * T, y:y * T }); }
