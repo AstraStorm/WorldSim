@@ -624,6 +624,8 @@ function drinkSpot(v, g){
   }
   if (far && (g.jars || 0) >= 1 && (!p || Math.hypot(tx - g.fx, ty - g.fy) < 30)) { const [sx, sy] = fireSpot(v, g); return { x:sx, y:sy, jar:true }; } // sin agua a mano: a las tinajas del pueblo
   if (!p && best) { const sb = standBy(best.i); if (sb) return { x:sb[0], y:sb[1], well:best }; } // o al pozo, aunque quede lejos
+  if (!p && !best && (g.jars || 0) < 1) { let dry = null, dd = Infinity; for (const w of wellsOf(g)) { const d = Math.hypot((w.i % W) - tx, ((w.i / W) | 0) - ty); if (d < dd) { dd = d; dry = w; } } // (todos secos: sacan lo que quede en el fondo, aunque sea poco y turbio)
+    if (dry) { const sb = standBy(dry.i); if (sb) return { x:sb[0], y:sb[1], well:dry, dry:true }; } }
   if (!p) { // todo helado: rompen el hielo de un río o lago, o derriten nieve en la hoguera (antes, se morían de sed junto al río congelado)
     const ice = ringFind(tx, ty, 30, (x, y) => { const i = y * W + x; return tileFree(x, y) && nb4i(i).some(n => FRESH(world.biome[n]) && frozen(n)); });
     if (ice) return { x:ice[0] * T + 2, y:ice[1] * T + 3, ice:true };
@@ -758,7 +760,7 @@ function drawVillageNames(){
       vctx.fillStyle = 'rgba(20,16,12,.55)'; vctx.fillRect(x - w / 2, y - h / 2, w, h); vctx.fillStyle = '#a8a29a'; vctx.fillText(txt, x, y); continue; }
     if (!pop || !world.objs[g.fy * W + g.fx]) continue;
     if (zoom < 1.1 && pop < 6) continue; // (con todo el mundo a la vista, las aldeas diminutas no llevan cartel)
-    const [r, g2, b] = villageColor(g), x = g.fx * T + 2, y0 = g.fy * T - 26 - fs * .8, txt0 = `${rankTag(g)}${g.name}${g.capturedFrom && nationOf(g) !== g ? ` (capturada · antes ${g.capturedFrom})` : ''} · ${pop}${allianceOf(g) && zoom >= 1.6 ? ' · ' + allianceOf(g).abbr : ''}${g.protest ? ' ✊' : ''}${g.coup || [...rels.values()].some(r => r.war && (r.war.att === g.id || r.war.def === g.id)) ? ' ⚔' : ''}`;
+    const [r, g2, b] = villageColor(g), x = g.fx * T + 2, y0 = g.fy * T - 26 - fs * .8, txt0 = `${rankTag(g)}${g.name}${g.capturedFrom && nationOf(g) !== g ? ` (capturada${g.capturedFrom !== g.name ? ` · antes de ${g.capturedFrom}` : ''})` : ''} · ${pop}${allianceOf(g) && zoom >= 1.6 ? ' · ' + allianceOf(g).abbr : ''}${g.protest ? ' ✊' : ''}${g.coup || [...rels.values()].some(r => r.war && (r.war.att === g.id || r.war.def === g.id)) ? ' ⚔' : ''}`;
     const nf = nationOf(g).flag, fw = nf ? fs * 1.5 : 0, h = fs * 1.45; let txt = txt0, w = vctx.measureText(txt).width + fs * 1.1 + fw;
     let y = spot(x, y0, w, h); if (y == null) { txt = g.name; w = vctx.measureText(txt).width + fs * 1.1 + fw; y = spot(x, y0, w, h); } if (y == null && pop >= 60) y = y0; if (y == null) continue; // (solo las ciudades grandes salen aunque se pisen) placed.push([x, y, w, h]);
     const atWar = [...rels.values()].some(r => r.war && (r.war.att === g.id || r.war.def === g.id));
@@ -1378,7 +1380,7 @@ function renderVillageCard(force){
   } else if (cardTab === 'calendario') {
     body = calendarTab(g);
   } else if (cardTab === 'mapa') {
-    body = chartCard(g) + buildingsList(g);
+    body = chartCard(g) + (typeof barriosCard === 'function' ? barriosCard(g) : '') + buildingsList(g);
   } else {
     body = `<ul class="log">${(g.log || []).slice(-30).reverse().map(e => `<li class="${logKind(e.txt)}"><span class="d">día ${e.d}</span>${esc(e.txt.startsWith(`En ${g.name} `) ? capFirst(e.txt.slice(g.name.length + 4)) : e.txt)}</li>`).join('') || '<li>Nada destacable aún</li>'}</ul>`;
   }
@@ -3082,9 +3084,10 @@ function updateVillagers(dt){
     }
     // El hambre y la sed mandan: si aprietan, deja lo que esté haciendo
     if (((v.hp ?? 1) < .45 || (v.sick && v.sick.t > 8)) && hasHosp(g) && !v.enemy && !v.foe && !['curarse', 'asalto', 'beber', 'comer', 'trabajando'].includes(v.task.k)) { const sb = standBy(g.hospital); if (sb) { releaseTask(v); v.task = { k:'curarse', x:sb[0], y:sb[1] }; v.lastD = Infinity; } }
-    if (v.water < .25 && v.task.k === 'trabajando' && v.task.job !== 'beber' && !v.boat) { const p = drinkSpot(v, g); if (p) { v.actT = 0; v.onDone = null; releaseTask(v); v.task = { k:'beber', ...p }; v.lastD = Infinity; } }
+    const thirstAt = Math.hypot(v.x / T - g.fx, v.y / T - g.fy) > 25 ? .45 : .3; // (lejos del pueblo van a beber antes: el camino de vuelta al pozo es largo)
+    if (v.water < thirstAt - .05 && v.task.k === 'trabajando' && v.task.job !== 'beber' && !v.boat) { const p = drinkSpot(v, g); if (p) { v.actT = 0; v.onDone = null; releaseTask(v); v.task = { k:'beber', ...p }; v.lastD = Infinity; } }
     if (v.task.k !== 'beber' && v.task.k !== 'comer' && v.task.k !== 'trabajando' && !v.boat) {
-      if (v.water < .3 && !(v.drinkFail > yearT)) { const p = drinkSpot(v, g); if (p) { releaseTask(v); v.task = { k:'beber', ...p }; v.lastD = Infinity; } else v.drinkFail = yearT + 2; } // (si no hay dónde, no se busca en cada paso)
+      if (v.water < thirstAt && !(v.drinkFail > yearT)) { const p = drinkSpot(v, g); if (p) { releaseTask(v); v.task = { k:'beber', ...p }; v.lastD = Infinity; } else v.drinkFail = yearT + 2; } // (si no hay dónde, no se busca en cada paso)
       else if (v.food < .28 && canEat(v, g)) { releaseTask(v); const [fx, fy] = fireXY(g); v.task = { k:'comer', ...eatSpot(v, g) }; v.lastD = Infinity; }
     }
     if (v.task.k === 'capturar' && v.task.phase === 'llevar') { if (vGo(v, v.task.x, v.task.y, dt)) { const a = v.task.a; if (a && !a.dead) { a.lead = null; a.x = v.task.x; a.y = v.task.y; } v.task = null; } continue; }
@@ -3181,7 +3184,7 @@ function updateVillages(dt){
     if (!g.coin && ((g.hall != null && people.length >= 12) || people.length >= 22 || g.market != null) && Math.random() < dt * .012) { g.coin = coinName(); notify(`En ${g.name} el gobierno acuña su propia moneda, el ${g.coin}: desde ahora el trabajo se paga con sueldo`, { x:g.fx * T, y:g.fy * T }); }
     // Un cementerio encima de una plaza sagrada (partidas de antes): se traslada (se vuelve a hacer en otro sitio)
     const cm = g.cemetery; if (cm && villages.some(o => o.holy && !(cm.x0 + cm.w - 1 < o.holy.x0 || cm.x0 > o.holy.x1 || cm.y0 + cm.h - 1 < o.holy.y0 || cm.y0 > o.holy.y1))) { g.cemetery = null; notify(`En ${g.name} trasladan el cementerio fuera de la plaza sagrada`, { x:(cm.x0 + cm.w / 2) * T, y:(cm.y0 + cm.h / 2) * T }); }
-    { const pump = knowsSci(g, 'vapor') ? 1.6 : 1; for (const w of wellsOf(g)) w.q = Math.min(1, w.q + (raining(w.i) ? .04 : .006 * pump) * dt); } // con la lluvia se llenan; sin ella, poco a poco (más rápido con la bomba de la máquina de vapor)
+    { const pump = knowsSci(g, 'vapor') ? 1.6 : 1; for (const w of wellsOf(g)) w.q = Math.min(1, w.q + (raining(w.i) ? .04 : .009 * pump) * dt); } // con la lluvia se llenan; sin ella, poco a poco (más rápido con la bomba de la máquina de vapor)
     for (const ti of towersOf(g)) {
       const o = world.objs[ti], tx = (ti % W) * T + 2, ty = ((ti / W) | 0) * T - 28;
       o.archer ||= { x:tx, y:ty, vid:g.id, carry:{ k:'-' }, dead:false, foe:null, name:'la torre' };

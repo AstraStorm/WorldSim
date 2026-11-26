@@ -460,7 +460,7 @@ function drawGlints(t){
 async function regenerate(refit, quiet){
   const token = ++genToken;
   busy = true;
-  villagers = []; setFollow(null); effects = [];
+  villagers = []; setFollow(null); effects = []; yearT = 0; // (un mundo nuevo empieza en el día 1: si no, heredaba el calendario del anterior y, por ejemplo, ya podía haber guerras nada más nacer)
   setLoading(true, 0, 'Levantando montañas', quiet);
   await nextFrame();
   if (token !== genToken) return;

@@ -107,7 +107,7 @@ const ZONE_INFO = {
   pen:['Trabajo', 'Cercado', 'Aquí guardan sus animales'],
   fort:['Defensa', 'Castillo en obras', 'El castillo que están levantando: cuando esté hecho, el pueblo podrá refugiarse dentro'],
 };
-const zoneRect = z => { const g = villageById(z.vid); if (!g) return null; if (z.k === 'pen') return pensOf(g)[z.n] || null; if (z.k === 'fort') { const f = g.fort; if (!f || f.built) return null; const x = f.i % W, y = (f.i / W) | 0; return { x0:x - 6, y0:y - 9, x1:x + 6, y1:y }; } const q = g[z.k]; return q ? (q.x1 != null ? q : { x0:q.x0, y0:q.y0, x1:q.x0 + q.w - 1, y1:q.y0 + q.h - 1 }) : null; };
+const zoneRect = z => { if (z.k === 'barrio') return typeof barrioRect === 'function' ? barrioRect(z) : null; const g = villageById(z.vid); if (!g) return null; if (z.k === 'pen') return pensOf(g)[z.n] || null; if (z.k === 'fort') { const f = g.fort; if (!f || f.built) return null; const x = f.i % W, y = (f.i / W) | 0; return { x0:x - 6, y0:y - 9, x1:x + 6, y1:y }; } const q = g[z.k]; return q ? (q.x1 != null ? q : { x0:q.x0, y0:q.y0, x1:q.x0 + q.w - 1, y1:q.y0 + q.h - 1 }) : null; };
 function zoneAt(sx, sy){
   const tx = Math.floor((sx - offX) / zoom / T), ty = Math.floor((sy - offY) / zoom / T), inR = r => r && tx >= r.x0 && tx <= r.x1 && ty >= r.y0 && ty <= r.y1;
   for (const g of liveTowns()) {
