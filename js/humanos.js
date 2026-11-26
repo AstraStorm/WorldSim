@@ -714,7 +714,7 @@ function setupTask(v, g, job){
 // ---- Hacer el trabajo: ir, trabajar un rato y volver a la hoguera con lo conseguido ----
 function runTask(v, g, dt){
   const t = v.task, [fx, fy] = fireXY(g);
-  if ((t.k === 'ritual' || t.k === 'votar' || t.k === 'golpe' || t.k === 'detenido' || t.k === 'espectador' || t.k === 'mitin') && yearT > t.until) { v.task = null; return; }
+  if ((t.k === 'ritual' || t.k === 'votar' || t.k === 'golpe' || t.k === 'detenido' || t.k === 'espectador' || t.k === 'mitin' || t.k === 'oficina') && yearT > t.until) { v.task = null; return; }
   if (t.k === 'jugar') { if (yearT > t.until) { v.task = null; return; } runBallPlayer(v, dt); return; }
   if (t.k === 'atleta') return; // lo mueve la carrera
   if (t.k === 'protesta') { if (yearT > t.until) { v.task = null; return; } const q = t.pts[t.idx % t.pts.length]; if (vGo(v, q[0], q[1], dt)) t.idx++; return; } // dando vueltas a la plaza con el cartel
@@ -998,7 +998,7 @@ function runTask(v, g, dt){
         smoke.push({ x:(t.fire % W) * T + 2, y:((t.fire / W) | 0) * T - 4, vx:0, vy:-8, r:2, life:0, max:2.5 });
       }; break;
     case 'quema': v.actT = 2; v.onDone = () => { if (!fires.has(t.ti) && !raining(t.ti)) { fires.set(t.ti, { t:0, life:2, ctrl:true }); g.ctrlBurns = (g.ctrlBurns || 0) + 1; } }; break;
-    case 'votar': case 'golpe': case 'detenido': case 'espectador': case 'mitin': v.actT = Math.max(.5, t.until - yearT); v.onDone = null; if (t.k === 'mitin' && t.fx != null) { v.dir = t.fx < v.x - 1 ? -1 : t.fx > v.x + 1 ? 1 : v.dir; v.dirT = v.actT; } break; // (en el mitin, mirando al estrado)
+    case 'votar': case 'golpe': case 'detenido': case 'espectador': case 'mitin': case 'oficina': v.actT = Math.max(.5, t.until - yearT); v.onDone = null; if (t.k === 'mitin' && t.fx != null) { v.dir = t.fx < v.x - 1 ? -1 : t.fx > v.x + 1 ? 1 : v.dir; v.dirT = v.actT; } break; // (en el mitin, mirando al estrado)
     case 'ritual': v.actT = Math.max(.5, t.until - yearT); v.dir = t.cx < v.x - 1 ? -1 : t.cx > v.x + 1 ? 1 : v.dir; v.dirT = v.actT;
       v.onDone = () => { g.wrath = Math.max(0, (g.wrath || 0) - .35); g.devotion = (g.devotion || 0) + .06; }; break;
     case 'santuario': v.actT = 7; v.onDone = () => {

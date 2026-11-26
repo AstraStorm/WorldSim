@@ -472,7 +472,7 @@ function crewTick(g, people, facs, at){
   // Contratar hasta llenar cada cuadrilla, sin dejar el pueblo sin gente en el campo (no más de un 30 %, un 40 % con fomento)
   const max = Math.ceil(adults.length * (fo ? .4 : .3)), cnt = o => adults.filter(u => u.oficio === o).length;
   if (g.food >= popOf(g) * 2.5) for (const f of facs) while (f.crew.length < facSlots(g) && total < max) {
-    const pref = CREW_FROM[f.k], free = adults.filter(u => u.oficio !== 'obrero' && u.facBoss == null && !(u.fired > yearT - DAY_LEN * 2) && !['maestro', 'curandero', 'sabio', 'bombero', 'sacerdote'].includes(u.oficio));
+    const pref = CREW_FROM[f.k], free = adults.filter(u => u.oficio !== 'obrero' && u.oficio !== 'oficinista' && u.compId == null && u.facBoss == null && !(u.fired > yearT - DAY_LEN * 2) && !['maestro', 'curandero', 'sabio', 'bombero', 'sacerdote'].includes(u.oficio));
     const u = free.sort((a, b) => (b.oficio === pref) - (a.oficio === pref) || cnt(b.oficio) - cnt(a.oficio))[0]; if (!u) break;
     u.oldOficio = u.oficio; u.oficio = 'obrero'; u.facI = f.i; f.crew.push(pidOf(u)); total++;
     if (!f.hired) { f.hired = true; notify(`${u.name} deja de ser ${ofW(u.oldOficio, u)} y entra de ${ofW('obrero', u)} en ${FACS[f.k].name.toLowerCase()} de ${g.name}`, { x:(f.i % W) * T, y:((f.i / W) | 0) * T }); }

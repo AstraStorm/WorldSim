@@ -134,6 +134,7 @@ Sin dependencias ni compilación: cada archivo es un script normal y se cargan e
 | `js/encuestas.js` | Encuestas de intención de voto y aprobación cada medio día, con su gráfica en la ficha y en el gobierno |
 | `js/redes.js` | Redes sociales (internet + móviles + cobertura): las ideas corren más y entre naciones, influencers con seguidores y bulos virales que funcionan como ideas susurradas |
 | `js/digital.js` | Estudios de videojuegos (juegos por géneros, ventas, Juego del año, jóvenes que juegan) y apps de redes sociales que compiten por los usuarios del mundo |
+| `js/empresas.js` | Empresas con sede (oficinas con letrero), CEO, plantilla de oficinistas, sueldos, beneficios, impuesto de sociedades, bonus, huelgas, despidos y quiebras; las de videojuegos, apps, medios y cine se vuelven empresas; lista con las fábricas y ranking en Historia |
 | `js/eras.js` | Las eras del mundo (Antigüedad, Hierro, Pólvora, Revolución Industrial, Eléctrica, Aire, Espacial, Digital): pantalla al empezar cada una |
 | `js/gobierno.js` | Menú de inicio con dos modos: modo dios o «Gobierna una nación» (fundas tu tribu en el mapa y decides régimen, leyes, impuestos, prioridades de trabajo, obras, ciencia, guerra, paz, diplomáticos, regalos, embargos y colonias; la gente puede enfadarse y protestar) |
 | `js/ui.js` | Pestañas del panel y de la barra de abajo, y el resumen del mundo |
