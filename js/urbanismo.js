@@ -515,6 +515,7 @@ SYSTEMS.push(dt => {
   for (const v of villagers) {
     if (v.dead) continue;
     if (typeof v.name === 'string' && v.name.includes('undefined')) v.name = v.name.replace(/undefined/g, '') || 'Ana';
+    if (v.mourn && typeof v.mourn.who === 'string' && v.mourn.who.includes('undefined')) v.mourn.who = v.mourn.who.replace(/undefined/g, '');
     if (v.away || v.boat || v.slave || (v.camp && v.camp.until > yearT) || (v.task && ['asalto', 'viaje', 'explorar', 'volver', 'detenido', 'golpe', 'protesta'].includes(v.task.k))) { v.farT = 0; continue; }
     const g = villageById(v.vid); if (!g) continue;
     const tx = v.x / T, ty = v.y / T; if (Math.hypot(tx - g.fx, ty - g.fy) < 60) { v.farT = 0; continue; }

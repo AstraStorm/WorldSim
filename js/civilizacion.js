@@ -65,7 +65,7 @@ function wedding(a, b, g){
 function funeral(v, g){
   if (!g || !g.cemetery || (g.funeral && g.funeral.until > yearT) || popOf(g) < 6) return;
   const C = g.cemetery; g.funeral = { name:v.name, until:yearT + 35, x:(C.x0 + C.w / 2) * T + 2, y:(C.y0 + C.h) * T + 6 };
-  for (const u of [...(v.parents || []), ...(v.kids || []), ...(v.partners || [])]) if (u && !u.dead && u.vid === g.id && !u.away && !(u.task && ['asalto', 'detenido'].includes(u.task.k))) { releaseTask(u); if (u.actT > 0) { u.actT = 0; u.onDone = null; } u.sleep = false; u.task = { k:'entierro', x:g.funeral.x + (Math.random() - .5) * 14, y:g.funeral.y + Math.random() * 4 }; }
+  for (const u of [...(v.parents || []), ...(v.kids || []), ...(v.partners || [])]) if (u && !u.dead && u.vid === g.id && !u.away && !(u.task && ['asalto', 'detenido'].includes(u.task.k)) && !locked(u)) { releaseTask(u); if (u.actT > 0) { u.actT = 0; u.onDone = null; } u.sleep = false; u.task = { k:'entierro', x:g.funeral.x + (Math.random() - .5) * 14, y:g.funeral.y + Math.random() * 4 }; }
 }
 const eventOf = g => g.wedding && g.wedding.until > yearT ? 'boda' : g.funeral && g.funeral.until > yearT ? 'entierro' : null;
 function eventLeisure(v, g, J){ const e = eventOf(g); if (e) J.push([e, e === 'boda' ? 9 : 5]); }
@@ -168,7 +168,7 @@ function goldRushTick(){
   ng.name = `${ng.name} del Oro`; ng.goldRush = { until:yearT + DAY_LEN * (5 + Math.random() * 4) }; ng.food = 40; ng.wood = 25;
   let n = 0;
   for (const g of live.filter(g => Math.hypot(g.fx - spot[0], g.fy - spot[1]) < 90)) {
-    for (const u of villagers.filter(u => !u.dead && !u.away && u.vid === g.id && ageOf(u) >= ADULT_H && u !== g.leader && !(u.task && ['asalto', 'detenido'].includes(u.task.k))).slice(0, 4)) { releaseTask(u); u.vid = ng.id; u.home = null; landAt(u, spot[0] * T + 2 + (Math.random() - .5) * 20, spot[1] * T + 6 + Math.random() * 10); n++; }
+    for (const u of villagers.filter(u => !u.dead && !u.away && u.vid === g.id && ageOf(u) >= ADULT_H && u !== g.leader && !(u.task && ['asalto', 'detenido'].includes(u.task.k)) && !locked(u)).slice(0, 4)) { releaseTask(u); u.vid = ng.id; u.home = null; landAt(u, spot[0] * T + 2 + (Math.random() - .5) * 20, spot[1] * T + 6 + Math.random() * 10); n++; }
   }
   ng.nation = ng.id; becomeIndependent(ng); if (!ng.coin) { const c = live.find(g => g.coin); if (c) ng.coin = c.coin; }
   notify(`¡Fiebre del oro! Han encontrado oro y ${n} buscadores acuden en masa: nace ${ng.name}`, { x:spot[0] * T, y:spot[1] * T }); snd('horn', spot[0] * T, spot[1] * T);

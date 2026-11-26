@@ -18,7 +18,7 @@ function stateVisitTick(dt){
   }
 }
 function stateVisit(g, o){
-  const L = g.leader, esc = villagers.filter(u => !u.dead && !u.away && !u.boat && u.vid === g.id && u.weapon && !u.militia && u !== L && ageOf(u) >= ADULT_H && !(u.task && ['asalto', 'detenido'].includes(u.task.k))).slice(0, 3);
+  const L = g.leader, esc = villagers.filter(u => !u.dead && !u.away && !u.boat && u.vid === g.id && u.weapon && !u.militia && u !== L && ageOf(u) >= ADULT_H && !(u.task && ['asalto', 'detenido'].includes(u.task.k)) && !locked(u)).slice(0, 3);
   const at = { x:g.fx * T, y:g.fy * T }, who = `${leaderTitle(g)} ${L.name}`;
   // En el aire: dirigible o globo (si hay uno listo y hace buen tiempo)
   const b = typeof parkedReady === 'function' ? parkedReady(g)[0] : null;

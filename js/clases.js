@@ -73,7 +73,7 @@ function classesOf(g){
 { const base = socialMood; socialMood = function(v, g, add){
   base(v, g, add); if (!g || ageOf(v) < ADULT_H) return;
   const c = classOf(v, g); if (!c) return; const gini = classesOf(g).gini;
-  if (c[2] === 'alta') add(4, 'es de la ' + c[1].toLowerCase());
+  if (c[2] === 'alta') add(4, 'es de la clase alta (' + c[1].toLowerCase() + ')');
   else if (c[2] === 'paria') add(-10, 'es de los ' + c[1].toLowerCase());
   else if (c[2] === 'baja' && gini > .5) add(-5, 'vive en un país muy desigual');
 }; }

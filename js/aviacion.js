@@ -37,7 +37,7 @@ SYSTEMS.push(dt => {
     // Un vuelo (si hay planeador libre, combustible y buen tiempo)
     const mine = planes.filter(p => p.g === g.id); if (mine.length >= (popOf(g) > 70 ? 2 : 1) || isNight() || (g.planeT || 0) > yearT || ((g.fuel || 0) < 1 && (g.coal || 0) < 2)) continue;
     const m = planeMission(g); if (!m) continue;
-    const crew = m.kind === 'pasajeros' ? villagers.filter(u => !u.dead && !u.away && !u.boat && u.vid === g.id && u !== g.leader && ageOf(u) >= ADULT_H && !u.weapon && !(u.task && ['asalto', 'detenido', 'guardia'].includes(u.task.k))).sort(() => Math.random() - .5).slice(0, popOf(g) > 70 ? 6 : 4) : [];
+    const crew = m.kind === 'pasajeros' ? villagers.filter(u => !u.dead && !u.away && !u.boat && u.vid === g.id && u !== g.leader && ageOf(u) >= ADULT_H && !u.weapon && !(u.task && ['asalto', 'detenido', 'guardia'].includes(u.task.k)) && !locked(u)).sort(() => Math.random() - .5).slice(0, popOf(g) > 70 ? 6 : 4) : [];
     if (m.kind === 'pasajeros' && crew.length < 2) continue;
     launchPlane(g, m, crew);
     if (m.kind === 'pasajeros' && !g.paxMsg) { g.paxMsg = true; notify(`Primer vuelo de pasajeros de ${g.name} a ${villageById(m.to).name}: ${crew.length} viajeros`, { x:g.fx * T, y:g.fy * T }); }
@@ -151,7 +151,7 @@ function planeLanded(p, g, o){
 function planeTurn(p, g, o){
   if (p.m.kind !== 'pasajeros' || !o) return;
   const room = (popOf(g) > 70 ? 6 : 4) - (p.crew || []).length; if (room <= 0 || houseCap(g) <= popOf(g) + 2) return;
-  const go = villagers.filter(u => !u.dead && !u.away && !u.boat && u.vid === o.id && u !== o.leader && ageOf(u) >= ADULT_H && !u.weapon && !(u.task && ['asalto', 'detenido'].includes(u.task.k)) && Math.random() < .12).slice(0, Math.min(room, 2));
+  const go = villagers.filter(u => !u.dead && !u.away && !u.boat && u.vid === o.id && u !== o.leader && ageOf(u) >= ADULT_H && !u.weapon && !(u.task && ['asalto', 'detenido'].includes(u.task.k)) && !locked(u) && Math.random() < .12).slice(0, Math.min(room, 2));
   for (const u of go) { releaseTask(u); dismount(u); u.task = { k:'viaje' }; u.away = true; u.inPlane = true; u.migrant = g.id; p.crew.push(u); }
 }
 function planeArrive(p, g){
@@ -223,7 +223,7 @@ SYSTEMS.push(() => { if (!world) return; for (const g of villages) { if (g.airV 
 // Visitas oficiales en avión: si las dos ciudades tienen aeródromo y hay un planeador libre, el líder vuela con su escolta
 { const base = stateVisit; stateVisit = function(g, o){
   if (hasAirfield(g) && hasAirfield(o) && !isNight() && planes.filter(p => p.g === g.id).length < planeCap(g) && ((g.fuel || 0) >= 1 || (g.coal || 0) >= 2) && g.leader && !g.leader.dead) {
-    const esc = villagers.filter(u => !u.dead && !u.away && !u.boat && u.vid === g.id && u.weapon && !u.militia && u !== g.leader && ageOf(u) >= ADULT_H && !(u.task && ['asalto', 'detenido'].includes(u.task.k))).slice(0, 3);
+    const esc = villagers.filter(u => !u.dead && !u.away && !u.boat && u.vid === g.id && u.weapon && !u.militia && u !== g.leader && ageOf(u) >= ADULT_H && !(u.task && ['asalto', 'detenido'].includes(u.task.k)) && !locked(u)).slice(0, 3);
     launchPlane(g, { kind:'visita', to:o.id, land:true }, [g.leader, ...esc]);
     notify(`¡Visita oficial! ${capFirst(leaderTitle(g))} ${g.leader.name} de ${g.name} vuela a ${o.name} en avión, con ${esc.length} de escolta`, { x:g.fx * T, y:g.fy * T });
     spiesHear(g, o); return;

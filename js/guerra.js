@@ -108,7 +108,7 @@ const deName = n => n.startsWith('el ') ? 'del ' + n.slice(3) : 'de ' + n; // «
 let battlefields = []; // cruces que quedan en el campo (se ven unos días)
 function armyOf(g, max){
   const nat = nationOf(g), mine = new Set(villages.filter(o => popOf(o) && nationOf(o) === nat).map(o => o.id)); // (de todo el país)
-  return villagers.filter(v => !v.dead && !v.away && !v.boat && mine.has(v.vid) && ageOf(v) >= ADULT_H && ageOf(v) < (v.life || 20) * .7 && !villages.some(o => o.leader === v) && (v.hp ?? 1) > .5 && !(v.task && ['asalto', 'detenido'].includes(v.task.k)))
+  return villagers.filter(v => !v.dead && !v.away && !v.boat && mine.has(v.vid) && ageOf(v) >= ADULT_H && ageOf(v) < (v.life || 20) * .7 && !villages.some(o => o.leader === v) && (v.hp ?? 1) > .5 && !(v.task && ['asalto', 'detenido'].includes(v.task.k)) && !locked(v))
     .sort((a, b) => (b.weapon ? 1 : 0) - (a.weapon ? 1 : 0)).slice(0, max);
 }
 function fieldBattleTick(att, def, r){

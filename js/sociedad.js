@@ -1307,7 +1307,7 @@ function renderPersonCard(force){
       <button class="x" aria-label="Soltar">×</button></div>
     <div class="lifebar" title="Vida: ${Math.round(life * 100)} %">${bar(life, life > .8 ? '#b89a6a' : '#6a9ac8', 270)}</div>
     <div class="sec"><div class="kv"><span>Oficio</span><b>${a < ADULT_H ? 'Ninguno (es pequeñ' + sexW(v, 'o', 'a') + ')' : oficioTxt(v) || 'Sin oficio'}</b></div>
-      <div class="kv"><span>Ahora</span><b>${esc(doingOf(v))}</b></div>
+      <div class="kv"><span>Ahora</span><b>${esc(doingOf(v))}</b></div>${v.lastSay && typeof thoughtOf === 'function' ? `<div class="kv"><span>Piensa</span><b>«${esc(v.lastSay)}»</b></div>` : ''}
       ${ageOf(v) >= ADULT_H ? `<div class="kv"><span>Orientación</span><b>${ORIENT_TXT[orientOf(v)]}${partnerOf(v) ? ` · pareja: ${esc(partnerOf(v).name)}${v.secret ? ' <span class="muted">(en secreto)</span>' : ''}` : ''}${g && isMinority(v, g) ? ' · <span class="muted">de piel distinta a la mayoría</span>' : ''}</b></div>` : ''}
       ${v.edu ? `<div class="kv"><span>Estudios</span><b>${v.edu >= .7 ? 'muy formad' + sexW(v, 'o', 'a') : v.edu >= .3 ? 'fue a la escuela' : 'algo de escuela'}${ageOf(v) >= ADULT_H ? ' <span class="muted">(cobra más)</span>' : ''}</b></div>` : ''}
       <div class="kv"><span>Dieta</span><b>${dietName(v)}</b></div>
@@ -1749,7 +1749,7 @@ function arriveFleet(t, from, to){
   notify(`Los barcos de ${from.name} saquean la costa de ${to.name}: se llevan ${Math.round(take)} de comida${wood.length ? ' y prenden fuego a lo que pillan' : ''}`, { x:t.land[0], y:t.land[1] });
 }
 function sendTraveler(kind, from, to){
-  const v = villagers.filter(u => !u.dead && !u.away && u.vid === from.id && (yearT - u.born) / YEAR >= ADULT_H && u !== from.leader && !u.sleep && !u.boat && !u.mount && !(u.actT > 0)).sort((a, b) => travelerScore(b, kind, to) - travelerScore(a, kind, to))[0]; // mejor un mercader; de diplomático, quien hable su lengua o la común
+  const v = villagers.filter(u => !u.dead && !u.away && u.vid === from.id && (yearT - u.born) / YEAR >= ADULT_H && u !== from.leader && !u.sleep && !u.boat && !u.mount && !(u.actT > 0) && !(u.task && ['asalto', 'detenido', 'guardia'].includes(u.task.k)) && !locked(u)).sort((a, b) => travelerScore(b, kind, to) - travelerScore(a, kind, to))[0]; // mejor un mercader; de diplomático, quien hable su lengua o la común
   if (!v) return;
   const home = from.port && to.port ? [(from.port.launch % W) * T + 2, ((from.port.launch / W) | 0) * T + 3] : fireSpot(v, from);
   const dest = from.port && to.port ? [(to.port.launch % W) * T + 2, ((to.port.launch / W) | 0) * T + 3] : to.market != null ? [(to.market % W) * T + 2, ((to.market / W) | 0) * T + 3 + T] : [to.fx * T + 2, to.fy * T + 9];
@@ -1926,12 +1926,14 @@ function drawCamps(t){
   }
   campQueue.sort((a, b) => a.y - b.y);
 }
+// Presos en la cárcel o en un campo: no se les puede mandar a la guerra, de viaje ni a otro pueblo
+const locked = v => !!((v.jail && v.jail.until > yearT) || (v.camp && v.camp.until > yearT));
 function launchRaid(att, def, r){
   if (!att || !def || att === def) return;
   // El ejército sale de todo el país: del pueblo que ataca y de sus ciudades cercanas (los armados primero)
   const nat = nationOf(att), mine = new Set(villages.filter(o => popOf(o) && nationOf(o) === nat && Math.hypot(o.fx - att.fx, o.fy - att.fy) < 70).map(o => o.id));
   const natPop = villages.filter(o => mine.has(o.id)).reduce((a, o) => a + popOf(o), 0);
-  const ps = villagers.filter(v => !v.dead && !v.away && !v.boat && mine.has(v.vid) && (yearT - v.born) / YEAR >= ADULT_H && !villages.some(o => o.leader === v) && (v.hp ?? 1) > .5 && v.oficio !== 'obrero' && !(v.task && ['asalto', 'detenido'].includes(v.task.k))) // (los obreros siguen en su fábrica)
+  const ps = villagers.filter(v => !v.dead && !v.away && !v.boat && mine.has(v.vid) && (yearT - v.born) / YEAR >= ADULT_H && !villages.some(o => o.leader === v) && (v.hp ?? 1) > .5 && v.oficio !== 'obrero' && !(v.task && ['asalto', 'detenido'].includes(v.task.k)) && !locked(v)) // (los obreros siguen en su fábrica)
     .sort((a, b) => (b.weapon ? 1 : 0) - (a.weapon ? 1 : 0) || (a.vid === att.id ? -1 : 0) - (b.vid === att.id ? -1 : 0)).slice(0, Math.min(18, Math.max(2, Math.floor(natPop / 2.2))));
   if (ps.length < 2) return;
   // Con experiencia, se reúnen antes en un punto a cierta distancia del pueblo enemigo y atacan todos a la vez

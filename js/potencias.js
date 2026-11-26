@@ -50,3 +50,47 @@ function powersHtml(){
   const el = $('histPanel'); if (el && !el.hidden && histTab === 'potencias') { el.querySelector('.hp-body').innerHTML = powersHtml(); return; }
   return base.apply(this, arguments);
 }; }
+// ================= Quién va primero en cada mercancía =================
+// Otra pestaña en Historia: para cada mercancía (y para la comida, la madera, la piedra, el hierro...) el podio de
+// naciones que más tienen y producen. En la ficha del pueblo, la medalla si su nación es la primera del mundo en algo
+const RAW_GOODS = { food:{ txt:'comida', col:'#8ac04e' }, wood:{ txt:'madera', col:'#a87448' }, stone:{ txt:'piedra', col:'#a8a49c' }, iron:{ txt:'hierro', col:'#7a8a9a' },
+  gold:{ txt:'oro', col:'#f0c840' }, coal:{ txt:'carbón', col:'#3a3a40' }, fuel:{ txt:'combustible', col:'#2a2018' }, chips:{ txt:'chips', col:'#4ac0a0' }, phones:{ txt:'móviles', col:'#6a8ad8' } };
+function goodsBoard(){
+  const nats = new Map();
+  for (const g of villages) {
+    if (!popOf(g)) continue; const n = nationOf(g); let e = nats.get(n); if (!e) nats.set(n, e = { n, have:{}, make:{} });
+    const G = goodsOf(g), m = makes(g), pop = popOf(g);
+    for (const k in GOODS) { e.have[k] = (e.have[k] || 0) + (G[k] || 0); e.make[k] = (e.make[k] || 0) + (m[k] || 0) * pop / 10 * DAY_LEN / 20; }
+    for (const k in RAW_GOODS) e.have[k] = (e.have[k] || 0) + (g[k] || 0);
+  }
+  const out = {}, all = [...nats.values()];
+  for (const k of [...Object.keys(GOODS), ...Object.keys(RAW_GOODS)]) {
+    const sc = e => (e.make[k] || 0) * 2 + (e.have[k] || 0); // primero quien más produce; a igualdad, quien más tiene
+    out[k] = all.filter(e => sc(e) >= 1).sort((a, b) => sc(b) - sc(a)).slice(0, 3);
+  }
+  return out;
+}
+let goodsBoardC = null;
+const goodsBoardNow = () => (goodsBoardC && yearT - goodsBoardC.t < 20 ? goodsBoardC : (goodsBoardC = { t:yearT, B:goodsBoard() })).B;
+// En qué es primera del mundo una nación (para la ficha del pueblo)
+const goodsFirst = n => { const B = goodsBoardNow(); return Object.keys(B).filter(k => B[k][0] && B[k][0].n === n && B[k].length > 1); };
+function goodsBoardHtml(){
+  const B = goodsBoardNow(), medal = i => ['🥇', '🥈', '🥉'][i];
+  const flag = n => n.flagUrl ? `<img src="${n.flagUrl}" alt="">` : `<i class="pw-sq" style="background:rgb(${villageColor(n).join(',')})"></i>`;
+  const num = x => x >= 100 ? Math.round(x) : String(Math.round(x * 10) / 10).replace('.', ',');
+  const row = (k, def) => { const P = B[k]; if (!P.length) return '';
+    return `<div class="gb-row"><span class="gb-k"><i style="background:${def.col}"></i>${esc(capFirst(def.txt))}</span><span class="gb-p">${P.map((e, i) => `<span class="gb-n${i ? '' : ' top'}">${medal(i)}${flag(e.n)}<b>${esc(e.n.name)}</b><span class="muted">${e.make[k] ? `${num(e.make[k])}/día · ` : ''}tiene ${Math.round(e.have[k] || 0)}</span></span>`).join('')}</span></div>`; };
+  const goods = Object.keys(GOODS).map(k => row(k, GOODS[k])).join(''), raw = Object.keys(RAW_GOODS).map(k => row(k, RAW_GOODS[k])).join('');
+  if (!goods && !raw) return '<div class="muted" style="padding:10px">Aún no hay naciones con mercancías.</div>';
+  return `<div class="pw"><p class="muted pw-note">Quién va primero en cada mercancía: va delante quien más produce y, a igualdad, quien más tiene guardado.</p>${goods ? `<h4>Mercancías del comercio</h4>${goods}` : ''}${raw ? `<h4>Materias primas</h4>${raw}` : ''}</div>`;
+}
+{ const base = renderHistory; renderHistory = function(){
+  const el = $('histPanel'); if (el && !el.hidden && histTab === 'bienes') { el.querySelector('.hp-body').innerHTML = goodsBoardHtml(); return; }
+  return base.apply(this, arguments);
+}; }
+// En la ficha del pueblo, bajo las mercancías: en qué es primera del mundo su nación
+{ const base = goodsCard; goodsCard = function(g){
+  const h = base.apply(this, arguments); if (!h) return h;
+  const first = goodsFirst(nationOf(g)); if (!first.length) return h;
+  return h + `<div class="muted" style="font-size:12px">🥇 ${esc(nationOf(g).name)} es la primera del mundo en ${first.map(k => (GOODS[k] || RAW_GOODS[k]).txt).join(', ').replace(/, ([^,]*)$/, ' y $1')}</div>`;
+}; }
