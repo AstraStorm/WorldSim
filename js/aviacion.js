@@ -107,6 +107,7 @@ function planeMission(g){
 SYSTEMS.push(dt => {
   if (!planes.length) return;
   for (const p of planes) {
+    if (p.hijack && typeof hijackStep === 'function') { hijackStep(p, dt); continue; } // (secuestrado: terrorismo.js)
     const g = villageById(p.g); if (!g || !popOf(g) || !hasAirfield(g)) { p.done = true; unboard(p, p.x, p.y); continue; }
     let dest = p.m.land ? villageById(p.m.to) : null;
     if (p.m.land && (!dest || !popOf(dest) || !hasAirfield(dest) || atWar(g, dest))) { // (el destino ya no existe o hay guerra: vuelven a casa)

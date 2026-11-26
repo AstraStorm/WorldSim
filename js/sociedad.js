@@ -1596,7 +1596,7 @@ function diploTick(){
     // Guerra: con mucha enemistad (y gente para luchar)
     const warAt = (hasLaw(a, 'ejercito') || hasLaw(b, 'ejercito') ? -45 : -58) - (hasLaw(a, 'paz') && hasLaw(b, 'paz') ? 25 : hasLaw(a, 'paz') || hasLaw(b, 'paz') ? 10 : 0);
     const warsOf = g => { let n = 0; for (const o of rels.values()) if (o.war && (o.war.att === g.id || o.war.def === g.id)) n++; return n; };
-    if (!r.war && r.v < warAt && !(hasTreaty(r, 'fronteras') && (r.reason || 'territorio') === 'territorio' && r.v > -85) && (!(hasTreaty(r, 'noagresion') || hasTreaty(r, 'paz')) || r.v < -85) && warsOf(a) + warsOf(b) === 0 && popOf(a) >= 14 && popOf(b) >= 14 && yearT > DAY_LEN * 8 && yearT - (r.peaceT ?? -1e9) > DAY_LEN * 8) { // tras una paz, una tregua larga
+    if (!r.war && r.v < warAt && !(hasTreaty(r, 'fronteras') && (r.reason || 'territorio') === 'territorio' && r.v > -85) && (!(hasTreaty(r, 'noagresion') || hasTreaty(r, 'paz')) || r.v < -85) && warsOf(a) + warsOf(b) === 0 && popOf(a) >= 20 && popOf(b) >= 20 && yearT > DAY_LEN * 10 && yearT - (r.peaceT ?? -1e9) > DAY_LEN * 8) { // tras una paz, una tregua larga
       const armed = g => villagers.filter(v => !v.dead && v.vid === g.id && v.weapon).length;
       const att = armed(a) + popOf(a) * .3 >= armed(b) + popOf(b) * .3 ? a : b, def = att === a ? b : a;
       r.war = { att:att.id, def:def.id, reason:r.reason || 'territorio', start:yearT, raidT:yearT - 40, dead:0 }; breakTreaties(att, def, r); mutualDefense(att, def); warCamp(att, def, r); // (tratados.js, guerra.js)
@@ -2913,7 +2913,7 @@ function updateVillagers(dt){
     if (age > v.life * (hasHosp(g) ? 1.12 : 1)) { killVillager(v, 'vejez'); continue; }
     const nut = Math.abs((v.ate ?? .5) - (v.diet ?? .5)); v.mal = nut > .3; const tHere = tempAt(ri); // (la temperatura de su casilla, una sola vez)
     const tough = v.task && v.task.k === 'asalto' ? .6 : 1; // los soldados en campaña aguantan más el hambre y la sed
-    v.food = Math.max(0, v.food - dt * (v.mal ? 1.4 : nut < .15 ? .9 : 1) * (v.sleep ? .5 : 1) * tough / (child ? 190 : 160)); v.water = Math.max(0, v.water - dt * (v.sleep ? .5 : 1) * (tHere > 28 ? 1.3 : 1) * tough / (child ? 130 : 120));
+    v.food = Math.max(0, v.food - dt * (v.mal ? 1.4 : nut < .15 ? .9 : 1) * (v.sleep ? .5 : 1) * tough / (child ? 190 : 160)); v.water = Math.max(0, v.water - dt * (v.sleep ? .5 : 1) * (tHere > 28 ? 1.3 : 1) * tough / (child ? 190 : 200)); // (beber les dura algo más de un día; antes, dos tercios, y media aldea estaba siempre yendo a por agua)
     if (v.food <= 0) { v.starve += dt; if (v.starve > 25) { killVillager(v, 'hambre'); continue; } } else v.starve = 0;
     if (v.water <= 0) { v.thirst += dt; if (v.thirst > 50) { killVillager(v, 'sed'); continue; } } else v.thirst = 0; // (sin beber nada, un buen rato: no al primer momento de sed)
     // El abrigo (hoguera, casa) solo calienta cuando hace frío, hasta unos 18 °C; con calor, la casa da algo de sombra

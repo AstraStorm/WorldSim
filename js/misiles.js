@@ -8,7 +8,9 @@
 // · Seis misiles: el V-2 (pionero), el táctico (preciso, corto), el de propulsores (lejos), el remachado (equilibrado),
 //   el antimisil (derriba los que llegan, si la nación atacada lo tiene) y el pesado (enorme)
 // · Disparar un misil escandaliza al mundo: todas las naciones se enfadan con quien lo lanza
-// · Tratado de no proliferación (entre ellos no hay misiles); leyes «desarme» (no se construyen silos) y «disuasión»
+// · Tratado de no proliferación (entre ellos no hay misiles); leyes «desarme» (no hay silos: los que había, se desmontan) y «disuasión»
+// · Son caros y no se usan a la ligera (control de armas, al final del archivo): fabricar cada misil, mantener los silos,
+//   autorización del gobierno solo si la guerra va mal, represalia y convención contra los misiles del Consejo
 (() => {
   const add = (after, d) => { if (DISCOVERIES.some(x => x.k === d.k)) return; const i = DISCOVERIES.findIndex(x => x.k === after); DISCOVERIES.splice(i < 0 ? DISCOVERIES.length : i + 1, 0, { ...d, req:d.req.filter(k => DISCOVERIES.some(x => x.k === k)) }); if (typeof SCI_REQ === 'object') SCI_REQ[d.k] = d.req; };
   add('coheteria', { k:'misiles', txt:'los misiles balísticos', cost:210, eff:'silos y misiles que caen sobre el enemigo como un meteorito', req:['coheteria', 'combustion'] });
@@ -30,21 +32,35 @@ let siloT = 0;
 SYSTEMS.push(dt => {
   if (!world || (siloT -= dt) > 0) return; siloT = 3;
   for (const g of liveTowns()) {
-    if (nationOf(g) !== g || !knowsSci(g, 'misiles') || hasLaw(g, 'desarme')) continue;
-    const foes = liveTowns().filter(o => atWar(g, o) && !noProlif(g, o)), S = silosOf(g), want = (hasLaw(g, 'disuasion') ? 2 : 1) + Math.floor(popOf(g) / 80);
-    // Silos: en guerra (o con la ley de disuasión), hasta los que quiera
-    if ((foes.length || hasLaw(g, 'disuasion')) && S.length < want && (g.iron || 0) >= 25 && g.stone >= 40 && !(g.siloFail > yearT - DAY_LEN / 3)) {
+    if (nationOf(g) !== g || !knowsSci(g, 'misiles')) continue;
+    if (missileBanned(g) && !hasLaw(g, 'desarme') && (g.banBreakT || 0) < yearT) { g.banBreakT = yearT + DAY_LEN; // (una vez al día se lo plantean)
+      const worst = liveTowns().filter(o => atWar(g, o) && !noProlif(g, o)).reduce((m, o) => Math.max(m, warStakes(g, o)), 0);
+      if (worst >= 1.5 && Math.random() < .35) leaveBan(g, true); }
+    if (hasLaw(g, 'desarme') || missileBanned(g)) { dismantleSilo(g); continue; } // (desarme o convención firmada: fuera silos, uno al día)
+    const ec = ecOf(g), foes = liveTowns().filter(o => atWar(g, o) && !noProlif(g, o)), S = silosOf(g), want = (hasLaw(g, 'disuasion') ? 2 : 1) + Math.floor(popOf(g) / 120);
+    // Mantener los silos cuesta dinero cada día; sin pagar, no funcionan
+    if (S.length && (g.siloPayT || 0) < yearT) { g.siloPayT = yearT + DAY_LEN; const fee = S.length * SILO_FEE; if (!ec || ec.treas >= fee) { if (ec) ec.treas -= fee; g.siloUnpaid = false; } else g.siloUnpaid = true; }
+    // Silos: en guerra (o con la ley de disuasión), hasta los que quiera; son caros
+    const serious = foes.some(o => warStakes(g, o) >= .5 || (world.mUsed || {})[nationOf(o).id + '>' + g.id]); // (por una disputa de nada no se gasta uno esto; si le han lanzado, se arma para responder)
+    if ((serious || hasLaw(g, 'disuasion')) && S.length < want && (g.iron || 0) >= SILO_COST.iron && g.stone >= SILO_COST.stone && (!ec || ec.treas >= SILO_COST.money) && !(g.siloFail > yearT - DAY_LEN / 3)) {
       const s = typeof farSite === 'function' ? farSite(g, 3, 4) : null; if (!s) { g.siloFail = yearT; continue; } clearRocks(s[0] - 3, s[1] - 4, s[0] + 3, s[1] + 1);
-      const i = s[1] * W + s[0]; world.objs[i] = { key:'silo:0', v:0, ox:0, oy:0, vid:g.id }; g.silos.push({ i, f:0, st:'cerrado', t:0, ready:yearT + 20 }); g.iron -= 25; g.stone -= 40;
-      composeRegion(s[0] - 6, s[1] - 8, s[0] + 6, s[1] + 3); notify(`${g.name} construye un silo de misiles`, { x:s[0] * T, y:s[1] * T }); continue;
+      const i = s[1] * W + s[0]; world.objs[i] = { key:'silo:0', v:0, ox:0, oy:0, vid:g.id }; g.silos.push({ i, f:0, st:'cerrado', t:0, ready:yearT + 20 }); g.iron -= SILO_COST.iron; g.stone -= SILO_COST.stone; if (ec) ec.treas -= SILO_COST.money;
+      composeRegion(s[0] - 6, s[1] - 8, s[0] + 6, s[1] + 3); notify(`${g.name} construye un silo de misiles (le ha costado ${SILO_COST.iron} de hierro, ${SILO_COST.stone} de piedra${ec ? ` y ${SILO_COST.money} ${coinPl(g)}` : ''}, y mantenerlo también cuesta)`, { x:s[0] * T, y:s[1] * T }); continue;
     }
-    // Disparar: a un pueblo enemigo a su alcance (el misil mejor que tenga)
+    // Fabricar misiles: uno cada día y medio como mucho, con hierro, combustible y dinero (se guardan, dos por silo)
+    if (S.length && (serious || hasLaw(g, 'disuasion')) && (g.mStock || 0) < S.length * 2 && (g.mMakeT || 0) < yearT && (g.iron || 0) >= MISSILE_COST.iron && ((g.fuel || 0) >= MISSILE_COST.fuel || (g.coal || 0) >= MISSILE_COST.fuel * 2) && (!ec || ec.treas >= MISSILE_COST.money)) {
+      g.iron -= MISSILE_COST.iron; if ((g.fuel || 0) >= MISSILE_COST.fuel) g.fuel -= MISSILE_COST.fuel; else g.coal -= MISSILE_COST.fuel * 2; if (ec) ec.treas -= MISSILE_COST.money;
+      g.mStock = (g.mStock || 0) + 1; g.mMakeT = yearT + DAY_LEN * 1.5;
+      if (!g.mMadeMsg) { g.mMadeMsg = true; notify(`${g.name} fabrica su primer misil: ${MISSILE_COST.iron} de hierro, ${MISSILE_COST.fuel} de combustible${ec ? ` y ${MISSILE_COST.money} ${coinPl(g)}` : ''} cada uno`, { x:g.fx * T, y:g.fy * T }); }
+    }
+    // Disparar: a un pueblo enemigo a su alcance (el misil mejor que tenga), si hay misiles hechos y el gobierno lo autoriza
     for (const s of S) {
-      if (s.st !== 'cerrado' || s.ready > yearT || !foes.length || (g.iron || 0) < 15 || ((g.fuel || 0) < 10 && (g.coal || 0) < 20)) continue;
+      if (s.st !== 'cerrado' || s.ready > yearT || !foes.length || !(g.mStock >= 1) || g.siloUnpaid) continue;
       const sx = s.i % W, sy = (s.i / W) | 0, types = MISSILES.map((m, k) => [m, k]).filter(([m]) => !m.anti && knowsSci(g, m.need));
-      const tgt = foes.filter(o => types.some(([m]) => Math.hypot(o.fx - sx, o.fy - sy) <= m.range)).sort((a, b) => popOf(b) - popOf(a))[0]; if (!tgt) continue;
+      const tgt = foes.filter(o => types.some(([m]) => Math.hypot(o.fx - sx, o.fy - sy) <= m.range) && missileOk(g, o)).sort((a, b) => popOf(b) - popOf(a))[0]; if (!tgt) continue;
       const fit = types.filter(([m]) => Math.hypot(tgt.fx - sx, tgt.fy - sy) <= m.range).sort((a, b) => b[0].R - a[0].R), [M, k] = fit[Math.floor(Math.random() * Math.min(2, fit.length))]; // (uno de los dos más fuertes que tenga)
-      g.iron -= 15; if ((g.fuel || 0) >= 10) g.fuel -= 10; else g.coal -= 20; s.st = 'abriendo'; s.t = 0; s.ready = yearT + DAY_LEN;
+      g.mStock -= 1; s.st = 'abriendo'; s.t = 0; s.ready = yearT + DAY_LEN * 2.5; // (recargar un silo lleva días)
+      ((world.mUsed ||= {})[g.id + '>' + nationOf(tgt).id] = yearT); missileBreach(g);
       const miss = Math.random() > M.acc ? 6 + Math.random() * 10 : Math.random() * 2, a = Math.random() * Math.PI * 2;
       s.load = { k, g:g.id, to:tgt.id, tx:(tgt.fx + Math.cos(a) * miss) * T, ty:(tgt.fy + Math.sin(a) * miss) * T };
     }
@@ -132,3 +148,88 @@ Object.assign(TREATY, { no_proliferacion:{ n:'tratado de no proliferación', day
   if (hasTreaty(r, 'no_proliferacion')) r.v = Math.min(100, r.v + .12);
   else if (r.v > 10 && knowsSci(a, 'misiles') && knowsSci(b, 'misiles') && Math.random() < .03) signTreaty(a, b, r, 'no_proliferacion');
 }; }
+
+// ---- Control de armas: cuestan, no se usan a la ligera y hay una convención mundial ----
+// · Un silo cuesta 50 de hierro, 80 de piedra y 100 monedas, y mantenerlo 4 al día por silo (sin pagar, no dispara).
+//   Cada misil se fabrica aparte (30 de hierro, 20 de combustible y 60 monedas; como mucho uno cada día y medio) y se
+//   guardan dos por silo. Recargar un silo lleva dos días y medio
+// · Nadie dispara el primero a la ligera: solo si la guerra le va mal (tiene menos gente que el enemigo o la guerra se
+//   alarga), y el gobierno tiene que autorizarlo (una dictadura se atreve mucho antes que una democracia, y si el
+//   enemigo también tiene silos, casi nadie se atreve: disuasión). A quien le han lanzado un misil, puede responder
+// · Convención contra los misiles, votada en el Consejo de las Naciones: quien la firma desmonta sus silos y no
+//   dispara; quien lance un misil mientras está en vigor queda sancionado por el Consejo
+const SILO_COST = { iron:50, stone:80, money:100 }, SILO_FEE = 4, MISSILE_COST = { iron:30, fuel:20, money:60 };
+const missileBan = () => world.missileBan || null;
+const missileBanned = g => { const B = missileBan(); return !!(B && B.signers.includes(nationOf(g).id)); };
+const nationPop = n => liveTowns().filter(o => nationOf(o) === n).reduce((a, o) => a + popOf(o), 0);
+function dismantleSilo(g){
+  const S = silosOf(g); if (!S.length || (g.siloDownT || 0) > yearT) return; g.siloDownT = yearT + DAY_LEN;
+  const s = S[0]; world.objs[s.i] = null; g.silos = g.silos.filter(q => q !== s); g.mStock = 0; const x = s.i % W, y = (s.i / W) | 0; composeRegion(x - 6, y - 8, x + 6, y + 3); addEffect(x * T + 2, y * T + 3, 'poof');
+  notify(`${g.name} desmantela un silo de misiles${missileBanned(g) ? ', como manda la convención que ha firmado' : ' por su ley de desarme'}`, { x:x * T, y:y * T });
+}
+// Lo que una nación se juega en una guerra (de 0 a 2 y pico), como en la vida real: el motivo (una guerra santa o una
+// guerra civil pesan más que el puerto o el oro de otro), las bajas que lleva para lo que era, si ha perdido ciudades y,
+// sobre todo, si es la atacada y el enemigo ya está a las puertas
+const STAKES = { 'religión':.6, 'guerra civil':.6, raza:.5, territorio:.4, venganza:.4, rencor:.35, honor:.25, alianza:.3, recursos:.2, oro:.2, puerto:.2, esclavos:.3 };
+function warStakes(g, o){
+  const n = nationOf(g), e = nationOf(o), r = rels.get(relKey(n, e)); if (!r || !r.war) return 0;
+  const Wr = r.war, att = Wr.att === n.id, P = Wr.pop0 || { a:nationPop(att ? n : e), d:nationPop(att ? e : n) };
+  const loss = (att ? Wr.lossA : Wr.lossD) || 0, base = att ? P.a : P.d, lostTowns = Wr['lost' + n.id] || 0;
+  let st = (STAKES[Wr.reason] || .3) * (att ? .8 : 1) + Math.min(1, loss / Math.max(4, base) * 2.5) + lostTowns * .4;
+  if (!att && (n.fortWarn > yearT || liveTowns().some(q => nationOf(q) === n && q.coup))) st += .2;
+  if (!att && villagers.some(u => !u.dead && u.vid === e.id && u.task && u.task.k === 'asalto' && Math.hypot(u.x / T - n.fx, u.y / T - n.fy) < 25)) st += .4; // (el enemigo, a las puertas de la capital)
+  return st;
+}
+// ¿Puede g lanzar contra o? Con tratado de no proliferación, nunca. A quien le han lanzado antes, puede responder. El
+// primero solo si se juega mucho, más aún si la convención está en vigor (quien no la firmó acepta sanciones) o si el
+// enemigo también tiene silos (disuasión). Las dictaduras se atreven antes; las democracias, más tarde
+function missileOk(g, o){
+  const n = nationOf(g), e = nationOf(o), r = rels.get(relKey(n, e)); if (!r || !r.war || missileBanned(n) || noProlif(n, e)) return false;
+  if ((world.mUsed || {})[e.id + '>' + n.id]) return true; // (le han lanzado antes: responde)
+  const W2 = r.war; if (W2['nk' + n.id]) return true; // (ya lo autorizó en esta guerra)
+  if ((W2['ask' + n.id] || 0) > yearT) return false; W2['ask' + n.id] = yearT + DAY_LEN; // (se lo plantean una vez al día)
+  const need = (missileBan() ? 1.2 : .8) + (silosOf(e).length ? .35 : 0) + (tyranny(n) ? -.25 : ['democracia', 'republica', 'monarquia_parlamentaria', 'partitocracia'].includes(regimeOf(n)) ? .2 : 0);
+  const st = warStakes(n, e); if (st < need || Math.random() > .5) return false;
+  W2['nk' + n.id] = true;
+  const why = st >= 1.5 ? 'dice que es su supervivencia' : (STAKES[W2.reason] || 0) >= .5 ? `por ${REASON_TXT[W2.reason] || W2.reason}` : 'la guerra se le complica';
+  notify(`¡${capFirst(leaderTitle(n))} ${n.leader ? n.leader.name + ' ' : ''}de ${n.name} autoriza lanzar misiles contra ${e.name} (${why})! ${tyranny(n) ? 'Nadie se atreve a llevarle la contraria' : 'El parlamento lo aprueba por poco, entre protestas'}${missileBan() ? '. Saben que el Consejo les sancionará' : ''}`, { x:n.fx * T, y:n.fy * T });
+  return true;
+}
+// Salirse de la convención (para volver a tener misiles): aceptando las sanciones
+function leaveBan(g, need){
+  const n = nationOf(g), B = missileBan(); if (!B) return; B.signers = B.signers.filter(id => id !== n.id);
+  const C = typeof council === 'function' && council();
+  if (C && need) { C.sanctions[n.id] = { until:yearT + DAY_LEN * 5, why:'romper la convención contra los misiles' }; councilLog(`${n.name} rompe la convención contra los misiles y queda sancionado`); }
+  notify(need ? `${n.name} rompe la convención contra los misiles: dice que se juega su supervivencia y acepta las sanciones del Consejo` : `${n.name} se sale de la convención contra los misiles`, { x:n.fx * T, y:n.fy * T });
+}
+// Quien lanza con la convención en vigor (sin haberla firmado), sancionado por el Consejo
+function missileBreach(g){
+  const n = nationOf(g); worldOutrage(n);
+  const C = typeof council === 'function' && council(), B = missileBan(); if (!C || !B) return;
+  C.sanctions[n.id] = { until:yearT + DAY_LEN * 6, why:'lanzar misiles contra la convención' };
+  if (!(n.mSancMsg > yearT)) { n.mSancMsg = yearT + DAY_LEN * 3; const txt = `El ${COUNCIL_NAME} sanciona a ${n.name} por lanzar misiles: la convención contra los misiles lo prohíbe`; councilLog(txt); notify(txt, { x:n.fx * T, y:n.fy * T }); }
+}
+// La convención: el Consejo la vota cuando ya hay misiles en el mundo; luego se puede unir quien quiera
+let banT = 0;
+SYSTEMS.push(dt => {
+  if (!world || (banT -= dt) > 0) return; banT = 20;
+  const C = typeof council === 'function' && council(); if (!C || C.members.length < 3) return;
+  const members = C.members.map(villageById).filter(m => m && popOf(m)); if (!liveTowns().some(g => knowsSci(g, 'misiles'))) return;
+  const wantsBan = m => !hasLaw(m, 'disuasion') && !(tyranny(m) && silosOf(m).length) && !(world.mUsed && Object.keys(world.mUsed).some(k => k.endsWith('>' + m.id)) && silosOf(m).length); // (quien acaba de sufrir un ataque y tiene con qué responder, no)
+  const B = missileBan();
+  if (!B) {
+    if ((world.banVoteT || 0) > yearT) return; world.banVoteT = yearT + DAY_LEN * 3;
+    const yes = members.filter(m => (typeof delegateOf !== 'function' || delegateOf(m)) && wantsBan(m)), no = members.length - yes.length;
+    let txt = `El ${COUNCIL_NAME} vota una convención contra los misiles: ${yes.length} a favor, ${no} en contra`;
+    if (yes.length > no) { world.missileBan = { since:Math.floor(yearT / DAY_LEN) + 1, signers:yes.map(m => m.id) }; txt += `. Sale adelante: ${yes.map(m => m.name).join(', ')} se comprometen a no tener misiles`; }
+    else txt += '. No sale adelante';
+    councilLog(txt); notify(txt, { x:villageById(C.seat).fx * T, y:villageById(C.seat).fy * T }); return;
+  }
+  // Se unen más (o se salen, si cambian de política)
+  for (const m of members) {
+    const in_ = B.signers.includes(m.id);
+    if (!in_ && wantsBan(m) && !atWarAny(m) && Math.random() < .15) { B.signers.push(m.id); notify(`${m.name} firma la convención contra los misiles`, { x:m.fx * T, y:m.fy * T }); }
+    else if (in_ && !wantsBan(m) && !atWarAny(m) && Math.random() < .3) leaveBan(m, false);
+  }
+});
+const atWarAny = g => [...rels.values()].some(r => r.war && (r.war.att === nationOf(g).id || r.war.def === nationOf(g).id));
