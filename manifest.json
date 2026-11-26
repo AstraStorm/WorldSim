@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611261359",
- "fecha": "2026-11-26 13:59",
+ "version": "202611261542",
+ "fecha": "2026-11-26 15:42",
  "novedades": [
   {
    "fecha": "2026-11-26",
-   "texto": "Ayuda alimentaria, casas con calefacción y nadie muere de sed en casa"
+   "texto": "Guerras solo entre naciones de cierto tamaño"
+  },
+  {
+   "fecha": "2026-11-26",
+   "texto": "Ayuda alimentaria entre pueblos, casas que abrigan y sin muertes de sed en casa"
   },
   {
    "fecha": "2026-11-26",
@@ -46,14 +50,10 @@
   {
    "fecha": "2026-11-25",
    "texto": "Bloque 8 · Misiles: misiles balísticos, guiados y pesado en la ciencia; silos con la compuerta animada (se abre, dispara y se cierra) y luces de alarma; 6 misiles con alcance, radio y puntería; vuelo en curva visible y caída con cráter y explosión como de meteorito; antimisiles que los derriban en el aire; el mundo condena a quien dispara; leyes de desarme y disuasión y tratado de no proliferación"
-  },
-  {
-   "fecha": "2026-11-25",
-   "texto": "Bloque 7 · Carrera espacial: cohetería, cohetes de 2 fases, combustible líquido, aterrizaje automático, satélites, estación espacial, hidroponía, defensa planetaria y colonización; lanzaderas de 3 niveles; 5 cohetes con cuenta atrás de 10 (aviso grande), llamarada, humo y estela, separación de propulsores laterales, fase central y superior, salida por arriba de la pantalla; la primera fase vuelve y aterriza en la base o en un carguero (o se estrella; la experiencia lo mejora); explosiones en vuelo; misiones de investigación, satélites (cobertura), estación (más ciencia), hidroponía (más comida), defensa contra meteoritos y colonos a la Luna o Marte; leyes y tratados del espacio. Los sitios grandes se buscan también junto a las otras ciudades de la nación"
   }
  ],
  "archivos": {
-  "index.html": "eeae008a168a6add728b5b27dac0f3fbfbec8852",
+  "index.html": "63470b318b840c26f66b319ad409a4d1a6f8026e",
   "css/estilo.css": "88324f7069e2f60231723d2f96c606f134224554",
   "js/agencia.js": "dd15e5ae8fa08af254622aba102dafae859910b9",
   "js/aldeanos.js": "9fc48c835e3cf5baaebb07594aa0624275287f1d",
@@ -61,7 +61,7 @@
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "a94b46896cfd10fd688954a3c5b9297e9b693872",
   "js/armas.js": "d4710aa65550aceb06fbdd1d2d290c8085f58e96",
-  "js/arte.js": "e4ef51469eacd03930ab53a2034ff7454d6179e2",
+  "js/arte.js": "71fe66d54bff2c758d3915aa2a967788a4a1c778",
   "js/arte_mapa.js": "a92d6a3c48ca112990a90102d27322fe8879ec53",
   "js/aviacion.js": "d1577602368a206110f98ecb150d9ecb4f716aba",
   "js/bandidos.js": "bc804375208c5f300e33435e76d16001e8c4daae",
@@ -138,7 +138,7 @@
   "js/riqueza.js": "6e0afe4ee16977f7f9b9bb2987844ad104f54f6a",
   "js/rutas.js": "6e12cafc1992e09fc3c2b5b13ca7d7db6416c364",
   "js/sindicatos.js": "f7cb8bf83ff74322a6fc45cc6ac90550425c6d15",
-  "js/sociedad.js": "8fbd7ecfd6516db8b4ed253c36fc070d4b2543ca",
+  "js/sociedad.js": "e297b6d2984609f3ad5890df0942f03abc16e2e6",
   "js/sonido.js": "25be9d9bda62336aba463c82e31668d0e9b2bc54",
   "js/terrorismo.js": "a2285a3dfa1180fc7b7922eadf05f9f189970d6e",
   "js/titulares.js": "0506409e843da939370bb404b894a52cffa68620",
