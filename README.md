@@ -126,6 +126,7 @@ Sin dependencias ni compilación: cada archivo es un script normal y se cargan e
 | `js/edificios.js` | Clic en un edificio: su ficha (qué es, de quién, quién vive, qué guarda) y lista de edificios del pueblo |
 | `js/calendario.js` | Días de la semana en cada lengua y calendario laboral con festivos (pestaña Calendario de la ficha) |
 | `js/pensamientos.js` | De cerca, bocadillos con lo que piensan y dicen los aldeanos (su ánimo, lo que hacen, la guerra, las leyes); el de al lado contesta |
+| `js/susurros.js` | Susurrar ideas: desde la ficha de un aldeano le metes una idea; se contagia boca a boca y entre pueblos y, si cala (30 % de un pueblo), pasa algo (tensión o guerra, paz, caravanas, protestas, ritual, leyes). Panel «Ideas en marcha» |
 | `js/ui.js` | Pestañas del panel y de la barra de abajo, y el resumen del mundo |
 | `js/interfaz.js` | Herramientas del jugador, entrada, panel, pantalla de carga y oleaje |
 

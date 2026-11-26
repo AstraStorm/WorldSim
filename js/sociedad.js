@@ -1305,7 +1305,7 @@ function renderPersonCard(force){
       <div class="muted">${v.sex === 'h' ? 'Hombre' : 'Mujer'} · ${Math.floor(a)} año${Math.floor(a) === 1 ? '' : 's'} (${stageOf(v)})</div>
       <div>${g ? `<button class="lnk" data-vid="${g.id}" title="Ver la ficha del pueblo">${n.flagUrl ? `<img class="fl" src="${n.flagUrl}" alt="">` : ''}${esc(g.name)}</button>` : 'Sin pueblo'}${g && g.leader === v ? ` · <b class="gold">${leaderTitle(g)}</b>` : ''}</div></div>
       <button class="x" aria-label="Soltar">×</button></div>
-    <div class="lifebar" title="Vida: ${Math.round(life * 100)} %">${bar(life, life > .8 ? '#b89a6a' : '#6a9ac8', 270)}</div>
+    <div class="lifebar" title="Vida: ${Math.round(life * 100)} %">${bar(life, life > .8 ? '#b89a6a' : '#6a9ac8', 270)}</div>${typeof ideaCardHtml === 'function' ? ideaCardHtml(v) : ''}
     <div class="sec"><div class="kv"><span>Oficio</span><b>${a < ADULT_H ? 'Ninguno (es pequeñ' + sexW(v, 'o', 'a') + ')' : oficioTxt(v) || 'Sin oficio'}</b></div>
       <div class="kv"><span>Ahora</span><b>${esc(doingOf(v))}</b></div>${v.lastSay && typeof thoughtOf === 'function' ? `<div class="kv"><span>Piensa</span><b>«${esc(v.lastSay)}»</b></div>` : ''}
       ${ageOf(v) >= ADULT_H ? `<div class="kv"><span>Orientación</span><b>${ORIENT_TXT[orientOf(v)]}${partnerOf(v) ? ` · pareja: ${esc(partnerOf(v).name)}${v.secret ? ' <span class="muted">(en secreto)</span>' : ''}` : ''}${g && isMinority(v, g) ? ' · <span class="muted">de piel distinta a la mayoría</span>' : ''}</b></div>` : ''}
@@ -1560,7 +1560,7 @@ function holyGlow(x, y, n = 8){ for (let k = 0; k < n; k++) chips.push({ x:x + (
 let rels = new Map(), travelers = [], diploT = 5;
 const relKey = (a, b) => a.id < b.id ? a.id + '-' + b.id : b.id + '-' + a.id;
 const relOf = (a, b) => { const k = relKey(a, b); let r = rels.get(k); if (!r) rels.set(k, r = { v:0, known:false, reason:'' }); return r; };
-const REASON_TXT = { 'guerra civil':'la guerra civil', alianza:'defender a sus aliados', 'religión':'la religión', raza:'ser de otro pueblo', territorio:'el territorio', recursos:'los recursos', rencor:'viejas ofensas' };
+const REASON_TXT = { 'guerra civil':'la guerra civil', alianza:'defender a sus aliados', 'religión':'la religión', raza:'ser de otro pueblo', territorio:'el territorio', recursos:'los recursos', rencor:'viejas ofensas', mercancias:'hacerse con sus mercancías', habladurias:'lo que se dice en la calle' };
 const relWord = r => r.war ? 'en guerra' : r.v >= 40 ? 'aliados' : r.v >= 15 ? 'amigos' : r.v > -15 ? 'neutrales' : r.v > -45 ? 'tensos' : 'enemigos';
 const skinAvg = g => { const ps = villagers.filter(v => !v.dead && v.vid === g.id); return ps.reduce((a, v) => a + Math.max(0, SKIN.indexOf(v.skin)), 0) / Math.max(1, ps.length); };
 function diploTick(){
@@ -1594,6 +1594,8 @@ function diploTick(){
     if (dist < 55) f.territorio = -(55 - dist) / 22;
     const fa = a.food / Math.max(1, popOf(a)), fb = b.food / Math.max(1, popOf(b));
     if ((fa < 1 && fb > 2.5) || (fb < 1 && fa > 2.5)) f.recursos = -1.2;
+    if (dist < 120 && typeof goodWant === 'function') { const wg = goodWant(a, b, r) || goodWant(b, a, r); if (wg) { f.mercancias = -1; r.wantGood = wg; } } // a uno le falta lo que el otro tiene de sobra, y no comercian (comercio.js)
+    if (typeof ideaPull === 'function') { const ip = ideaPull(a, b); if (ip) f.habladurias = ip; } // lo que se dice en la calle del otro pueblo (susurros.js)
     const gr = ((a.grudge || {})[b.id] || 0) + ((b.grudge || {})[a.id] || 0); if (gr) f.rencor = -gr;
     // Lo que acerca: comerciar, el trato de los años y que el otro gobierne parecido
     if (yearT - (r.tradeT ?? -1e9) < DAY_LEN * 1.5) f.comercio = .7;
@@ -1618,6 +1620,7 @@ function diploTick(){
       const sol = g0 => villagers.filter(v => !v.dead && v.vid === g0.id && v.weapon).length;
       notify(`¡${att.name} declara la guerra a ${def.name}! Motivo: ${REASON_TXT[r.war.reason] || 'el territorio'}. ${att.name} tiene ${sol(att)} soldados y ${popOf(att)} habitantes; ${def.name}, ${sol(def)} soldados y ${popOf(def)} habitantes`, { x:def.fx * T, y:def.fy * T });
       sendNews(att, `${att.name} ha declarado la guerra a ${def.name}`);
+      if (r.war.reason === 'mercancias' && r.wantGood && GOODS[r.wantGood]) { const needy = (villageById(r.war.att).lacks || []).includes(r.wantGood) ? att : def; notify(`Es una guerra por ${GOODS[r.wantGood].txt}: a ${needy.name} le falta y ${needy === att ? def.name : att.name} la tiene de sobra sin vendérsela`, { x:def.fx * T, y:def.fy * T }); }
       if (r.war.reason === 'religión') notify(`¡Es una guerra santa! ${att.name} quiere imponer ${godTxt(att.faith)} a ${def.name}`, { x:def.fx * T, y:def.fy * T });
       callAllies(nationOf(att), nationOf(def));
       misfortune(def, 'guerra');
@@ -1830,7 +1833,7 @@ function updateTravelers(dt){
         } else if (r.war) {
           if (yearT - r.war.start > DAY_LEN * 2 && Math.random() < (.2 + Math.min(.4, (yearT - r.war.start) / (DAY_LEN * 8))) * und) makePeace(from, to, r, `gracias a un diplomático de ${from.name}`);
           else notify(`${to.name} rechaza al diplomático de ${from.name}${und < .5 ? ` (ni le entienden: no habla su lengua ni ${langName(LANG_COMMON)})` : ''}: sigue la guerra`, { x:t.x, y:t.y });
-        } else { r.v = clamp(r.v + 7 * und, -100, 100); if (r.v > 20) shareCharts(from, to); notify(und < .5 ? `Un diplomático de ${from.name} visita ${to.name}, pero apenas se entienden: ni habla ${langName(villageLang(to))} ni allí saben ${langName(LANG_COMMON)}` : `Un diplomático de ${from.name} visita ${to.name}${und < 1 ? ` (hablan en ${langName(LANG_COMMON)})` : ''}: mejoran sus relaciones`, { x:t.x, y:t.y }); }
+        } else { r.v = clamp(r.v + 7 * und + (typeof giveJewels === 'function' && giveJewels(from, to) ? 6 : 0), -100, 100); /* (con joyas de regalo, mucho mejor: comercio.js) */ if (r.v > 20) shareCharts(from, to); notify(und < .5 ? `Un diplomático de ${from.name} visita ${to.name}, pero apenas se entienden: ni habla ${langName(villageLang(to))} ni allí saben ${langName(LANG_COMMON)}` : `Un diplomático de ${from.name} visita ${to.name}${und < 1 ? ` (hablan en ${langName(LANG_COMMON)})` : ''}: mejoran sus relaciones`, { x:t.x, y:t.y }); }
       }
       t.phase = 'vuelta'; t.tx = t.hx; t.ty = t.hy; continue;
     }

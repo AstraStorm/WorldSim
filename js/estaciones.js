@@ -16,7 +16,7 @@ function seasonsTick(g, dt, people){
   if ((g.seasT = (g.seasT || 0) - dt) > 0) return; g.seasT = 5; const el = 5, at = { x:g.fx * T, y:g.fy * T }, pop = people.length; if (!pop) return;
   const t = villageTemp(g);
   // La comida se estropea (con calor, más)
-  const rate = (t > 22 ? .0035 : t > 12 ? .0018 : t > 2 ? .0008 : .0002) * (hasInst(g, 'granero') ? .4 : 1);
+  const rate = (t > 22 ? .0035 : t > 12 ? .0018 : t > 2 ? .0008 : .0002) * (hasInst(g, 'granero') ? .4 : 1) * (typeof saltOk === 'function' && saltOk(g) ? .6 : 1); // (con sal se estropea menos: comercio.js)
   const lost = g.food * rate * el; g.food -= lost; g.meat = Math.min(g.meat || 0, g.food);
   g.spoiled = (g.spoiled || 0) + lost;
   if (g.spoiled > pop * 3 && yearT - (g.spoilMsg ?? -1e9) > DAY_LEN * 2) { g.spoilMsg = yearT; notify(`En ${g.name} se ha podrido ${Math.round(g.spoiled)} de comida${t > 22 ? ' con el calor' : ''}${hasInst(g, 'granero') ? '' : ': les haría falta un granero'}`, at); g.spoiled = 0; }

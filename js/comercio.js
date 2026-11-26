@@ -42,7 +42,59 @@ const goodsCap = g => 30 + popOf(g) * .8;
 function goodsTick(g){
   const G = goodsOf(g), m = makes(g), pop = popOf(g), cap = goodsCap(g);
   for (const k in GOODS) { G[k] = clamp((G[k] || 0) + (m[k] || 0) * pop / 10 - pop * DEMAND[k], 0, cap); }
+  goodsUse(g);
 }
+// ================= Para qué sirve cada mercancía =================
+// · Pieles y telas: con frío se cosen abrigos para quien no tiene (los soldados, los niños y los mayores primero)
+// · Sal y pescado salado: la comida se estropea mucho menos (estaciones.js)
+// · Sal, telas y cerámica son lo básico: si faltan (y saben que existen), la gente se queja; vino, especias y joyas alegran
+// · Armas: en guerra se reparten a quien no tiene; joyas: los diplomáticos las llevan de regalo y caen mucho mejor
+// · Si a un pueblo le falta algo básico que un vecino tiene de sobra y no comercian, la tensión sube (guerras por la sal)
+const BASIC_GOODS = ['sal', 'telas', 'ceramica'], LUXURY_GOODS = ['vino', 'especias', 'joyas'];
+const goodAmt = (g, k) => goodsOf(g)[k] || 0;
+const goodOk = (g, k) => goodAmt(g, k) >= Math.max(2, popOf(g) * .08);
+const saltOk = g => goodOk(g, 'sal') || goodOk(g, 'pescado');
+let goodsKnownC = null; // qué mercancías produce alguien en el mundo (se mira cada 30 s)
+const goodsKnown = () => { if (!goodsKnownC || yearT - goodsKnownC.t > 30 || yearT < goodsKnownC.t) { const S = new Set(); for (const o of villages) if (popOf(o)) { const m = makes(o); for (const k in m) if (m[k] > 0) S.add(k); } goodsKnownC = { t:yearT, S }; } return goodsKnownC.S; };
+const atWarG = g => { const n = nationOf(g); for (const r of rels.values()) if (r.war && (r.war.att === n.id || r.war.def === n.id || r.war.att === g.id || r.war.def === g.id)) return true; return false; };
+function goodsUse(g){
+  const G = goodsOf(g), pop = popOf(g); if (!pop) return;
+  const K = goodsKnown(), at = { x:g.fx * T, y:g.fy * T };
+  g.lacks = pop >= 12 ? BASIC_GOODS.filter(k => K.has(k) && !goodOk(g, k)) : [];
+  g.enjoys = LUXURY_GOODS.filter(k => goodOk(g, k));
+  const people = villagers.filter(u => !u.dead && !u.away && u.vid === g.id);
+  // Abrigos: con frío, de pieles (2) o de telas (3)
+  const cold = seasonInfo().i === 3 || villageTemp(g) < 8;
+  if (cold) {
+    const need = people.filter(u => !u.coat && ((u.chill || 0) > .02 || u.weapon || ageOf(u) < 6)).sort((a, b) => coatNeed(b) - coatNeed(a));
+    let n = 0, used = null;
+    for (const u of need) { if (n >= 3) break; const k = G.pieles >= 2 ? 'pieles' : G.telas >= 3 ? 'telas' : null; if (!k) break; G[k] -= k === 'pieles' ? 2 : 3; u.coat = true; n++; used = k; g.coatsSewn = (g.coatsSewn || 0) + 1; }
+    if (n && !nationOf(g).coatMsg) { nationOf(g).coatMsg = true; notify(`En ${g.name} empiezan a coser abrigos de ${used === 'pieles' ? 'piel' : 'tela'}: ya no pasarán tanto frío`, at); } // (un aviso por nación; el resto, en la ficha)
+  }
+  // Armas: en guerra, a los adultos que no tienen (2 de mercancía por arma)
+  if ((G.armas || 0) >= 2 && atWarG(g)) {
+    const raw = people.filter(u => !u.weapon && ageOf(u) >= ADULT_H && ageOf(u) < (u.life || 20) * .7 && u !== g.leader && !locked(u)).slice(0, Math.min(4, Math.floor(G.armas / 2)));
+    for (const u of raw) { u.weapon = hasForge(g) && Math.random() < .4 ? 'espada' : 'lanza'; G.armas -= 2; }
+    if (raw.length) { g.armsGiven = (g.armsGiven || 0) + raw.length; if (yearT - (g.armsMsgT ?? -1e9) > DAY_LEN * 2) { g.armsMsgT = yearT; notify(`En ${g.name} reparten ${raw.length} arma${raw.length > 1 ? 's' : ''} de su almacén para la guerra`, at); } }
+  }
+}
+// Las joyas de regalo: el diplomático lleva unas cuantas y la otra nación lo recibe mucho mejor (desde la llegada del diplomático)
+function giveJewels(from, to){ const G = goodsOf(from); if ((G.joyas || 0) < 4) return false; G.joyas -= 4; goodsOf(to).joyas = (goodsOf(to).joyas || 0) + 4; floats.push({ x:to.fx * T, y:to.fy * T - 14, txt:'💎 joyas de regalo', col:'#f0d040', life:0 }); return true; }
+// ¿Le falta a x algo básico que y tiene de sobra (y no comercian)? Devuelve la mercancía
+function goodWant(x, y, r){
+  if (yearT - (r.tradeT ?? -1e9) < DAY_LEN * 2 || !popOf(x) || !popOf(y)) return null;
+  for (const k of x.lacks || []) if (goodAmt(y, k) >= goodsCap(y) * .5) return k;
+  return null;
+}
+// El ánimo: lo que falta y lo que alegra
+{ const base = socialMood; socialMood = function(v, g, add){
+  base(v, g, add); if (!g || ageOf(v) < ADULT_H) return;
+  for (const k of g.lacks || []) add(-4, `le falta${k === 'telas' ? 'n' : ''} ${GOODS[k].txt}`);
+  const L = g.enjoys || [];
+  if (L.includes('vino')) add(4, 'bebe buen vino');
+  if (L.includes('especias')) add(3, 'come con especias');
+  if (L.includes('joyas') && trait(v, 'ambicion') > .5) add(3, 'luce joyas');
+}; }
 // Al salir la caravana: carga lo que más gana
 function loadCargo(t, from, to){
   const G = goodsOf(from); let best = null, gain = 1.2;
@@ -68,5 +120,15 @@ function goodsCard(g){
   const G = goodsOf(g), m = makes(g), ks = Object.keys(GOODS).filter(k => (G[k] || 0) >= 1 || m[k]);
   if (!ks.length) return '';
   return `<h4>Mercancías</h4><div class="needs">${ks.slice(0, 9).map(k => `<span><i style="display:inline-block;width:8px;height:8px;background:${GOODS[k].col};margin-right:4px"></i>${esc(capFirst(GOODS[k].txt))}</span>${bar((G[k] || 0) / goodsCap(g), GOODS[k].col, 120)}<span>${Math.floor(G[k] || 0)} · vale ${String(Math.round(goodPrice(g, k) * 10) / 10).replace('.', ',')}${m[k] ? ' · produce' : ''}</span>`).join('')}</div>
-    <div class="muted" style="font-size:12px">${hasLaw(g, 'aranceles') ? 'Cobra aranceles a las mercancías de fuera · ' : ''}${g.tradeWealth ? `ha ganado ${Math.round(g.tradeWealth)} con el comercio` : ''}</div>`;
+    ${goodsUseHtml(g)}<div class="muted" style="font-size:12px">${hasLaw(g, 'aranceles') ? 'Cobra aranceles a las mercancías de fuera · ' : ''}${g.tradeWealth ? `ha ganado ${Math.round(g.tradeWealth)} con el comercio` : ''}</div>`;
+}
+// En la ficha: para qué le está sirviendo lo que tiene y qué le falta
+function goodsUseHtml(g){
+  const L = [], list = a => a.map(k => GOODS[k].txt).join(', ').replace(/, ([^,]*)$/, ' y $1');
+  if ((g.lacks || []).length) L.push(`<span style="color:#e08a6a">Le falta ${list(g.lacks)}: la gente se queja</span>`);
+  if (saltOk(g)) L.push('Con sal, la comida se estropea menos');
+  if (g.coatsSewn) L.push(`${g.coatsSewn} abrigo${g.coatsSewn > 1 ? 's' : ''} cosido${g.coatsSewn > 1 ? 's' : ''} con pieles y telas`);
+  if (g.armsGiven) L.push(`${g.armsGiven} arma${g.armsGiven > 1 ? 's' : ''} repartida${g.armsGiven > 1 ? 's' : ''} para la guerra`);
+  if ((g.enjoys || []).length) L.push(`Disfrutan de ${list(g.enjoys)}`);
+  return L.length ? `<div style="font-size:12px;margin:4px 0;display:flex;flex-direction:column;gap:2px">${L.map(x => `<span>· ${x}</span>`).join('')}</div>` : '';
 }

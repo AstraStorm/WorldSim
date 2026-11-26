@@ -94,3 +94,13 @@ function goodsBoardHtml(){
   const first = goodsFirst(nationOf(g)); if (!first.length) return h;
   return h + `<div class="muted" style="font-size:12px">🥇 ${esc(nationOf(g).name)} es la primera del mundo en ${first.map(k => (GOODS[k] || RAW_GOODS[k]).txt).join(', ').replace(/, ([^,]*)$/, ' y $1')}</div>`;
 }; }
+// Monopolios: cuando una nación produce más de la mitad de una mercancía del mundo, sale en las noticias (cada medio día se mira)
+{ const base = powersTick; powersTick = function(){
+  base.apply(this, arguments);
+  const B = goodsBoard(), lead = world.goodLead ||= {};
+  for (const k of Object.keys(GOODS)) {
+    const P = B[k]; if (P.length < 2) continue;
+    const tot = P.reduce((a, e) => a + (e.make[k] || 0), 0), top = P[0], share = tot ? (top.make[k] || 0) / tot : 0;
+    if (share > .55 && lead[k] !== top.n.id) { const had = lead[k] != null; lead[k] = top.n.id; if (had) { notify(`${top.n.name} controla ya ${Math.round(share * 100)} % de ${({ sal:'la', ceramica:'la', vino:'el', pescado:'el' })[k] || 'las'} ${GOODS[k].txt} del mundo`, { x:top.n.fx * T, y:top.n.fy * T }); break; } }
+  }
+}; }

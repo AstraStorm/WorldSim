@@ -50,6 +50,12 @@ const TH_MOOD = [
   [/^es de los /, () => ['Nos tratan como a basura', 'Algún día nos tocará a nosotros']],
   [/^vive en un país muy desigual$/, () => ['Unos tanto y otros tan poco', 'Los ricos, cada vez más ricos']],
   [/^no se puede pagar la entrada/, () => ['No me llega para la entrada del partido']],
+  [/^le falta sal$/, () => ['La comida sin sal no sabe a nada', '¿Nadie vende sal por aquí?']],
+  [/^le faltan telas$/, () => ['Llevo la ropa hecha jirones', 'Necesito tela para coser']],
+  [/^le falta cerámica$/, () => ['No nos quedan ni cuencos', 'Hay que traer vasijas de fuera']],
+  [/^bebe buen vino$/, () => ['¡Qué buen vino!', '¡Salud!']],
+  [/^come con especias$/, () => ['Qué bien sabe todo con especias']],
+  [/^luce joyas$/, () => ['¿Has visto mi collar nuevo?', 'Estas joyas valen una fortuna']],
   [/^tiene (\d+) hij/, (m) => [+m[1] > 1 ? 'Mis hijos crecen tan rápido' : 'Mi crío crece tan rápido', +m[1] > 2 ? '¡Qué familia más grande tengo!' : 'Lo que más quiero, mi familia']],
 ];
 // Lo que no está en la lista: se pasa a primera persona si empieza de una forma conocida (si no, mejor no decir nada)
