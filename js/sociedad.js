@@ -614,7 +614,9 @@ const wellsOf = g => (g.wells ||= []).filter(w => world.objs[w.i] && world.objs[
 function drinkSpot(v, g){
   const tx = Math.floor(v.x / T), ty = Math.floor(v.y / T), p = waterSpot(tx, ty, v);
   let best = null, bd = Infinity;
-  for (const w of wellsOf(g)) { if (w.q < .05) continue; const d = Math.hypot((w.i % W) - tx, ((w.i / W) | 0) - ty); if (d < bd) { bd = d; best = w; } }
+  const nw = v.noWell, cut = yearT - 30; if (nw) for (const k in nw) if (nw[k] < cut) delete nw[k];
+  const reach = w => !(nw && nw[w.i] > cut); // (los pozos a los que hace poco no pudo llegar, fuera)
+  for (const w of wellsOf(g)) { if (w.q < .05 || !reach(w)) continue; const d = Math.hypot((w.i % W) - tx, ((w.i / W) | 0) - ty); if (d < bd) { bd = d; best = w; } }
   if (best && bd <= (p ? Math.hypot(p[0] / T - tx, p[1] / T - ty) : Infinity) + 6) { const sb = standBy(best.i); if (sb) return { x:sb[0], y:sb[1], well:best }; }
   const far = !p || Math.hypot(p[0] / T - tx, p[1] / T - ty) > 9;
   if (far) { g.thirsty = yearT; const kn = g.know ||= {}; if (!kn.pozo) { kn.pozo = kn.molino = true; notify(`En ${g.name} el agua queda lejos o se ha secado: aprenden a cavar pozos`, { x:g.fx * T, y:g.fy * T }); } } else if (g.thirsty && yearT - g.thirsty > DAY_LEN) g.thirsty = 0;
@@ -624,7 +626,7 @@ function drinkSpot(v, g){
   }
   if (far && (g.jars || 0) >= 1 && (!p || Math.hypot(tx - g.fx, ty - g.fy) < 30)) { const [sx, sy] = fireSpot(v, g); return { x:sx, y:sy, jar:true }; } // sin agua a mano: a las tinajas del pueblo
   if (!p && best) { const sb = standBy(best.i); if (sb) return { x:sb[0], y:sb[1], well:best }; } // o al pozo, aunque quede lejos
-  if (!p && !best && (g.jars || 0) < 1) { let dry = null, dd = Infinity; for (const w of wellsOf(g)) { const d = Math.hypot((w.i % W) - tx, ((w.i / W) | 0) - ty); if (d < dd) { dd = d; dry = w; } } // (todos secos: sacan lo que quede en el fondo, aunque sea poco y turbio)
+  if (!p && !best && (g.jars || 0) < 1) { let dry = null, dd = Infinity; for (const w of wellsOf(g)) { if (!reach(w)) continue; const d = Math.hypot((w.i % W) - tx, ((w.i / W) | 0) - ty); if (d < dd) { dd = d; dry = w; } } // (todos secos: sacan lo que quede en el fondo, aunque sea poco y turbio)
     if (dry) { const sb = standBy(dry.i); if (sb) return { x:sb[0], y:sb[1], well:dry, dry:true }; } }
   if (!p) { // todo helado: rompen el hielo de un río o lago, o derriten nieve en la hoguera (antes, se morían de sed junto al río congelado)
     const ice = ringFind(tx, ty, 30, (x, y) => { const i = y * W + x; return tileFree(x, y) && nb4i(i).some(n => FRESH(world.biome[n]) && frozen(n)); });
@@ -3070,6 +3072,8 @@ function updateVillagers(dt){
         else { const h = homeOf(v, g), [sx, sy] = h != null ? [(h % W) * T + 2, ((h / W) | 0) * T + 3 + T] : campSpot(v, g) || fireSpot(v, g); v.task = { k:'dormir', x:sx, y:sy, h }; v.lastD = Infinity; }
       }
     }
+    // Con mucha sed o hambre se deja lo que se esté haciendo (un ritual, una votación, un oficio largo...) para ir a beber o comer
+    if (v.actT > 0 && (v.water < .15 || v.food < .1) && v.task && !['beber', 'comer', 'asalto', 'apagar', 'detenido', 'curarse'].includes(v.task.k) && !['beber', 'comer'].includes(v.task.job) && !v.boat) { v.actT = 0; v.onDone = null; releaseTask(v); v.task = null; v.wait = 0; }
     if (v.actT > 0) { v.actT -= dt; v.walk = 0; if (v.actT <= 0) { const had = v.carry, tk0 = v.task; if (v.onDone) v.onDone(); v.onDone = null; if (tk0 && !v.carry && !UNPAID.has(tk0.k)) payWage(v, g, 3); /* obras, oficios y servicios también se pagan */ if (v.carry && v.carry !== had) { if (v.cart) v.carry.n = Math.round(v.carry.n * 2.5); gainText(v); } if (v.task === tk0) v.task = v.carry ? { k:'volver' } : null; } continue; } // (si al acabar se ha puesto otra tarea, se respeta)
     if (v.wait > 0) { v.wait -= dt; continue; }
     if (!v.task && v.carry) v.task = { k:'volver' }; // lo que lleva encima, primero a casa

@@ -186,6 +186,9 @@ function vGo(v, x, y, dt, run){
     // No hay forma de llegar: se da por imposible (y se apunta para no volver a elegirlo enseguida)
     if (!v.route && d > T * 3 && !inWater(v.x, v.y) && !(v.task && v.task.k === 'asalto')) {
       (v.avoid ||= new Map()).set(tk, yearT); if (v.task && v.task.i != null) v.avoid.set(v.task.i, yearT);
+      if (v.task && v.task.k === 'beber') { const nw = v.noWell ||= {}; nw[v.task.well ? v.task.well.i : 'w' + tk] = yearT; // (a ese pozo o agua no llega: que busque otra)
+        // Aislado (en una lengua de tierra, tras desembarcar...) y sin saber nadar: la sed puede más y se tira al agua
+        if (v.swims === false && v.water < .2 && Object.keys(nw).length >= 3) { v.swims = true; floats.push({ x:v.x, y:v.y - 12, txt:'se tira al agua', col:'#cfe8ff', life:0 }); } }
       releaseTask(v); v.task = null; v.wait = .3; v.routeKey = null; return false;
     }
     // ¿Esta ruta cruza agua a nado, o da un rodeo largo porque hay agua en medio? Se apunta por dónde se cruzaría
@@ -217,7 +220,7 @@ function vGo(v, x, y, dt, run){
   const onPath = pathMap.has(Math.floor(v.y / T) * W + Math.floor(v.x / T)) || bridgeSet.has(Math.floor(v.y / T) * W + Math.floor(v.x / T));
   const sp = Math.min(dg, (swim ? 4 * (1 + (v.swimFit || 0)) : 10 * (1 + (v.fit || 0) * .3)) * // (la piscina y la pista mejoran la velocidad: deportes.js)
      (onPath ? (typeof isAsphalt === 'function' && isAsphalt(Math.floor(v.y / T) * W + Math.floor(v.x / T)) ? 2.2 : isRoad(Math.floor(v.y / T) * W + Math.floor(v.x / T)) ? 1.75 : 1.3) : 1) * (run ? 1.35 : 1) * (child ? .8 : 1) * (v.mount ? (v.cart ? 1.6 : 2) : 1) * dt), base = Math.atan2(dy, dx);
-  let moved = false;
+  let moved = false; const wpWet = !!v.route && v.swims !== false && !v.mount && (inWater(gx, gy) || inWater((v.x + gx) / 2, (v.y + gy) / 2) || (v.ri > 0 && v.ri <= v.route.length && inWater(...v.route[v.ri - 1]))); // (el siguiente punto de la ruta está en el agua: hay que nadar)
   // Rodea los obstáculos siempre por el mismo lado durante un rato (si no, da bandazos a izquierda y derecha),
   // y no se gira a cada paso
   const pref = v.sideT > 0 ? v.side : 0;
@@ -226,7 +229,7 @@ function vGo(v, x, y, dt, run){
   for (let pass = 0; pass < 3 && !moved; pass++) for (const o of V_OFFS) {
     if (pass === 0 && pref && o * pref < 0) continue;
     const a = base + o, nx = v.x + Math.cos(a) * sp, ny = v.y + Math.sin(a) * sp;
-    if (!walkable(nx, ny) || ((pass < 2 || v.swims === false || v.mount) && !swim && inWater(nx, ny))) continue; // quien no sabe nadar no se mete
+    if (!walkable(nx, ny) || (((pass < 2 && !wpWet) || v.swims === false || v.mount) && !swim && inWater(nx, ny))) continue; // quien no sabe nadar no se mete (y quien sabe, solo si la ruta pasa por el agua)
     if (pass < 2 && footAt(tileOfXY(nx, ny)) && !footAt(tileOfXY(v.x, v.y)) && Math.hypot(nx - x, ny - y) > T * 3) continue; // ni se mete por la planta de un edificio (salvo el de su destino)
     { const cx = Math.floor(v.x / T), cy = Math.floor(v.y / T), qx = Math.floor(nx / T), qy = Math.floor(ny / T); if (qx !== cx && qy !== cy && tileCost(qx, cy) === Infinity && tileCost(cx, qy) === Infinity) continue; } // sin colarse en diagonal entre dos tramos de muralla (o dos muros) que se tocan por la esquina
     v.x = nx; v.y = ny; moved = true;

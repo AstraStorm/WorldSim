@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611261902",
- "fecha": "2026-11-26 19:02",
+ "version": "202611261917",
+ "fecha": "2026-11-26 19:17",
  "novedades": [
   {
    "fecha": "2026-11-26",
-   "texto": "Murallas por la orilla y rejas en los ríos, puertas verticales, esquinas y mancha de petróleo"
+   "texto": "Aldeanos con sed que no se quedan quietos"
+  },
+  {
+   "fecha": "2026-11-26",
+   "texto": "Murallas que siguen la orilla y cruzan los ríos con rejas; puertas en tramos verticales; esquinas; mancha de petróleo bajo los edificios"
   },
   {
    "fecha": "2026-11-26",
@@ -46,14 +50,10 @@
   {
    "fecha": "2026-11-25",
    "texto": "Segunda revisión visual"
-  },
-  {
-   "fecha": "2026-11-25",
-   "texto": "Revisión visual de la revolución industrial"
   }
  ],
  "archivos": {
-  "index.html": "d4dbe6a795fbacf0935299cfdf8b5e238f520a2b",
+  "index.html": "41f50d1610590c5798f5d5a7e0bbb11c81d180af",
   "css/estilo.css": "88324f7069e2f60231723d2f96c606f134224554",
   "js/agencia.js": "dd15e5ae8fa08af254622aba102dafae859910b9",
   "js/aldeanos.js": "9fc48c835e3cf5baaebb07594aa0624275287f1d",
@@ -61,7 +61,7 @@
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "a94b46896cfd10fd688954a3c5b9297e9b693872",
   "js/armas.js": "d4710aa65550aceb06fbdd1d2d290c8085f58e96",
-  "js/arte.js": "0e897a19521cfab96a7f6081f026327d19986c0c",
+  "js/arte.js": "2e721bf9b5911264b0a70b699e259a4b3f974a62",
   "js/arte_mapa.js": "a92d6a3c48ca112990a90102d27322fe8879ec53",
   "js/aviacion.js": "d1577602368a206110f98ecb150d9ecb4f716aba",
   "js/bandidos.js": "bc804375208c5f300e33435e76d16001e8c4daae",
@@ -103,7 +103,7 @@
   "js/globos.js": "955b67ce3b9dd8c36b7ee965f9f05f4fb8bd9d39",
   "js/grafica.js": "d548461632882f80f4077d9e5754c70c5319331e",
   "js/guerra.js": "1153940b77fd53d54b2cb9fb5083e85282bc93fe",
-  "js/humanos.js": "c76c15412a7a52a5b58fd0f9c13687b66ebe341e",
+  "js/humanos.js": "9517706d77f2ed4c40fdb757d9ccfe5d04492044",
   "js/idiomas.js": "6fcf8b439467c9bba4c533f86710240f477c5b5b",
   "js/impuestos.js": "9820acf00db62b3039fb43433ddcc3f522453daa",
   "js/industria.js": "45344548ba566b198096e11e73952483dfb1b864",
@@ -138,7 +138,7 @@
   "js/riqueza.js": "6e0afe4ee16977f7f9b9bb2987844ad104f54f6a",
   "js/rutas.js": "6e12cafc1992e09fc3c2b5b13ca7d7db6416c364",
   "js/sindicatos.js": "f7cb8bf83ff74322a6fc45cc6ac90550425c6d15",
-  "js/sociedad.js": "e297b6d2984609f3ad5890df0942f03abc16e2e6",
+  "js/sociedad.js": "6385cc47ff91fdc844c7ae00ad322589fc21c84c",
   "js/sonido.js": "25be9d9bda62336aba463c82e31668d0e9b2bc54",
   "js/terrorismo.js": "a2285a3dfa1180fc7b7922eadf05f9f189970d6e",
   "js/titulares.js": "0506409e843da939370bb404b894a52cffa68620",
