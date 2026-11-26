@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611262102",
- "fecha": "2026-11-26 21:02",
+ "version": "202611262125",
+ "fecha": "2026-11-26 21:25",
  "novedades": [
   {
    "fecha": "2026-11-26",
-   "texto": "Bocadillos con lo que piensan y dicen los aldeanos, podio de cada mercancía y sin presos en el ejército"
+   "texto": "Más consumo de mercancías y caravanas que vuelven cargadas"
+  },
+  {
+   "fecha": "2026-11-26",
+   "texto": "Pensamientos de los aldeanos, quién va primero en cada mercancía y sin presos en la guerra"
   },
   {
    "fecha": "2026-11-26",
@@ -46,14 +50,10 @@
   {
    "fecha": "2026-11-26",
    "texto": "Misiles con control de armas, terrorismo, y supervivencia de las aldeas"
-  },
-  {
-   "fecha": "2026-11-26",
-   "texto": "Barrios en las ciudades, sed y pozos, calendario de cada mundo nuevo"
   }
  ],
  "archivos": {
-  "index.html": "56f590dbadfbf2e0aadc4d9872623bfe8f531f62",
+  "index.html": "0a91bb7f3ecf1e17711da130870774dbaf108340",
   "css/estilo.css": "45aa6d4f67b4dcf38cc4ccb3a2c02eb08c1fac89",
   "js/agencia.js": "dd15e5ae8fa08af254622aba102dafae859910b9",
   "js/aldeanos.js": "9fc48c835e3cf5baaebb07594aa0624275287f1d",
@@ -61,7 +61,7 @@
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "a94b46896cfd10fd688954a3c5b9297e9b693872",
   "js/armas.js": "d4710aa65550aceb06fbdd1d2d290c8085f58e96",
-  "js/arte.js": "577f20cc7921534d6b83b2aee4d4fe28e50e6e18",
+  "js/arte.js": "e2bad9f164a0e491bc17a1bfe2fc3b0763ccc1a1",
   "js/arte_mapa.js": "a92d6a3c48ca112990a90102d27322fe8879ec53",
   "js/aviacion.js": "2bceeb5a9a59332b96ad69d19b5f6e39da71af42",
   "js/bandidos.js": "bc804375208c5f300e33435e76d16001e8c4daae",
@@ -78,7 +78,7 @@
   "js/clases.js": "d492b674481b1fba29d3b594d2a65a9bb2d75029",
   "js/clima.js": "e545e861b32b69714cf334b67d1a6308503596c7",
   "js/colonias.js": "f23380da6b0ba72188b0d28a9b185517b505bd50",
-  "js/comercio.js": "a5d3d6c160291bc74c9db4ac0991dd6b84be4f7f",
+  "js/comercio.js": "74f227dc4b112431d1f52d39ea5a81dfc9566e78",
   "js/consejo.js": "3ed73b3dcc91de9bb3f1c23c7caec240114f61e4",
   "js/convivencia.js": "81be8970d88a47871bd4e45796c00a51f56287f8",
   "js/credos.js": "2c9349a62f485ee953ea7e58c09de270a73b45c0",
@@ -139,7 +139,7 @@
   "js/riqueza.js": "6e0afe4ee16977f7f9b9bb2987844ad104f54f6a",
   "js/rutas.js": "6e12cafc1992e09fc3c2b5b13ca7d7db6416c364",
   "js/sindicatos.js": "f7cb8bf83ff74322a6fc45cc6ac90550425c6d15",
-  "js/sociedad.js": "f221b941a4268f74cb7cde570c651f73d4b456e0",
+  "js/sociedad.js": "2800d9485a7a99b1b69e65c594bb446cbaaf985f",
   "js/sonido.js": "25be9d9bda62336aba463c82e31668d0e9b2bc54",
   "js/terrorismo.js": "a2285a3dfa1180fc7b7922eadf05f9f189970d6e",
   "js/titulares.js": "0506409e843da939370bb404b894a52cffa68620",

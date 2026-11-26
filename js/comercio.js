@@ -4,7 +4,8 @@
 //   pieles en el frío y los bosques, pescado salado si tiene muelle, cerámica junto a los ríos, telas, armas con
 //   herrería, joyas con oro y gemas) y consume un poco de todo. Lo que escasea sube de precio
 // · Las caravanas (y las barcas de comercio) cargan la mercancía que más gana yendo de un pueblo al otro; se ve la
-//   carga de su color sobre el carro o la barca. Al llegar se vende: el pueblo que la manda gana dinero (o comida)
+//   carga de su color sobre el carro o la barca. Al llegar se vende: el pueblo que la manda gana dinero (o comida); y a la
+//   vuelta traen lo que allí sobra y en casa se paga mejor (eso lo cobra el otro pueblo)
 // · Aranceles (ley): la nación que los tiene cobra una parte al entrar; entonces algunos prefieren el contrabando, que
 //   si lo pillan pierde la carga. El Consejo de las Naciones puede embargar a un sancionado
 const GOODS = {
@@ -34,9 +35,13 @@ function makes(g){
 const goodsOf = g => (g.goods ||= {});
 const goodPrice = (g, k) => { const s = goodsOf(g)[k] || 0, pop = Math.max(1, popOf(g)); return GOODS[k].base * clamp((pop * .6 + 4) / (s + 3), .3, 4); };
 // Producción y consumo (desde econTick, o cada 20 s en los pueblos sin moneda)
+// Cada persona gasta de cada cosa (lo básico más que los lujos): quien la produce apenas guarda un poco más de lo que
+// gasta, así que lo que sobra se vende fuera y lo que se vende fuera se nota; el almacén crece con el pueblo
+const DEMAND = { sal:.12, especias:.06, telas:.1, pieles:.06, vino:.07, ceramica:.08, pescado:.12, armas:.04, joyas:.025 };
+const goodsCap = g => 30 + popOf(g) * .8;
 function goodsTick(g){
-  const G = goodsOf(g), m = makes(g), pop = popOf(g);
-  for (const k in GOODS) { G[k] = clamp((G[k] || 0) + (m[k] || 0) * pop / 10 - pop * .03, 0, 80); }
+  const G = goodsOf(g), m = makes(g), pop = popOf(g), cap = goodsCap(g);
+  for (const k in GOODS) { G[k] = clamp((G[k] || 0) + (m[k] || 0) * pop / 10 - pop * DEMAND[k], 0, cap); }
 }
 // Al salir la caravana: carga lo que más gana
 function loadCargo(t, from, to){
@@ -62,6 +67,6 @@ function sellCargo(t, from, to){
 function goodsCard(g){
   const G = goodsOf(g), m = makes(g), ks = Object.keys(GOODS).filter(k => (G[k] || 0) >= 1 || m[k]);
   if (!ks.length) return '';
-  return `<h4>Mercancías</h4><div class="needs">${ks.slice(0, 9).map(k => `<span><i style="display:inline-block;width:8px;height:8px;background:${GOODS[k].col};margin-right:4px"></i>${esc(capFirst(GOODS[k].txt))}</span>${bar((G[k] || 0) / 80, GOODS[k].col, 120)}<span>${Math.floor(G[k] || 0)} · vale ${String(Math.round(goodPrice(g, k) * 10) / 10).replace('.', ',')}${m[k] ? ' · produce' : ''}</span>`).join('')}</div>
+  return `<h4>Mercancías</h4><div class="needs">${ks.slice(0, 9).map(k => `<span><i style="display:inline-block;width:8px;height:8px;background:${GOODS[k].col};margin-right:4px"></i>${esc(capFirst(GOODS[k].txt))}</span>${bar((G[k] || 0) / goodsCap(g), GOODS[k].col, 120)}<span>${Math.floor(G[k] || 0)} · vale ${String(Math.round(goodPrice(g, k) * 10) / 10).replace('.', ',')}${m[k] ? ' · produce' : ''}</span>`).join('')}</div>
     <div class="muted" style="font-size:12px">${hasLaw(g, 'aranceles') ? 'Cobra aranceles a las mercancías de fuera · ' : ''}${g.tradeWealth ? `ha ganado ${Math.round(g.tradeWealth)} con el comercio` : ''}</div>`;
 }

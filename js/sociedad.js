@@ -1824,7 +1824,7 @@ function updateTravelers(dt){
       if (to && r) {
         const und = langUnderstand(v, to); // si no se entienden, la visita sirve de poco
         if (t.kind === 'caravana') {
-          const got = doTrade(from, to), sold = sellCargo(t, from, to); r.v = clamp(r.v + 4 * und, -100, 100); tradeTrip(from, to, r); shareCharts(from, to); spreadCoin(from, to);
+          const got = doTrade(from, to), sold = sellCargo(t, from, to); t.smuggle = false; loadCargo(t, to, from); // y de vuelta, lo que allí sobra y en casa se paga mejor (comercio.js) r.v = clamp(r.v + 4 * und, -100, 100); tradeTrip(from, to, r); shareCharts(from, to); spreadCoin(from, to);
           const sickHome = villagers.find(u => !u.dead && u.vid === from.id && u.sick); if (sickHome && !hasLaw(to, 'cuarentena') && Math.random() < .3) { const tgt = villagers.find(u => !u.dead && u.vid === to.id && !u.sick); if (tgt) infect(tgt, sickHome.sick, to); } // la caravana trae la enfermedad
           notify(`Una caravana de ${from.name} llega a ${to.name} ${t.sea ? 'por mar' : 'por tierra'}${sold}${got.length ? `: ${got.join(', ')}` : ''}`, { x:t.x, y:t.y });
         } else if (r.war) {
@@ -1834,6 +1834,7 @@ function updateTravelers(dt){
       }
       t.phase = 'vuelta'; t.tx = t.hx; t.ty = t.hy; continue;
     }
+    if (t.kind === 'caravana' && t.cargo && to) sellCargo(t, to, from); // la carga de vuelta: la cobra el pueblo de donde viene
     if (t.crew) for (const u of t.crew) if (!u.dead && u !== v) { u.away = false; u.task = null; u.x = t.x; u.y = t.y; } // el comando (y el rescatado)
     t.done = true; v.away = false; v.task = null; v.wait = .5; const [fx, fy] = fireSpot(v, from); if (!t.sea) { v.x = fx; v.y = fy; } else landAt(v, t.x, t.y); // del barco, a tierra firme
   }
