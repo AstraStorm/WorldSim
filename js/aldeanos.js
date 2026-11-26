@@ -153,7 +153,7 @@ function findPath(v){
       if (!dx && !dy) continue;
       const nx = x + dx, ny = y + dy;
       if (Math.abs(nx - sx) > R || Math.abs(ny - sy) > R) continue;
-      const c = tileCost(nx, ny); if (c === Infinity) continue;
+      const c = tileCost(nx, ny); if (c === Infinity || (footAt(ny * W + nx) && !footAt(sy * W + sx))) continue; // (ni por la planta de los edificios)
       if (dx && dy && (tileCost(x + dx, y) === Infinity || tileCost(x, y + dy) === Infinity)) continue; // sin cortar esquinas
       const ni = L(nx, ny), nd = best + c * (dx && dy ? 1.41 : 1);
       if (nd < dist[ni]) { dist[ni] = nd; par[ni] = li; }

@@ -17,7 +17,7 @@ BLD.add('power'); BLD.add('pylon'); BUILD_DIMS.power = [6, 7]; BUILD_DIMS.pylon 
 OBJ['power:central'] = ['Central eléctrica de carbón', 'house', 0]; OBJ['pylon:torre'] = ['Torre de alta tensión', 'house', 0];
 Object.assign(BLD_DESC, { power:'Central eléctrica: quema carbón y manda la corriente por las torres de alta tensión', pylon:'Torre de alta tensión: lleva la corriente por los cables y la reparte a lo que tiene cerca' });
 Object.assign(BLD_TYPE, { power:'Energía', pylon:'Energía' });
-const PYLON_R = 12, PYLON_GAP = 11, LINK_R = 8; // (LINK_R: a cuánto de una casa tiene que llegar la línea para dar luz a todo el pueblo)
+const PYLON_R = 12, PYLON_GAP = 11, PYLON_MIN = 7, LINK_R = 8; // (LINK_R: a cuánto de una casa tiene que llegar la línea para dar luz a todo el pueblo)
 const hasPower = g => g.plant != null && world.objs[g.plant] && world.objs[g.plant].key === 'power:central';
 function plantOn(g){ return hasPower(g) && !g.plantOff; }
 // Torres conectadas (con su torre «madre», hacia la central) y casillas con corriente, por pueblo (caché)
@@ -37,30 +37,31 @@ function powered(g){
 const isPowered = (g, x, y) => { if (!g) return false; const c = powered(g); return c.set.has(((y | 0) >> 1) * W + ((x | 0) >> 1)) || (c.town && Math.hypot(x - g.fx, y - g.fy) <= c.reach); };
 const isBldObj = o => o && BLD.has(o.key.split(':')[0]) && !o.key.startsWith('pylon:');
 const clearOfBuildings = (x, y, r) => { for (let yy = y - r; yy <= y + r; yy++) for (let xx = x - r; xx <= x + r; xx++) if (xx >= 0 && yy >= 0 && xx < W && yy < H && isBldObj(world.objs[yy * W + xx])) return false; return !villages.some(q => underBuilding(q, x, y)); };
-// De dónde le llega la corriente: de su central; si no tiene, de la de otra ciudad de su nación (red nacional, hasta 90
-// casillas) o de la de un vecino con tratado de suministro eléctrico
+// De dónde le llega la corriente: de su central; si no tiene, de la de otra ciudad de su nación (red nacional, hasta 160
+// casillas: así no hay una central en cada pueblo) o de la de un vecino con tratado de suministro eléctrico
 function supplierOf(g){
   if (hasPower(g)) return g;
   let best = null, bd = 1e9;
-  for (const o of villages) { if (o === g || !hasPower(o) || !popOf(o)) continue; const d = Math.hypot(o.fx - g.fx, o.fy - g.fy), r = rels.get(relKey(g, o)); if ((nationOf(o) === nationOf(g) && d < 90) || (r && hasTreaty(r, 'electrico'))) if (d < bd) { bd = d; best = o; } }
+  for (const o of villages) { if (o === g || !hasPower(o) || !popOf(o)) continue; const d = Math.hypot(o.fx - g.fx, o.fy - g.fy), r = rels.get(relKey(g, o)); if ((nationOf(o) === nationOf(g) && d < 160) || (r && hasTreaty(r, 'electrico'))) if (d < bd) { bd = d; best = o; } }
   return best;
 }
 function importsPower(g){ if (hasPower(g)) return false; const s0 = supplierOf(g); return !!(s0 && plantOn(s0)); }
 // ---- Dónde: la central, en la zona industrial (o a las afueras); las torres, desde la central hacia lo que no tiene luz ----
 function plantSite(g){
-  if (typeof facSite === 'function') { const s = facSite(g, Object.keys(FACS)[0]); if (s) return [s.x, s.y]; }
-  const o = typeof outskirtsSite === 'function' ? outskirtsSite(g, 'central') : null; if (o) return o;
+  const big = (x, y) => typeof bigClash === 'function' && bigClash(x, y, 6, 7); // (ni encima ni pegada a otra central, refinería, aeródromo...)
+  if (typeof facSite === 'function') { const s = facSite(g, Object.keys(FACS)[0]); if (s && !big(s.x, s.y) && !buildingClash(s.x, s.y, 'central')) return [s.x, s.y]; }
+  const o = typeof outskirtsSite === 'function' ? outskirtsSite(g, 'central') : null; if (o && !big(o[0], o[1])) return o;
   // Lejos, en su propia tierra (las centrales no tienen por qué estar en la ciudad: las torres traen la corriente)
   const towns = liveTowns().filter(q => q !== g), cx = Math.round(g.fx), cy = Math.round(g.fy); let best = null, bd = 1e9;
   for (let r = 20; r <= 140 && !best; r += 5) for (let k = 0; k < 40; k++) {
     const a2 = k / 40 * Math.PI * 2, x = Math.round(cx + Math.cos(a2) * r), y = Math.round(cy + Math.sin(a2) * r * .85);
-    if (x < 10 || y < 12 || x >= W - 10 || y >= H - 4 || towns.some(o => nationOf(o) !== nationOf(g) && Math.hypot(o.fx - x, o.fy - y) < 25) || !clearable(x - 6, y - 7, x + 6, y + 1) || pathIn(x - 6, y - 7, x + 6, y) || plazaIn(x - 6, y - 7, x + 6, y) || penOverlap(null, x - 6, y - 7, x + 6, y + 1) || buildingClash(x, y, 'central')) continue; // (sobre campos de labranza sí: se pierden esos campos)
+    if (x < 10 || y < 12 || x >= W - 10 || y >= H - 4 || towns.some(o => nationOf(o) !== nationOf(g) && Math.hypot(o.fx - x, o.fy - y) < 25) || !clearable(x - 6, y - 7, x + 6, y + 1) || pathIn(x - 6, y - 7, x + 6, y) || plazaIn(x - 6, y - 7, x + 6, y) || penOverlap(null, x - 6, y - 7, x + 6, y + 1) || buildingClash(x, y, 'central') || big(x, y)) continue; // (sobre campos de labranza sí: se pierden esos campos)
     if (r < bd) { bd = r; best = [x, y]; }
   }
   return best; // (nunca derribando casas del centro: una central de carbón no va en mitad de la ciudad)
 }
 function nextPylon(g){
-  const sup = supplierOf(g); if (!sup) return null; const P = (g.pylons || []).filter(p => world.objs[p.i]), nodes = [{ i:sup.plant }, ...(typeof renewOf === 'function' ? renewOf(sup).map(r => ({ i:r.i })) : []), ...(sup === g ? [] : (sup.pylons || []).filter(p => world.objs[p.i])), ...P].filter(n => n.i != null);
+  const sup = supplierOf(g); if (!sup) return null; const P = (g.pylons || []).filter(p => world.objs[p.i]), nodes = [{ i:sup.plant }, ...(typeof renewOf === 'function' ? renewOf(sup).map(r => ({ i:r.i })) : []), ...liveTowns().filter(o => o !== g && supplierOf(o) === sup).flatMap(o => (o.pylons || []).filter(p => world.objs[p.i])), ...P].filter(n => n.i != null); // (la red es una: se engancha a la torre más a mano, sea de quien sea)
   const cov = (x, y) => nodes.some(n => Math.hypot(n.i % W - x, ((n.i / W) | 0) - y) <= PYLON_R - 2), c = powered(g);
   // Lo que falta: llegar al pueblo (a la casa más a mano) y a las fábricas que quedan fuera de él
   const want = [...(c.town ? [] : housesOf(g)), ...(g.facs || []).map(f => f.i).filter(i => !cov(i % W, (i / W) | 0) && !(c.town && Math.hypot(i % W - g.fx, ((i / W) | 0) - g.fy) <= c.reach))];
@@ -71,12 +72,15 @@ function nextPylon(g){
   // los pueblos (su círculo de casas): las torres los rodean, no los cruzan (salvo para salir del pueblo en el que ya están)
   const circ = liveTowns().map(o => { const hs = housesOf(o); return [o.fx, o.fy, Math.min(30, hs.reduce((m, h) => Math.max(m, Math.hypot(h % W - o.fx, ((h / W) | 0) - o.fy)), 0) * .85)]; });
   let from0 = null; const outside = (x, y) => circ.every(([cx, cy, r]) => Math.hypot(x - cx, y - cy) >= r || (from0 && Math.hypot(from0[0] - cx, from0[1] - cy) < r));
-  const okR = (r, out = true) => (x, y) => (!out || outside(x, y)) && tileFree(x, y) && !pathMap.has(y * W + x) && !plazaSet.has(y * W + x) && !wallSet.has(y * W + x) && clearOfBuildings(x, y, r) && !plotIn(x, y, x, y); // (lejos de casas y edificios; en un campo sí: la torre ocupa poco)
+  const allP = villages.flatMap(o => (o.pylons || []).filter(p => world.objs[p.i]).map(p => [p.i % W, (p.i / W) | 0]));
+  const spaced = (x, y) => allP.every(([px, py]) => Math.hypot(px - x, py - y) >= PYLON_MIN); // (separadas: nunca un racimo de torres)
+  const bigBox = (x, y) => villages.some(o => [[o.airfield, 14, 14], [o.spacePad, 7, 11], [o.refinery, 6, 7], [o.renewAt, 18, 9], ...(o.silos || []).map(q => [q.i, 4, 5])].some(([i, w, h]) => i != null && Math.abs(x - i % W) <= w && y >= ((i / W) | 0) - h && y <= ((i / W) | 0) + 2)); // (ni dentro del aeródromo, la lanzadera, la refinería...)
+  const okR = (r, out = true) => (x, y) => (!out || outside(x, y)) && spaced(x, y) && !bigBox(x, y) && tileFree(x, y) && !pathMap.has(y * W + x) && !plazaSet.has(y * W + x) && !wallSet.has(y * W + x) && clearOfBuildings(x, y, r) && !plotIn(x, y, x, y); // (lejos de casas y edificios; en un campo sí: la torre ocupa poco)
   // si hay casas por medio, rodea; y si no queda otra, se arrima algo más
   for (const [, from, to] of pairs.slice(0, 6)) {
     const fx = from.i % W, fy = (from.i / W) | 0, tx = to % W, ty = (to / W) | 0, d = Math.hypot(tx - fx, ty - fy) || 1;
     from0 = [fx, fy];
-    for (const [step, R, cl, out] of [[Math.min(PYLON_GAP, Math.max(1, d - 5)), 5, 3, true], [Math.min(7, Math.max(1, d - 5)), 5, 3, true], [Math.min(PYLON_GAP, Math.max(1, d - 5)), 10, 3, true], [Math.min(PYLON_GAP, Math.max(1, d - 5)), 9, 3, false]]) { const p = ringFind(Math.round(fx + (tx - fx) / d * step), Math.round(fy + (ty - fy) / d * step), R, okR(cl, out)); if (p) { farmMap.delete(p[1] * W + p[0]); return { i:p[1] * W + p[0], from:from.i }; } }
+    const st0 = Math.max(PYLON_MIN + 1, Math.min(PYLON_GAP, d - 5)); for (const [step, R, cl, out] of [[st0, 4, 3, true], [Math.max(PYLON_MIN + 1, Math.min(8, d - 5)), 4, 3, true], [st0, 8, 3, true], [st0, 8, 3, false]]) { const p = ringFind(Math.round(fx + (tx - fx) / d * step), Math.round(fy + (ty - fy) / d * step), R, okR(cl, out)); if (p) { farmMap.delete(p[1] * W + p[0]); return { i:p[1] * W + p[0], from:from.i }; } }
     skip[to] = yearT + DAY_LEN / 2; // por aquí no hay sitio: otro rato
   }
   return null;
@@ -103,9 +107,14 @@ SYSTEMS.push(dt => {
       continue;
     }
     // Quemar carbón (algo más con más torres); sin carbón, apagón
-    const burn = dt * (.02 + (g.pylons || []).length * .0015) * 2;
+    const burn = dt * (.02 + (g.pylons || []).length * .0015) * 2 * [1, .7, .5][(g.plantLv || 1) - 1];
     if ((g.coal || 0) >= burn) { g.coal -= burn; if (g.plantOff) { g.plantOff = false; powC.delete(g.id); notify(`Vuelve la luz a ${g.name}: la central tiene carbón otra vez`, at); } }
     else if (!g.plantOff) { g.plantOff = true; powC.delete(g.id); notify(`¡Apagón en ${g.name}! La central se ha quedado sin carbón`, at); }
+    // En vez de más centrales, la que hay se moderniza: quema menos carbón por la misma luz (hasta el nivel 3)
+    const users = liveTowns().filter(o => o !== g && supplierOf(o) === g).length;
+    if ((g.plantLv || 1) < 3 && (users >= 1 || popOf(g) > 60) && (g.iron || 0) >= 20 && g.stone >= 40 && (g.plantUpT || 0) < yearT - DAY_LEN * 2) {
+      g.plantUpT = yearT; g.plantLv = (g.plantLv || 1) + 1; g.iron -= 20; g.stone -= 40; addEffect((g.plant % W) * T + 2, ((g.plant / W) | 0) * T - 10, 'poof');
+      notify(`${g.name} moderniza su central eléctrica (nivel ${g.plantLv}): con el mismo carbón da luz a más pueblos`, at); }
     // Una torre más (si hay material y falta luz en algún sitio)
     if ((g.iron || 0) >= 1 && g.wood >= 3 && (g.pylonT || 0) < yearT - 6) {
       const n = nextPylon(g); g.pylonT = yearT;
@@ -173,9 +182,27 @@ Object.assign(TREATY, { electrico:{ n:'acuerdo de suministro eléctrico', days:[
 
 // Las redes de antes (torres en mitad del pueblo) se rehacen una vez con la regla nueva: torres por fuera, hasta las afueras
 SYSTEMS.push(() => {
-  if (!world || !villages.some(g => g.gridV !== 2 && (g.pylons || []).length)) return;
-  const old = villages.filter(g => g.gridV !== 2 && (g.pylons || []).length);
-  for (const g of old) { for (const p of g.pylons) if (world.objs[p.i] && world.objs[p.i].key === 'pylon:torre') { delete world.objs[p.i]; const x = p.i % W, y = (p.i / W) | 0; composeRegion(x - 4, y - 8, x + 4, y + 2); } g.pylons = []; g.pylonSkip = {}; g.gridV = 2; powC.delete(g.id); }
+  if (!world || !villages.some(g => g.gridV !== 3 && (g.pylons || []).length)) return;
+  const old = villages.filter(g => g.gridV !== 3 && (g.pylons || []).length);
+  for (const g of old) { for (const p of g.pylons) if (world.objs[p.i] && world.objs[p.i].key === 'pylon:torre') { delete world.objs[p.i]; const x = p.i % W, y = (p.i / W) | 0; composeRegion(x - 4, y - 8, x + 4, y + 2); } g.pylons = []; g.pylonSkip = {}; g.gridV = 3; powC.delete(g.id); }
   for (const g of [...old.filter(hasPower), ...old.filter(g => !hasPower(g))]) for (let k = 0; k < 30; k++) { const n = nextPylon(g); if (!n) break; world.objs[n.i] = { key:'pylon:torre', v:0, ox:0, oy:0, vid:g.id }; g.pylons.push(n); powC.delete(g.id); const x = n.i % W, y = (n.i / W) | 0; composeRegion(x - 4, y - 8, x + 4, y + 2); }
 });
-SYSTEMS.push(() => { if (world) for (const g of villages) if (g.gridV == null && !(g.pylons || []).length) g.gridV = 2; });
+SYSTEMS.push(() => { if (world) for (const g of villages) if (g.gridV !== 3 && !(g.pylons || []).length) g.gridV = 3; });
+
+// Las instalaciones grandes (central, refinería, aeródromo, lanzadera, silos, pozos, molinos, placas, antenas) cuentan como
+// edificios al buscar solar: nada nuevo se levanta encima de ellas
+{ const base = allBuildings; let t2 = -1, c2 = null, b2 = null;
+  allBuildings = function(){ const b = base.apply(this, arguments); if (t2 === yearT && c2 && b === b2) return c2; t2 = yearT; b2 = b;
+    const ex = []; for (const g of villages) { for (const i of [g.plant, g.refinery, g.airfield, g.spacePad]) if (i != null && world.objs[i]) ex.push(i); for (const L of [g.silos, g.renew, g.tele]) for (const q of L || []) if (world.objs[q.i]) ex.push(q.i); }
+    if (typeof oilDeposits === 'function' && world.oil) for (const d of world.oil) if (d.well != null && world.objs[d.well]) ex.push(d.well);
+    return c2 = b.concat(ex); }; }
+// Una refinería que quedó encima de la central (o de otra instalación grande) se traslada una vez a un solar libre
+SYSTEMS.push(() => {
+  if (!world || typeof hasRefinery !== 'function') return;
+  for (const g of villages) { if (g.refV === 3) continue; g.refV = 3; if (!hasRefinery(g)) continue;
+    const i = g.refinery, x = i % W, y = (i / W) | 0, keep = g.refinery; g.refinery = null;
+    const clash = (typeof bigClash === 'function' && bigClash(x, y, 5, 6)) || (knowsSci(g, 'aviacion') && !hasAirfield(g) && !farSite(g, 13, 13)); if (!clash) { g.refinery = keep; continue; } // (o si no deja sitio para el aeródromo)
+    const ob = world.objs[i]; delete world.objs[i]; composeRegion(x - 14, y - 14, x + 14, y + 4);
+    const s0 = typeof refinerySite === 'function' ? refinerySite(g) : plantSite(g); if (!s0) { world.objs[i] = ob; g.refinery = keep; composeRegion(x - 14, y - 14, x + 14, y + 4); continue; }
+    const j = s0[1] * W + s0[0]; world.objs[j] = ob; g.refinery = j; composeRegion(s0[0] - 14, s0[1] - 14, s0[0] + 14, s0[1] + 4); connect(g, s0[0], s0[1]); }
+});

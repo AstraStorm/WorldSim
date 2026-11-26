@@ -333,7 +333,7 @@ function redrawFront(l, r, top, baseY){
   if (!params.objects) return;
   const objs = world.objs;
   for (let ty = Math.max(0, Math.floor(baseY / T)); ty <= Math.min(H - 1, Math.floor((baseY + 80) / T)); ty++)
-    for (let tx = Math.max(0, Math.floor((l - 34) / T)); tx <= Math.min(W - 1, Math.floor((r + 34) / T)); tx++) {
+    for (let tx = Math.max(0, Math.floor((l - 66) / T)); tx <= Math.min(W - 1, Math.floor((r + 66) / T)); tx++) {
       const o = objs[ty * W + tx]; if (!o) continue;
       const os = objSprite(o), by = ty * T + 3 + o.oy;
       if (by <= baseY || o.key === 'quarry:cantera') continue;

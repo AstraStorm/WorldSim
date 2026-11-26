@@ -263,7 +263,7 @@ if os.path.exists(os.path.join(SRC, 'pozoPetrolero.png')):  # petróleo: el bala
     for k in range(8):
         add(f'oil:pozo{k}', shrink(box_parts('pozoPetrolero.png', (int((560 + 180 * k) * 1.086), 20, int((752 + 180 * k) * 1.086), 250)), 22, 40))
 if os.path.exists(os.path.join(SRC, 'pozoPetroleroAcuatico.png')):
-    add('oil:plataforma', shrink(box_parts('pozoPetroleroAcuatico.png', (240, 40, 1290, 970)), 44, 40))
+    add('oil:plataforma', shrink(box_parts('pozoPetroleroAcuatico.png', (240, 40, 1290, 970)), 70, 40))
 if os.path.exists(os.path.join(SRC, 'refineriaPetrolera.png')):
     add('oil:refineria', shrink(box_parts('refineriaPetrolera.png', (70, 70, 830, 660)), 46, 40))
 if os.path.exists(os.path.join(SRC, 'camion.png')):  # el camión, en 8 direcciones (a la misma escala: el de lado mide 16)
@@ -331,7 +331,7 @@ if os.path.exists(os.path.join(SRC, 'lanzadoras.png')):  # lanzaderas: base, mej
     for k, box, w in [(1, (70, 230, 500, 700), 34), (2, (600, 180, 1190, 700), 46), (3, (1290, 60, 2075, 700), 60)]:
         add(f'space:lanzadera{k}', shrink(box_parts('lanzadoras.png', box), w, 40))
 if os.path.exists(os.path.join(SRC, 'cohetes.png')):  # cohetes (a la misma escala, ~0,07) y sus piezas sueltas para separar las fases
-    R = [('a', (45, 240, 250, 640), 18), ('b', (255, 170, 480, 640), 19), ('c', (530, 145, 715, 640), 16), ('d', (1000, 130, 1205, 645), 18), ('e', (1500, 100, 1740, 645), 20)]  # (las fases se recortan en el juego del cohete entero)
+    R = [('a', (45, 240, 250, 640), 16), ('b', (255, 170, 480, 640), 17), ('c', (530, 145, 715, 640), 14), ('d', (1000, 130, 1205, 645), 16), ('e', (1500, 100, 1740, 645), 18)]  # (las fases se recortan en el juego del cohete entero)
     for k, box, w in R: add(f'rocket:{k}', shrink(box_parts('cohetes.png', box), w, 40))
 if os.path.exists(os.path.join(SRC, 'siloMisiles.png')):  # silo de misiles: 12 fotogramas (se abre y se cierra)
     xs = [(15, 280), (310, 575), (605, 870), (900, 1165), (1195, 1460), (1490, 1760)]

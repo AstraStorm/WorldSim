@@ -632,7 +632,7 @@ function composeRegion(x0, y0, x1, y1){
     const objs = world.objs;
     // Los objetos se dibujan fila a fila: los de abajo tapan a los de arriba
     for (let ty = Math.max(0, y0 - 1); ty <= Math.min(H - 1, y1 + 16); ty++)
-      for (let tx = Math.max(0, x0 - 8); tx <= Math.min(W - 1, x1 + 8); tx++) {
+      for (let tx = Math.max(0, x0 - 14); tx <= Math.min(W - 1, x1 + 14); tx++) { // (14: lo más ancho, el aeródromo, sobresale 13 casillas de su punto)
         const wi = ty * W + tx; if (typeof wallSet !== 'undefined' && (wallSet.has(wi) || gateSet.has(wi))) { const keep = vctx; vctx = wctx; try { (gateSet.has(wi) ? paintGateTile : paintWallTile)(wi); } finally { vctx = keep; } } // la muralla, en su fila (defensa.js)
         const o = objs[wi]; if (!o) continue;
         const s = objSprite(o), cx = tx * T + 2 + o.ox, by = ty * T + 3 + o.oy;

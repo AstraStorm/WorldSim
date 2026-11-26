@@ -110,3 +110,18 @@ function drawCastles(now){
 }
 
 { const base = drawCamps; drawCamps = function(t){ base.apply(this, arguments); if (castleQ.length || liveQ.length) { campQueue.push(...castleQ, ...liveQ); campQueue.sort((a, b) => a.y - b.y); } }; }
+// La planta de cada edificio (la parte de abajo de su dibujo, donde se apoya) no se pisa: la gente la rodea en vez de
+// colarse por detrás de la fachada (con las torres del castillo incluidas). Los caminos siempre se pueden pisar
+let footG = null, footSig = '', footT = -1;
+function footGrid(){
+  if (footT === yearT && footG) return footG; footT = yearT;
+  const B = allBuildings(), sig = B.length + ':' + B.reduce((a, b) => (a + b * 31) % 1e9, 0) + ':' + villages.filter(g => g.castle).length;
+  if (footG && sig === footSig) return footG; footSig = sig;
+  const F = footG && footG.length === N ? footG.fill(0) : (footG = new Uint8Array(N));
+  for (const b of B) { const o = world.objs[b]; if (!o || /^(pylon|wind|tele):/.test(o.key)) continue; const s = objSprite(o); if (!s) continue;
+    const bx = b % W, by = (b / W) | 0, left = bx * T + 2 + (o.ox || 0) - (s.ax || 0), hall = villages.find(g => g.castle && g.hall === b), ext = hall ? 11 : 0;
+    const x0 = Math.ceil((left - ext + 3) / T), x1 = Math.floor((left + s.width + ext - 3) / T), y0 = by - Math.max(1, Math.floor(s.height * .45 / T));
+    for (let y = Math.max(0, y0); y <= by; y++) for (let x = Math.max(0, x0); x <= Math.min(W - 1, x1); x++) F[y * W + x] = 1; }
+  return F;
+}
+const footAt = i => footGrid()[i] === 1 && !pathMap.has(i);

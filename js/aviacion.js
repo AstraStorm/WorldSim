@@ -47,10 +47,11 @@ function farSite(g, hw, hh){ // (alrededor de la ciudad y, si no cabe, de las de
 // Como clearable, pero las piedras sueltas también se pueden quitar (para lo grande: aeródromo, lanzadera, silos...)
 function clearableRocks(x0, y0, x1, y1){
   if (x0 < 0 || y0 < 0 || x1 >= W || y1 >= H) return false;
-  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const i = y * W + x, b = world.biome[i], o = world.objs[i]; if (WATER[b] || b === B.LAVA || bridgeSet.has(i) || isFlooded(i)) return false; if (o && !['tree', 'berry', 'stone'].includes(OBJ[o.key][1])) return false; }
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const i = y * W + x, b = world.biome[i], o = world.objs[i]; if (WATER[b] || b === B.LAVA || bridgeSet.has(i) || isFlooded(i)) return false; if (o && !['tree', 'berry', 'stone'].includes(OBJ[o.key][1]) && !o.key.startsWith('pylon:')) return false; } // (las torres de la luz se apartan: la red se rehace por fuera)
   return true;
 }
-function clearRocks(x0, y0, x1, y1){ for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const i = y * W + x, o = world.objs[i]; if (o && ['tree', 'berry', 'stone'].includes(OBJ[o.key][1])) delete world.objs[i]; } }
+function clearRocks(x0, y0, x1, y1){ let grid = false; for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const i = y * W + x, o = world.objs[i]; if (o && o.key.startsWith('pylon:')) { delete world.objs[i]; grid = true; } else if (o && ['tree', 'berry', 'stone'].includes(OBJ[o.key][1])) delete world.objs[i]; }
+  if (grid) for (const g of villages) if ((g.pylons || []).some(p => !world.objs[p.i])) g.gridV = 0; } // (la red de ese pueblo se vuelve a tender, rodeando lo nuevo)
 // Las instalaciones grandes de todas las ciudades (aeródromo, lanzadera, central, refinería, silos, parque de renovables):
 // una nueva no puede pisar ninguna (con 2 casillas de margen)
 function bigClash(x, y, hw, hh){

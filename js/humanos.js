@@ -128,7 +128,8 @@ function routeTo(v, goal){
   if (far > lim) { const k = lim * .8 / far; gx = Math.round(sx + (gx - sx) * k); gy = Math.round(sy + (gy - sy) * k); goal = gy * W + gx; partial = true; }
   if (!rtG || rtG.length !== N) { rtG = new Float32Array(N); rtP = new Int32Array(N); rtS = new Uint32Array(N); rtC = new Uint32Array(N); rtStamp = 0; }
   const st = ++rtStamp, swim = v.swims !== false && !v.mount, burning = fires.size > 0;
-  const cost = i => { const c = tileCost(i % W, (i / W) | 0); if (burning && fires.has(i)) return Infinity; return c > 1 ? (swim ? c * 3 : Infinity) : c; };
+  // (no se cuela por la planta de los edificios, salvo para entrar en el de su destino)
+  const cost = i => { const c = tileCost(i % W, (i / W) | 0); if (burning && fires.has(i)) return Infinity; if (footAt(i) && Math.max(Math.abs(i % W - gx), Math.abs(((i / W) | 0) - gy)) > 3 && Math.max(Math.abs(i % W - sx), Math.abs(((i / W) | 0) - sy)) > 1) return Infinity; return c > 1 ? (swim ? c * 3 : Infinity) : c; };
   const hf = rtHF, hi = rtHI; hf.length = 0; hi.length = 0;
   const push = (f, i) => { let k = hf.length; hf.push(f); hi.push(i); while (k) { const q = (k - 1) >> 1; if (hf[q] <= f) break; hf[k] = hf[q]; hi[k] = hi[q]; k = q; } hf[k] = f; hi[k] = i; };
   const pop = () => { const top = hi[0], lf = hf.pop(), li = hi.pop(), n = hf.length; if (n) { let k = 0; for (;;) { const l = 2 * k + 1, r = l + 1; let m = -1, mf = lf; if (l < n && hf[l] < mf) { m = l; mf = hf[l]; } if (r < n && hf[r] < mf) { m = r; mf = hf[r]; } if (m < 0) break; hf[k] = hf[m]; hi[k] = hi[m]; k = m; } hf[k] = lf; hi[k] = li; } return top; };
@@ -225,6 +226,7 @@ function vGo(v, x, y, dt, run){
     if (pass === 0 && pref && o * pref < 0) continue;
     const a = base + o, nx = v.x + Math.cos(a) * sp, ny = v.y + Math.sin(a) * sp;
     if (!walkable(nx, ny) || ((pass < 2 || v.swims === false || v.mount) && !swim && inWater(nx, ny))) continue; // quien no sabe nadar no se mete
+    if (pass < 2 && footAt(tileOfXY(nx, ny)) && !footAt(tileOfXY(v.x, v.y)) && Math.hypot(nx - x, ny - y) > T * 3) continue; // ni se mete por la planta de un edificio (salvo el de su destino)
     { const cx = Math.floor(v.x / T), cy = Math.floor(v.y / T), qx = Math.floor(nx / T), qy = Math.floor(ny / T); if (qx !== cx && qy !== cy && tileCost(qx, cy) === Infinity && tileCost(cx, qy) === Infinity) continue; } // sin colarse en diagonal entre dos tramos de muralla (o dos muros) que se tocan por la esquina
     v.x = nx; v.y = ny; moved = true;
     if (o) { v.side = Math.sign(o); v.sideT = 1.2; }
