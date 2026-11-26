@@ -250,7 +250,7 @@ function linkRoute(g, start, net, C){
     if (URB_NET(i)) return wallSet.has(i) ? Infinity : .3;
     if (WATER[world.biome[i]] || world.biome[i] === B.LAVA || wallSet.has(i)) return Infinity;
     const o = world.objs[i]; if (o && !['tree', 'berry'].includes(OBJ[o.key][1])) return Infinity;
-    if (underBuilding(g, x, y) || C.pen.has(i)) return Infinity; // ni por debajo de un edificio ni cruzando un cercado
+    if (underBuilding(g, x, y) || C.pen.has(i) || inCemetery(x, y)) return Infinity; // (ni por el cementerio) // ni por debajo de un edificio ni cruzando un cercado
     return (o ? 4 : 1) + (farmMap.has(i) ? 6 : 0) + (plotIn(x, y, x, y) ? 20 : 0);
   };
   const push = (f, i) => { heap.push([f, i]); let k = heap.length - 1; while (k) { const p = (k - 1) >> 1; if (heap[p][0] <= heap[k][0]) break; [heap[p], heap[k]] = [heap[k], heap[p]]; k = p; } };

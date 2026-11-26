@@ -1571,6 +1571,7 @@ function diploTick(){
     const a = live[i], b = live[j], r = relOf(a, b), dist = Math.hypot(a.fx - b.fx, a.fy - b.fy);
     if (sameNation(a, b)) { r.known = true; r.v = 80; r.war = null; continue; }
     if (r.route) routeTick(a, b, r); // la ruta comercial: negocio, o se corta (rutas.js)
+    if (r.war && !r.war.civil && yearT - r.war.start > DAY_LEN * 2 && !warReachC(r, a, b) && !warReachC(r, b, a) && !travelers.some(t => t.kind === 'flota' && (t.from === a.id || t.from === b.id))) { makePeace(a, b, r, 'porque ninguno de los dos puede llegar hasta el otro'); continue; } // (una guerra que no se puede librar)
     // Anexión pacífica: aliados, con la misma fe, y uno mucho más pequeño que el otro
     if (r.known && !r.war && r.v >= 60 && a.faith && b.faith && a.faith.god === b.faith.god && Math.random() < .08) {
       const big = popOf(a) >= popOf(b) ? a : b, small = big === a ? b : a;
@@ -1609,7 +1610,9 @@ function diploTick(){
     const warsOf = g => { let n = 0; for (const o of rels.values()) if (o.war && (o.war.att === g.id || o.war.def === g.id)) n++; return n; };
     if (!r.war && r.v < warAt && !(hasTreaty(r, 'fronteras') && (r.reason || 'territorio') === 'territorio' && r.v > -85) && (!(hasTreaty(r, 'noagresion') || hasTreaty(r, 'paz')) || r.v < -85) && warsOf(a) + warsOf(b) === 0 && popOf(a) >= 28 && popOf(b) >= 28 && yearT > DAY_LEN * 12 && yearT - (r.peaceT ?? -1e9) > DAY_LEN * 8) { // tras una paz, una tregua larga
       const armed = g => villagers.filter(v => !v.dead && v.vid === g.id && v.weapon).length;
-      const att = armed(a) + popOf(a) * .3 >= armed(b) + popOf(b) * .3 ? a : b, def = att === a ? b : a;
+      let att = armed(a) + popOf(a) * .3 >= armed(b) + popOf(b) * .3 ? a : b, def = att === a ? b : a;
+      if (!warReachC(r, att, def)) { if (warReachC(r, def, att)) [att, def] = [def, att]; } // (ataca el que puede llegar)
+      if (warReachC(r, att, def)) {
       r.war = { att:att.id, def:def.id, reason:r.reason || 'territorio', start:yearT, raidT:yearT - 40, dead:0 }; breakTreaties(att, def, r); mutualDefense(att, def); warCamp(att, def, r); // (tratados.js, guerra.js)
       att.danger = def.danger = 120;
       const sol = g0 => villagers.filter(v => !v.dead && v.vid === g0.id && v.weapon).length;
@@ -1618,7 +1621,7 @@ function diploTick(){
       if (r.war.reason === 'religión') notify(`¡Es una guerra santa! ${att.name} quiere imponer ${godTxt(att.faith)} a ${def.name}`, { x:def.fx * T, y:def.fy * T });
       callAllies(nationOf(att), nationOf(def));
       misfortune(def, 'guerra');
-    }
+    } }
     if (r.war) {
       const att = villageById(r.war.att), def = villageById(r.war.def);
       if (!att || !def || !popOf(att) || !popOf(def)) { r.war = null; continue; }
@@ -2122,10 +2125,10 @@ const LAW_DESC = { aranceles:'las mercancías de otras naciones pagan una parte 
 const LAW_LEAN = { aranceles:.4, autonomia:-.2, pensiones:-.5, fortificacion:.35, derecho_huelga:-.45, prohibir_huelgas:.6, lengua_unica:.55, plurilinguismo:-.4, reforma_lengua:-.25, pureza_lengua:.45, vivienda_publica:-.6, tope_alquiler:-.45, mercado_vivienda:.55, libertad_religiosa:-.35, persecucion_religiosa:.75, derechos_humanos:-.45, matrimonio_igualitario:-.5, segregacion:.7, persecucion:.8, cuarentena:.1, fronteras_abiertas:-.35, fronteras_cerradas:.45, salario_minimo:-.55, reparto:-.7, jornada_corta:-.6, sanidad:-.5, impuestos_altos:-.5, educacion:-.4, paz:-.35, bosques:-.3, laicidad:-.3, obras:-.15, comercio:.45, fe:.4, natalidad:.3, jornada_larga:.5, impuestos_bajos:.55, ejercito:.6, orden:.6, expansion:.7 };
 const LAW_CLASH = [['derecho_huelga', 'prohibir_huelgas'], ['lengua_unica', 'plurilinguismo'], ['reforma_lengua', 'pureza_lengua'], ['vivienda_publica', 'mercado_vivienda'], ['tope_alquiler', 'mercado_vivienda'], ['libertad_religiosa', 'persecucion_religiosa'], ['laicidad', 'persecucion_religiosa'], ['derechos_humanos', 'segregacion'], ['matrimonio_igualitario', 'persecucion'], ['fronteras_abiertas', 'fronteras_cerradas'], ['salario_minimo', 'impuestos_bajos'], ['jornada_corta', 'jornada_larga'], ['impuestos_altos', 'impuestos_bajos'], ['fe', 'laicidad'], ['paz', 'expansion']];
 // Programa de un partido: 3 o 4 leyes cercanas a sus ideas, con algo de sorpresa (dos partidos del mismo lado no proponen lo mismo)
-function partyProgram(ideo, n = 3 + (Math.random() < .5 ? 1 : 0), keep = []){
+function partyProgram(ideo, n = 3 + (Math.random() < .5 ? 1 : 0), keep = [], g = null){ // (con g: solo leyes que tienen sentido ahí, leyes.js lawAwake)
   const laws = [...keep];
   while (laws.length < n) {
-    const opts = Object.entries(LAW_LEAN).filter(([l]) => !laws.includes(l) && !LAW_CLASH.some(([a, b]) => (l === a && laws.includes(b)) || (l === b && laws.includes(a))));
+    const opts = Object.entries(LAW_LEAN).filter(([l]) => !laws.includes(l) && !(g && typeof lawAwake === 'function' && !lawAwake(g, l)) && !LAW_CLASH.some(([a, b]) => (l === a && laws.includes(b)) || (l === b && laws.includes(a))));
     if (!opts.length) break;
     const w = opts.map(([, lean]) => Math.exp(-((lean - ideo) ** 2) / .14) + .008);
     let k = Math.random() * w.reduce((a, b) => a + b, 0), pick = opts[0][0];
@@ -2166,7 +2169,7 @@ function makeParties(g){
   for (const side of Math.random() < .5 ? ['izq', 'centro', 'der'] : ['izq', 'der']) {
     const { name, abbr } = partyName(side, g, used); // nombres como los de verdad, con siglas
     const ideo = side === 'izq' ? -.4 - Math.random() * .45 : side === 'der' ? .4 + Math.random() * .45 : (Math.random() - .5) * .3;
-    const laws = partyProgram(ideo, undefined, name.includes('Fe') ? ['fe'] : []);
+    const laws = partyProgram(ideo, undefined, name.includes('Fe') ? ['fe'] : [], g);
     parties.push({ name, abbr, kind:side, ideo, laws, col:side === 'izq' ? '#d8483a' : side === 'der' ? '#3a6ab8' : '#e8b848' });
   }
   g.parties = parties;
@@ -2229,7 +2232,7 @@ function countVotes(cap){
   const avgIdeo = voters.reduce((a, u) => a + (u.ideo || 0), 0) / Math.max(1, voters.length);
   for (const [k, q] of ps.entries()) if (k !== win && Math.random() < .6 && q.laws.length) {
     const nOut = Math.random() < .35 ? 2 : 1, outs = [...q.laws].sort(() => Math.random() - .5).slice(0, nOut), keep = q.laws.filter(l => !outs.includes(l));
-    const nl = partyProgram(q.ideo + (avgIdeo - q.ideo) * .3 + (Math.random() - .5) * .2, q.laws.length, keep), added = nl.filter(l => !q.laws.includes(l));
+    const nl = partyProgram(q.ideo + (avgIdeo - q.ideo) * .3 + (Math.random() - .5) * .2, q.laws.length, keep.filter(l => typeof lawAwake !== 'function' || lawAwake(cap, l)), cap), added = nl.filter(l => !q.laws.includes(l));
     if (added.length) { q.laws = nl; const txt = `Tras perder en ${cap.name}, ${artP(q)} ${q.name} renueva su programa: deja ${outs.map(l => `«${LAW_TXT[l]}»`).join(' y ')} y propone ${added.map(l => `«${LAW_TXT[l]}»`).join(' y ')}`; lawLog(cap, txt); setTimeout(() => notify(txt, { x:cap.fx * T, y:cap.fy * T }), 600); }
   }
   // El líder: alguien de la capital con ideas parecidas a las del partido
@@ -2655,12 +2658,42 @@ function allyCheck(a, b, r){
     }
   }
 }
+// ¿Puede att llevar la guerra hasta def? Por tierra, si no están demasiado lejos para ir andando (más con caballos,
+// tren o aviones) y no hay mar en medio; por mar, con muelle y una ruta que tengan en el mapa (como launchNavalRaid).
+// Sin esto había guerras entre pueblos que nunca llegaban a encontrarse
+// Camino por tierra (ríos y lagos poco hondos a nado, como los soldados; rodeando bosques, rocas y murallas, por las
+// puertas) de un pueblo a las afueras del otro, de como mucho maxLen pasos
+let lrSeen = null, lrQ = null, lrStamp = 0;
+function landReach(a, b, maxLen){
+  if (!lrSeen || lrSeen.length !== N) { lrSeen = new Uint32Array(N); lrQ = new Int32Array(N); lrStamp = 0; }
+  const st = ++lrStamp, s0 = Math.round(a.fy + 3) * W + Math.round(a.fx), bx = b.fx, by = b.fy;
+  let h = 0, t = 0; lrQ[t++] = s0; lrSeen[s0] = st;
+  let layerEnd = t, depth = 0; // (búsqueda por capas: cada capa, un paso más lejos)
+  while (h < t) {
+    if (h === layerEnd) { depth++; layerEnd = t; if (depth > maxLen) return false; }
+    const i = lrQ[h++], x = i % W, y = (i / W) | 0;
+    if (Math.abs(x - bx) <= 9 && Math.abs(y - by) <= 9) return true;
+    for (const j of [i - 1, i + 1, i - W, i + W]) { if (lrSeen[j] === st) continue; const jx = j % W, jy = (j / W) | 0; if (jx < 1 || jy < 1 || jx >= W - 1 || jy >= H - 1) continue; lrSeen[j] = st; const c = tileCost(jx, jy); if (c === Infinity && !(Math.abs(jx - bx) <= 9 && Math.abs(jy - by) <= 9)) continue; lrQ[t++] = j; }
+  }
+  return false;
+}
+function warReach(att, def){
+  const d = Math.hypot(att.fx - def.fx, att.fy - def.fy), kn = att.know || {};
+  const landMax = 100 + (kn.montar ? 50 : 0) + (knowsSci(att, 'ferrocarril') ? 80 : 0) + (knowsSci(att, 'aviacion') ? 120 : 0);
+  if (d <= landMax && landReach(att, def, landMax * 1.5)) return true;
+  if (!att.port || !openWater(att.port.launch)) return false;
+  const L = landingOf(def); if (!L) return false;
+  const route = waterRoute(att.port.launch, pxTile(L.water));
+  return !!route && route.length > 0 && route.length <= 120 && seaRouteKnown(att, route);
+}
+const warReachC = (r, att, def) => { const k = att.id + '>' + def.id; r.reachC ||= {}; const c = r.reachC[k]; if (c && yearT - c.t < DAY_LEN / 2 && yearT >= c.t) return c.ok; const ok = warReach(att, def); r.reachC[k] = { t:yearT, ok }; return ok; };
 // Si atacan a un miembro, los demás entran en la guerra
 function callAllies(att, def){
   const al = allianceOf(def); if (!al || allianceOf(att) === al) return;
   for (const id of al.members) {
     const m = villageById(id); if (!m || m === nationOf(def) || !popOf(m) || sameNation(m, att)) continue;
     const r = relOf(m, att); if (r.war) continue;
+    if (!warReachC(r, m, att) && !warReachC(r, att, m)) continue; // (un aliado que no puede ni llegar no entra en la guerra)
     r.known = true; r.v = Math.min(r.v, -60); r.reason = 'alianza'; r.war = { att:m.id, def:att.id, reason:'alianza', start:yearT, raidT:yearT - 40, dead:0 };
     notify(`${m.name} entra en la guerra contra ${att.name} para defender a ${def.name} (${al.abbr})`, { x:m.fx * T, y:m.fy * T });
   }
@@ -3204,7 +3237,8 @@ function updateVillages(dt){
     // Un pueblo grande con gobierno acuña su moneda aunque apenas comercie (y desde entonces se pagan sueldos)
     if (!g.coin && ((g.hall != null && people.length >= 12) || people.length >= 22 || g.market != null) && Math.random() < dt * .012) { g.coin = coinName(); notify(`En ${g.name} el gobierno acuña su propia moneda, el ${g.coin}: desde ahora el trabajo se paga con sueldo`, { x:g.fx * T, y:g.fy * T }); }
     // Un cementerio encima de una plaza sagrada (partidas de antes): se traslada (se vuelve a hacer en otro sitio)
-    const cm = g.cemetery; if (cm && villages.some(o => o.holy && !(cm.x0 + cm.w - 1 < o.holy.x0 || cm.x0 > o.holy.x1 || cm.y0 + cm.h - 1 < o.holy.y0 || cm.y0 > o.holy.y1))) { g.cemetery = null; notify(`En ${g.name} trasladan el cementerio fuera de la plaza sagrada`, { x:(cm.x0 + cm.w / 2) * T, y:(cm.y0 + cm.h / 2) * T }); }
+    const cm = g.cemetery; if (cm && villages.some(o => o.holy && !(cm.x0 + cm.w - 1 < o.holy.x0 || cm.x0 > o.holy.x1 || cm.y0 + cm.h - 1 < o.holy.y0 || cm.y0 > o.holy.y1))) { g.cemMoved = [...cm.graves.values()]; g.cemetery = null; notify(`En ${g.name} trasladan el cementerio fuera de la plaza sagrada`, { x:(cm.x0 + cm.w / 2) * T, y:(cm.y0 + cm.h / 2) * T }); }
+    else if (cm && Math.random() < dt * .05) cemeteryTidy(g, cm);
     { const pump = knowsSci(g, 'vapor') ? 1.6 : 1; for (const w of wellsOf(g)) w.q = Math.min(1, w.q + (raining(w.i) ? .04 : .009 * pump) * dt); } // con la lluvia se llenan; sin ella, poco a poco (más rápido con la bomba de la máquina de vapor)
     for (const ti of towersOf(g)) {
       const o = world.objs[ti], tx = (ti % W) * T + 2, ty = ((ti / W) | 0) * T - 28;
@@ -3421,6 +3455,18 @@ function snowCap(s){
     if ((px * 7 + py) % 3 === 0) { x.fillStyle = '#dfe6ee'; x.fillRect(px, py + 2, 1, 1); }
   }
   snowCapCache.set(s, c); return c;
+}
+// El cementerio es suyo: las calles y senderos que lo cruzan se quitan (menos la entrada, abajo en medio); si encima
+// ha quedado una plaza o un edificio, se traslada con sus tumbas a otro sitio
+const cemGate = cm => (cm.y0 + cm.h - 1) * W + cm.x0 + (cm.w >> 1);
+const inCemetery = (x, y) => villages.some(o => { const c = o.cemetery; return c && x >= c.x0 && x < c.x0 + c.w && y >= c.y0 && y < c.y0 + c.h && y * W + x !== cemGate(c); });
+function cemeteryTidy(g, cm){
+  let plaza = 0, built = 0;
+  for (let y = cm.y0; y < cm.y0 + cm.h; y++) for (let x = cm.x0; x < cm.x0 + cm.w; x++) {
+    const i = y * W + x; if (plazaSet.has(i)) plaza++; if (villages.some(o => underBuilding(o, x, y))) built++;
+    if (i !== cemGate(cm) && pathMap.has(i) && !bridgeSet.has(i) && !plazaSet.has(i)) { pathMap.delete(i); desireSet.delete(i); wornSet.delete(i); if (wear) wear[i] = 0; }
+  }
+  if (plaza > 2 || built > cm.w * cm.h * .25) { g.cemMoved = [...cm.graves.values()]; g.cemetery = null; notify(`En ${g.name} trasladan el cementerio: el pueblo ha crecido encima`, { x:(cm.x0 + cm.w / 2) * T, y:(cm.y0 + cm.h / 2) * T }); }
 }
 function drawCemeteries(){
   const [x0, y0, x1, y1] = visibleRect();

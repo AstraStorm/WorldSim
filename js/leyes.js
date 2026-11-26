@@ -61,6 +61,22 @@ const LAW_REQ = {
   autonomia:g => villages.filter(o => popOf(o) && nationOf(o) === nationOf(g)).length > 1,
   lengua_unica:g => natLangs(g) > 1, plurilinguismo:g => natLangs(g) > 1, reforma_lengua:g => natAny(g, o => (o.know || {}).escritura), pureza_lengua:g => natAny(g, o => (o.know || {}).escritura),
 };
+// Las demás leyes, también solo cuando existe aquello de lo que hablan (antes se votaban papeles, alquileres u okupas
+// en aldeas que no tenían ni moneda ni casas en alquiler)
+const otherNations = g => villages.some(o => popOf(o) && nationOf(o) !== nationOf(g) && (rels.get(relKey(nationOf(g), nationOf(o))) || {}).known); // ¿tratan con otra nación?
+const faiths = g => { const s = new Set(); for (const o of villages) if (popOf(o) && nationOf(o) === nationOf(g) && o.faith) s.add(o.faith.god); for (const u of villagers) if (!u.dead && u.creed && villageById(u.vid) && nationOf(villageById(u.vid)) === nationOf(g)) s.add(u.creed.god); return s.size; };
+Object.assign(LAW_REQ, {
+  fortificacion:g => natAny(g, o => hasBarracks(o) || (o.wallPlan || []).length > 0), obras:g => natAny(g, o => o.hall != null), estatal:g => natAny(g, o => !!o.coin),
+  comercio:g => otherNations(g), paz:g => otherNations(g), fronteras_abiertas:g => otherNations(g), fronteras_cerradas:g => otherNations(g),
+  ejercito:g => natAny(g, o => hasBarracks(o) || popOf(o) >= 20), expansion:g => natAny(g, o => popOf(o) >= 20),
+  jornada_corta:g => natAny(g, o => !!o.coin), jornada_larga:g => natAny(g, o => !!o.coin), mas_festivos:g => natAny(g, o => !!o.coin),
+  fe:g => faiths(g) > 0, laicidad:g => faiths(g) > 0, libertad_religiosa:g => faiths(g) > 1, persecucion_religiosa:g => faiths(g) > 1,
+  control_fronteras:g => knowsSci(g, 'registro_civil') && otherNations(g), deportaciones:g => knowsSci(g, 'registro_civil') && otherNations(g), regularizacion:g => knowsSci(g, 'registro_civil') && otherNations(g),
+  trabajos_forzados:g => natAny(g, o => hasInst(o, 'carcel')), campos_internamiento:g => natAny(g, o => hasInst(o, 'carcel')) && otherNations(g),
+  contratos_alquiler:g => natAny(g, housingOn), proteger_okupas:g => natAny(g, housingOn), desalojo_okupas:g => natAny(g, housingOn),
+  derechos_humanos:g => natAny(g, o => (o.know || {}).escritura), proteccion_infancia:g => natAny(g, o => (o.know || {}).escritura), segregacion:g => natAny(g, o => popOf(o) >= 12),
+  toque_queda:g => natAny(g, o => popOf(o) >= 15), orden:g => natAny(g, o => popOf(o) >= 15),
+});
 function natLangs(g){ const s = new Set(); for (const u of villagers) if (!u.dead && villageById(u.vid) && nationOf(villageById(u.vid)) === nationOf(g) && u.lang != null) s.add(u.lang); return s.size; }
 // Caché por nación (cada 5 s de juego): qué leyes tienen sentido ahí
 const lawFitC = new Map();

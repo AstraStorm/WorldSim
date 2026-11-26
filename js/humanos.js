@@ -1038,6 +1038,7 @@ function runTask(v, g, dt){
       for (let y = r.y0 + 1; y < r.y0 + r.h - 1; y += 2) for (let x = r.x0 + 1; x < r.x0 + r.w - 1; x += 2) slots.push(y * W + x);
       clearSite(g, r.x0, r.y0, r.x0 + r.w - 1, r.y0 + r.h - 1);
       g.cemetery = { ...r, slots, graves:new Map() }; connect(g, r.x0 + (r.w >> 1), r.y0 + r.h - 1);
+      if (g.cemMoved) { g.cemMoved.forEach((gr, k) => { if (slots[k] != null) g.cemetery.graves.set(slots[k], gr); }); g.cemMoved = null; } // (las tumbas del cementerio trasladado)
       notify(`En ${g.name} preparan un cementerio para enterrar a los suyos`, { x:(r.x0 + r.w / 2) * T, y:(r.y0 + r.h / 2) * T });
     }; break;
     case 'arboleda': case 'bayal': v.actT = 3; v.onDone = () => {
