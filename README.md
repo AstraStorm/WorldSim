@@ -129,6 +129,7 @@ Sin dependencias ni compilación: cada archivo es un script normal y se cargan e
 | `js/susurros.js` | Susurrar ideas: desde la ficha de un aldeano le metes una idea; se contagia boca a boca y entre pueblos y, si cala (30 % de un pueblo), pasa algo (tensión o guerra, paz, caravanas, protestas, ritual, leyes). Panel «Ideas en marcha» |
 | `js/mitines.js` | Cada partido tiene su líder; en campaña dan mítines en los barrios (estrado, banderas, programa a gritos) que reafirman a los suyos y convencen a indecisos |
 | `js/parlamento.js` | Elecciones una vez al año, escaños por D'Hondt, hemiciclo en la ficha y mociones de censura entre elecciones |
+| `js/cortes.js` | Leyes votadas en las Cortes (debate de los líderes, votos por escaños y pactos), referéndums para leyes y régimen, y partidos que nacen o se fusionan |
 | `js/eras.js` | Las eras del mundo (Antigüedad, Hierro, Pólvora, Revolución Industrial, Eléctrica, Aire, Espacial, Digital): pantalla al empezar cada una |
 | `js/gobierno.js` | Menú de inicio con dos modos: modo dios o «Gobierna una nación» (fundas tu tribu en el mapa y decides régimen, leyes, impuestos, prioridades de trabajo, obras, ciencia, guerra, paz, diplomáticos, regalos, embargos y colonias; la gente puede enfadarse y protestar) |
 | `js/ui.js` | Pestañas del panel y de la barra de abajo, y el resumen del mundo |

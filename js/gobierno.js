@@ -47,18 +47,18 @@ function lawSupport(g, l){
 }
 let lawSupC = new Map();
 const lawSup = (g, l) => { const c = lawSupC.get(l); if (c && yearT - c.t < 15 && yearT >= c.t) return c.v; const v = lawSupport(g, l); lawSupC.set(l, { t:yearT, v }); return v; };
-function setPlayerLaw(l, on){
+function setPlayerLaw(l, on, how = 'por decisión del gobierno', angerK = 1){
   const n = playerNat(); if (!n) return; const L = n.pLaws ||= [];
   if (on === L.includes(l)) return;
   const sup = lawSup(n, l), at = { x:n.fx * T, y:n.fy * T };
   if (on) { const o = lawOpp(l); if (o && L.includes(o)) L.splice(L.indexOf(o), 1); L.push(l); } else L.splice(L.indexOf(l), 1);
   n.pIdeo = L.length ? clamp(L.reduce((a, k) => a + (LAW_LEAN[k] || 0), 0) / Math.max(2, L.length) * 1.4, -1, 1) : 0;
   lawSupC.clear();
-  const pct = Math.round((on ? sup : 1 - sup) * 100), txt = `En ${n.name} ${on ? 'se aprueba' : 'se deroga'} la ley de «${LAW_TXT[l] || l}» por decisión del gobierno (la apoya${on ? '' : 'ba'} el ${Math.round(sup * 100)} % de la gente)`;
+  const pct = Math.round((on ? sup : 1 - sup) * 100), txt = `En ${n.name} ${on ? 'se aprueba' : 'se deroga'} la ley de «${LAW_TXT[l] || l}» ${how} (la apoya${on ? '' : 'ba'} el ${Math.round(sup * 100)} % de la gente)`;
   lawLog(n, txt); notify(txt, at);
   // Lo que la mayoría no quiere, enfada; lo que pide, calma
   for (const g of playerTowns()) {
-    if (pct < 35) { g.anger = Math.min(100, (g.anger || 0) + (35 - pct) * .6); if ((g.anger || 0) > 20) g.grief = 'imposicion'; }
+    if (pct < 35) { g.anger = Math.min(100, (g.anger || 0) + (35 - pct) * .6 * angerK); if ((g.anger || 0) > 20 && angerK >= 1) g.grief = 'imposicion'; }
     else if (pct > 60) g.anger = Math.max(0, (g.anger || 0) - 6);
   }
 }
@@ -234,21 +234,21 @@ function regSupport(reg){
   const free = ['republica', 'democracia', 'monarquia_parlamentaria', 'partitocracia'].includes(reg), I = REGIME_IDEO[reg] ?? 0;
   return ads.filter(u => free ? Math.abs(u.ideo || 0) < .75 : reg === 'tribu' ? true : Math.abs((u.ideo || 0) - I) < .45).length / ads.length;
 }
-function setPlayerRegime(reg){
-  const n = playerNat(), P = world.player; if (!n || regimeOf(n) === reg || regNeed(n, reg) || (P.regT || -1e9) > yearT) return;
+function setPlayerRegime(reg, how = 'por decisión del gobierno', angerK = 1, force = false){
+  const n = playerNat(), P = world.player; if (!n || regimeOf(n) === reg || regNeed(n, reg) || (!force && (P.regT || -1e9) > yearT)) return;
   const sup = regSupport(reg);
   setRegime(n, reg, n.leader && !n.leader.dead ? n.leader : null); P.regT = yearT + DAY_LEN * 3;
-  const txt = `${n.name} cambia de régimen por decisión del gobierno: ahora es ${REGIME_A[reg]} (lo apoya el ${Math.round(sup * 100)} % de la gente)`; notify(txt, { x:n.fx * T, y:n.fy * T }); lawLog(n, txt);
-  for (const g of playerTowns()) { g.anger = Math.min(100, (g.anger || 0) + (1 - sup) * 45); if (sup < .4) g.grief = 'imposicion'; }
+  const txt = `${n.name} cambia de régimen ${how}: ahora es ${REGIME_A[reg]} (lo apoya el ${Math.round(sup * 100)} % de la gente)`; notify(txt, { x:n.fx * T, y:n.fy * T }); lawLog(n, txt);
+  for (const g of playerTowns()) { g.anger = Math.min(100, (g.anger || 0) + (1 - sup) * 45 * angerK); if (sup < .4 && angerK >= 1) g.grief = 'imposicion'; }
 }
 function govRegime(n){
   const cur = regimeOf(n), P = world.player, cd = (P.regT || -1e9) > yearT;
   return `<div class="gv-head">${flagOf(n)}<div><h3>${esc(REGIMES[cur] || cur)}</h3><span class="muted">${esc(REG_DESC[cur] || '')}</span></div></div>
     <p class="muted gv-note">Elige cómo se gobierna ${esc(n.name)}. Las leyes las sigues poniendo tú, pero el régimen cambia si hay partidos y elecciones, cómo se reparte el dinero y cómo reacciona la gente. Cambiar a algo que pocos apoyan enfada mucho${cd ? '. Acabáis de cambiar: hay que esperar unos días' : ''}.</p>
-    <div class="gv-regs">${REG_ORDER.filter(r => REGIMES[r]).map(r => { const need = regNeed(n, r), s = regSupport(r), on = r === cur;
+    ${typeof cortesBar === 'function' ? cortesBar(n) : ''}<div class="gv-regs">${REG_ORDER.filter(r => REGIMES[r]).map(r => { const need = regNeed(n, r), s = regSupport(r), on = r === cur;
       return `<div class="gv-reg${on ? ' on' : ''}${need ? ' off' : ''}"><b>${esc(REGIMES[r])}</b><span class="muted">${esc(REG_DESC[r] || '')}</span>
         <div class="gv-sup"><span class="gv-meter sm"><i style="width:${Math.round(s * 100)}%;background:${s > .55 ? '#7ab04a' : s > .35 ? '#d8b848' : '#d8583a'}"></i></span><span>lo apoyaría el ${pctTxt(s)}</span></div>
-        ${on ? '<span class="gv-cur">★ ahora</span>' : need ? `<span class="gv-miss">${esc(need)}</span>` : `<button class="gv-btn gold" data-greg="${r}" ${cd ? 'disabled' : ''}>Cambiar</button>`}</div>`; }).join('')}</div>`;
+        ${on ? '<span class="gv-cur">★ ahora</span>' : need ? `<span class="gv-miss">${esc(need)}</span>` : `<div class="gv-acts"><button class="gv-btn gold" data-greg="${r}" ${cd ? 'disabled' : ''}>Cambiar</button><button class="gv-btn" data-gref="regimen" data-key="${r}" ${P.ref || (P.refT || -1e9) > yearT ? 'disabled' : ''}>🗳 Referéndum</button></div>`}</div>`; }).join('')}</div>`;
 }
 // ---- El menú de inicio ----
 let menuFresh = true; // (al abrir el juego, el mundo recién creado sirve; luego, cada opción crea uno nuevo)
@@ -327,10 +327,10 @@ function govLaws(n){
   const row = l => { const on = L.includes(l), s = lawSup(n, l), lean = LAW_LEAN[l] || 0, opp = lawOpp(l);
     return `<div class="gv-law${on ? ' on' : ''}"><div class="gv-lt"><b>${esc(capFirst(LAW_TXT[l] || l))}</b><span class="gv-lean ${lean < -.15 ? 'l' : lean > .15 ? 'r' : 'c'}">${lean < -.15 ? 'izquierda' : lean > .15 ? 'derecha' : 'de centro'}</span>${opp && L.includes(opp) && !on ? `<span class="muted">· quitaría «${esc(LAW_TXT[opp] || opp)}»</span>` : ''}</div>
       <div class="gv-sup"><span class="gv-meter sm"><i style="width:${Math.round(s * 100)}%;background:${s > .55 ? '#7ab04a' : s > .35 ? '#d8b848' : '#d8583a'}"></i></span><span>la apoya el ${pctTxt(s)}</span></div>
-      <button class="gv-btn${on ? '' : ' gold'}" data-glaw="${l}" data-on="${on ? 0 : 1}" ${!on && L.length >= P_LAWS_MAX ? 'disabled title="Ya tienes demasiadas leyes"' : ''}>${on ? 'Derogar' : 'Aprobar'}</button></div>`; };
+      <div class="gv-acts gv-la">${!on && L.length >= P_LAWS_MAX ? '<span class="gv-miss">ya tienes demasiadas leyes</span>' : typeof lawActions === 'function' ? lawActions(n, l, !on) : `<button class="gv-btn" data-glaw="${l}" data-on="${on ? 0 : 1}">${on ? 'Derogar' : 'Aprobar'}</button>`}</div></div>`; };
   const act = all.filter(l => L.includes(l)), rest = all.filter(l => !L.includes(l)).sort((a, b) => lawSup(n, b) - lawSup(n, a));
   return `<p class="muted gv-note">Tú decides las leyes de ${esc(n.name)} (como mucho ${P_LAWS_MAX}). Aprobar lo que la mayoría rechaza enfada a la gente; lo que pide, la calma. Solo salen las leyes que ya tienen sentido aquí.</p>
-    <h4>En vigor (${act.length})</h4>${act.length ? act.map(row).join('') : '<div class="muted">Ninguna todavía.</div>'}
+    ${typeof cortesBar === 'function' ? cortesBar(n) : ''}<h4>En vigor (${act.length})</h4>${act.length ? act.map(row).join('') : '<div class="muted">Ninguna todavía.</div>'}
     <h4>Se pueden aprobar</h4>${rest.map(row).join('')}`;
 }
 function govEconomy(n){
@@ -391,6 +391,10 @@ function govClick(e){
     if (k === 'colonia') { $('govPanel').hidden = true; foundStart('colonia'); }
     return; }
   const rg = e.target.closest('[data-greg]'); if (rg) { setPlayerRegime(rg.dataset.greg); govRender(true); return; }
+  const cb = e.target.closest('[data-gbill]'); if (cb) { startBill(cb.dataset.gbill, cb.dataset.on === '1'); world.player.neg = null; govRender(true); return; }
+  const cn = e.target.closest('[data-gneg]'); if (cn) { world.player.neg = world.player.neg === cn.dataset.gneg ? null : cn.dataset.gneg; govRender(true); return; }
+  const cp = e.target.closest('[data-gpact]'); if (cp) { makePact(+cp.dataset.gpact, cp.dataset.law, cp.dataset.on === '1'); govRender(true); return; }
+  const cr = e.target.closest('[data-gref]'); if (cr) { startReferendum(cr.dataset.gref, cr.dataset.key, cr.dataset.on !== '0'); govRender(true); return; }
   const l = e.target.closest('[data-glaw]'); if (l) { setPlayerLaw(l.dataset.glaw, l.dataset.on === '1'); govRender(true); return; }
   const x = e.target.closest('[data-gtax]'); if (x) { setPlayerTax(x.dataset.gtax, x.dataset.on === '1'); govRender(true); return; }
   const f = e.target.closest('[data-gfocus]'); if (f) { for (const g of playerTowns()) g.pFocus = f.dataset.gfocus === 'normal' ? null : f.dataset.gfocus; const F = FOCUS[f.dataset.gfocus]; const n = playerNat(); if (n) notify(`${n.name} pone a su gente a trabajar sobre todo en: ${F.txt.toLowerCase()}`, { x:n.fx * T, y:n.fy * T }); govRender(true); return; }
