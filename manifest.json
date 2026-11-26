@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611262319",
- "fecha": "2026-11-26 23:19",
+ "version": "202611262327",
+ "fecha": "2026-11-26 23:27",
  "novedades": [
   {
    "fecha": "2026-11-26",
-   "texto": "Cortes con debates y pactos, referéndums, partidos nuevos y fusiones"
+   "texto": "Radio, televisión, cine y famosos"
+  },
+  {
+   "fecha": "2026-11-26",
+   "texto": "Cortes con debates y pactos, referéndums y partidos que nacen o se fusionan"
   },
   {
    "fecha": "2026-11-26",
@@ -46,22 +50,18 @@
   {
    "fecha": "2026-11-26",
    "texto": "Sed: nadie se queda quieto sin beber"
-  },
-  {
-   "fecha": "2026-11-26",
-   "texto": "Murallas que siguen la orilla y cruzan los ríos con rejas; puertas en tramos verticales; esquinas; mancha de petróleo bajo los edificios"
   }
  ],
  "archivos": {
-  "index.html": "11affda4f4398549293170813cf21152284fc81c",
-  "css/estilo.css": "996c424b404d6714a00104de869db6b0012b59bf",
+  "index.html": "92da184ad6e0a7983f4b97702fa4d633de1e4ba7",
+  "css/estilo.css": "c1865c77bb0fb5c4e667d4e195ce0f5e55809f8b",
   "js/agencia.js": "dd15e5ae8fa08af254622aba102dafae859910b9",
   "js/aldeanos.js": "9fc48c835e3cf5baaebb07594aa0624275287f1d",
   "js/ambiente.js": "6c96bf777f6cdfc55b648f495836521ee28aeb8f",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "a94b46896cfd10fd688954a3c5b9297e9b693872",
   "js/armas.js": "d4710aa65550aceb06fbdd1d2d290c8085f58e96",
-  "js/arte.js": "aa527a5c43a76967f1767e37bf3b7d534ce6e364",
+  "js/arte.js": "866aae53e5d3a68775fcf56b0192b9a36c18b100",
   "js/arte_mapa.js": "a92d6a3c48ca112990a90102d27322fe8879ec53",
   "js/aviacion.js": "2bceeb5a9a59332b96ad69d19b5f6e39da71af42",
   "js/bandidos.js": "bc804375208c5f300e33435e76d16001e8c4daae",
@@ -119,6 +119,7 @@
   "js/libro.js": "77022669857da910d675ba22320bd2281a13fa64",
   "js/lluvia.js": "f5d9f158319f36671117bcf52a7e408433bc153d",
   "js/mapas.js": "822f9d930f4b0a1f4fc0bbb8808ef5ba56f2f985",
+  "js/medios.js": "8b1549a24d5dd5c14d8e8530b0cc6736f3bd2360",
   "js/minas.js": "4f093817fbd8df8654fd4d2c9507600191bcd312",
   "js/misiles.js": "69cc84a321ce23a1be2f64d0ff60c9966fd43d52",
   "js/mitines.js": "cf5fb8338be6f1c32a3340060ab39d995a13759b",
