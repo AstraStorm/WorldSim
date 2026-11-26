@@ -22,7 +22,7 @@ function colonySite(n){
     const a = Math.random() * Math.PI * 2, d = 50 + Math.random() * 110, x = Math.round(lx + Math.cos(a) * d), y = Math.round(ly + Math.sin(a) * d);
     if (x < 8 || y < 8 || x >= W - 8 || y >= H - 8 || !tileFree(x, y)) continue;
     const wn = nb4i(y * W + x).find(i => openWater(i)); if (wn == null) continue;
-    if (villages.some(o => popOf(o) && Math.hypot(o.fx - x, o.fy - y) < 30)) continue;
+    if (villages.some(o => popOf(o) && Math.hypot(o.fx - x, o.fy - y) < 30) || (typeof siteRoom === 'function' && !siteRoom(x, y))) continue;
     let land = 0; for (let yy = y - 4; yy <= y + 4; yy++) for (let xx = x - 4; xx <= x + 4; xx++) if (!WATER[world.biome[yy * W + xx]]) land++; if (land < 50) continue;
     const route = waterRoute(L, wn); if (!route || route.length < 8 || route.length > 220) continue;
     if (!seaRouteKnown(n, route)) continue; // solo a costas que tienen en el mapa

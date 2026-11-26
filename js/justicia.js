@@ -46,7 +46,7 @@ function verdict(g, t){
     jail(u, g, days, t.crime);
     if (t.crime === 'corrupción') { // devuelve lo robado y, si mandaba, deja el cargo
       if (g.coin && (u.money || 0) > 0) { ecOf(g).treas += u.money; u.money = 0; }
-      if (g.leader === u) g.leader = null; if (n.leader === u) { n.leader = null; if (votes(n)) n.voteT = -1e9; }
+      if (g.leader === u) g.leader = null; if (n.leader === u) { n.leader = null; if (votes(n) && typeof replaceLeader === 'function') replaceLeader(n); } /* (su partido pone a otro: no hay elecciones hasta que toque) */
       g.anger = Math.max(0, (g.anger || 0) - 20);
     }
     txt = `Juicio en ${g.name}: ${u.name}, ${t.crime === 'corrupción' && (u === n.leader || u === g.leader) ? 'quien mandaba, ' : ''}acusad${u.sex === 'm' ? 'a' : 'o'} de ${CRIME_TXT[t.crime]}, es condenad${u.sex === 'm' ? 'a' : 'o'} a ${days < 1 ? 'unas horas' : days === 1 ? 'un día' : `${days} días`} de cárcel`;

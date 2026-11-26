@@ -111,7 +111,18 @@ function foundOk(tx, ty){
   if (!tileFree(tx, ty)) return 'ahí no se puede construir';
   if (villages.some(g => popOf(g) && Math.hypot(g.fx - tx, g.fy - ty) < 30)) return 'demasiado cerca de otro pueblo';
   if (typeof volcDanger === 'function' && volcDanger(tx, ty, 6)) return 'al pie de un volcán';
+  if (!siteRoom(tx, ty)) return 'no hay sitio para un pueblo (muy cerca de otro o sin tierra firme alrededor)';
   return null;
+}
+// Lo mismo que mira makeVillage: un sitio cerca con tierra seca alrededor y espacio para crecer (se recuerda por casilla)
+const siteRoomC = new Map();
+function siteRoom(tx, ty){
+  const key = ty * W + tx, c = siteRoomC.get(key); if (c && yearT - c.t < 5 && yearT >= c.t) return c.ok;
+  const dry = (x, y) => { for (let b = -3; b <= 3; b++) for (let a = -3; a <= 3; a++) { const xx = x + a, yy = y + b; if (xx < 0 || yy < 0 || xx >= W || yy >= H) return false; const j = yy * W + xx; if (WATER[world.biome[j]] || world.biome[j] === B.LAVA) return false; } return true; };
+  let fi = -1;
+  for (let r = 0; r <= 12 && fi < 0; r++) for (let dy = -r; dy <= r && fi < 0; dy++) for (let dx = -r; dx <= r; dx++) { const x = tx + dx, y = ty + dy; if (!tileFree(x, y) || farmMap.has(y * W + x) || !dry(x, y)) continue; fi = y * W + x; break; }
+  const ok = fi >= 0 && townSpace(fi % W, (fi / W) | 0);
+  if (siteRoomC.size > 400) siteRoomC.clear(); siteRoomC.set(key, { t:yearT, ok }); return ok;
 }
 // Consejos sobre el sitio (no impiden fundar)
 function foundHint(tx, ty){ const i = ty * W + tx, t = tempAt(i), h = []; if (!freshNear(i, 6)) h.push('lejos del agua dulce'); if (t < 0) h.push('mucho frío'); else if (t > 30) h.push('mucho calor'); return h.length ? h.join(' y ') : 'buen sitio'; }
@@ -131,14 +142,14 @@ function foundTribe(tx, ty, name){
   govSync(); govOpen('resumen');
   return g;
 }
-function foundStart(){
-  if (!world || busy) { setTimeout(foundStart, 300); return; }
-  founding = { name:'' }; params.tool = 'move';
+function foundStart(mode){
+  if (!world || busy) { setTimeout(() => foundStart(mode), 300); return; }
+  founding = { name:'', mode:mode || 'tribu' }; params.tool = 'move'; const col = founding.mode === 'colonia';
   let el = $('foundBar'); if (!el) { el = document.createElement('div'); el.id = 'foundBar'; el.className = 'foundbar'; $('pcard').parentElement.appendChild(el);
-    el.addEventListener('click', e => { if (e.target.closest('[data-fcancel]')) { foundEnd(); menuOpen(); } });
+    el.addEventListener('click', e => { if (e.target.closest('[data-fcancel]')) { const m = founding && founding.mode; foundEnd(); if (m === 'colonia') govOpen('trabajo'); else menuOpen(); } });
     el.addEventListener('input', e => { if (e.target.id === 'foundName') founding.name = e.target.value; }); }
-  el.innerHTML = `<div class="fb-ic">👑</div><div class="fb-t"><b>Elige dónde fundar tu tribu</b><span>Pulsa en tierra firme, mejor cerca de agua dulce y de bosque. Puedes moverte por el mapa antes de elegir.</span></div>
-    <label class="fb-name"><span>Nombre</span><input id="foundName" maxlength="22" placeholder="(lo eligen ellos)" autocomplete="off" spellcheck="false"></label><button data-fcancel type="button">Volver al menú</button><div class="fb-why" id="foundWhy" aria-live="polite"></div>`;
+  el.innerHTML = `<div class="fb-ic">👑</div><div class="fb-t"><b>${col ? 'Elige dónde fundar la colonia' : 'Elige dónde fundar tu tribu'}</b><span>${col ? 'Seis colonos saldrán de tu capital con provisiones. Tiene que ser un sitio al que podáis llegar (por tierra, o por mar si tenéis muelle).' : 'Pulsa en tierra firme, mejor cerca de agua dulce y de bosque. Puedes moverte por el mapa antes de elegir.'}</span></div>
+    <label class="fb-name"><span>Nombre</span><input id="foundName" maxlength="22" placeholder="(lo eligen ellos)" autocomplete="off" spellcheck="false"></label><button data-fcancel type="button">${col ? 'Cancelar' : 'Volver al menú'}</button><div class="fb-why" id="foundWhy" aria-live="polite"></div>`;
   el.hidden = false; zoom = Math.max(1.2, Math.min(zoom, 2));
 }
 function foundEnd(){ founding = null; const el = $('foundBar'); if (el) el.hidden = true; }
@@ -149,8 +160,8 @@ function foundEnd(){ founding = null; const el = $('foundBar'); if (el) el.hidde
     if (!founding) return; e.stopImmediatePropagation(); e.preventDefault();
     if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) return; // (era arrastrar el mapa)
     const rc = $('view').getBoundingClientRect(), wx = (e.clientX - rc.left - offX) / zoom, wy = (e.clientY - rc.top - offY) / zoom, tx = Math.floor(wx / T), ty = Math.floor(wy / T);
-    const why = foundOk(tx, ty); if (why) { const w = $('foundWhy'); if (w) { w.textContent = `Ahí no: ${why}`; w.classList.remove('shake'); void w.offsetWidth; w.classList.add('shake'); } return; }
-    const name = founding.name.trim(); foundEnd(); foundTribe(tx, ty, name);
+    const why = foundOk(tx, ty) || (founding.mode === 'colonia' ? colonyReach(tx, ty) : null); if (why) { const w = $('foundWhy'); if (w) { w.textContent = `Ahí no: ${why}`; w.classList.remove('shake'); void w.offsetWidth; w.classList.add('shake'); } return; }
+    const name = founding.name.trim(), m = founding.mode; foundEnd(); if (m === 'colonia') sendColonists(tx, ty, name); else foundTribe(tx, ty, name);
   }, true);
 }
 // El círculo donde caería la tribu
@@ -162,10 +173,83 @@ function foundEnd(){ founding = null; const el = $('foundBar'); if (el) el.hidde
     vctx.beginPath(); vctx.arc(sx, sy, 12 * Math.max(1, zoom / 2), 0, Math.PI * 2); vctx.stroke();
     vctx.setLineDash([4, 6]); vctx.beginPath(); vctx.arc(sx, sy, 30 * T * zoom, 0, Math.PI * 2); vctx.stroke(); vctx.setLineDash([]); // (a esta distancia no puede haber otro pueblo)
     vctx.font = '600 12px system-ui, sans-serif'; vctx.textAlign = 'center'; vctx.fillStyle = why ? '#ffb0a0' : '#f8e0a0'; vctx.strokeStyle = 'rgba(10,10,14,.85)'; vctx.lineWidth = 3;
-    const t = why ? `✕ ${why}` : `👑 Fundar aquí · ${foundHint(tx, ty)}`; vctx.strokeText(t, sx, sy - 18 * Math.max(1, zoom / 2)); vctx.fillText(t, sx, sy - 18 * Math.max(1, zoom / 2)); vctx.textAlign = 'start';
+    const t = why ? `✕ ${why}` : `${founding.mode === 'colonia' ? '🏕 Colonia aquí' : '👑 Fundar aquí'} · ${foundHint(tx, ty)}`; vctx.strokeText(t, sx, sy - 18 * Math.max(1, zoom / 2)); vctx.fillText(t, sx, sy - 18 * Math.max(1, zoom / 2)); vctx.textAlign = 'start';
   }
   return r;
 }; }
+// ---- Colonizar: seis colonos salen de la capital hacia el sitio elegido y fundan allí una provincia ----
+const COL_FOOD = 30, COL_WOOD = 15;
+function colonyCan(n){
+  const adults = villagers.filter(u => !u.dead && !u.away && u.vid === n.id && ageOf(u) >= ADULT_H).length;
+  if (travelers.some(t => t.kind === 'colonos' && t.from === n.id)) return 'ya hay colonos de camino';
+  if (typeof colonies === 'function' && colonies(n).length >= 4) return 'ya tenéis 4 colonias';
+  if (adults < 16) return `hacen falta 16 adultos en ${n.name} (hay ${adults})`;
+  if (n.food < COL_FOOD + popOf(n)) return `hace falta comida de sobra (${COL_FOOD} para el viaje)`;
+  if (n.wood < COL_WOOD) return `hacen falta ${COL_WOOD} de madera`;
+  return null;
+}
+function colonyReach(tx, ty){
+  const n = playerNat(); if (!n) return 'no hay nación';
+  if (Math.hypot(tx - n.fx, ty - n.fy) > 220) return 'demasiado lejos';
+  if (n.port) return null; // (con muelle, si no hay camino por tierra van en barca)
+  try { if (landRoute(n.fx * T + 2, n.fy * T + 9, tx * T + 2, ty * T + 3)) return null; } catch (e) {}
+  return 'no hay camino por tierra y no tenéis muelle';
+}
+function sendColonists(tx, ty, name){
+  const n = playerNat(); if (!n || colonyCan(n)) return;
+  const goers = villagers.filter(u => !u.dead && !u.away && !u.boat && u.vid === n.id && ageOf(u) >= ADULT_H && u !== n.leader && !locked(u) && !(u.task && BUSY_POL.includes(u.task.k))).sort(() => Math.random() - .5).slice(0, 6);
+  if (goers.length < 4) { notify(`En ${n.name} no hay bastante gente libre para ir de colonos`, { x:n.fx * T, y:n.fy * T }); return; }
+  n.food -= COL_FOOD; n.wood -= COL_WOOD;
+  for (const u of goers) { releaseTask(u); if (u.actT > 0) { u.actT = 0; u.onDone = null; } dismount(u); u.sleep = false; u.task = { k:'viaje' }; u.away = true; }
+  const hx = n.fx * T + 2, hy = n.fy * T + 9;
+  travelers.push({ kind:'colonos', v:goers[0], crew:goers, from:n.id, to:n.id, x:hx, y:hy, tx:tx * T + 2, ty:ty * T + 3, path:[], sea:false, phase:'ida', dir:1, site:[tx, ty], hx, hy, cname:name || null });
+  notify(`De ${n.name} salen ${goers.length} colonos con provisiones${name ? ` a fundar ${name}` : ' a fundar una colonia'}`, { x:n.fx * T, y:n.fy * T });
+}
+{ const base = foundColony; foundColony = function(t, n){
+  const before = villages.length; const r = base.apply(this, arguments);
+  const c = villages.length > before ? villages[villages.length - 1] : null;
+  if (c && t.cname) { c.name = t.cname.slice(0, 22); c.freshName = false; }
+  return r;
+}; }
+// ---- Régimen: el jugador elige el tipo de gobierno ----
+const REG_DESC = { tribu:'Un consejo de jefes y ancianos: sin partidos ni elecciones.', monarquia:'Manda un rey o una reina y la corona pasa a sus hijos. No se vota.', monarquia_parlamentaria:'Hay rey, pero gobierna el parlamento que vota la gente.',
+  republica:'La gente vota a sus gobernantes cada poco, entre dos o más partidos.', democracia:'Muchos partidos, parlamento y gobiernos de coalición.', partitocracia:'Se vota, pero los partidos lo controlan todo.',
+  oligarquia:'Gobiernan los más ricos: les gustan los impuestos bajos y el comercio.', tecnocracia:'Gobiernan los expertos: escuelas, hospitales y obras.', teocracia:'Gobiernan los sacerdotes en nombre de los dioses.',
+  dictadura:'Manda un militar con mano dura: ejército y orden.', socialismo:'Una república que reparte la riqueza y pone la economía en manos del estado.', comunismo:'Partido único: todo es del estado.',
+  fascismo:'Partido único, la nación por encima de todo y mano de hierro.', anarquia:'Nadie manda: todo se decide en asambleas.' };
+const REG_ORDER = ['tribu', 'monarquia', 'republica', 'oligarquia', 'teocracia', 'dictadura', 'anarquia', 'monarquia_parlamentaria', 'democracia', 'partitocracia', 'tecnocracia', 'socialismo', 'comunismo', 'fascismo'];
+function regNeed(n, reg){
+  const pop = playerTowns().reduce((a, g) => a + popOf(g), 0), letters = playerTowns().some(g => (g.know || {}).escritura);
+  if (reg === 'tribu') return null;
+  if (reg === 'anarquia') return pop >= 15 ? null : 'hacen falta 15 habitantes';
+  if (pop < 25) return 'hacen falta 25 habitantes';
+  if (reg === 'teocracia' && !n.faith) return 'hace falta una religión';
+  if (['monarquia', 'republica', 'oligarquia', 'teocracia', 'dictadura'].includes(reg)) return null;
+  if (!letters) return 'hace falta la escritura';
+  return pop >= 40 ? null : 'hacen falta 40 habitantes';
+}
+// Cuánta gente lo apoyaría: los que piensan parecido (los regímenes con votaciones gustan a casi todos los de centro)
+function regSupport(reg){
+  const ads = villagers.filter(u => !u.dead && ageOf(u) >= ADULT_H && isPlayerG(villageById(u.vid))); if (!ads.length) return .5;
+  const free = ['republica', 'democracia', 'monarquia_parlamentaria', 'partitocracia'].includes(reg), I = REGIME_IDEO[reg] ?? 0;
+  return ads.filter(u => free ? Math.abs(u.ideo || 0) < .75 : reg === 'tribu' ? true : Math.abs((u.ideo || 0) - I) < .45).length / ads.length;
+}
+function setPlayerRegime(reg){
+  const n = playerNat(), P = world.player; if (!n || regimeOf(n) === reg || regNeed(n, reg) || (P.regT || -1e9) > yearT) return;
+  const sup = regSupport(reg);
+  setRegime(n, reg, n.leader && !n.leader.dead ? n.leader : null); P.regT = yearT + DAY_LEN * 3;
+  const txt = `${n.name} cambia de régimen por decisión del gobierno: ahora es ${REGIME_A[reg]} (lo apoya el ${Math.round(sup * 100)} % de la gente)`; notify(txt, { x:n.fx * T, y:n.fy * T }); lawLog(n, txt);
+  for (const g of playerTowns()) { g.anger = Math.min(100, (g.anger || 0) + (1 - sup) * 45); if (sup < .4) g.grief = 'imposicion'; }
+}
+function govRegime(n){
+  const cur = regimeOf(n), P = world.player, cd = (P.regT || -1e9) > yearT;
+  return `<div class="gv-head">${flagOf(n)}<div><h3>${esc(REGIMES[cur] || cur)}</h3><span class="muted">${esc(REG_DESC[cur] || '')}</span></div></div>
+    <p class="muted gv-note">Elige cómo se gobierna ${esc(n.name)}. Las leyes las sigues poniendo tú, pero el régimen cambia si hay partidos y elecciones, cómo se reparte el dinero y cómo reacciona la gente. Cambiar a algo que pocos apoyan enfada mucho${cd ? '. Acabáis de cambiar: hay que esperar unos días' : ''}.</p>
+    <div class="gv-regs">${REG_ORDER.filter(r => REGIMES[r]).map(r => { const need = regNeed(n, r), s = regSupport(r), on = r === cur;
+      return `<div class="gv-reg${on ? ' on' : ''}${need ? ' off' : ''}"><b>${esc(REGIMES[r])}</b><span class="muted">${esc(REG_DESC[r] || '')}</span>
+        <div class="gv-sup"><span class="gv-meter sm"><i style="width:${Math.round(s * 100)}%;background:${s > .55 ? '#7ab04a' : s > .35 ? '#d8b848' : '#d8583a'}"></i></span><span>lo apoyaría el ${pctTxt(s)}</span></div>
+        ${on ? '<span class="gv-cur">★ ahora</span>' : need ? `<span class="gv-miss">${esc(need)}</span>` : `<button class="gv-btn gold" data-greg="${r}" ${cd ? 'disabled' : ''}>Cambiar</button>`}</div>`; }).join('')}</div>`;
+}
 // ---- El menú de inicio ----
 let menuFresh = true; // (al abrir el juego, el mundo recién creado sirve; luego, cada opción crea uno nuevo)
 function menuOpen(){
@@ -206,8 +290,8 @@ function govRender(force){
   let h;
   if (!n) h = `<div class="gv-fallen"><div class="gv-big">🏚</div><h3>Tu nación ha caído</h3><p class="muted">Ya no queda nadie de ${esc(world.player ? world.player.name : 'tu tribu')} gobernando. Puedes seguir mirando el mundo o fundar una tribu nueva.</p>
     <div class="gv-row"><button class="gv-btn gold" data-gact="refundar">👑 Fundar otra tribu</button><button class="gv-btn" data-gact="dios">✨ Seguir en modo dios</button></div></div>`;
-  else h = ({ resumen:govSummary, leyes:govLaws, economia:govEconomy, trabajo:govWork, diplomacia:govDiplo })[govTab](n);
-  const tabs = [['resumen', '🏛 Resumen'], ['leyes', '📜 Leyes'], ['economia', '💰 Economía'], ['trabajo', '🏗 Trabajo y obras'], ['diplomacia', '🤝 Diplomacia']];
+  else h = ({ resumen:govSummary, regimen:govRegime, leyes:govLaws, economia:govEconomy, trabajo:govWork, diplomacia:govDiplo })[govTab](n);
+  const tabs = [['resumen', '🏛 Resumen'], ['regimen', '👑 Régimen'], ['leyes', '📜 Leyes'], ['economia', '💰 Economía'], ['trabajo', '🏗 Trabajo y obras'], ['diplomacia', '🤝 Diplomacia']];
   const html = `${n ? `<div class="cl-f gv-tabs">${tabs.map(([k, t]) => `<button data-gtab="${k}" class="${govTab === k ? 'on' : ''}">${t}</button>`).join('')}</div>` : ''}<div class="gv">${h}</div>`;
   if (!force && (el.matches(':hover') && performance.now() - (el._t || 0) < 1200)) return;
   if (body._html !== html) { const top = body.scrollTop; body.innerHTML = html; body._html = html; body.scrollTop = top; el._t = performance.now(); }
@@ -234,6 +318,7 @@ function govSummary(n){
     ${alerts.length ? `<div class="gv-alerts">${alerts.slice(0, 6).map(a => `<div>${a}</div>`).join('')}</div>` : '<div class="gv-ok">Todo tranquilo por ahora.</div>'}
     <div class="gv-2"><div><h4>Lo que más les preocupa</h4>${M.bad.length ? M.bad.map(([t, f]) => `<div class="gv-why bad"><span>${esc(t)}</span><b>${pctTxt(f)}</b></div>`).join('') : '<div class="muted">Nada en especial</div>'}</div>
       <div><h4>Lo que les gusta</h4>${M.good.length ? M.good.map(([t, f]) => `<div class="gv-why good"><span>${esc(t)}</span><b>${pctTxt(f)}</b></div>`).join('') : '<div class="muted">Poca cosa</div>'}</div></div>
+    ${typeof hemicycle === 'function' && seatsOf(n) ? `<h4>Parlamento</h4>${hemicycle(n, 360)}` : ''}
     <h4>Ciencia</h4><div class="gv-row">${goal ? `<span>Investigando <b>${esc(capFirst(goal.txt))}</b> · ${Math.round(Math.min(1, (n.research || 0) / goal.cost) * 100)} %</span>` : `<span class="muted">${hasInst(n, 'universidad') ? 'Nada que investigar ahora' : 'Sin universidad apenas se investiga: lo que sepan lo aprenden de otros'}</span>`}<button class="gv-btn" data-gact="ciencia">🔬 Elegir qué investigar</button></div>
     <p class="muted gv-note">Tu gente vive a su aire: tú marcas el rumbo. Si la aprobación cae mucho, habrá protestas e incluso golpes de estado.</p>`;
 }
@@ -266,6 +351,9 @@ function govWork(n){
   const T0 = playerTowns(), cur = T0[0] && T0[0].pFocus || 'normal', sel = T0.find(g => g.id === govWork.vid) || n;
   let h = `<h4>En qué se trabaja más</h4><p class="muted gv-note">La gente sigue eligiendo sus tareas, pero hará mucho más de lo que marques (en todos tus pueblos).</p>
     <div class="gv-focus">${Object.entries(FOCUS).map(([k, F]) => `<button data-gfocus="${k}" class="${cur === k ? 'on' : ''}" aria-pressed="${cur === k}"><span>${F.ic}</span>${F.txt}</button>`).join('')}</div>`;
+  const cc = colonyCan(n), cols = typeof colonies === 'function' ? colonies(n) : [];
+  h += `<h4>Colonizar</h4><div class="gv-law"><div class="gv-lt"><b>Fundar una colonia</b><span class="muted">Seis colonos salen de ${esc(n.name)} con ${COL_FOOD} de comida y ${COL_WOOD} de madera y fundan una provincia donde elijas.${cols.length ? ` Colonias: ${cols.map(c => esc(c.name)).join(', ')}.` : ''}</span></div>
+    <div class="gv-sup">${cc ? `<span class="gv-miss">${esc(cc)}</span>` : '<span class="gv-okk">podéis</span>'}</div><button class="gv-btn gold" data-gact="colonia" ${cc ? 'disabled' : ''}>🏕 Elegir sitio</button></div>`;
   const rows = Object.entries(INSTS).filter(([k, I]) => !hasInst(sel, k) && k !== 'consejo' && (I.want(sel) || (BASIC_WORKS.includes(k) && popOf(sel) >= 8))); // (solo lo que ya tiene sentido allí)
   h += `<h4>Encargar obras</h4>${T0.length > 1 ? `<select class="wh-sel gv-town" aria-label="Pueblo">${T0.map(g => `<option value="${g.id}"${g === sel ? ' selected' : ''}>${esc(g.name)}</option>`).join('')}</select>` : ''}
     <p class="muted gv-note">Lo encargado pasa delante de todo: si falta material, la gente sale a por él.</p>`;
@@ -300,7 +388,9 @@ function govClick(e){
     if (k === 'ciencia') { const n = playerNat(); if (n) openSciTree(n.id); }
     if (k === 'refundar') { $('govPanel').hidden = true; foundStart(); }
     if (k === 'dios') { world.player = null; govSync(); }
+    if (k === 'colonia') { $('govPanel').hidden = true; foundStart('colonia'); }
     return; }
+  const rg = e.target.closest('[data-greg]'); if (rg) { setPlayerRegime(rg.dataset.greg); govRender(true); return; }
   const l = e.target.closest('[data-glaw]'); if (l) { setPlayerLaw(l.dataset.glaw, l.dataset.on === '1'); govRender(true); return; }
   const x = e.target.closest('[data-gtax]'); if (x) { setPlayerTax(x.dataset.gtax, x.dataset.on === '1'); govRender(true); return; }
   const f = e.target.closest('[data-gfocus]'); if (f) { for (const g of playerTowns()) g.pFocus = f.dataset.gfocus === 'normal' ? null : f.dataset.gfocus; const F = FOCUS[f.dataset.gfocus]; const n = playerNat(); if (n) notify(`${n.name} pone a su gente a trabajar sobre todo en: ${F.txt.toLowerCase()}`, { x:n.fx * T, y:n.fy * T }); govRender(true); return; }

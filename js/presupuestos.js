@@ -66,7 +66,7 @@ function budgetDay(g, ec, people, L){
     notify(`¡Escándalo en ${g.name}! Se descubre que ${L.name} se ha quedado ${amt} ${coinPl(g)} del dinero público`, at);
     if (openTrial(g, L, 'corrupción', .85)) setTimeout(() => notify(`${L.name} tendrá que responder ante el juez por corrupción`, at), 300); // justicia.js
     if (votes(g) && Math.random() < .5) { // dimite y hay elecciones
-      if (g.leader === L) g.leader = null; const cap = nationOf(g); if (cap.leader === L) cap.leader = null; cap.voteT = -1e9;
+      if (g.leader === L) g.leader = null; const cap = nationOf(g); if (cap.leader === L) cap.leader = null; if (typeof replaceLeader === 'function') replaceLeader(cap);
       setTimeout(() => notify(`${L.name} dimite por el escándalo; ${g.name} convoca elecciones`, at), 500);
     } else if (tyranny(g) && Math.random() < .6) { // el tirano no se va: amenaza a la ciudad
       g.threat = { by:L.name, until:yearT + DAY_LEN * 3 };
@@ -95,7 +95,7 @@ function lynchLeader(g, who, grief = g.grief){
   for (const u of who) u.ideo = clamp((u.ideo || 0) * .8, -1, 1);
   notify(holy ? `¡En ${g.name} la multitud arrastra a ${L.name} hasta el altar y ${la} sacrifica a ${g.faith.god} ${why}!` : `¡En ${g.name} la multitud, furiosa, lincha a ${L.name} ${why}!`, at);
   if (was) { const anar = Math.random() < .3; setRegime(g, anar ? 'anarquia' : 'republica', null); if (anar) g.leader = null; setTimeout(() => notify(anar ? `Tras la caída de ${L.name}, nadie ocupa su sitio en ${g.name}: todo se decide en asambleas (anarquía)` : `Tras la caída de ${L.name}, ${g.name} se proclama república y habrá elecciones`, { x:g.fx * T, y:g.fy * T }), 600); }
-  else cap.voteT = -1e9;
+  else if (typeof replaceLeader === 'function') replaceLeader(cap); /* (su partido pone a otro: no hay elecciones hasta que toque) */
   return true;
 }
 // Panel de economía: los presupuestos

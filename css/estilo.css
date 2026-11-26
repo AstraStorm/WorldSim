@@ -798,3 +798,55 @@ body.drop-save::after{content:'Suelta aquí la partida .forja para abrirla';posi
 .gv-fallen .gv-row{justify-content:center;margin-top:10px}
 @media (max-width:760px){.gm-modes{grid-template-columns:1fr}.gm-logo h1{font-size:30px}.gv-2{grid-template-columns:1fr}.gv-law{grid-template-columns:1fr auto}.gv-sup{grid-column:1;align-items:flex-start}}
 @media (prefers-reduced-motion:reduce){.gmenu,.gm-card,.gm-globe{animation:none}}
+/* ---- Régimen en el panel de gobierno (gobierno.js) ---- */
+.gv-regs{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:7px}
+.gv-reg{display:flex;flex-direction:column;gap:5px;padding:9px 10px;border-radius:9px;background:rgba(255,255,255,.03);border:1px solid var(--line)}
+.gv-reg b{font-size:13px}
+.gv-reg .muted{font-size:11.5px;line-height:1.35;flex:1}
+.gv-reg .gv-sup{align-items:flex-start}
+.gv-reg .gv-btn{align-self:flex-start}
+.gv-reg.on{border-color:#f0d070;background:rgba(240,208,112,.1);box-shadow:0 0 16px rgba(240,208,112,.12)}
+.gv-reg.off{opacity:.6}
+.gv-cur{font-size:12px;font-weight:700;color:#f0d070}
+/* ---- Pantalla de una era nueva (eras.js) ---- */
+.era[hidden]{display:none !important}
+.era{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:16px;background:radial-gradient(ellipse at 50% 35%,rgba(60,48,20,.55),rgba(4,5,10,.93));opacity:0;transition:opacity .5s}
+.era.in{opacity:1}
+.era-card{width:min(620px,100%);max-height:100%;overflow:auto;text-align:center;padding:28px 26px 22px;border-radius:18px;background:linear-gradient(180deg,rgba(34,30,22,.97),rgba(14,13,10,.97));border:1px solid rgba(240,208,112,.5);box-shadow:0 30px 90px rgba(0,0,0,.7),0 0 80px rgba(240,208,112,.12);transform:translateY(16px) scale(.96);transition:transform .6s cubic-bezier(.2,.9,.3,1.15)}
+.era.in .era-card{transform:none}
+.era-ic{font-size:58px;line-height:1;filter:drop-shadow(0 0 18px rgba(255,210,120,.55));animation:eraPulse 2.4s ease-in-out infinite}
+@keyframes eraPulse{50%{transform:scale(1.08);filter:drop-shadow(0 0 28px rgba(255,210,120,.8))}}
+.era-kick{margin-top:10px;font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:#c8b078}
+.era-card h2{margin:6px 0 4px;font-family:var(--f-display);font-size:38px;line-height:1.05;color:#f6dc8a;text-shadow:0 2px 0 #5a3a10,0 0 30px rgba(240,200,100,.35)}
+.era-sub{margin:0 auto 14px;max-width:460px;color:#d8ccb0;font-size:14px;line-height:1.5}
+.era-who{display:inline-flex;align-items:center;gap:9px;padding:7px 14px;border-radius:20px;background:rgba(240,208,112,.1);border:1px solid rgba(240,208,112,.35);font-size:13px;text-align:left}
+.era-who img,.era-who i{width:28px;height:19px;border:1px solid rgba(0,0,0,.5);display:inline-block;flex:none;image-rendering:pixelated}
+.era-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin:16px 0 6px}
+.era-stats div{display:flex;flex-direction:column;padding:8px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}
+.era-stats div.mine{border-color:rgba(240,208,112,.5);background:rgba(240,208,112,.08)}
+.era-stats b{font-size:18px;color:#fff}
+.era-stats span{font-size:11px;color:#b8ae98}
+.era-card h4{margin:14px 0 6px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#c8b078}
+.era-log{list-style:none;margin:0;padding:0;text-align:left;font-size:12.5px;display:flex;flex-direction:column;gap:4px}
+.era-log li{padding:5px 9px;border-radius:7px;background:rgba(255,255,255,.03);line-height:1.4}
+.era-log span{color:#c8b078;font-weight:700;margin-right:6px}
+.era-steps{display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin:16px 0 14px}
+.era-steps span{width:30px;height:30px;display:grid;place-items:center;border-radius:50%;font-size:15px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);filter:grayscale(1);opacity:.4}
+.era-steps span.done{filter:none;opacity:.85}
+.era-steps span.now{filter:none;opacity:1;border-color:#f0d070;box-shadow:0 0 14px rgba(240,208,112,.5);transform:scale(1.15)}
+.era-ok{padding:10px 26px;border-radius:22px;border:0;font:700 15px var(--f-body);color:#1a1408;background:linear-gradient(180deg,#f8dc80,#e0b040);cursor:pointer;box-shadow:0 6px 18px rgba(224,176,64,.35)}
+.era-ok:hover{filter:brightness(1.08)}
+.era-ok:focus-visible{outline:2px solid #fff;outline-offset:3px}
+@media (prefers-reduced-motion:reduce){.era,.era-card{transition:none}.era-ic{animation:none}}
+
+/* ---- Hemiciclo del parlamento (parlamento.js) ---- */
+.hemi{margin:4px 0 8px;padding:8px 10px 6px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid var(--line)}
+.hemi svg{display:block;max-width:360px;margin:0 auto}
+.hemi-n{fill:#f0d070;font:700 16px var(--f-display)}
+.hemi-info{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 12px;font-size:12px;color:#c8ccd4;margin-top:4px}
+.hemi-leg{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:6px;font-size:12px}
+.hemi-leg span{display:inline-flex;align-items:center;gap:4px;opacity:.85}
+.hemi-leg span.gov{opacity:1;font-weight:700}
+.hemi-leg i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.hemi-mot{display:flex;flex-direction:column;gap:2px;margin-top:6px;font-size:11.5px;color:var(--muted)}
+.hemi-mot b{color:#f0a890}.hemi-mot b.ok{color:#a8d890}
