@@ -128,9 +128,9 @@ function routeTo(v, goal){
   const lim = v.task && v.task.k === 'asalto' ? 200 : 60, far = Math.max(Math.abs(sx - gx), Math.abs(sy - gy));
   if (far > lim) { const k = lim * .8 / far; gx = Math.round(sx + (gx - sx) * k); gy = Math.round(sy + (gy - sy) * k); goal = gy * W + gx; partial = true; }
   if (!rtG || rtG.length !== N) { rtG = new Float32Array(N); rtP = new Int32Array(N); rtS = new Uint32Array(N); rtC = new Uint32Array(N); rtStamp = 0; }
-  const st = ++rtStamp, swim = v.swims !== false && !v.mount, burning = fires.size > 0;
+  const st = ++rtStamp, swim = v.swims !== false && !v.mount, burning = fires.size > 0, kid = v.born !== undefined && ageOf(v) < ADULT_H;
   // (no se cuela por la planta de los edificios, salvo para entrar en el de su destino)
-  const cost = i => { const c = tileCost(i % W, (i / W) | 0); if (burning && fires.has(i)) return Infinity; if (footAt(i) && Math.max(Math.abs(i % W - gx), Math.abs(((i / W) | 0) - gy)) > 3 && Math.max(Math.abs(i % W - sx), Math.abs(((i / W) | 0) - sy)) > 1) return Infinity; return c > 1 ? (swim ? c * 3 : Infinity) : c; };
+  const cost = i => { const c = tileCost(i % W, (i / W) | 0); if (burning && fires.has(i)) return Infinity; if (footAt(i) && Math.max(Math.abs(i % W - gx), Math.abs(((i / W) | 0) - gy)) > 3 && Math.max(Math.abs(i % W - sx), Math.abs(((i / W) | 0) - sy)) > 1) return Infinity; if (c <= 1) return c; if (!swim) return Infinity; if (world.biome[i] === B.SHALLOW) return kid ? Infinity : c * 9; return c * 3; }; // (el mar: los niños nunca; los mayores, solo si no hay más remedio)
   const hf = rtHF, hi = rtHI; hf.length = 0; hi.length = 0;
   const push = (f, i) => { let k = hf.length; hf.push(f); hi.push(i); while (k) { const q = (k - 1) >> 1; if (hf[q] <= f) break; hf[k] = hf[q]; hi[k] = hi[q]; k = q; } hf[k] = f; hi[k] = i; };
   const pop = () => { const top = hi[0], lf = hf.pop(), li = hi.pop(), n = hf.length; if (n) { let k = 0; for (;;) { const l = 2 * k + 1, r = l + 1; let m = -1, mf = lf; if (l < n && hf[l] < mf) { m = l; mf = hf[l]; } if (r < n && hf[r] < mf) { m = r; mf = hf[r]; } if (m < 0) break; hf[k] = hf[m]; hi[k] = hi[m]; k = m; } hf[k] = lf; hi[k] = li; } return top; };
@@ -165,7 +165,7 @@ const routeC = new Map(); let routeCW = null, routeHits = 0, routeMiss = 0;
 { const base = routeTo; routeTo = function(v, goal){
   if (fires.size) return base(v, goal);
   if (routeCW !== world) { routeC.clear(); routeCW = world; }
-  const sx = Math.floor(v.x / T), sy = Math.floor(v.y / T), key = `${v.swims !== false && !v.mount ? 1 : 0}${v.task && v.task.k === 'asalto' ? 'a' : ''}|${(sy >> 2) * W + (sx >> 2)}|${goal}`;
+  const sx = Math.floor(v.x / T), sy = Math.floor(v.y / T), key = `${v.swims !== false && !v.mount ? 1 : 0}${v.task && v.task.k === 'asalto' ? 'a' : ''}${v.born !== undefined && ageOf(v) < ADULT_H ? 'k' : ''}|${(sy >> 2) * W + (sx >> 2)}|${goal}`;
   const c = routeC.get(key);
   if (c && yearT - c.t < (c.r ? 20 : 6) && yearT >= c.t) { routeHits++; if (!c.r) return null; const out = c.r.slice(); if (c.r.partial) out.partial = true; return out; }
   routeMiss++;
@@ -403,7 +403,7 @@ function chooseJob(v, g){
   if (g.port && openWater(g.port.launch)) add('barca', g.boatOut || busyWith(g, 'barca') ? 0 : (hungry || needMeat ? 3.5 : 1));
   const nPens = pensOf(g).length, nPenA = penAnimals(g).length; // otro cercado cuando los que hay están casi llenos
   add('cercar', pop >= 4 && (!nPens || (nPenA >= nPens * (PEN_CAP - 2) && nPens < penLimit(g))) && spare >= 8 && !busyWith(g, 'cercar') && houses >= 1 ? 4 : 0);
-  add('capturar', nPens && nPenA + busyWith(g, 'capturar') < nPens * PEN_CAP && busyWith(g, 'capturar') < 3 ? (nPenA < 4 ? 5 : 3) : 0);
+  add('capturar', nPens && nPenA + busyWith(g, 'capturar') < nPens * PEN_CAP && busyWith(g, 'capturar') < 3 ? (nPenA < 4 ? 5 : nPenA < 6 ? 2 : .4) : 0); // (con el cercado ya poblado, crían ellos: apenas se captura más)
   // Armas: solo saben hacer lanzas y arcos, y se ponen a ello cuando ven fieras cerca
   add('equipar', gearNeed(g) && busyWith(g, 'equipar') < 3 ? (atWarJ ? 2.5 : 1.5) * ((g.danger || 0) > 0 || L.includes('ejercito') || [...rels.values()].some(r => r.war && (r.war.att === g.id || r.war.def === g.id)) ? 5 : 1.5) : 0);
   const wantArmy = pop * (atWarJ ? .45 : g.danger > 0 || L.includes('ejercito') ? .3 : .15) * (g.food < pop * 3 ? .5 : 1); // una pequeña guardia siempre; en guerra, a filas
@@ -632,9 +632,11 @@ function setupTask(v, g, job){
       // Entre los animales de granja que hay cerca, el más a mano (prefieren alguna especie que aún no tengan) y, si ya
       // han aprendido qué adaptación les va bien aquí, uno parecido
       const have = new Set(penAnimals(g).map(a => a.sp));
+      // Se deja siempre una manada salvaje (al menos 4 de cada especie por la zona) para que sigan criando en libertad
+      const wild = {}; for (const a of animals) if (!a.dead && !a.dom && !a.lead && Math.hypot(a.x - fx, a.y - fy) / T < 70) wild[a.sp] = (wild[a.sp] || 0) + 1;
       let best = null, bs = Infinity;
       for (const a of animals) {
-        if (a.dead || a.dom || a.lead || !HERBIVORES.includes(a.sp) || (yearT - a.born) / YEAR < ADULT) continue;
+        if (a.dead || a.dom || a.lead || !HERBIVORES.includes(a.sp) || (yearT - a.born) / YEAR < ADULT || (wild[a.sp] || 0) <= 4) continue;
         const d = Math.hypot(a.x - fx, a.y - fy) / T; if (d > 50) continue;
         const L = g.learn[a.sp], sc = d + (have.has(a.sp) ? 8 : 0) + (L && L.pref != null ? Math.abs(a.ad - L.pref) * 6 : 0) + Math.random() * 6;
         if (sc < bs) { bs = sc; best = a; }
