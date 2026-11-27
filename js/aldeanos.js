@@ -31,6 +31,7 @@ const STYLE_W = [['corto', 18], ['largo', 12], ['melena', 7], ['coleta', 8], ['m
 const pickStyle = r => { let k = r() * STYLE_W.reduce((a, [, w]) => a + w, 0); for (const [st, w] of STYLE_W) if ((k -= w) < 0) return st; return 'corto'; };
 const styleOf = v => v.style || (v.long ? 'largo' : 'corto');
 const PERSON = {
+  coat:  [['kwwwk', 'skkKs', '.kkK.', '.kKk.'], ['kwwwk', '.kkks', 'skkK.', '.kKk.']], // con abrigo: cuello de piel, mangas y faldón hasta los muslos
   body:  [['cccCc', 'scccs', '.ccC.'], ['cccCc', '.cccs', 'sccC.']], // brazos abajo / balanceo
   legs:  [['.p.p.', '.p.p.', '.f.f.'], ['.p.p.', 'p...p', 'f...f']], // pies juntos / zancada
 };
@@ -43,11 +44,15 @@ function padRows(rows){
   const w = Math.max(...rows.map(r => r.length));
   return rows.map(r => { const l = (w - r.length) >> 1; return '.'.repeat(l) + r + '.'.repeat(w - r.length - l); });
 }
+// El abrigo (con frío): de piel, marrón con el cuello claro; de tela, de lana de un color oscuro (fabricas.js, comercio.js)
+const COAT_WOOL = ['#4a5a7a', '#6a3a3a', '#3a5a4a', '#5a4a6a', '#5a5048'];
+const coatColOf = v => v.coatMat === 'telas' ? COAT_WOOL[Math.floor((v.pid || .5) * 1e6) % COAT_WOOL.length] : '#8a5a34';
 function personSprite(v, frame, flip){
-  const key = [v.skin, v.shirt, v.hair, v.pants, styleOf(v), v.hat, frame, flip].join();
+  const coat = v.coat && v.cold ? coatColOf(v) : null;
+  const key = [v.skin, v.shirt, v.hair, v.pants, styleOf(v), v.hat, frame, flip, coat].join();
   if (personCache[key]) return personCache[key];
-  const rows = padRows([...HAIRSTYLE[styleOf(v)], ...PERSON.body[frame], ...PERSON.legs[frame]]);
-  const col = { h:v.hair, g:v.hat || HATS[0], s:v.skin, c:v.shirt, C:shade(v.shirt, .68), p:v.pants, P:shade(v.pants, .7), f:'#2a1c14' };
+  const rows = padRows([...HAIRSTYLE[styleOf(v)], ...(coat ? PERSON.coat[frame] : PERSON.body[frame]), ...(coat ? PERSON.legs[frame].slice(1) : PERSON.legs[frame])]);
+  const col = { h:v.hair, g:v.hat || HATS[0], s:v.skin, c:v.shirt, C:shade(v.shirt, .68), p:v.pants, P:shade(v.pants, .7), f:'#2a1c14', k:coat, K:coat && shade(coat, .7), w:v.coatMat === 'telas' ? '#c8c0b0' : '#efe4cc' };
   const c = document.createElement('canvas'); c.width = rows[0].length + 2; c.height = rows.length + 2;
   const x = c.getContext('2d');
   x.fillStyle = '#16110d';

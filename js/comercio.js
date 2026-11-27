@@ -68,7 +68,7 @@ function goodsUse(g){
   if (cold) {
     const need = people.filter(u => !u.coat && ((u.chill || 0) > .02 || u.weapon || ageOf(u) < 6)).sort((a, b) => coatNeed(b) - coatNeed(a));
     let n = 0, used = null;
-    for (const u of need) { if (n >= 3) break; const k = G.pieles >= 2 ? 'pieles' : G.telas >= 3 ? 'telas' : null; if (!k) break; G[k] -= k === 'pieles' ? 2 : 3; u.coat = true; n++; used = k; g.coatsSewn = (g.coatsSewn || 0) + 1; }
+    for (const u of need) { if (n >= 3) break; const k = G.pieles >= 2 ? 'pieles' : G.telas >= 3 ? 'telas' : null; if (!k) break; G[k] -= k === 'pieles' ? 2 : 3; u.coat = true; u.coatMat = k; n++; used = k; g.coatsSewn = (g.coatsSewn || 0) + 1; }
     if (n && !nationOf(g).coatMsg) { nationOf(g).coatMsg = true; notify(`En ${g.name} empiezan a coser abrigos de ${used === 'pieles' ? 'piel' : 'tela'}: ya no pasarán tanto frío`, at); } // (un aviso por nación; el resto, en la ficha)
   }
   // Armas: en guerra, a los adultos que no tienen (2 de mercancía por arma)

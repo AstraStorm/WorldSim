@@ -551,7 +551,7 @@ function drawClothes(v, x, y, s, lift, drop){
   const top = y - s.height + 1 - lift - drop;
   if (v.coat) {
     if (!(v.coldT > yearT)) { v.coldT = yearT + 2; v.cold = tempAt(Math.floor(v.y / T) * W + Math.floor(v.x / T)) < 10; }
-    if (v.cold) { const ty = y - 8 - lift - drop; vctx.fillStyle = '#5a3a22'; vctx.fillRect(x - 2, ty, 5, 6); vctx.fillStyle = '#8a5c36'; vctx.fillRect(x - 1, ty + 1, 3, 4); vctx.fillStyle = '#f0e6d2'; vctx.fillRect(x - 2, ty, 5, 1); vctx.fillRect(x, ty + 1, 1, 4); }
+    // (el abrigo va dibujado en la propia figura cuando hace frío: personSprite, aldeanos.js)
   }
   if (v.oficio === 'obrero' && v.born !== undefined && (yearT - v.born) / YEAR >= ADULT_H) { vctx.fillStyle = '#2e2e34'; vctx.fillRect(x - 2, top, 4, 1); vctx.fillRect(x + (v.dir < 0 ? -3 : 2), top + 1, 2, 1); } // gorra con visera
 }
