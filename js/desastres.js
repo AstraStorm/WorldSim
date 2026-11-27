@@ -10,6 +10,7 @@ let snowDirty = new Set();
 const setSnow = (i, v) => { const o = snowA[i]; snowA[i] = v; if ((o * 20 | 0) !== (v * 20 | 0) || v <= 0) snowDirty.add(i); };
 // Temperatura media del planeta respecto a la normal: va hacia un objetivo que cambia cada año
 let globalT = 0, globalTarget = 0, globalYear = 0;
+let ensoDT = 0; // (El Niño / La Niña: fenomenos.js)
 let iceSet = new Set(), drySet = new Set(), snowDepth = null, snowClock = 0, seasonTempNow = 0, soil = null, soilNorm = null, soilRain = null, drought = null, droughtCv = null, climT = 0, iceSweep = 0, climClock = 0, lastDroughtNotice = -1e9;
 const SOIL_C = 8; // las celdas de humedad del suelo agrupan 8×8 casillas
 const BIOME_DT = { [B.DESERT]:6, [B.DRY]:2, [B.SAND]:2, [B.SNOW]:-4, [B.TUNDRA]:-3, [B.ROCK]:-2, [B.SWAMP]:1 };
@@ -67,7 +68,7 @@ function tempAt(i){
   const amp = sea ? .5 : 1 + clamp(-world.baseT[i] / 15, 0, 1) * .6;
   // Cerca de un volcán hace más calor (dormido, algo; en erupción, mucho) y sobre la lava, muchísimo
   const vk = world.vHeatId[i], volc = vk ? world.vHeatF[i] * (6 + world.volcanoes[vk - 1].heat * 30) : 0;
-  return world.baseT[i] + globalT + seasonTempNow * amp + anomaly(x, y) - (raining(i) ? 2 : 0) + droughtAt(i) * 3 + volc + world.lavaT[i] * 40;
+  return world.baseT[i] + globalT + ensoDT + seasonTempNow * amp + anomaly(x, y) - (raining(i) ? 2 : 0) + droughtAt(i) * 3 + volc + world.lavaT[i] * 40;
 }
 const FRESH = b => b === B.LAKE || b === B.RIVER;
 const frozen = i => world.ice && world.ice[i] > .5;
@@ -218,6 +219,7 @@ function paintIce(Dd, x0, y0, x1, y1){
 // nieve lo apagan y el agua lo frena. Lo quemado queda como tierra calcinada que se recupera con los años
 let fires = new Map(), burnt = new Map(), smoke = [], lastFireNotice = -1e9, wetT = null, simT = 0;
 const raining = i => wetT && simT - wetT[i] < .5; // le ha llovido o nevado en el último medio segundo
+const wetSoil = i => wetT && simT - wetT[i] < 25; // la tierra sigue húmeda un rato después de llover (los campos no se secan nada más parar)
 const FUEL = { [B.DRY]:1, [B.PLAINS]:.8, [B.GRASS]:.7, [B.FOREST]:.75, [B.HILLS]:.55, [B.TUNDRA]:.2, [B.SWAMP]:.08 };
 const SEASON_DRY = [.55, 1.35, .85, .25]; // primavera · verano · otoño · invierno
 function fireRisk(i){
@@ -501,8 +503,8 @@ function whirlPull(w, o, dt, k){
 function updateWhirls(dt){
   if (!world) return;
   // Nacen solos en mar abierto, más con temporal
-  if (whirls.length < 2 && Math.random() < dt * .0012 * disasterF() * (storms.some(s => s.type === 'huracan') ? 4 : 1)) {
-    for (let k = 0; k < 30; k++) { const i = Math.floor(Math.random() * N); if (world.biome[i] !== B.DEEP) continue; if (addWhirl((i % W) * T + 2, ((i / W) | 0) * T + 2, true)) break; }
+  if (whirls.length < 3 && Math.random() < dt * .003 * disasterF() * (storms.some(s => s.type === 'huracan') ? 4 : 1)) {
+    for (let k = 0; k < 30; k++) { const i = Math.floor(Math.random() * N); if (world.biome[i] !== B.DEEP && world.biome[i] !== B.SEA) continue; if (addWhirl((i % W) * T + 2, ((i / W) | 0) * T + 2, true)) break; }
   }
   for (const w of whirls) {
     w.age += dt; const p = whirlPower(w);

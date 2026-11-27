@@ -3236,7 +3236,7 @@ function updateVillages(dt){
     const g = villageById(f.vid); if (!g) { farmMap.delete(i); continue; }
     if (world.objs[i] || WATER[world.biome[i]] || world.biome[i] === B.LAVA) { farmMap.delete(i); continue; } // algo ha ocupado el campo
     if (f.st === 'muerta' || f.st === 'arada' || f.st === 'pradera') continue; // sin nada sembrado
-    const t = tempAt(i), C = CROPS[f.crop || 'trigo'], water = freshNear(i, (g.know || {}).acequias ? 12 : 8) || raining(i) || (floodA && floodA[i] > .2) || wellWater(g, i, dt);
+    const t = tempAt(i), C = CROPS[f.crop || 'trigo'], water = freshNear(i, (g.know || {}).acequias ? 12 : 8) || wetSoil(i) || (floodA && floodA[i] > .2) || wellWater(g, i, dt);
     const secano = !water && [B.GRASS, B.PLAINS, B.FOREST].includes(world.biome[i]) && droughtAt(i) < .3; // tierra húmeda: aguanta con la lluvia de vez en cuando
     if (fires.has(i) || burnt.has(i)) { f.st = 'muerta'; f.why = 'quemada'; misfortune(g, 'quemada'); continue; }
     if (floodA && floodA[i] > .6) { f.st = 'muerta'; f.why = 'inundada'; misfortune(g, 'inundada'); continue; }

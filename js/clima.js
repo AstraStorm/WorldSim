@@ -165,7 +165,7 @@ function updateWeather(dt){
     if (s.age > s.life) systems[k] = makeSystem();
   }
   for (let k = 0; k < clouds.length; k++) {
-    const c = clouds[k], cx = c.x + (c.x0 + c.x1) / 2, cy = c.y + c.h / 2, [wx, wy] = windAt(cx, cy);
+    const c = clouds[k], cx = c.x + (c.x0 + c.x1) / 2, cy = c.y + c.h / 2, [wx, wy] = windAt(cx, cy); c.wx = wx; // (las gotas caen inclinadas con el viento)
     c.x += wx * c.speed * dt; c.y += wy * c.speed * dt;
     // Al salir del mapa o al quedarse sin agua la nube se desvanece y nace otra donde haya humedad
     if (cx < -60 || cy < -60 || cx > PW + 60 || cy > PH + 60) c.dying = true;
@@ -174,7 +174,7 @@ function updateWeather(dt){
     if (!c.dying) {
       const ci = clamp(Math.floor(cy / T), 0, H - 1) * W + clamp(Math.floor(cx / T), 0, W - 1);
       const evap = evapAt(cx, cy), lift = liftAt(cx, cy, wx, wy), p = pressureAt(cx, cy), t = tempAt(ci);
-      c.q += dt * .014 * evap;                                             // recoge el agua que se evapora debajo
+      c.q += dt * .014 * evap * (typeof ensoRain === 'function' ? ensoRain(cy) : 1); // recoge el agua que se evapora debajo (con El Niño / La Niña, más o menos según dónde)
       if (p > .3) c.q -= dt * .03 * (p - .3);                              // anticiclón: el aire baja y la seca
       if (!WATER[world.biome[ci]] && t > 24 && evap < .3) c.q -= dt * .008; // desierto caluroso
       // Se satura antes si el aire sube (montaña, borrasca): entonces llueve y va perdiendo agua
@@ -192,7 +192,8 @@ function updateWeather(dt){
     // Nieve o lluvia según la temperatura que haga bajo la nube
     const ti = clamp(Math.floor(cy / T), 0, H - 1) * W + clamp(Math.floor(cx / T), 0, W - 1);
     c.snow = c.type !== 'normal' && tempAt(ti) < 1; // nieva si bajo la nube hace frío; si no, llueve
-    if (c.snow && c.alpha > .5 && c.precip > .3) {
+    const gd = (c.gAcc = (c.gAcc || 0) + dt) >= .3 ? c.gAcc : 0; if (gd) c.gAcc = 0; // (el suelo, cada 0,3 s con todo el tiempo junto)
+    if (gd && c.snow && c.alpha > .5 && c.precip > .3) {
       // Rastro de nieve en el suelo bajo la nube
       const gx0 = Math.floor((c.x + c.x0 + 4) / T), gx1 = Math.floor((c.x + c.x1 - 4) / T);
       const gy0 = Math.floor((c.y + c.h * .35) / T), gy1 = Math.floor((c.y + c.y1) / T);
@@ -201,9 +202,9 @@ function updateWeather(dt){
         if (WATER[world.biome[i]] || world.biome[i] === B.LAVA) continue;
         const fall = footprint(c, tx, ty, gx0, gx1, gy0, gy1); if (fall <= 0) continue;
         wetT[i] = simT;
-        if (tempAt(i) < 0) { setSnow(i, Math.min(1, snowA[i] + dt * .4 * fall * c.precip)); snowSet.add(i); } // con más calor no cuaja
+        if (tempAt(i) < 0) { setSnow(i, Math.min(1, snowA[i] + gd * .4 * fall * c.precip)); snowSet.add(i); } // con más calor no cuaja
       }
-    } else if (c.type !== 'normal' && c.alpha > .5 && c.precip > .3) {
+    } else if (gd && c.type !== 'normal' && c.alpha > .5 && c.precip > .3) {
       // La lluvia encharca el terreno bajo (cerca del nivel del mar); con tormenta, más deprisa
       const { e, sea } = world, lowSpan = (1 - sea) * .12;
       const gx0 = Math.floor((c.x + c.x0 + 4) / T), gx1 = Math.floor((c.x + c.x1 - 4) / T);
@@ -213,10 +214,10 @@ function updateWeather(dt){
         if (WATER[world.biome[i]] || world.biome[i] === B.LAVA) continue;
         const fall = footprint(c, tx, ty, gx0, gx1, gy0, gy1); if (fall <= 0) continue;
         wetT[i] = simT; // está lloviendo aquí ahora mismo (apaga incendios)
-        if (soilRain) soilRain[soilCell(i)] += dt * fall * c.precip * .0013; // y empapa el suelo
+        if (soilRain) soilRain[soilCell(i)] += gd * fall * c.precip * .0013; // y empapa el suelo
         const low = 1 - clamp((e[i] - sea) / lowSpan, 0, 1);
         if (low <= 0) continue;
-        floodA[i] = Math.min(1, floodA[i] + dt * .07 * low * fall * c.precip * (c.type === 'storm' ? 1.7 : 1)); floodSet.add(i);
+        floodA[i] = Math.min(1, floodA[i] + gd * .07 * low * fall * c.precip * (c.type === 'storm' ? 1.7 : 1)); floodSet.add(i);
       }
     }
     if (c.type === 'storm' && c.alpha > .6 && c.precip > .5 && (c.bolt -= dt) <= 0) { c.bolt = 2 + Math.random() * 6; strike(c); }
@@ -253,10 +254,14 @@ function drawWeather(t){
         vctx.fillRect(Math.round(left + h2(d, 1, 33) * width + Math.sin(ts * 2 + d) * 2), Math.round(top + ph * span), 1, 1);
       }
     } else {
-      vctx.fillStyle = c.type === 'storm' ? 'rgba(170,190,220,.6)' : 'rgba(190,210,235,.55)';
+      // Las gotas caen inclinadas según el viento (con tormenta, más largas y rápidas) y salpican al llegar al suelo
+      const storm = c.type === 'storm', slant = clamp((c.wx || 0) / 8, -2.5, 2.5) * (storm ? 1.6 : 1), len = storm ? 4 : 3, sp = storm ? 2.1 : 1.4;
+      vctx.fillStyle = storm ? 'rgba(170,190,220,.6)' : 'rgba(190,210,235,.55)';
       for (let d = 0; d < n; d++) {
-        const ph = (ts * (1.4 + h2(d, 3, 31)) + h2(d, 7, 32)) % 1;
-        vctx.fillRect(Math.round(left + h2(d, 1, 33) * width - ph * 3), Math.round(top + ph * span), 1, 3);
+        const ph = (ts * (sp + h2(d, 3, 31)) + h2(d, 7, 32)) % 1, x = left + h2(d, 1, 33) * width + slant * ph * span * .25;
+        if (ph > .94) { vctx.fillRect(Math.round(x) - 1, Math.round(top + span), 3, 1); continue; } // salpicadura
+        vctx.fillRect(Math.round(x), Math.round(top + ph * span), 1, len);
+        if (Math.abs(slant) > 1.2) vctx.fillRect(Math.round(x + Math.sign(slant)), Math.round(top + ph * span) + len, 1, 1);
       }
     }
   }
