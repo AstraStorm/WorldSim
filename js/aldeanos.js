@@ -316,7 +316,7 @@ function drawPersonIcons(){
 
 function spawnVillagers(){
   villagers = []; setFollow(null); nameIdx = 0; villages = []; rels = new Map(); travelers = []; diploT = 5; farmMap = new Map(); vidSeq = 0; pathMap = new Set(); bridgeSet = new Set(); bridges = []; plazaSet = new Set(); holySet = new Map(); usedFlags = new Set(); wear = new Float32Array(N); wornSet = new Set(); desireSet = new Set(); arrows = []; slashes = []; cannonballs = []; ashClouds = []; fireworks = []; fwQueue = []; fwFlash = []; chips = []; floats = []; zoneCv = null; zoneT = 0; wallSet = new Set(); gateSet = new Set(); alliances = []; moneyFlows = []; worldHist = { t:[], n:{} }; olymp = { next:yearT + SEASON_LEN * 2, cur:null, past:[] }; epidemics = []; ballGames = []; sieges = []; stones = []; wallStone = new Set(); gateOwner = new Map();
-  if (!params.people) { updateVillagePanel(); return; }
+  if (!params.people) { updateVillagePanel(true); return; }
   const r = mulberry32(hashStr(params.seed) ^ 0x51ed), bi = world.biome;
   // Tres pueblos en tierra buena cerca de agua dulce, lo bastante lejos para ser distintos y lo bastante cerca
   // para acabar encontrándose (cada uno con la piel de su clima)
@@ -339,7 +339,7 @@ function spawnVillagers(){
       v.vid = g.id; villagers.push(v); n++;
     }
   }
-  updateVillagePanel();
+  updateVillagePanel(true);
 }
 const auraCache = new Map();
 const auraCol = v => { const g = villageById(v.vid); if (!g) return '255,255,255'; let c = auraCache.get(g); if (!c) { c = (g.col || villageColor(g)).join(','); auraCache.set(g, c); } return c; };
@@ -349,6 +349,18 @@ function drawVillagers(){
   const objs = world.objs, now = performance.now(), [vx0, vy0, vx1, vy1] = visibleRect();
   const camps = villages.filter(g => !g.fireOut && world.objs[g.fy * W + g.fx] && g.fx * T > vx0 - 10 && g.fx * T < vx1 + 10 && g.fy * T > vy0 - 20 && g.fy * T < vy1 + 10).sort((a, b) => a.fy - b.fy);
   let ci = 0, qi = 0;
+  // De lejos (cada aldeano ocupa uno o dos píxeles): un puntito con su cara y su camisa, sin todo lo demás. Es lo que más
+  // costaba al ver el mapa entero (800 figuras con aura, herramientas...) y a ese tamaño no se distingue
+  if (zoom < 1) {
+    for (const g of camps) drawCampFlames(g, now);
+    for (const q of campQueue) q.f();
+    for (const v of villagers) {
+      if (v.dead || v.away || v.boat || v.appear < .25 || (v.sleep && v.home != null) || v.x < vx0 - 4 || v.x > vx1 + 4 || v.y < vy0 - 8 || v.y > vy1 + 4) continue;
+      const x = Math.round(v.x) - 1, y = Math.round(v.y);
+      vctx.fillStyle = v.shirt || '#d8d0c0'; vctx.fillRect(x, y - 4, 3, 4); vctx.fillStyle = v.skin || '#e0ae80'; vctx.fillRect(x, y - 6, 3, 2);
+    }
+    return;
+  }
   for (const v of [...villagers].sort((a, b) => a.y - b.y)) {
     while (ci < camps.length && camps[ci].fy * T + 3 <= v.y) drawCampFlames(camps[ci++], now);
     while (qi < campQueue.length && campQueue[qi].y <= v.y) campQueue[qi++].f(); // tiendas de acampadas y campamentos que están más atrás

@@ -103,13 +103,16 @@ function ownPlots(g){
 // ¿Agua donde no se levanta muralla? Mar y lagos sí; un río no (se cruza con una reja)
 const seaWater = i => WATER[world.biome[i]] && world.biome[i] !== B.RIVER;
 // Un tramo puesto sin obra (al cambiar la muralla vieja por la nueva): las mismas reglas que al levantarla
+// Las casillas donde hay alguien ahora mismo (una vez por paso: antes se repasaba a todo el mundo por cada tramo)
+let vTilesC = null, vTilesT = -1;
+const vTiles = () => { if (vTilesT !== yearT || !vTilesC) { vTilesT = yearT; vTilesC = new Set(); for (const u of villagers) if (!u.dead && !u.away) vTilesC.add(Math.floor(u.y / T) * W + Math.floor(u.x / T)); } return vTilesC; };
 function placeWall(g, i, stone){
   const x = i % W, y = (i / W) | 0, o = world.objs[i];
   if (seaWater(i) || bridgeSet.has(i) || plazaSet.has(i)) return false;
   if (midGate(g, i)) { gateSet.add(i); gateOwner.set(i, g.id); return true; }
   if (o && (isBuilding(o) || o.key.startsWith('fire') || o.vid != null)) return false;
   if (underBuilding(g, x, y) || plotIn(x, y, x, y) || villages.some(q => inPen(q, x, y, 1))) return false;
-  if (villagers.some(u => !u.dead && !u.away && Math.floor(u.x / T) === x && Math.floor(u.y / T) === y)) return false; // (nunca encima de nadie)
+  if (vTiles().has(i)) return false; // (nunca encima de nadie)
   if (o) { world.objs[i] = null; composeRegion(x - 7, y - 11, x + 7, y + 12); }
   farmMap.delete(i); pathMap.delete(i); wallSet.add(i); if (stone) wallStone.add(i);
   return true;

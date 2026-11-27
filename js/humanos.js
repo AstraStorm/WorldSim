@@ -174,6 +174,9 @@ const routeC = new Map(); let routeCW = null, routeHits = 0, routeMiss = 0;
   routeC.set(key, { t:yearT, r:r ? r.slice() : null }); if (r && r.partial) routeC.get(key).r.partial = true;
   return r;
 }; }
+// Con pasos largos (a x4-x5, o quien está fuera de la vista y piensa un paso sí y otro no), el movimiento se hace en
+// trocitos de 0,1 s: así nadie atraviesa una muralla o un río de un salto
+{ const base = vGo; vGo = function(v, x, y, dt, run){ if (!(dt > .12)) return base(v, x, y, dt, run); const n = Math.min(4, Math.ceil(dt / .1)), d = dt / n; let r = false; for (let k = 0; k < n && !r; k++) r = base(v, x, y, d, run); return r; }; }
 function vGo(v, x, y, dt, run){
   const d = Math.hypot(x - v.x, y - v.y);
   if (d < 3 || (d < 9 && !walkable(x, y))) { v.route = null; return true; }

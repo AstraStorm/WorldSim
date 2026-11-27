@@ -143,7 +143,7 @@ function foundTribe(tx, ty, name){
   g.pOwn = true; const n = nationOf(g);
   world.player = { vid:g.id, nid:n.id, t0:yearT, name:g.name, embargo:[], peaceT:{}, giftT:{}, dipT:{} };
   n.pLaws = []; n.pIdeo = 0;
-  updateVillagePanel(); centerOn(g.fx * T, g.fy * T, 5);
+  updateVillagePanel(true); centerOn(g.fx * T, g.fy * T, 5);
   notify(`Nace ${g.name}, tu tribu: doce personas y todo por hacer. Desde «Gobierno» decides cómo crece`, { x:g.fx * T, y:g.fy * T });
   govSync(); govOpen('resumen');
   return g;

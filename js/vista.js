@@ -158,17 +158,22 @@ function draw(t){
   }
   // Flecha sobre cada aldeano para encontrarlo a cualquier zoom, del color de su nación (con borde dorado si la cámara lo sigue)
   const natCol = new Map(), colOf = v => { let c = natCol.get(v.vid); if (!c) { const g = villageById(v.vid); c = g ? villageColor(nationOf(g)) : [255, 255, 255]; natCol.set(v.vid, c); } return c; };
+  // (agrupadas por color: un solo trazado para todas las flechas de cada nación, en vez de cientos)
+  const arrowsBy = new Map();
   for (const v of villagers) {
-    if (v.appear < .25 || v.dead || v.away || (v.sleep && v.home != null) || (zoom >= 4 && v !== follow) || (zoom >= 2 && v !== follow && v.task && v.task.k === 'asalto')) continue; // (los soldados en una batalla ya se ven en grupo: sin flechas que la tapen) // de cerca ya se ven sin flecha; quien va en globo, en barco o de viaje (o duerme en casa) no está ahí
+    if (v.appear < .25 || v.dead || v.away || (v.sleep && v.home != null) || (zoom >= 4 && v !== follow) || (zoom >= 2 && v !== follow && v.task && v.task.k === 'asalto')) continue;
     const sx = offX + v.x * zoom, sy = offY + (v.y - 8) * zoom - 4 - (reduceMotion ? 0 : Math.abs(Math.sin(t / 300)) * 3);
     if (sx < -10 || sy < -10 || sx > cw + 10 || sy > ch + 10) continue;
-    const c = colOf(v), fol = v === follow;
-    vctx.fillStyle = fol ? '#e9b949' : 'rgba(0,0,0,.8)';
-    vctx.beginPath(); vctx.moveTo(sx - 6.5, sy - 8.5); vctx.lineTo(sx + 6.5, sy - 8.5); vctx.lineTo(sx, sy + 1.5); vctx.fill();
-    vctx.fillStyle = `rgb(${c[0]},${c[1]},${c[2]})`;
-    vctx.beginPath(); vctx.moveTo(sx - 4.5, sy - 7); vctx.lineTo(sx + 4.5, sy - 7); vctx.lineTo(sx, sy - 1); vctx.fill();
-    vctx.fillStyle = 'rgba(255,255,255,.55)'; vctx.fillRect(sx - 3.5, sy - 7, 7, 1.2); // brillo arriba
+    if (v === follow) { const c = colOf(v); vctx.fillStyle = '#e9b949'; vctx.beginPath(); vctx.moveTo(sx - 6.5, sy - 8.5); vctx.lineTo(sx + 6.5, sy - 8.5); vctx.lineTo(sx, sy + 1.5); vctx.fill();
+      vctx.fillStyle = `rgb(${c[0]},${c[1]},${c[2]})`; vctx.beginPath(); vctx.moveTo(sx - 4.5, sy - 7); vctx.lineTo(sx + 4.5, sy - 7); vctx.lineTo(sx, sy - 1); vctx.fill(); continue; }
+    const c = colOf(v), key = c.join(','); let A = arrowsBy.get(key); if (!A) arrowsBy.set(key, A = { out:new Path2D(), inn:new Path2D(), hi:new Path2D(), c });
+    A.out.moveTo(sx - 6.5, sy - 8.5); A.out.lineTo(sx + 6.5, sy - 8.5); A.out.lineTo(sx, sy + 1.5); A.out.closePath();
+    A.inn.moveTo(sx - 4.5, sy - 7); A.inn.lineTo(sx + 4.5, sy - 7); A.inn.lineTo(sx, sy - 1); A.inn.closePath();
+    A.hi.rect(sx - 3.5, sy - 7, 7, 1.2);
   }
+  vctx.fillStyle = 'rgba(0,0,0,.8)'; for (const A of arrowsBy.values()) vctx.fill(A.out);
+  for (const A of arrowsBy.values()) { vctx.fillStyle = `rgb(${A.c[0]},${A.c[1]},${A.c[2]})`; vctx.fill(A.inn); }
+  vctx.fillStyle = 'rgba(255,255,255,.55)'; for (const A of arrowsBy.values()) vctx.fill(A.hi);
   if (mouse && params.tool !== 'move') {
     const r = brushRadius() + .5;
     vctx.strokeStyle = 'rgba(255,255,255,.85)'; vctx.lineWidth = 1.5;

@@ -222,8 +222,13 @@ const KIND_DIMS = { altar:[1, 2], templo:[4, 7], mercado:[4, 4], casa:[4, 6], ay
 const TASK_KIND = { templo:'templo', mercado:'mercado', construir:'casa', ayuntamiento:'ayuntamiento', molino:'molino', pozo:'pozo', almacen:'almacen', torre:'torre', cantera:'cantera', banco:'banco', maravilla:'maravilla', herreria:'herreria', hospital:'hospital', cuartel:'cuartel', lonja:'lonja', teatro:'teatro', coliseo:'coliseo', taberna:'taberna', catedral:'catedral', escuela:'escuela', tribunal:'tribunal', carcel:'carcel', imprenta:'imprenta', sindicato:'sindicato', parlamento:'parlamento', academia:'academia', mina:'mina', universidad:'universidad', consejo:'consejo', espias:'espias', granero:'granero', ahumadero:'ahumadero', lenera:'lenera', postas:'postas', chabola:'chabola' };
 // ¿Choca con un edificio ya hecho o con uno que alguien está a punto de levantar? (skip: el propio solar)
 // Todos los edificios (y las hogueras) de todos los pueblos, una vez por paso: buildingClash se pregunta muchísimo
-let abC = null, abT = -1;
-function allBuildings(){ if (abT !== yearT || !abC) { abT = yearT; abC = []; for (const g of villages) { for (const b of buildingsOf(g)) abC.push(b); abC.push(Math.round(g.fy) * W + Math.round(g.fx)); } } return abC; }
+let abC = null, abT = -1, abG = null;
+const AB_CELL = 16;
+function allBuildings(){ if (abT !== yearT || !abC) { abT = yearT; abC = []; abG = new Map(); for (const g of villages) { for (const b of buildingsOf(g)) abC.push(b); abC.push(Math.round(g.fy) * W + Math.round(g.fx)); }
+  for (const b of abC) { const k = ((((b / W) | 0) / AB_CELL) | 0) * 4096 + (((b % W) / AB_CELL) | 0); let L = abG.get(k); if (!L) abG.set(k, L = []); L.push(b); } } return abC; }
+// Los edificios cerca de un rectángulo (con margen para los más grandes): para no recorrer los miles del mundo
+function buildingsNear(x0, y0, x1, y1){ allBuildings(); const M = 14, out = [], cx0 = Math.max(0, ((x0 - M) / AB_CELL) | 0), cx1 = ((x1 + M) / AB_CELL) | 0, cy0 = Math.max(0, ((y0 - M) / AB_CELL) | 0), cy1 = ((y1 + M) / AB_CELL) | 0;
+  for (let cy = cy0; cy <= cy1; cy++) for (let cx = cx0; cx <= cx1; cx++) { const L = abG.get(cy * 4096 + cx); if (L) for (const b of L) out.push(b); } return out; }
 const ZONE_OK = new Set(['altar', 'templo', 'catedral', 'mercado', 'maravilla', 'ayuntamiento']);
 const zoneHit = (x0, y0, x1, y1) => villages.some(o => [o.holy, o.marketRect, o.plaza].some(q => q && !(x1 < q.x0 || x0 > q.x1 || y1 < q.y0 || y0 > q.y1)));
 let pwC = null, pwT = -1; // trazado de las murallas que se están levantando (no se construye encima)
@@ -232,7 +237,7 @@ function buildingClash(x, y, kind, skip){
   if (volcDanger(x, y)) return true; // ni en las faldas de un volcán ni sobre la lava (volcanes.js)
   const [hw, hh] = KIND_DIMS[kind] || [4, 5];
   const hit = (bx, by, d) => !(x + hw < bx - d[0] || x - hw > bx + d[0] || y + 1 < by - d[1] || y - hh > by + 1);
-  for (const b of allBuildings()) {
+  for (const b of buildingsNear(x - hw, y - hh, x + hw, y + 1)) {
     if (b === skip) continue; const o = world.objs[b]; if (!o) continue;
     const d = BUILD_DIMS[o.key.split(':')[0]]; if (d && hit(b % W, (b / W) | 0, d)) return true;
   }
@@ -680,9 +685,13 @@ function villageColor(g){
   const f = k => { const a = .62 * Math.min(.5, 1 - .5); const kk = (k + h / 30) % 12; return .5 - a * Math.max(-1, Math.min(kk - 3, 9 - kk, 1)); };
   return g.col = [f(0) * 255 | 0, f(8) * 255 | 0, f(4) * 255 | 0];
 }
-function buildZones(){
+let zoneSig = '';
+function buildZones(force){
   const live = villages.filter(g => popOf(g) > 0 && world.objs[g.fy * W + g.fx]);
-  if (!live.length) { zoneCv = null; return; }
+  if (!live.length) { zoneCv = null; zoneSig = ''; return; }
+  // Solo si ha cambiado algo (casas, pozos, campos, cercados o quién vive): rehacerlo costaba ~100 ms
+  const sig = live.map(g => `${g.id}:${g.houses.length}:${(g.wells || []).length}:${(g.pens || []).length}:${nationOf(g).id}`).join(',') + '|' + Math.round(farmMap.size / 10) + '|' + (world.player ? 1 : 0);
+  if (!force && sig === zoneSig && zoneCv) return; zoneSig = sig;
   const own = new Int16Array(N), best = new Float32Array(N).fill(9);
   // Empieza pequeño (la hoguera y poco más) y se extiende alrededor de lo que van construyendo:
   // cada casa, pozo, molino o cantera, sus campos y el cercado suman su trozo de tierra
@@ -1562,7 +1571,7 @@ const relKey = (a, b) => a.id < b.id ? a.id + '-' + b.id : b.id + '-' + a.id;
 const relOf = (a, b) => { const k = relKey(a, b); let r = rels.get(k); if (!r) rels.set(k, r = { v:0, known:false, reason:'' }); return r; };
 const REASON_TXT = { 'guerra civil':'la guerra civil', alianza:'defender a sus aliados', 'religión':'la religión', raza:'ser de otro pueblo', territorio:'el territorio', recursos:'los recursos', rencor:'viejas ofensas', mercancias:'hacerse con sus mercancías', habladurias:'lo que se dice en la calle' };
 const relWord = r => r.war ? 'en guerra' : r.v >= 40 ? 'aliados' : r.v >= 15 ? 'amigos' : r.v > -15 ? 'neutrales' : r.v > -45 ? 'tensos' : 'enemigos';
-const skinAvg = g => { const ps = villagers.filter(v => !v.dead && v.vid === g.id); return ps.reduce((a, v) => a + Math.max(0, SKIN.indexOf(v.skin)), 0) / Math.max(1, ps.length); };
+const skinAvg = g => { const c = g.skinC; if (c && yearT - c.t < DAY_LEN / 2 && yearT >= c.t) return c.v; const ps = villagers.filter(v => !v.dead && v.vid === g.id); const v = ps.reduce((a, u) => a + Math.max(0, SKIN.indexOf(u.skin)), 0) / Math.max(1, ps.length); g.skinC = { t:yearT, v }; return v; }; // (una vez cada medio día: se preguntaba por cada pareja de pueblos)
 function diploTick(){
   fairTick(); // la feria ambulante (fama.js)
   goldRushTick(); // ¿fiebre del oro? (civilizacion.js)
@@ -2947,8 +2956,12 @@ function killVillager(v, cause){
   addCorpse(s, v.x, v.y, false, cause === 'guerra' ? 25 : 0); // los caídos en la guerra se quedan un rato en el campo de batalla
   if (follow === v) setFollow(null);
 }
-function updateVillagers(dt){
+// Rendimiento: con mucha gente, quien está fuera de la vista piensa un paso sí y otro no (con el doble de tiempo): lo
+// mismo, con la mitad de trabajo. Nunca quien lucha, apaga un fuego o está en peligro, ni el que sigue la cámara
+let vLodPh = 0;
+function updateVillagers(dtAll){
   if (!world) return;
+  let dt = dtAll; const [lx0, ly0, lx1, ly1] = visibleRect(), lod = villagers.length > 250; vLodPh ^= 1;
   let thinkLeft = 8 + Math.ceil(villagers.length / 25); // decisiones por paso (pensar por turnos)
   updateArrows(dt);
   updateTravelers(dt);
@@ -2959,6 +2972,8 @@ function updateVillagers(dt){
     v.moving = false;
     if (v.dead) continue;
     if (v.away) continue; // de viaje (caravana o diplomático)
+    dt = dtAll;
+    if (lod && v !== follow && !v.enemy && !v.foe && !v.fogata && !(v.task && (v.task.k === 'asalto' || v.task.k === 'apagar' || v.task.k === 'guardia')) && (v.x < lx0 - 80 || v.x > lx1 + 80 || v.y < ly0 - 80 || v.y > ly1 + 80)) { if ((refOf(v) & 1) === vLodPh) continue; dt = dtAll * 2; }
     if (!isFinite(v.x) || !isFinite(v.y)) { const g0 = villageById(v.vid); window.__nanLog = (window.__nanLog || []).concat([v.task && (v.task.job || v.task.k)]).slice(-20); v.x = g0 ? g0.fx * T + 2 : PW / 2; v.y = g0 ? g0.fy * T + 6 : PH / 2; v.task = null; v.route = null; } // por si alguna cuenta sale mal
     if (v.appear < .25) { v.appear += dt; continue; }
     if (v.born === undefined) lifeFields(v, Math.floor(v.x / T), Math.floor(v.y / T), 3 + Math.random() * 6, Math.random);
@@ -3167,7 +3182,7 @@ function updateVillagers(dt){
     runTask(v, g, dt);
   }
   if (villagers.some(v => v.dead)) villagers = villagers.filter(v => !v.dead);
-  villageClock += dt;
+  villageClock += dtAll;
   if (villageClock >= 1) { updateVillages(villageClock); villageClock = 0; }
 }
 // ---- Pueblo abandonado: en unos días los edificios se caen, el cercado se pudre y la hierba se come las calles ----
@@ -3581,7 +3596,7 @@ function drawVillageFx(t){
   for (const g of villages) {
     drawWellsMills(g, t);
     drawTorches(g, t);
-    if (snowA) for (const b of buildingsOf(g)) {
+    if (snowA && zoom >= 1.4 && g.fx * T > x0 - 300 && g.fx * T < x1 + 300 && g.fy * T > y0 - 300 && g.fy * T < y1 + 300) for (const b of buildingsOf(g)) { // (de lejos no se distingue y costaba mucho)
       const o = world.objs[b]; if (!o) continue;
       const sn = Math.max(snowA[b], snowA[b - W] || 0, snowA[b - 2 * W] || 0); if (sn < .2) continue;
       const sp = objSprite(o), left = (b % W) * T + 2 + o.ox - sp.ax, base = ((b / W) | 0) * T + 3 + o.oy, top = base - sp.height + 1;
@@ -3618,8 +3633,10 @@ function dietMix(g){
   const ps = villagers.filter(v => !v.dead && v.vid === g.id), veg = ps.filter(v => v.diet < .2).length, car = ps.filter(v => v.diet > .8).length;
   return `${ps.length - veg - car} omnívoros${veg ? `, ${veg} vegetarianos` : ''}${car ? `, ${car} carnívoros` : ''}`;
 }
-function updateVillagePanel(){
+let vpT = 0;
+function updateVillagePanel(force){
   const el = $('aldeas'); if (!el) return;
+  if (!force && (!el.offsetParent || performance.now() - vpT < 3000)) return; vpT = performance.now(); // (solo si se ve, y como mucho cada 3 s: repintarlo costaba)
   const live = villages.filter(g => popOf(g) > 0);
   el.innerHTML = live.length ? live.map(g => {
     const farms = [...farmMap.values()].filter(f => f.vid === g.id), ripe = farms.filter(f => f.st === 'madura').length, dead = farms.filter(f => f.st === 'muerta').length;

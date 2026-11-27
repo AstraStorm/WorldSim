@@ -345,7 +345,7 @@ function updateAnimals(dt){
     if (a.dead) continue;
     // Lejos de la vista (o con el mapa entero a la vista, que se ven diminutos), los animales salvajes piensan un paso sí y otro no (con el doble de tiempo): lo mismo, con la mitad de trabajo
     let dt = dtAll;
-    if (!a.dom && !a.lead && (zoom < 1.2 || a.x < lx0 - 60 || a.x > lx1 + 60 || a.y < ly0 - 60 || a.y > ly1 + 60)) { if ((a.lod = (a.lod ?? Math.floor(Math.random() * 4)) & 3) !== half) continue; dt = dtAll * 4; } // (fuera de la vista, uno de cada cuatro pasos: en los mapas enormes hay miles)
+    if (!a.dom && !a.lead && (a.x < lx0 - 60 || a.x > lx1 + 60 || a.y < ly0 - 60 || a.y > ly1 + 60)) { if ((a.lod = (a.lod ?? Math.floor(Math.random() * 4)) & 3) !== half) continue; dt = dtAll * 4; } // (fuera de la vista, uno de cada cuatro pasos: en los mapas enormes hay miles)
     const S = ANIMALS[a.sp], age = (yearT - a.born) / YEAR;
     a.moving = false;
     // Muerte por vejez, lava, hambre, frío o sed

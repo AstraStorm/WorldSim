@@ -83,8 +83,9 @@ function loop(t){
     // cada sistema por separado: si uno falla en un fotograma, el resto sigue y el juego no se congela
     // Si no caben todos los pasos en el presupuesto, se dan menos pasos pero más largos (máx. 0,1 s, como a 10 fps):
     // así x5 avanza de verdad 5 veces más rápido en vez de quedarse en x2 por los pasos que se perdían
-    const simT0 = performance.now(), want = dt * gameSpeed, budget = SIM_BUDGET + Math.max(0, gameSpeed - 2) * 10; // a x3-x5 se acepta perder algo de fluidez
-    const steps = gameSpeed ? Math.min(gameSpeed, Math.max(1, Math.ceil(want / .1), Math.floor(budget / simStepMs))) : 0, sdt = steps ? Math.min(.1, want / steps) : 0;
+    const simT0 = performance.now(), want = dt * gameSpeed, budget = SIM_BUDGET + Math.max(0, gameSpeed - 2) * (gameSpeed >= 4 ? 22 : 10); // a x3-x5 se acepta perder algo de fluidez
+    const maxStep = gameSpeed >= 4 ? .2 : .1; // (a x4 y x5, pasos de hasta 0,2 s: la mitad de pasos para lo mismo; el movimiento se sigue haciendo de 0,1 en 0,1)
+    const steps = gameSpeed ? Math.min(gameSpeed, Math.max(1, Math.ceil(want / maxStep), Math.floor(budget / simStepMs))) : 0, sdt = steps ? Math.min(maxStep, want / steps) : 0;
     for (let k = 0; k < steps; k++) {
       if (k && performance.now() - simT0 + simStepMs * .7 > budget) { simLag = steps - k; break; } // no da para tanto: el resto, otro fotograma (más lento, pero sin tirones)
       const s0 = performance.now();
