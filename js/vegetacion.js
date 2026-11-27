@@ -76,7 +76,7 @@ const WAVES_SYS = SYSTEMS[SYSTEMS.length - 1];
 const SLOW_RE = /updateClimate|updateWeather|updateLanguages|clearWallsOverPens|updateCouncil|tidyStatues|islandTick|stateVisitTick|conquestTick/, slowSys = new WeakMap();
 const isSlowSys = f => { let v = slowSys.get(f); if (v === undefined) { v = SLOW_RE.test(f.toString()) && !/updateVillagers|updateAnimals/.test(f.toString()); slowSys.set(f, v); } return v; }; // el oleaje es solo dibujo: una vez por fotograma aunque el juego vaya rápido (otros módulos añaden sistemas detrás)
 function loop(t){
-  const dt = Math.min(.1, (t - (lastT || t)) / 1000); lastT = t;
+  const dt = Math.min(gameSpeed >= 4 ? .2 : .1, (t - (lastT || t)) / 1000); lastT = t; // (a x4 y x5, si van pocos fotogramas, cada uno avanza más: si no, x5 no llega nunca a x5)
   if (loadingShown) drawGlobe(t);
   if (!busy) {
     // A 2×, 3× o 4× la simulación da varios pasos por fotograma (el oleaje, que es solo dibujo, uno);

@@ -413,9 +413,10 @@ function drawVillagers(){
       vctx.globalAlpha = 1;
       if (v.task && v.task.k === 'protesta') { // cartel en alto, subiendo y bajando
         const sx = x + v.dir * 2, sy = y - s.height - 8 - lift - drop - ((Math.floor(now / 280) + Math.floor(v.x)) % 2);
+        if (typeof drawProtestSign === 'function' && drawProtestSign(v, x, sy, now)) {} else {
         vctx.fillStyle = '#7a5230'; vctx.fillRect(sx, sy + 4, 1, 6); vctx.fillStyle = '#2a2420'; vctx.fillRect(sx - 4, sy - 1, 9, 6);
         vctx.fillStyle = v.task.col; vctx.fillRect(sx - 3, sy, 7, 4); vctx.fillStyle = '#3a3028'; vctx.fillRect(sx - 2, sy + 1, 2, 1); vctx.fillRect(sx + 1, sy + 1, 2, 1); vctx.fillRect(sx - 2, sy + 2, 4, 1);
-      }
+      } }
       if (v.task && (v.task.k === 'golpe' || (v.task.k === 'trabajando' && v.task.job === 'golpe'))) { // brazalete y banderín de los golpistas
         const sx = x - v.dir * 2, sy = y - s.height - 6 - lift - drop; vctx.fillStyle = '#5a4030'; vctx.fillRect(sx, sy, 1, 8); vctx.fillStyle = '#c8302a'; vctx.fillRect(sx + 1, sy, 3, 2); vctx.fillStyle = '#1a1a1a'; vctx.fillRect(sx + 1, sy + 2, 3, 1);
       }

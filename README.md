@@ -138,6 +138,7 @@ Sin dependencias ni compilación: cada archivo es un script normal y se cargan e
 | `js/eras.js` | Las eras del mundo (Antigüedad, Hierro, Pólvora, Revolución Industrial, Eléctrica, Aire, Espacial, Digital): pantalla al empezar cada una |
 | `js/gobierno.js` | Menú de inicio con dos modos: modo dios o «Gobierna una nación» (fundas tu tribu en el mapa y decides régimen, leyes, impuestos, prioridades de trabajo, obras, ciencia, guerra, paz, diplomáticos, regalos, embargos y colonias; la gente puede enfadarse y protestar) |
 | `js/constitucion.js` | Constitución: las naciones donde se vota fijan en ella las leyes que quiere la gran mayoría (≥60 %); valen gobierne quien gobierne y solo cambian con reformas de dos tercios. Se suspende con golpes y vuelve con la democracia. En tu nación la convocas y reformas por referéndum |
+| `js/manifestaciones.js` | Manifestaciones con cabeza: se reúnen en la plaza y marchan en columna tras un cabecilla con pancarta hasta el edificio que toca según la queja (ayuntamiento, parlamento, fábrica, banco, cuartel, escuela, hospital, tribunal), se concentran en filas y corean. Sale quien se siente afectado y el miedo frena en las dictaduras; se suma gente por el camino. Tácticas: sentada si no les hacen caso, cacerolada desde casa (también de noche) si les reprimen; huyen de las cargas y se reagrupan |
 | `js/ui.js` | Pestañas del panel y de la barra de abajo, y el resumen del mundo |
 | `js/interfaz.js` | Herramientas del jugador, entrada, panel, pantalla de carga y oleaje |
 

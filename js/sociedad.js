@@ -171,7 +171,7 @@ function dropSpot(v, g){
 function clampStore(g){
   const cap = capOf(g); g.food = Math.min(g.food, cap); g.wood = Math.min(g.wood, cap); g.stone = Math.min(g.stone, cap); g.meat = Math.min(g.meat || 0, g.food);
 }
-const penOverlap = (g, x0, y0, x1, y1) => villages.some(o => pensOf(o).some(p => !(x1 < p.x0 - 1 || x0 > p.x1 + 1 || y1 < p.y0 - 1 || y0 > p.y1 + 1)));
+const penOverlap = (g, x0, y0, x1, y1) => { for (const o of villages) { const P = o.pens || (o.pen ? [o.pen] : null); if (P) for (const p of P) if (p && !(x1 < p.x0 - 1 || x0 > p.x1 + 1 || y1 < p.y0 - 1 || y0 > p.y1 + 1)) return true; } return false; };
 // ¿Esta casilla queda bajo el dibujo de una casa, pozo o molino de la aldea?
 // Rejilla de casillas ocupadas por la huella de los edificios de todos los pueblos: se rehace solo si cambian
 let ubCache = null, ubT = -1, ubGrid = null, ubSig = '';
@@ -1500,7 +1500,7 @@ function riteFx(g, x, y, big){
 const shapeTxt = s0 => s0 === 'filas' ? 'filas' : ['aspa', 'espiral', 'estrella', 'media luna'].includes(s0) ? `una ${s0}` : `un ${s0}`;
 function startRitual(g, why){
   const sp = g.holy ? [g.holy.cx * T + 2, (g.holy.cy + 1) * T + 3] : altarSpot(g) || fireSpot({}, g), cx = sp[0], cy = sp[1] - (!g.holy && altarSpot(g) ? 6 : 0);
-  const people = villagers.filter(u => !u.dead && u.vid === g.id && (yearT - u.born) / YEAR >= ADULT_H && !u.sleep && !u.away && !u.boat && !u.mount && !u.foe && !(u.task && ['apagar', 'sacrificio', 'asalto'].includes(u.task.k)) && u.food > .2 && u.water > .2);
+  const people = villagers.filter(u => !u.dead && u.vid === g.id && (yearT - u.born) / YEAR >= ADULT_H && !u.sleep && !u.away && !u.boat && !u.mount && !u.foe && !(u.task && ['apagar', 'sacrificio', 'asalto', 'protesta', 'reprimir', 'detenido', 'votar'].includes(u.task.k)) && u.food > .2 && u.water > .2);
   if (people.length < 3) return;
   const n = Math.min(14, people.length), until = yearT + 30;
   g.faith.shape ||= RITUAL_SHAPES[Math.floor(Math.random() * RITUAL_SHAPES.length)];
@@ -2217,8 +2217,11 @@ const artP = p => /^(Ciudadanos|Verdes|Liberales)/.test(p.name) ? 'los' : /^(Uni
 const lawsOfAll = g => { const n = nationOf(g), cm = typeof constMerge === 'function' ? L0 => constMerge(n, L0) : L0 => L0; /* (constMerge: el núcleo de la Constitución, constitucion.js) */ if (n.pLaws) return cm(n.pLaws); if (REGIME_LAWS[n.regime]) return REGIME_LAWS[n.regime]; /* (n.pLaws: las leyes que pone el jugador, gobierno.js) */ let L = n.ruling != null && n.parties && n.parties[n.ruling] ? n.parties[n.ruling].laws : [];
   const C = n.coalition != null && n.parties && n.parties[n.coalition]; if (C) L = [...L, ...C.laws.filter(l => !L.includes(l) && !LAW_CLASH.some(([a, b]) => (l === a && L.includes(b)) || (l === b && L.includes(a))))];
   return cm(n.regime === 'socialismo' ? [...new Set(['reparto', 'estatal', 'vivienda_publica', ...L.filter(l => l !== 'mercado_vivienda')])] : L); };
-const lawsOf = g => { const L = lawsOfAll(g); if (typeof lawAwake !== 'function') return L; const c = L._aw; if (c && c.t === yearT && c.n === nationOf(g)) return c.out; const out = L.filter(l => lawAwake(g, l)); try { Object.defineProperty(L, '_aw', { value:{ t:yearT, n:nationOf(g), out }, configurable:true, writable:true }); } catch (e) {} return out; }; // (las leyes sin sentido aún quedan dormidas: leyes.js)
-const hasLaw = (g, l) => lawsOf(g).includes(l);
+// (en cada paso se calcula una vez por nación; en pausa no se guarda, para que lo que cambia el jugador se vea al momento)
+const lawsOfC = new WeakMap();
+const lawsOf = g => { const n = nationOf(g); if (n && gameSpeed) { const c = lawsOfC.get(n); if (c && c.t === yearT && c.w === world) return c.out; } const out = lawsOf0(g); if (n && gameSpeed) lawsOfC.set(n, { t:yearT, w:world, out, set:new Set(out) }); return out; };
+const lawsOf0 = g => { const L = lawsOfAll(g); if (typeof lawAwake !== 'function') return L; const c = L._aw; if (c && c.t === yearT && c.n === nationOf(g)) return c.out; const out = L.filter(l => lawAwake(g, l)); try { Object.defineProperty(L, '_aw', { value:{ t:yearT, n:nationOf(g), out }, configurable:true, writable:true }); } catch (e) {} return out; }; // (las leyes sin sentido aún quedan dormidas: leyes.js)
+const hasLaw = (g, l) => { const L = lawsOf(g), c = gameSpeed && lawsOfC.get(nationOf(g)); return c && c.out === L ? c.set.has(l) : L.includes(l); };
 const sideTxt = p => p.ideo < -.3 ? 'izquierda' : p.ideo > .3 ? 'derecha' : 'centro';
 // Elecciones: los de toda la nación van a la plaza de su pueblo a votar; luego se cuenta
 function startElection(cap){
@@ -2400,7 +2403,7 @@ function politicsTick(g, dt, people){
   if (g.protestN) for (const k in g.protestN) if (!(f[k] > 0)) delete g.protestN[k]; // ya no hay motivo: se olvida
   if (g.protest) { runProtest(g); return; }
   if (g.coup) { if (yearT > g.coup.until) resolveCoup(g); return; }
-  if (g.anger > (hasLaw(g, 'orden') ? 50 : 35) && !afraid(g) && g.grief && !isNight() && g.plaza && !cap.election && yearT - (g.protestT ?? -1e9) > DAY_LEN * .5) { startProtest(g, adults); return; }
+  if (g.anger > (hasLaw(g, 'orden') ? 50 : 35) && !afraid(g) && g.grief && (!isNight() || (tyranny(g) && (g.repressed || 0) >= 1)) && g.plaza && !cap.election && yearT - (g.protestT ?? -1e9) > DAY_LEN * .5) { startProtest(g, adults); return; } /* (de noche, solo la cacerolada: manifestaciones.js) */
   if (cap === g && g.faith && ['republica', 'monarquia', 'tribu'].includes(regimeOf(g)) && (g.devotion || 0) > 8 && (g.wrath || 0) > 3 && !isNight() && Math.random() < .0004 * dt) {
     const priest = adults.filter(u => u.oficio === 'sacerdote').sort((a, b) => pietyOf(b) - pietyOf(a))[0] || adults.slice().sort((a, b) => pietyOf(b) - pietyOf(a))[0];
     if (priest) { const old = g.leader; setRegime(g, 'teocracia', priest); notify(`Los sacerdotes de ${g.name} toman el poder en nombre de ${g.faith.god}${old && old !== priest && !old.dead ? ` y apartan a ${old.name}` : ''}: ${priest.name} es ${leaderTitle(g)} de una teocracia`, { x:g.fx * T, y:g.fy * T }); return; }
@@ -2462,11 +2465,11 @@ function drawProtestBanners(){
   vctx.font = `bold ${fs}px system-ui, sans-serif`; vctx.textAlign = 'center'; vctx.textBaseline = 'middle';
   for (const g of villages) {
     if (!(g.protest || g.camp) || !g.plaza) continue;
-    const r0 = g.plaza, x = (r0.x0 + r0.x1 + 1) / 2 * T, y = r0.y0 * T - 10 - fs;
+    const r0 = g.plaza, PL = g.protest && g.protest.kind && g.protest.kind !== 'cacerolada' && g.protest.lead && !g.protest.lead.dead ? g.protest.lead : null, x = PL ? PL.x : (r0.x0 + r0.x1 + 1) / 2 * T, y = PL ? PL.y - 30 - fs : r0.y0 * T - 10 - fs; /* (sigue al cabecilla: manifestaciones.js) */
     if (x < x0 - 80 || x > x1 + 80 || y < y0 - 40 || y > y1 + 60) continue;
     const p = g.protest, live = p ? p.who.filter(u => !u.dead && u.task && u.task.k === 'protesta').length : 0;
     const lines = [];
-    if (p) lines.push([`✊ Manifestación contra ${GRIEF_TXT[g.grief] || 'el gobierno'} · ${live} personas`, '#f8f0d8']);
+    if (p) lines.push([`✊ ${p.kind && typeof PROT_KIND !== 'undefined' ? PROT_KIND[p.kind] : 'Manifestación'}${p.tg && p.kind !== 'cacerolada' ? ` ante ${p.tg.name}` : ''} contra ${GRIEF_TXT[p.grief || g.grief] || 'el gobierno'} · ${live} personas`, '#f8f0d8']);
     if (p && p.fires) lines.push([`🔥 Disturbios: ${p.fires} incendio${p.fires > 1 ? 's' : ''}`, '#ffb060']);
     if (g.camp) lines.push([`⛺ Acampada en la plaza · ${Math.max(1, Math.ceil((g.camp.until - yearT) / DAY_LEN))} día${Math.ceil((g.camp.until - yearT) / DAY_LEN) > 1 ? 's' : ''} más como mucho`, '#d8e8f8']);
     const w = Math.max(...lines.map(([s0]) => vctx.measureText(s0).width)) + fs * 1.2, lh = fs * 1.35, h = lh * lines.length + fs * .5, top = y - h;
@@ -2961,9 +2964,17 @@ function killVillager(v, cause){
 // Rendimiento: con mucha gente, quien está fuera de la vista piensa un paso sí y otro no (con el doble de tiempo): lo
 // mismo, con la mitad de trabajo. Nunca quien lucha, apaga un fuego o está en peligro, ni el que sigue la cámara
 let vLodPh = 0;
+// Rejilla de 48 px con la gente, rehecha una vez por paso: para buscar enemigos cerca sin recorrer a todo el mundo
+let vGridT = -1, vGrid = new Map(); const VG = 48;
+function villagersNear(x, y){
+  if (vGridT !== yearT) { vGridT = yearT; vGrid = new Map(); for (const u of villagers) { if (u.dead) continue; const k = Math.floor(u.x / VG) + Math.floor(u.y / VG) * 4096; let L = vGrid.get(k); if (!L) vGrid.set(k, L = []); L.push(u); } }
+  const cx = Math.floor(x / VG), cy = Math.floor(y / VG), out = [];
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const L = vGrid.get(cx + dx + (cy + dy) * 4096); if (L) for (const u of L) out.push(u); }
+  return out;
+}
 function updateVillagers(dtAll){
   if (!world) return;
-  let dt = dtAll; const [lx0, ly0, lx1, ly1] = visibleRect(), lod = villagers.length > 250; vLodPh ^= 1;
+  let dt = dtAll; const [lx0, ly0, lx1, ly1] = visibleRect(), lod = villagers.length > 250, lodN = gameSpeed >= 4 ? 4 : 2; vLodPh = (vLodPh + 1) & 3; /* (a x4 y x5, los que no se ven, uno de cada cuatro pasos) */
   let thinkLeft = 8 + Math.ceil(villagers.length / 25); // decisiones por paso (pensar por turnos)
   updateArrows(dt);
   updateTravelers(dt);
@@ -2975,7 +2986,7 @@ function updateVillagers(dtAll){
     if (v.dead) continue;
     if (v.away) continue; // de viaje (caravana o diplomático)
     dt = dtAll;
-    if (lod && v !== follow && !v.enemy && !v.foe && !v.fogata && !(v.task && (v.task.k === 'asalto' || v.task.k === 'apagar' || v.task.k === 'guardia')) && (v.x < lx0 - 80 || v.x > lx1 + 80 || v.y < ly0 - 80 || v.y > ly1 + 80)) { if ((refOf(v) & 1) === vLodPh) continue; dt = dtAll * 2; }
+    if (lod && v !== follow && !v.enemy && !v.foe && !v.fogata && !(v.task && (v.task.k === 'asalto' || v.task.k === 'apagar' || v.task.k === 'guardia')) && (v.x < lx0 - 80 || v.x > lx1 + 80 || v.y < ly0 - 80 || v.y > ly1 + 80)) { if ((refOf(v) & (lodN - 1)) !== (vLodPh & (lodN - 1))) continue; dt = dtAll * lodN; }
     if (!isFinite(v.x) || !isFinite(v.y)) { const g0 = villageById(v.vid); window.__nanLog = (window.__nanLog || []).concat([v.task && (v.task.job || v.task.k)]).slice(-20); v.x = g0 ? g0.fx * T + 2 : PW / 2; v.y = g0 ? g0.fy * T + 6 : PH / 2; v.task = null; v.route = null; } // por si alguna cuenta sale mal
     if (v.appear < .25) { v.appear += dt; continue; }
     if (v.born === undefined) lifeFields(v, Math.floor(v.x / T), Math.floor(v.y / T), 3 + Math.random() * 6, Math.random);
@@ -3047,7 +3058,7 @@ function updateVillagers(dtAll){
       v.scanW = .4; v.enemy = null;
       let bd = v.task && v.task.k === 'asalto' ? 45 : 35;
       const focus = knowsT(g, 'foco'); let bs = Infinity;
-      for (const u of (v.task && v.task.k === 'asalto' ? villagers : assaulters)) { if (u.dead || u.away || u === v || !enemyOf(v, u)) continue; if (!(u.task && u.task.k === 'asalto') && !(v.task && v.task.k === 'asalto')) continue; const d = Math.hypot(u.x - v.x, u.y - v.y); if (d >= bd) continue; const sc = focus ? d - (1 - (u.hp ?? 1)) * 40 : d; if (sc < bs) { bs = sc; v.enemy = u; } }
+      for (const u of (v.task && v.task.k === 'asalto' ? villagersNear(v.x, v.y) : assaulters)) { if (u.dead || u.away || u === v || Math.abs(u.x - v.x) >= bd || Math.abs(u.y - v.y) >= bd) continue; if (!(u.task && u.task.k === 'asalto') && !(v.task && v.task.k === 'asalto')) continue; if (!enemyOf(v, u)) continue; const d = Math.hypot(u.x - v.x, u.y - v.y); if (d >= bd) continue; /* (primero lo barato: la distancia) */ const sc = focus ? d - (1 - (u.hp ?? 1)) * 40 : d; if (sc < bs) { bs = sc; v.enemy = u; } }
     } else v.scanW -= dt;
     if (v.task && v.task.k === 'asalto' && (v.hp ?? 1) < .35 && knowsT(g, 'retirada')) { v.task = { k:'volver' }; v.enemy = null; v.retreatT = 10; floats.push({ x:v.x, y:v.y - 14, txt:'¡retirada!', col:'#f0c8a0', life:0 }); }
     if (v.retreatT > 0) { v.retreatT -= dt; v.enemy = null; }
@@ -3174,11 +3185,11 @@ function updateVillagers(dtAll){
     }
     // El hambre y la sed mandan: si aprietan, deja lo que esté haciendo
     if (((v.hp ?? 1) < .45 || (v.sick && v.sick.t > 8)) && hasHosp(g) && !v.enemy && !v.foe && !['curarse', 'asalto', 'beber', 'comer', 'trabajando'].includes(v.task.k)) { const sb = standBy(g.hospital); if (sb) { releaseTask(v); v.task = { k:'curarse', x:sb[0], y:sb[1] }; v.lastD = Infinity; } }
-    const thirstAt = Math.hypot(v.x / T - g.fx, v.y / T - g.fy) > 25 ? .45 : .3; // (lejos del pueblo van a beber antes: el camino de vuelta al pozo es largo)
+    const thirstAt = v.task.k === 'protesta' ? .15 : Math.hypot(v.x / T - g.fx, v.y / T - g.fy) > 25 ? .45 : .3; /* (en la manifestación aguantan: llevan agua y algo de comer) */ // (lejos del pueblo van a beber antes: el camino de vuelta al pozo es largo)
     if (v.water < thirstAt - .05 && v.task.k === 'trabajando' && v.task.job !== 'beber' && !v.boat) { const p = drinkSpot(v, g); if (p) { v.actT = 0; v.onDone = null; releaseTask(v); v.task = { k:'beber', ...p }; v.lastD = Infinity; } }
     if (v.task.k !== 'beber' && v.task.k !== 'comer' && v.task.k !== 'trabajando' && !v.boat) {
       if (v.water < thirstAt && !(v.drinkFail > yearT)) { const p = drinkSpot(v, g); if (p) { releaseTask(v); v.task = { k:'beber', ...p }; v.lastD = Infinity; } else v.drinkFail = yearT + 2; } // (si no hay dónde, no se busca en cada paso)
-      else if (v.food < .28 && canEat(v, g)) { releaseTask(v); const [fx, fy] = fireXY(g); v.task = { k:'comer', ...eatSpot(v, g) }; v.lastD = Infinity; }
+      else if (v.food < (v.task.k === 'protesta' ? .15 : .28) && canEat(v, g)) { releaseTask(v); const [fx, fy] = fireXY(g); v.task = { k:'comer', ...eatSpot(v, g) }; v.lastD = Infinity; }
     }
     if (v.task.k === 'capturar' && v.task.phase === 'llevar') { if (vGo(v, v.task.x, v.task.y, dt)) { const a = v.task.a; if (a && !a.dead) { a.lead = null; a.x = v.task.x; a.y = v.task.y; } v.task = null; } continue; }
     runTask(v, g, dt);

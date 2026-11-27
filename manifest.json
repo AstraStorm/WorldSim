@@ -1,8 +1,12 @@
 {
  "juego": "World Sim",
- "version": "202611271218",
- "fecha": "2026-11-27 12:18",
+ "version": "202611271300",
+ "fecha": "2026-11-27 13:00",
  "novedades": [
+  {
+   "fecha": "2026-11-27",
+   "texto": "Constitución: solo leyes fundamentales, la política del día a día queda para cada gobierno"
+  },
   {
    "fecha": "2026-11-27",
    "texto": "Constitución: un núcleo de leyes que no cambia con cada gobierno"
@@ -46,22 +50,18 @@
   {
    "fecha": "2026-11-27",
    "texto": "Abrigos dibujados en la propia figura"
-  },
-  {
-   "fecha": "2026-11-27",
-   "texto": "Modo nación: leyes por bloques arrastrables y presupuestos propios"
   }
  ],
  "archivos": {
-  "index.html": "84ecf117f0453fbad65a4a0ddcbd602c86b3b748",
+  "index.html": "edf0097492c59a4594f1392d2024b937fb884554",
   "css/estilo.css": "c312120dba0778bf02fde9ce57a98f7776bec66f",
   "js/agencia.js": "dd15e5ae8fa08af254622aba102dafae859910b9",
-  "js/aldeanos.js": "f3cc33d51bbdef68e8917643c836dd13a5ab0039",
+  "js/aldeanos.js": "f154c584cd8b3c983fa0154330d6ec4f3c76c8d6",
   "js/ambiente.js": "6c96bf777f6cdfc55b648f495836521ee28aeb8f",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "a94b46896cfd10fd688954a3c5b9297e9b693872",
   "js/armas.js": "d4710aa65550aceb06fbdd1d2d290c8085f58e96",
-  "js/arte.js": "e5d0a68c65f7fa59782b30c29227a6323d8937fe",
+  "js/arte.js": "b13b19b918e5df8b51dde1377607f8892e83796d",
   "js/arte_mapa.js": "a92d6a3c48ca112990a90102d27322fe8879ec53",
   "js/aviacion.js": "2bceeb5a9a59332b96ad69d19b5f6e39da71af42",
   "js/bandidos.js": "bc804375208c5f300e33435e76d16001e8c4daae",
@@ -111,7 +111,7 @@
   "js/gobierno.js": "0640677a5d4bf3f5c071d293b7f1485c138529d3",
   "js/grafica.js": "d548461632882f80f4077d9e5754c70c5319331e",
   "js/guerra.js": "2aab88f346ccb8117f2fd463cb66b8189034b083",
-  "js/humanos.js": "4d3596f456e9c6d20ec7ab8575cf379e2a87bf86",
+  "js/humanos.js": "b8d5f15d44c9f24901106ea9533fce27ece81413",
   "js/idiomas.js": "c9cea6906055fb07058b9e57a2e455a8238ba521",
   "js/impuestos.js": "30a39fbfba11c9245a09cf6e54504337272a2fb6",
   "js/industria.js": "22d48830a1468bf98232c5575425dce53c564f30",
@@ -123,6 +123,7 @@
   "js/leyes2.js": "856be98432d378371775fd37d9fc19f9ed13c096",
   "js/libro.js": "77022669857da910d675ba22320bd2281a13fa64",
   "js/lluvia.js": "f5d9f158319f36671117bcf52a7e408433bc153d",
+  "js/manifestaciones.js": "25c0c2b43822d161f26723012cd223cd09ad4ca3",
   "js/mapas.js": "822f9d930f4b0a1f4fc0bbb8808ef5ba56f2f985",
   "js/medios.js": "3da2fb5734d0fdf45a37828bad849d11ee88ca61",
   "js/minas.js": "4f093817fbd8df8654fd4d2c9507600191bcd312",
@@ -151,7 +152,7 @@
   "js/riqueza.js": "6e0afe4ee16977f7f9b9bb2987844ad104f54f6a",
   "js/rutas.js": "6e12cafc1992e09fc3c2b5b13ca7d7db6416c364",
   "js/sindicatos.js": "f7cb8bf83ff74322a6fc45cc6ac90550425c6d15",
-  "js/sociedad.js": "8b0e7422b5c6b5b111c95699d5126e01e1a546b7",
+  "js/sociedad.js": "f430fe8f0d55b5475fc7eefa2ab992caa341aaa3",
   "js/sonido.js": "59d02d23305c1cd915f05be3262d7a642c59d7be",
   "js/susurros.js": "691d8cb4be92fdaff56018d77370403fb6300b66",
   "js/terrorismo.js": "a2285a3dfa1180fc7b7922eadf05f9f189970d6e",
@@ -160,7 +161,7 @@
   "js/tratados.js": "c7221ac52158a928a77489448ca7f1ce45ade8e2",
   "js/ui.js": "87256f0f01b8aa2a5b9d282c0a2a538dce73cf85",
   "js/urbanismo.js": "fc463eb0ef8c8080138d8ce2650bb2cdfc2b7718",
-  "js/vegetacion.js": "1e1ae14d67c26a7aaf0199221b364b1df13378ab",
+  "js/vegetacion.js": "37faf9a0358361a3423aef8f9110c0e754889584",
   "js/vida.js": "2fca663a0d538b7d713ddf84ee9c89d69dcf6b66",
   "js/visitas.js": "5ae62a73b96064c44cf473c03ed02d831401bd82",
   "js/vista.js": "25efedff617e0f2eab5ef9c098b87900d73af85b",

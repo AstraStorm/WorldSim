@@ -25,7 +25,10 @@ function villageName(){
   }
   return rnd1(VN_INI) + rnd1(VN_END) + ' ' + (vidSeq + 1);
 }
-const villageById = id => villages.find(g => g.id === id);
+// (con un índice: se llama miles de veces por paso; los pueblos solo se añaden o se cambia la lista entera)
+let vbiArr = null, vbiLen = -1, vbiMap = null;
+const villageById = id => { if (villages !== vbiArr || villages.length !== vbiLen) { vbiArr = villages; vbiLen = villages.length; vbiMap = new Map(); for (const g of villages) if (!vbiMap.has(g.id)) vbiMap.set(g.id, g); }
+  const g = vbiMap.get(id); return g && g.id === id ? g : villages.find(o => o.id === id); };
 const fireXY = g => [g.fx * T + 2, g.fy * T + 2];
 // Cada uno tiene su sitio alrededor de la hoguera: si no, se amontonan todos en el mismo punto
 const fireSpot = (v, g) => { v.slotA ??= Math.random() * Math.PI * 2; return [g.fx * T + 2 + Math.cos(v.slotA) * 9, g.fy * T + 4 + Math.sin(v.slotA) * 6]; };
@@ -111,8 +114,14 @@ const freshNear = (i, R) => { const x0 = i % W, y0 = (i / W) | 0;
   for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) { const x = x0 + dx, y = y0 + dy; if (x < 0 || y < 0 || x >= W || y >= H) continue;
     const j = y * W + x; if (FRESH(world.biome[j]) && !dried(j) && !frozen(j)) return true; } return false; };
 // Orilla de agua dulce (o charco) para beber, junto a la que se pueda estar de pie
+// (buscar en 40 casillas a la redonda es caro y mucha gente tiene sed a la vez: se recuerda por zonas de 4×4 unos segundos)
+const waterC = new Map(); let waterCW = null;
+const waterOk = (x, y, v) => { const i = y * W + x; return tileFree(x, y) && !avoided(v, i) && (nb4i(i).some(n => FRESH(world.biome[n]) && !frozen(n) && !dried(n)) || (floodA && floodA[i] > .35 && !WATER[world.biome[i]])); };
 function waterSpot(tx, ty, v){
-  const p = ringFind(tx, ty, 40, (x, y) => { const i = y * W + x; return tileFree(x, y) && !avoided(v, i) && (nb4i(i).some(n => FRESH(world.biome[n]) && !frozen(n) && !dried(n)) || (floodA && floodA[i] > .35 && !WATER[world.biome[i]])); });
+  if (waterCW !== world) { waterC.clear(); waterCW = world; }
+  const key = (ty >> 2) * W + (tx >> 2), c = waterC.get(key);
+  let p = c && yearT - c.t < 4 && yearT >= c.t && (c.p === null || waterOk(c.p[0], c.p[1], v)) ? c.p : undefined;
+  if (p === undefined) { p = ringFind(tx, ty, 40, (x, y) => waterOk(x, y, v)); if (waterC.size > 4000) waterC.clear(); waterC.set(key, { t:yearT, p }); }
   return p && [p[0] * T + 2, p[1] * T + 3];
 }
 // ---- Movimiento hacia un punto: prefiere tierra, nada si no queda otra, y abandona si se atasca ----
@@ -294,7 +303,7 @@ function siteNear(g, rMin, rMax, test, tries = 60){
   return null;
 }
 // Cercados de animales: un pueblo puede tener varios (g.pen es siempre el primero, por las partidas guardadas de antes)
-const pensOf = g => { if (!g.pens) g.pens = g.pen ? [g.pen] : []; g.pen = g.pens[0] || null; return g.pens; };
+const pensOf = g => { if (!g.pens) g.pens = g.pen ? [g.pen] : []; const p0 = g.pens[0] || null; if (g.pen !== p0) g.pen = p0; return g.pens; };
 const PEN_CAP = 12; // animales por cercado
 const penLimit = g => Math.min(4, 1 + Math.floor(popOf(g) / 15)); // uno más por cada 15 habitantes
 const penOfAnimal = (g, a) => { const ps = pensOf(g); return ps[a.penK] || ps[0] || null; };
@@ -321,7 +330,10 @@ const fieldObjOk = i => { const o = world.objs[i]; return !o || ['tree', 'berry'
 const farmable = (g, x, y, i) => (tileFree(x, y) || (fieldObjOk(i) && !WATER[world.biome[i]] && !bridgeSet.has(i) && !wallSet.has(i))) && !farmMap.has(i) && !pathMap.has(i) && !plotIn(x, y, x, y) && !streetZone(g, x, y) && !underBuilding(g, x, y) && !inPen(g, x, y) && Math.hypot(x - g.fx, y - g.fy) > 2.5
   && [B.GRASS, B.PLAINS, B.FOREST, B.DRY, B.DIRT, B.HILLS].includes(world.biome[i]) && (freshNear(i, (g.know || {}).acequias ? 12 : 8) || [B.GRASS, B.PLAINS, B.FOREST].includes(world.biome[i]));
 // Cuántos de la aldea están ya con ese trabajo (para no ir todos a lo mismo)
-const busyWith = (g, job) => villagers.filter(o => !o.dead && o.vid === g.id && o.task && (o.task.k === job || o.task.job === job)).length;
+// La gente de cada pueblo, agrupada una vez por paso (las tareas se leen en vivo, así que la cuenta es exacta)
+let byVidT = -1, byVidA = null, byVidN = -1, byVid = new Map();
+const villagersOf = id => { if (byVidT !== yearT || byVidA !== villagers || byVidN !== villagers.length) { byVidT = yearT; byVidA = villagers; byVidN = villagers.length; byVid = new Map(); for (const o of villagers) { let L = byVid.get(o.vid); if (!L) byVid.set(o.vid, L = []); L.push(o); } } return byVid.get(id) || []; };
+const busyWith = (g, job) => { let n = 0; for (const o of villagersOf(g.id)) if (!o.dead && o.vid === g.id && o.task && (o.task.k === job || o.task.job === job)) n++; return n; };
 // Cada uno a lo suyo: lo que es de otro oficio solo se hace muy de vez en cuando si en el pueblo ya hay quien lo tiene
 // (un pescador no se pone a cosechar habiendo agricultores); si no hay nadie de ese oficio, o hay hambre de verdad y
 // es un trabajo de comida, cualquiera echa una mano
@@ -751,7 +763,7 @@ function runTask(v, g, dt){
   if ((t.k === 'ritual' || t.k === 'votar' || t.k === 'golpe' || t.k === 'detenido' || t.k === 'espectador' || t.k === 'mitin' || t.k === 'oficina') && yearT > t.until) { v.task = null; return; }
   if (t.k === 'jugar') { if (yearT > t.until) { v.task = null; return; } runBallPlayer(v, dt); return; }
   if (t.k === 'atleta') return; // lo mueve la carrera
-  if (t.k === 'protesta') { if (yearT > t.until) { v.task = null; return; } const q = t.pts[t.idx % t.pts.length]; if (vGo(v, q[0], q[1], dt)) t.idx++; return; } // dando vueltas a la plaza con el cartel
+  if (t.k === 'protesta') { if (yearT > t.until) { v.task = null; return; } if (t.mf) { protSteer(v, t); vGo(v, t.gx, t.gy, dt, t.run); return; } /* (manifestaciones.js) */ const q = t.pts[t.idx % t.pts.length]; if (vGo(v, q[0], q[1], dt)) t.idx++; return; } // dando vueltas a la plaza con el cartel
   if (t.k === 'reprimir') { runRepress(v, g, t, dt); return; }
   if (t.k === 'guardia') { if (yearT > t.until) { v.task = null; v.ambush = false; return; } if (vGo(v, t.x, t.y, dt, true)) v.ambush = !!t.hide; return; } // en su puesto, esperando
   if (t.k === 'sacrificio' && t.phase !== 'altar') {
@@ -1211,12 +1223,15 @@ function releaseTask(v){ const t = v.task; if (t && t.farm) t.farm.claim = false
 function plotSlot(g, key){
   const pl = g[key]; if (!pl) return null;
   pl.slots = pl.slots.filter(i => !plazaSet.has(i) && !pathMap.has(i) && !farmMap.has(i) && !wallSet.has(i) && !bridgeSet.has(i)); // si algo ha ocupado un hueco, ese ya no se planta
-  for (const i of pl.slots) if (!world.objs[i] && !villagers.some(u => u.task && u.task.k === 'plantar' && u.task.i === i) && !WATER[world.biome[i]] && !underBuilding(g, i % W, (i / W) | 0)) return i;
+  const taken = new Set(); for (const u of villagers) if (u.task && u.task.k === 'plantar') taken.add(u.task.i);
+  for (const i of pl.slots) if (!world.objs[i] && !taken.has(i) && !WATER[world.biome[i]] && !underBuilding(g, i % W, (i / W) | 0)) return i;
   return null;
 }
 // ¿Pisa la parcela de una arboleda o de un bayal (de cualquier pueblo)?
 const holyNear = (x0, y0, x1, y1) => villages.some(o => o.holy && !(x1 < o.holy.x0 - 1 || x0 > o.holy.x1 + 1 || y1 < o.holy.y0 - 1 || y0 > o.holy.y1 + 1) || o.marketRect && !(x1 < o.marketRect.x0 - 1 || x0 > o.marketRect.x1 + 1 || y1 < o.marketRect.y0 - 1 || y0 > o.marketRect.y1 + 1));
-const plotIn = (x0, y0, x1, y1) => villages.some(o => [o.grove, o.berryPlot, o.cemetery, o.track, o.aero, o.pitch, o.pool, o.sportPlan, o.registry, ...Object.values(o.camps || {})].some(q => q && !(x1 < q.x0 || x0 > q.x0 + q.w - 1 || y1 < q.y0 || y0 > q.y0 + q.h - 1)));
+const PLOT_KEYS = ['grove', 'berryPlot', 'cemetery', 'track', 'aero', 'pitch', 'pool', 'sportPlan', 'registry'];
+const plotHit = (q, x0, y0, x1, y1) => q && !(x1 < q.x0 || x0 > q.x0 + q.w - 1 || y1 < q.y0 || y0 > q.y0 + q.h - 1);
+const plotIn = (x0, y0, x1, y1) => { for (const o of villages) { for (const k of PLOT_KEYS) if (plotHit(o[k], x0, y0, x1, y1)) return true; if (o.camps) for (const k in o.camps) if (plotHit(o.camps[k], x0, y0, x1, y1)) return true; } return false; }; // (sin crear listas: se llama mucho al buscar sitio)
 // ---- Asedio: catapultas que acompañan al ejército y derriban murallas y edificios ----
 let sieges = [], stones = [];
 const hasBarracks = g => g && g.barracks != null && !!world.objs[g.barracks];
