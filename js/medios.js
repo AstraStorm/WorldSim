@@ -17,7 +17,6 @@ const RADIO_NAMES = { izq:['Radio Popular', 'Onda Obrera', 'Radio Libertad', 'La
 const TV_NAMES = { izq:['Canal Popular', 'Tele Pueblo', 'La Pantalla Roja'], centro:['Antena {N}', 'Canal Estrella', 'Cuatro Vientos', 'Tele{P}'], der:['Canal Patria', 'Televisión del Orden', 'Canal Plus {N}'] };
 const MEDIA_COLS = ['#e0604a', '#4a8ad8', '#e8b848', '#7ab04a', '#c84a90', '#30a8a8', '#8a5ac8', '#e07a30'];
 const mediaOf = n => (n.media ||= { radio:[], tv:[] });
-const natTowns = n => villages.filter(o => popOf(o) && nationOf(o) === n);
 const townPower = g => typeof plantOn === 'function' && (plantOn(g) || (typeof importsPower === 'function' && importsPower(g)));
 const radioOn = n => knowsSci(n, 'electricidad') && natTowns(n).some(townPower);
 const tvOn = n => knowsSci(n, 'telecomunicaciones') && natTowns(n).some(g => townPower(g) && typeof teleOf === 'function' && teleOf(g).length);

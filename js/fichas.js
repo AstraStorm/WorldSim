@@ -8,8 +8,8 @@ const SEC_STATE = new Map(); // pestaña|título → abierta o no
 const SEC_FOLD = /historia|historial|bolsa|consejo de las naciones|tratados|relaciones|cambio de moneda|sindicato|instituciones por construir|cementerio|descubierto|se puede investigar|saberes|justicia|espionaje|cultura|arte de la guerra|gente destacada|muertes|mercancías|fiestas|festivos/i;
 // Orden de las secciones en cada pestaña: lo de cada día arriba; lo de fuera (bolsa, cambio) y los historiales, abajo
 const SEC_ORDER = {
-  economia:[/^valor del/, /salarios/, /impuestos/, /presupuestos/, /^clases/, /riqueza/, /vivienda/, /clima/, /mercanc/, /f[aá]brica|industria|obreros/, /^mina/, /instituciones/, /sindicato/, /rescate|bancarrota|plan/, /cambio de moneda/, /bolsa/],
-  politica:[/partidos/, /^leyes/, /historia de las leyes/, /^naci[oó]n/, /alianza/, /guerra/, /tratados/, /relaciones/, /justicia/, /prensa/, /consejo/, /espionaje/, /cultura/, /ciencia/, /colonia/, /horario/],
+  economia:[/^valor del/, /salarios/, /impuestos/, /presupuestos/, /^clases/, /riqueza/, /vivienda/, /clima/, /mercanc/, /f[aá]brica|industria|obreros/, /^empresas/, /^mina/, /instituciones/, /sindicato/, /rescate|bancarrota|plan/, /cambio de moneda/, /bolsa/],
+  politica:[/^parlamento/, /^encuestas/, /partidos/, /^leyes/, /historia de las leyes/, /^naci[oó]n/, /alianza/, /guerra/, /tratados/, /relaciones/, /justicia/, /prensa/, /radio y televisi/, /cartelera/, /famosos/, /videojuegos/, /consejo/, /espionaje/, /cultura/, /ciencia/, /colonia/, /horario/],
 };
 // Redondea los números con decimales del texto (no toca lo que va dentro de las etiquetas: estilos, atributos…)
 const roundNums = html => html.replace(/>([^<]+)/g, (m, t) => '>' + t.replace(/(\d+)([.,])(\d+)/g, (q, a, sep, b) => sep === '.' && b.length === 3 && !/^0/.test(a) && a.length <= 3 ? q : String(Math.round(parseFloat(a + '.' + b)))));

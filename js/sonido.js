@@ -77,6 +77,7 @@ const SND_PEOPLE = new Set(['burner', 'build', 'coin', 'cough', 'cheer', 'clash'
 const SND_REACH = { thunder:4, boom:6, rumble:5, bell:1.6, cheer:1.3, clash:1.3, horn:3 };
 const SND_GAP = { clash:.07, arrow:.08, build:.25, coin:.3, cheer:2, bell:1.5, horn:3, thunder:.8, cough:1.2, boom:.3, rumble:2 };
 function snd(kind, x, y, k = 1){
+  if (x != null && !(isFinite(x) && isFinite(y))) return; // (sin sitio válido, no suena)
   if (!SND.on || !SND.ctx || SND.ctx.state !== 'running' || SND.busy > 70) return;
   let g = 1, pan = 0, far = 0;
   if (x != null) {

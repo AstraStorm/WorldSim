@@ -285,7 +285,7 @@ $('pcard').addEventListener('click', e => { if (e.target.closest('[data-whisper]
 let ideaTrackOpen = true, ideaTrackT = 0;
 function ideaTrackRender(force){
   let el = $('ideaTrack');
-  const L = ideasOf();
+  const L = ideasOf().filter(I => !I.bulo || (I.st !== 'fin' && (I.peak || 0) >= 5)); // (de los bulos de las redes, solo los que prenden y mientras duran)
   if (!L.length) { if (el) el.hidden = true; return; }
   if (!el) { el = document.createElement('div'); el.id = 'ideaTrack'; el.className = 'itrack'; $('pcard').parentElement.appendChild(el); el.addEventListener('click', ideaTrackClick); }
   el.hidden = false;

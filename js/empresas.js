@@ -89,13 +89,13 @@ function linkRevenue(c, n){
 function companyDay(g, c){
   const n = nationOf(g), P = ecOf(g).P || 1, at = hqOk(c) ? { x:(c.hq % W) * T, y:((c.hq / W) | 0) * T } : { x:g.fx * T, y:g.fy * T }, S = SECTORS[c.sector];
   c.staff = c.staff.filter(u => !u.dead && u.vid === g.id && u.compId === c.id);
-  if (!c.ceo || c.ceo.dead || c.ceo.vid !== g.id) { const nu = c.staff.slice().sort((a, b) => (b.edu || 0) - (a.edu || 0))[0]; if (c.ceo) c.ceo.ceo = false; c.ceo = nu || null; if (nu) { nu.ceo = true; c.staff = c.staff.filter(u => u !== nu); nu.greed ??= Math.random(); c.log.push(`día ${Math.floor(yearT / DAY_LEN) + 1}: nuevo CEO, ${nu.name}`); notify(`${nu.name} es el nuevo CEO de «${c.name}»`, at); } else { companyBust(g, c, 'se queda sin nadie al frente'); return; } }
+  if (!c.ceo || c.ceo.dead || c.ceo.vid !== g.id) { const nu = c.staff.slice().sort((a, b) => (b.edu || 0) - (a.edu || 0))[0] || villagers.filter(u => !u.dead && !u.away && u.vid === g.id && ageOf(u) >= ADULT_H && u.compId == null && u.facBoss == null && !locked(u) && u !== g.leader).sort((a, b) => ((b.edu || 0) + trait(b, 'ambicion')) - ((a.edu || 0) + trait(a, 'ambicion')))[0]; if (c.ceo) c.ceo.ceo = false; c.ceo = nu || null; if (nu) { nu.ceo = true; nu.compId = c.id; c.staff = c.staff.filter(u => u !== nu); nu.greed ??= Math.random(); c.log.push(`día ${Math.floor(yearT / DAY_LEN) + 1}: nuevo CEO, ${nu.name}`); notify(`${nu.name} es el nuevo CEO de «${c.name}»`, at); } else { companyBust(g, c, 'se queda sin nadie al frente'); return; } }
   const state = hasLaw(g, 'estatal') || hasLaw(g, 'nacionalizar_industria');
   if (state && !c.state) { c.state = true; c.ceoPay = 2; notify(`«${c.name}» pasa a ser del estado: el beneficio irá al tesoro`, at); } else if (!state && c.state) { c.state = false; c.ceoPay = CEO_PAY; }
   // Ingresos y gastos (en monedas)
-  const prosper = clamp(g.food / Math.max(1, popOf(g) * 2), .4, 1.3) * (g.strike ? .5 : 1);
-  const base = ((c.staff.length + 2) * S.rev + popOf(g) * S.rev * .03) * P * prosper * (c.strikeT > yearT ? .3 : 1) + linkRevenue(c, n) * P; // (cada empleado produce más de lo que cobra; y el pueblo, cuanto más grande, más clientes)
-  const wageBase = costOfLiving(g) * .9, cost = (c.staff.length * c.pay + c.ceoPay) * wageBase;
+  const prosper = clamp(g.food / Math.max(1, popOf(g) * 2), .7, 1.2) * (g.strike ? .6 : 1), wageBase = costOfLiving(g) * .9;
+  const base = ((c.staff.length + 2) + popOf(g) * .04) * (S.rev / 3.5) * wageBase * prosper * (c.strikeT > yearT ? .3 : 1) + linkRevenue(c, n) * P; // (cada empleado produce más de lo que cobra; y el pueblo, cuanto más grande, más clientes)
+  const cost = (c.staff.length * c.pay + c.ceoPay) * wageBase;
   c.rev = Math.round(base); c.cost = Math.round(cost); c.profit = c.rev - c.cost;
   const tax = c.profit > 0 ? Math.round(c.profit * (state ? 1 : hasLaw(g, 'impuestos_altos') ? .3 : hasLaw(g, 'impuestos_bajos') ? .1 : .18)) : 0;
   if (tax) ecOf(g).treas += tax; c.tax = tax; c.cash += c.profit - tax;
@@ -114,7 +114,7 @@ function companyDay(g, c){
     if (c.lossDays >= 2 && c.staff.length) { const out = c.staff.splice(0, Math.max(1, Math.ceil(c.staff.length / 4))); for (const u of out) { u.compId = null; u.oficio = u.oldOficio || pickOficio(g); u.fired = yearT; } log(`despide a ${out.length}`); notify(`📉 «${c.name}» pierde dinero y despide a ${out.length} persona${out.length > 1 ? 's' : ''}`, at); c.lossDays = 0; }
     else if (c.pay > 1.05 && Math.random() < .4) { c.pay = +(c.pay * .93).toFixed(2); log('baja los sueldos'); }
   } else c.lossDays = 0;
-  if (!c.staff.length && c.profit <= 0 && Math.random() < .5) hire(g, c, 1);
+  if (c.staff.length < 3 && c.cash > 0 && Math.random() < .7) hire(g, c, 1); // (la plantilla mínima para arrancar)
   if (c.cash < -40 * P) { companyBust(g, c, 'se ha quedado sin dinero'); return; }
   c.value = Math.max(0, Math.round(c.cash + Math.max(0, c.profit) * 8 + c.staff.length * 5 * P));
   if (!hqOk(c) && Math.random() < .3) buildHQ(g, c);
@@ -178,7 +178,7 @@ SYSTEMS.push(dt => {
   if (zoom < 1.5) return r; const [vx0, vy0, vx1, vy1] = visibleRect();
   for (const g of villages) for (const c of (g.comps || [])) {
     if (!hqOk(c)) continue; const x = (c.hq % W) * T + 2, y = ((c.hq / W) | 0) * T - 44; if (x < vx0 - 30 || x > vx1 + 30 || y < vy0 - 20 || y > vy1 + 60) continue;
-    const ab = c.name.split(/\s+/).filter(w => w.length > 2 && !/^(de|del|la|las|los|el|S\.A\.)$/i.test(w)).map(w => w[0]).join('').slice(0, 3).toUpperCase() || c.name.slice(0, 2).toUpperCase();
+    const ws = c.name.split(/\s+/).filter(w => w.length > 2 && !/^(de|del|la|las|los|el|S\.A\.)$/i.test(w)), ab = (ws.length > 1 ? ws.map(w => w[0]).join('').slice(0, 3) : (ws[0] || c.name).slice(0, 3)).toUpperCase(); // (siglas; con una sola palabra, sus tres primeras letras)
     vctx.fillStyle = 'rgba(10,10,14,.85)'; vctx.fillRect(x - 9, y, 19, 7); vctx.fillStyle = c.col; vctx.fillRect(x - 8, y + 1, 17, 5);
     vctx.fillStyle = '#fff'; vctx.font = 'bold 4.5px sans-serif'; vctx.textAlign = 'center'; vctx.fillText(ab, x + .5, y + 5.2); vctx.textAlign = 'start';
     if (c.strikeT > yearT) { vctx.fillStyle = '#e04040'; vctx.fillRect(x - 9, y + 8, 19, 2); }

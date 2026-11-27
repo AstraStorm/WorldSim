@@ -1815,7 +1815,7 @@ function updateTravelers(dt){
     if (t.kind === 'emigrante') { if (to) welcomeMigrant(v, from, to); t.done = true; v.away = false; v.task = null; v.home = null; if (to && popOf(to) !== undefined) { v.vid = to.id; v.x = t.x; v.y = t.y; floats.push({ x:v.x, y:v.y - 12, txt:'¡nuevo hogar!', col:'#c8e0a0', life:0 }); } continue; } // de vuelta al muelle, a pie hasta casa
     if (t.kind === 'flota' && t.phase === 'ida') { if (to) arriveFleet(t, from, to); if (t.crewOff) { t.done = true; continue; } t.phase = 'vuelta'; t.path = t.back.slice(); const nx = t.path.shift(); t.tx = nx[0]; t.ty = nx[1]; continue; }
     if (t.kind === 'flota') { t.done = true; for (const u of t.crew) if (!u.dead) { u.away = false; u.task = null; u.x = t.x; u.y = t.y; } continue; }
-    if (t.kind === 'colonos') { foundColony(t, from); t.done = true; continue; } // colonias.js
+    if (t.kind === 'colonos') { if (foundColony(t, from) === 'espera') continue; t.done = true; continue; } // colonias.js (si el sitio no vale ahora mismo, esperan: gobierno.js)
     if (t.kind === 'mudanza') { islandArrive(t, from); t.done = true; continue; } // dejan la isla (islas.js)
     if (t.kind === 'visita' && t.phase === 'ida') { if (to) stateVisitArrive(t.v, t.crew, from, to); t.phase = 'vuelta'; t.tx = t.hx; t.ty = t.hy; continue; } // visita oficial (visitas.js)
     if (t.kind === 'mensajero' && t.phase === 'ida') { newsArrive(t, from, to); t.phase = 'vuelta'; t.tx = t.hx; t.ty = t.hy; continue; } // noticias.js
@@ -2421,7 +2421,7 @@ function startProtest(g, adults){
   who = who.slice(0, 14);
   const pn = g.protestN ||= {}; pn[g.grief] = (pn[g.grief] || 0) + 1;
   const r0 = g.plaza, pts = [[r0.x0, r0.y0], [r0.x1, r0.y0], [r0.x1, r0.y1], [r0.x0, r0.y1]].map(([x, y]) => [x * T + 2, y * T + 3]);
-  const slog = SLOGANS[g.grief], col = ['#f2efe6', '#f0d060', '#f08a7a'][Math.floor(Math.random() * 3)];
+  const slog = SLOGANS[g.grief] || ['¡Basta ya!', '¡Queremos cambios!', '¡Así no!'], col = ['#f2efe6', '#f0d060', '#f08a7a'][Math.floor(Math.random() * 3)];
   who.forEach((u, k) => { releaseTask(u); if (u.actT > 0) { u.actT = 0; u.onDone = null; } u.task = { k:'protesta', pts, idx:k % 4, until:yearT + 30, slogan:slog[k % slog.length], col }; u.lastD = Infinity; u.hitBy = null; });
   g.protest = { until:yearT + 30, who, said:false, grief:g.grief, riot:g.anger > 60 || pn[g.grief] >= 3, lynch:(g.grief === 'corrupción' && g.anger > 75) || (g.grief === 'presupuestos' && g.anger > 85 && (g.noBudgetDays || 0) >= 3) }; // furiosos con su líder: van a por él // muy enfadados, o hartos de protestar por lo mismo: disturbios
   if (g.grief === 'vivienda') startCamp(g, who);
@@ -2732,7 +2732,7 @@ function allianceTick(){
       notify(`${capFirst(artA(al))} ${al.name} (${al.abbr}) adopta una moneda común, el ${al.coin}, que sustituye ${olds.join(' y ')}`, { x:ms[0].fx * T, y:ms[0].fy * T });
     }
     if (al.coin) {
-      for (const m of coined) if (m.coin !== al.coin) { m.coin = al.coin; m.coinType = coinType(ms.find(o => o.coin === al.coin && o !== m) || m); notify(`${m.name} adopta el ${al.coin}, la moneda de ${al.abbr}`, { x:m.fx * T, y:m.fy * T }); }
+      for (const m of coined) if (m.coin !== al.coin && !alliances.some(o => o !== al && !o.dead && o.coin === m.coin && o.members.includes(m.id))) { m.coin = al.coin; /* (si ya tiene la de otra alianza suya, se la queda: si no, cambiaba en cada vuelta) */ m.coinType = coinType(ms.find(o => o.coin === al.coin && o !== m) || m); notify(`${m.name} adopta el ${al.coin}, la moneda de ${al.abbr}`, { x:m.fx * T, y:m.fy * T }); }
       const ecs = coined.map(ecOf), P = ecs.reduce((s, e) => s + e.P, 0) / ecs.length, inf = ecs.reduce((s, e) => s + e.infl, 0) / ecs.length;
       for (const e of ecs) { e.P = P; e.infl = inf; } // una misma moneda: los precios y la inflación se contagian
       // Flujo bancario: el miembro más rico invierte en el más endeudado

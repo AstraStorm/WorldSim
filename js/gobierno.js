@@ -7,7 +7,12 @@
 // no le gusta, se enfada, protesta, vota en contra o da un golpe. Sin victoria ni derrota: si tu nación cae, puedes
 // seguir mirando o fundar otra. world.player = { vid, nid, t0, name, embargo:[ids], peaceT:{}, giftT:{}, dipT:{} }
 const playerOn = () => !!(world && world.player);
-const playerNat = () => { const P = world && world.player; if (!P) return null; const n = villageById(P.nid); return n && popOf(n) && nationOf(n) === n ? n : null; };
+const playerNat = () => {
+  const P = world && world.player; if (!P) return null; const n = villageById(P.nid); if (n && popOf(n) && nationOf(n) === n) return n;
+  // Si la capital cambia (o deja de serlo), la nación sigue siendo la del pueblo del jugador, mientras no la haya conquistado otro
+  const g = villageById(P.vid), m = g && popOf(g) && nationOf(g); if (!m || !(m === g || m.pOwn || g.pOwn && m.id === P.nid)) return null;
+  if (m.id !== P.nid) { m.pLaws ||= [...lawsOf(m)]; m.pIdeo ??= 0; m.pOwn = true; P.nid = m.id; } return m;
+};
 const isPlayerG = g => { if (!g || !world || !world.player) return false; const n = playerNat(); return !!n && nationOf(g) === n; };
 const playerTowns = () => { const n = playerNat(); return n ? villages.filter(o => popOf(o) && nationOf(o) === n) : []; };
 const embargoed = (a, b) => { const P = world && world.player; if (!P || !P.embargo || !P.embargo.length) return false; const n = playerNat(); if (!n) return false; const na = nationOf(a), nb = nationOf(b); return (na === n && P.embargo.includes(nb.id)) || (nb === n && P.embargo.includes(na.id)); };
@@ -62,6 +67,7 @@ function setPlayerLaw(l, on, how = 'por decisión del gobierno', angerK = 1){
     else if (pct > 60) g.anger = Math.max(0, (g.anger || 0) - 6);
   }
 }
+if (typeof SLOGANS !== 'undefined') { SLOGANS.imposicion = ['¡Esa ley no la queremos!', '¡Que nos pregunten!', '¡Gobierno, escucha!']; SLOGANS.guerra_impuesta = ['¡No a la guerra!', '¡Paz ya!', '¡Ni un soldado más!']; SLOGANS['engaño'] = ['¡Nos mienten!', '¡Queremos la verdad!', '¡Fuera mentirosos!']; }
 if (typeof GRIEF_TXT !== 'undefined') { GRIEF_TXT.imposicion = 'las leyes que les impone el gobierno'; GRIEF_TXT.guerra_impuesta = 'una guerra que nadie quería'; }
 if (typeof REASON_TXT !== 'undefined') REASON_TXT.gobierno = 'la decisión de su gobierno';
 // ---- Impuestos del jugador ----
@@ -206,6 +212,13 @@ function sendColonists(tx, ty, name){
   notify(`De ${n.name} salen ${goers.length} colonos con provisiones${name ? ` a fundar ${name}` : ' a fundar una colonia'}`, { x:n.fx * T, y:n.fy * T });
 }
 { const base = foundColony; foundColony = function(t, n){
+  // Al llegar, el sitio puede no valer (inundado por la lluvia, alguien ha construido...): buscan otro cerca o esperan un rato
+  const [sx, sy] = t.site; siteRoomC.delete(sy * W + sx);
+  if (!siteRoom(sx, sy)) {
+    let alt = null; for (let r = 3; r <= 30 && !alt; r += 3) for (let k = 0; k < 24 && !alt; k++) { const a = k / 24 * Math.PI * 2, x = Math.round(sx + Math.cos(a) * r), y = Math.round(sy + Math.sin(a) * r); if (x > 4 && y > 4 && x < W - 4 && y < H - 4 && !foundOk(x, y)) alt = [x, y]; }
+    if (alt) t.site = alt;
+    else if ((t.waitT ??= yearT) > yearT - DAY_LEN * .5) return 'espera';
+  }
   const before = villages.length; const r = base.apply(this, arguments);
   const c = villages.length > before ? villages[villages.length - 1] : null;
   if (c && t.cname) { c.name = t.cname.slice(0, 22); c.freshName = false; }

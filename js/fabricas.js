@@ -112,7 +112,7 @@ function nextFac(g){
 // ---- Zona industrial: un solar grande a las afueras (hacia la mina, si la hay), con las fábricas en filas ----
 function zoneFree(x, y, hw, hh){ return clearable(x - hw, y - hh, x + hw, y + 1) && !pathIn(x - hw, y - hh, x + hw, y) && !farmIn(x - hw, y - hh, x + hw, y + 1) && !plazaIn(x - hw, y - hh, x + hw, y) && !penOverlap(null, x - hw, y - hh, x + hw, y + 1); }
 // Radio del pueblo: hasta dónde llegan casi todas sus casas
-function townRadius(g){ const d = g.houses.map(h => Math.hypot((h % W) - g.fx, (((h / W) | 0) - g.fy) * 1.2)).sort((a, b) => a - b); return d.length ? d[Math.floor(d.length * .9)] : 8; }
+function townRadius(g){ const d = g.houses.map(h => Math.hypot((h % W) - g.fx, (((h / W) | 0) - g.fy) * 1.2)).filter(x => x <= 90).sort((a, b) => a - b); return d.length ? d[Math.floor(d.length * .9)] : 8; } // (las casas a más de 90 casillas no cuentan: si el pueblo se muda, las viejas no le hacen ocupar medio mapa)
 // Casillas a las que se llega andando desde el centro del pueblo (por tierra o por puentes), dentro de un radio
 function walkSet(g, R){
   const gx = Math.round(g.fx), gy = Math.round(g.fy), seen = new Set([gy * W + gx]), q = [gy * W + gx];
