@@ -322,6 +322,19 @@ const farmable = (g, x, y, i) => (tileFree(x, y) || (fieldObjOk(i) && !WATER[wor
   && [B.GRASS, B.PLAINS, B.FOREST, B.DRY, B.DIRT, B.HILLS].includes(world.biome[i]) && (freshNear(i, (g.know || {}).acequias ? 12 : 8) || [B.GRASS, B.PLAINS, B.FOREST].includes(world.biome[i]));
 // Cuántos de la aldea están ya con ese trabajo (para no ir todos a lo mismo)
 const busyWith = (g, job) => villagers.filter(o => !o.dead && o.vid === g.id && o.task && (o.task.k === job || o.task.job === job)).length;
+// Cada uno a lo suyo: lo que es de otro oficio solo se hace muy de vez en cuando si en el pueblo ya hay quien lo tiene
+// (un pescador no se pone a cosechar habiendo agricultores); si no hay nadie de ese oficio, o hay hambre de verdad y
+// es un trabajo de comida, cualquiera echa una mano
+let JOB_OF = null;
+const FOOD_JOBS = new Set(['sembrar', 'arar', 'cosechar', 'campo', 'pescar', 'barca', 'cazar', 'bayas']);
+function oficioCount(g){ const c = g.ofC; if (c && c.t === yearT) return c.m; const m = {}; for (const u of villagers) if (!u.dead && u.vid === g.id && u.oficio) m[u.oficio] = (m[u.oficio] || 0) + 1; g.ofC = { t:yearT, m }; return m; }
+function otherJob(v, k, ofc, hunger){
+  if (!JOB_OF) { JOB_OF = {}; for (const [o, L] of Object.entries(OFICIOS)) for (const j of L) (JOB_OF[j] ||= []).push(o); }
+  const owners = JOB_OF[k]; if (!owners) return 1; // (trabajo de todos: no es de ningún oficio)
+  if (hunger && FOOD_JOBS.has(k)) return 1;
+  if (!owners.some(o => (ofc[o] || 0) > 0)) return 1;
+  return owners.includes('constructor') || owners.includes('pastor') ? .5 : .05; // (las obras y los cercados, un poco cosa de todos)
+}
 function chooseJob(v, g){
   if (retired(v, g)) return Math.random() < .6 ? 'ocio' : 'pasear'; // jubilados (cultura.js)
   if (v.chill > (ageOf(v) < ADULT_H ? .15 : .3) && !warmthAt(v, g)) return 'refugio'; // tiene frío: a calentarse (los niños, antes)
@@ -331,7 +344,8 @@ function chooseJob(v, g){
   const pop = popOf(g), houses = housesOf(g).length, farms = [...farmMap.values()].filter(f => f.vid === g.id);
   const si = seasonInfo().i, J = [];
   const mine = OFICIOS[v.oficio] || [];
-  const add = (k, w) => { if (w > 0 && !((g.jobFail || {})[k] > yearT) && worksOk(g, k) && !onStrike(v, g, k)) J.push([k, w * (mine.includes(k) ? 3 : 1) * (g.pFocus ? focusMul(g, k) : 1)]); }; // (y la prioridad que marca el jugador: gobierno.js) // lo de su oficio, mucho más a menudo
+  const hunger = g.food < pop * .6, ofc = oficioCount(g);
+  const add = (k, w) => { if (w > 0 && !((g.jobFail || {})[k] > yearT) && worksOk(g, k) && !onStrike(v, g, k)) J.push([k, w * (mine.includes(k) ? 3 : otherJob(v, k, ofc, hunger)) * (g.pFocus ? focusMul(g, k) : 1)]); }; // (y la prioridad que marca el jugador: gobierno.js) // lo de su oficio, mucho más a menudo
   // Construir: uno por cada 6 de madera disponibles; el cercado lo hace una sola persona
   // Mientras falten casas, la madera es para ellas: lo demás solo se hace con la que sobre
   // Cuando las casas ya tienen dueño, cuántas se hacen depende de la política de vivienda del gobierno

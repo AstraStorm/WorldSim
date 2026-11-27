@@ -274,6 +274,9 @@ function menuOpen(){
       const m = b.dataset.mode;
       if (m === 'seguir') { menuClose(); return; }
       if (m === 'cargar') { menuClose(); $('saveBtn').click(); return; }
+      if (m === 'salir') { el.querySelector('.gm-quit').hidden = false; b.hidden = true; return; }
+      if (m === 'salir-no') { el.querySelector('.gm-quit').hidden = true; el.querySelector('[data-mode="salir"]').hidden = false; return; }
+      if (m === 'salir-guardar' || m === 'salir-ya') { quitGame(m === 'salir-guardar'); return; }
       const fresh = menuFresh && !playerOn(); menuClose(); menuFresh = false;
       if (m === 'dios') { if (!fresh) regenerate(true); return; }
       if (m === 'nacion') { if (!fresh) { regenerate(true).then(() => foundStart()); } else foundStart(); }
@@ -287,8 +290,15 @@ function menuOpen(){
       <button class="gm-mode" data-mode="dios" type="button"><span class="gm-ic">✨</span><b>Modo dios</b><span>Mira cómo nace y crece un mundo, y juega con él: crea vida, desata catástrofes y susurra ideas a la gente.</span><em>${inGame ? 'Mundo nuevo' : 'Empezar'}</em></button>
       <button class="gm-mode gold" data-mode="nacion" type="button"><span class="gm-ic">👑</span><b>Gobierna una nación</b><span>Funda tu tribu donde quieras y gobiérnala: leyes, impuestos, obras, ciencia, guerra y paz. Tu gente vive a su aire… y puede ponerse en tu contra.</span><em>${inGame ? 'Mundo nuevo' : 'Empezar'}</em></button>
     </div>
-    <div class="gm-foot">${inGame ? '<button data-mode="seguir" type="button">Seguir jugando</button>' : ''}<button data-mode="cargar" type="button">📂 Cargar partida</button></div></div>`;
+    <div class="gm-foot">${inGame ? '<button data-mode="seguir" type="button">Seguir jugando</button>' : ''}<button data-mode="cargar" type="button">📂 Cargar partida</button><button data-mode="salir" type="button">🚪 Salir del juego</button></div>
+    <div class="gm-quit" hidden><span>¿Salir del juego?</span>${inGame ? '<button data-mode="salir-guardar" type="button" class="gold">💾 Guardar y salir</button>' : ''}<button data-mode="salir-ya" type="button">Salir${inGame ? ' sin guardar' : ''}</button><button data-mode="salir-no" type="button">Cancelar</button></div></div>`;
   el.hidden = false; const f = el.querySelector('.gm-mode'); if (f) f.focus();
+}
+// Salir: en la app de escritorio se cierra la ventana; en el navegador, si no deja cerrar la pestaña, se avisa
+async function quitGame(save){
+  if (save && world && !busy) { try { await saveGame(typeof lastSlot !== 'undefined' && lastSlot ? lastSlot : 'p' + Date.now(), true); } catch (e) { console.error(e); } }
+  window.close();
+  setTimeout(() => { if (!window.closed) sysToast(save ? 'Partida guardada. El navegador no deja cerrar la pestaña desde el juego: ciérrala tú' : 'El navegador no deja cerrar la pestaña desde el juego: ciérrala tú'); }, 400);
 }
 function menuClose(){ const el = $('gameMenu'); if (el) el.hidden = true; }
 // ---- El panel de gobierno ----

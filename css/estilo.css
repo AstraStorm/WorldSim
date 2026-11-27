@@ -924,3 +924,8 @@ body.drop-save::after{content:'Suelta aquí la partida .forja para abrirla';posi
 .gv-bk input{width:100%;accent-color:#e0b850}
 .gv-bk b{text-align:right}
 .gv-budf{margin-top:6px;font-size:12.5px}
+
+.gm-quit[hidden]{display:none !important}
+.gm-quit{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;margin-top:12px;padding:10px;border-radius:12px;background:rgba(216,72,58,.08);border:1px solid rgba(216,72,58,.35);font-size:13px}
+.gm-quit button{padding:7px 14px;border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:var(--fg);font:600 13px var(--f-body);cursor:pointer}
+.gm-quit button.gold{border-color:#e0b850;background:linear-gradient(180deg,#f8dc80,#e0b040);color:#1a1408}
