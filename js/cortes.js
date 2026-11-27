@@ -76,7 +76,7 @@ function billTick(dt){
 }
 // ---- Referéndums ----
 function personYes(u, g, R){
-  if (R.kind === 'ley') { const lean = LAW_LEAN[R.key] || 0, s = (typeof lawNeed === 'function' ? lawNeed(u, g, R.key) : 0) * .7 + (lean ? .45 - Math.abs((u.ideo || 0) - lean) * .5 : .1); return R.on ? s > 0 : s <= 0; }
+  if (R.kind === 'ley') { const lean = LAW_LEAN[R.key] || 0, s = (typeof lawNeed === 'function' ? lawNeed(u, g, R.key) : 0) * .7 + (lean ? .22 - Math.abs((u.ideo || 0) - lean) * .55 : .02 + (Math.random() - .5) * .3); return R.on ? s > 0 : s <= 0; }
   const free = ['republica', 'democracia', 'monarquia_parlamentaria', 'partitocracia'].includes(R.key), I = REGIME_IDEO[R.key] ?? 0;
   return free ? Math.abs(u.ideo || 0) < .75 : Math.abs((u.ideo || 0) - I) < .45;
 }

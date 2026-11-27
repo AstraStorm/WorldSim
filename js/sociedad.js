@@ -1583,7 +1583,7 @@ function diploTick(){
     if (!r.known) {
       if ((dist < 70 || mapSees(a, b) || mapSees(b, a)) && yearT > DAY_LEN * .5) { // vecinos, o lejos pero en el mapa de uno de los dos (cartografia.js)
         r.known = true; r.v = a.faith && b.faith && allGods(a.faith).some(d => allGods(b.faith).some(e => e.god === d.god)) ? 15 : 0;
-        notify(`Los de ${a.name} y los de ${b.name} se han encontrado`, { x:(a.fx + b.fx) / 2 * T, y:(a.fy + b.fy) / 2 * T });
+        meetQ.push([a, b]); // (se avisan juntos al final: «Los de X conocen a los de A, B y C»)
       }
       continue;
     }
@@ -1605,7 +1605,9 @@ function diploTick(){
     const before = relWord(r);
     r.v = clamp(r.v * .97 + sum * .8, -100, 100); if (worst) r.reason = worst;
     const now = relWord(r);
-    if (now !== before && !r.war) notify(`${a.name} y ${b.name} ahora son ${now}${now === 'tensos' || now === 'enemigos' ? ` (por ${REASON_TXT[r.reason] || 'desconfianza'})` : ''}`, { x:(a.fx + b.fx) / 2 * T, y:(a.fy + b.fy) / 2 * T });
+    if (now !== before && !r.war && now !== r.wordN && yearT - (r.wordT ?? -1e9) > DAY_LEN) { r.wordN = now; r.wordT = yearT; // (a la crónica, solo si pasan a enemigos o aliados; lo demás, al diario de los dos pueblos)
+      if (now === 'enemigos' || now === 'aliados') notify(`${a.name} y ${b.name} ahora son ${now}${now === 'tensos' || now === 'enemigos' ? ` (por ${REASON_TXT[r.reason] || 'desconfianza'})` : ''}`, { x:(a.fx + b.fx) / 2 * T, y:(a.fy + b.fy) / 2 * T });
+      else { const d = Math.floor(yearT / DAY_LEN) + 1, t = `${a.name} y ${b.name} ahora son ${now}`; for (const g0 of [a, b]) { (g0.log ||= []).push({ d, txt:t }); if (g0.log.length > 60) g0.log.shift(); } } }
     allyCheck(a, b, r); treatyTick(a, b, r);
     // Guerra: con mucha enemistad (y gente para luchar)
     const warAt = (hasLaw(a, 'ejercito') || hasLaw(b, 'ejercito') ? -45 : -58) - (hasLaw(a, 'paz') && hasLaw(b, 'paz') ? 25 : hasLaw(a, 'paz') || hasLaw(b, 'paz') ? 10 : 0);
@@ -1641,6 +1643,15 @@ function diploTick(){
     if (r.v < 30 && yearT - (r.dipT ?? -1e9) > DAY_LEN * (hasLaw(a, 'paz') || hasLaw(b, 'paz') ? 1 : 2) && Math.random() < .5 && !travelers.some(t => t.kind === 'diplomatico' && !t.done && (t.from === a.id || t.from === b.id))) { /* (un diplomático por pueblo a la vez) */ r.dipT = yearT; const from = (a.hall != null) !== (b.hall != null) ? (a.hall != null ? a : b) : Math.random() < .5 ? a : b; sendTraveler('diplomatico', from, from === a ? b : a); }
   }
 }
+// Los encuentros de esta vuelta, juntos: un aviso por pueblo con todos los que acaba de conocer
+const meetQ = [];
+{ const base = diploTick; diploTick = function(){
+  const r = base.apply(this, arguments), M = meetQ.splice(0);
+  const by = new Map(); for (const [a, b] of M) { (by.get(a) || by.set(a, []).get(a)).push(b); }
+  for (const [a, L] of by) { const names = L.map(o => o.name), txt = names.length === 1 ? `Los de ${a.name} y los de ${names[0]} se han encontrado` : `Los de ${a.name} se han encontrado con los de ${names.slice(0, -1).join(', ')} y ${names[names.length - 1]}`;
+    notify(txt, { x:a.fx * T, y:a.fy * T }); }
+  return r;
+}; }
 // Un pueblo que se queda por su cuenta: su propia bandera, su gobierno y alguien al mando (y se rehacen las fronteras)
 // Al comerciar con quien ya usa moneda, se aprende a usarla (cada uno acuña la suya)
 function spreadCoin(a, b){

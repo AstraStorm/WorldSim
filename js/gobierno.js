@@ -47,7 +47,7 @@ const P_LAWS_MAX = 12;
 function lawSupport(g, l){
   const ads = villagers.filter(u => !u.dead && ageOf(u) >= ADULT_H && isPlayerG(villageById(u.vid))); if (!ads.length) return .5;
   const S = ads.length > 80 ? ads.filter((u, i) => i % Math.ceil(ads.length / 80) === 0) : ads, lean = LAW_LEAN[l] || 0;
-  let yes = 0; for (const u of S) { const s = (typeof lawNeed === 'function' ? lawNeed(u, villageById(u.vid) || g, l) : 0) * .7 + (lean ? .45 - Math.abs((u.ideo || 0) - lean) * .5 : .1); if (s > 0) yes++; }
+  let yes = 0; for (const u of S) { const s = (typeof lawNeed === 'function' ? lawNeed(u, villageById(u.vid) || g, l) : 0) * .7 + (lean ? .22 - Math.abs((u.ideo || 0) - lean) * .55 : .02 + (Math.random() - .5) * .3); if (s > 0) yes++; /* (sin ideas ni nada que ganar, a medias) */ }
   return yes / S.length;
 }
 let lawSupC = new Map();
@@ -338,7 +338,7 @@ function govSummary(n){
 function govLaws(n){
   const L = n.pLaws ||= [], all = Object.keys(LAW_TXT).filter(l => typeof lawAwake !== 'function' || lawAwake(n, l));
   const row = l => { const on = L.includes(l), s = lawSup(n, l), lean = LAW_LEAN[l] || 0, opp = lawOpp(l);
-    return `<div class="gv-law${on ? ' on' : ''}"><div class="gv-lt"><b>${esc(capFirst(LAW_TXT[l] || l))}</b><span class="gv-lean ${lean < -.15 ? 'l' : lean > .15 ? 'r' : 'c'}">${lean < -.15 ? 'izquierda' : lean > .15 ? 'derecha' : 'de centro'}</span>${opp && L.includes(opp) && !on ? `<span class="muted">· quitaría «${esc(LAW_TXT[opp] || opp)}»</span>` : ''}</div>
+    return `<div class="gv-law${on ? ' on' : ''}"><div class="gv-lt"><b>${esc(capFirst(LAW_TXT[l] || l))}</b><span class="gv-lean ${lean < -.15 ? 'l' : lean > .15 ? 'r' : 'c'}">${lean < -.15 ? 'izquierda' : lean > .15 ? 'derecha' : 'de centro'}</span>${opp && L.includes(opp) && !on ? `<span class="muted">· quitaría «${esc(LAW_TXT[opp] || opp)}»</span>` : ''}${typeof LAW_DESC !== 'undefined' && LAW_DESC[l] ? `<span class="gv-desc">${esc(capFirst(LAW_DESC[l]))}</span>` : ''}</div>
       <div class="gv-sup"><span class="gv-meter sm"><i style="width:${Math.round(s * 100)}%;background:${s > .55 ? '#7ab04a' : s > .35 ? '#d8b848' : '#d8583a'}"></i></span><span>la apoya el ${pctTxt(s)}</span></div>
       <div class="gv-acts gv-la">${!on && L.length >= P_LAWS_MAX ? '<span class="gv-miss">ya tienes demasiadas leyes</span>' : typeof lawActions === 'function' ? lawActions(n, l, !on) : `<button class="gv-btn" data-glaw="${l}" data-on="${on ? 0 : 1}">${on ? 'Derogar' : 'Aprobar'}</button>`}</div></div>`; };
   const act = all.filter(l => L.includes(l)), rest = all.filter(l => !L.includes(l)).sort((a, b) => lawSup(n, b) - lawSup(n, a));

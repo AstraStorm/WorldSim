@@ -206,15 +206,19 @@ const TOAST_KIND = [
   ['death', /muere|Murió|ha muerto|extinguido|ejecutados/]
 ];
 const TOAST_TITLE = { war:'Guerra', pol:'Política', eco:'Economía', dip:'Diplomacia', rel:'Religión', dis:'Catástrofe', death:'Muerte', misc:'Noticia', sys:'Partidas' };
-const TOAST_BIG = /declara la guerra|conquista|Triunfa|Golpe de estado|Revolución|extinguido|arrasada|Bancarrota|firman|teocracia|República Socialista|imperio|independiza|entra en la guerra|rechazan el ataque|se corona/;
+const TOAST_BIG = /declara la guerra|conquista|Triunfa|Golpe de estado|Revolución|extinguido|arrasada|Bancarrota|firman la paz|teocracia|República Socialista|imperio|independiza|entra en la guerra|rechazan el ataque|se corona/;
 let chronicle = [], toastSeq = 0, chronUnread = 0, lastToastT = -1e9;
 const kindOf = t => (TOAST_KIND.find(([, re]) => re.test(t)) || ['misc'])[0];
 // Avisos del propio juego (guardar, cargar…): se ven siempre, pero no son historia del mundo (ni crónica ni diario de los pueblos)
 function sysToast(text){ pushToast(text, null, 'sys'); }
+// Lo de cada día (rituales, visitas, compras, caravanas, mensajeros...): solo en el diario de cada pueblo, para que la
+// crónica guarde lo que cambia el mundo y no se llene en unas horas
+const ROUTINE = /firman una? (pacto de no agresión|acuerdo comercial|libre circulación|acuerdo de cooperación científica|acuerdo de intercambio cultural)|celebran un ritual|^Un diplomático de .+ visita|^El gobierno de .+ compra|^Una caravana de .+ llega|abre la oficina|creen que (la|el|los|las|tantos)|^El agua ha apagado la hoguera|renuevan un|intercambian sus|^Llega a .+ un mensajero|aprenden a |escribe «|se ha podrido|declaran festivo|quieren levantar|empiezan a coser|^El globo comercial|se ponen a rezar|llega a .+ en visita oficial|vuelven a tener/;
 function pushToast(text, target, sys){
+  if (!sys && ROUTINE.test(text) && !TOAST_BIG.test(text)) return;
   const kind = sys || kindOf(text), big = TOAST_BIG.test(text), box = $('toasts');
   if (big) snd(/guerra|Golpe|Revolución|conquista/.test(text) ? 'horn' : 'bell');
-  if (!sys) chronicle.push({ d:Math.floor(yearT / DAY_LEN) + 1, text, kind, target }); if (chronicle.length > 150) chronicle.shift();
+  if (!sys) chronicle.push({ d:Math.floor(yearT / DAY_LEN) + 1, text, kind, target }); if (chronicle.length > 400) chronicle.shift(); // (con la rutina fuera, cabe más historia)
   if ($('chron') && !$('chron').hidden) renderChronicle();
   if (!box) return;
   const btn = $('chronBtn'); if (btn && $('chron').hidden && !sys) { chronUnread++; btn.dataset.n = chronUnread > 99 ? '99+' : chronUnread; }
