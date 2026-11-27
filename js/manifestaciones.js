@@ -109,7 +109,7 @@ function protSteer(v, t){
 const protBase = runProtest;
 runProtest = function(g){
   const p = g.protest; if (!p.kind) return protBase.apply(this, arguments);
-  const live = protPlace(p), L = p.lead && !p.lead.dead && p.lead.task && p.lead.task.k === 'protesta' ? p.lead : live[0];
+  const live = protPlace(p).filter(u => u.task && u.task.k === 'protesta'), L = p.lead && !p.lead.dead && p.lead.task && p.lead.task.k === 'protesta' ? p.lead : live[0];
   if (L && L !== p.lead) { p.lead = L; L.task.lead = true; }
   if (p.ph === 'reunion' && L) {
     const near = live.filter(u => Math.hypot(u.x - p.plaza.x, u.y - p.plaza.y) < T * 3).length;
@@ -123,8 +123,8 @@ runProtest = function(g){
   // Cánticos: grita el cabecilla y la gente responde
   if (p.ph !== 'reunion' && L && yearT > p.chantT) { p.chantT = yearT + 2.2 + Math.random();
     if (p.kind === 'cacerolada') { const u = live[Math.floor(Math.random() * live.length)]; if (u) floats.push({ x:u.x, y:u.y - 14, txt:'¡clang, clang!', col:'#c8ccd4', life:0 }); }
-    else { floats.push({ x:L.x, y:L.y - 18, txt:L.task.slogan, col:'#fff4d0', life:0 });
-      setTimeout(() => { for (const u of live.filter(u => u !== L && !u.dead).sort(() => Math.random() - .5).slice(0, 2)) floats.push({ x:u.x, y:u.y - 14, txt:Math.random() < .5 ? L.task.slogan : PROT_ECHO[Math.floor(Math.random() * PROT_ECHO.length)], col:'#e8dcc0', life:0 }); }, 700); } }
+    else { const sl = L.task.slogan; floats.push({ x:L.x, y:L.y - 18, txt:sl, col:'#fff4d0', life:0 });
+      setTimeout(() => { for (const u of live.filter(u => u !== L && !u.dead).sort(() => Math.random() - .5).slice(0, 2)) floats.push({ x:u.x, y:u.y - 14, txt:Math.random() < .5 ? sl : PROT_ECHO[Math.floor(Math.random() * PROT_ECHO.length)], col:'#e8dcc0', life:0 }); }, 700); } }
   // Se suma quien pasa cerca y está de acuerdo
   if (p.kind !== 'cacerolada' && L && yearT > p.joinT && live.length < 32) { p.joinT = yearT + 3;
     for (const u of p.who) if (!u.dead && !(u.task && u.task.k === 'protesta') && !p.quit.includes(u) && protFree(u) && (!u.task || ['ocio', 'pasear'].includes(u.task.k)) && u.food > .3 && u.water > .35) protTask(p, u); // (los que fueron a comer o a beber, vuelven)

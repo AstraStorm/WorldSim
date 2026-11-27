@@ -186,6 +186,37 @@ const routeC = new Map(); let routeCW = null, routeHits = 0, routeMiss = 0;
 // Con pasos largos (a x4-x5, o quien está fuera de la vista y piensa un paso sí y otro no), el movimiento se hace en
 // trocitos de 0,1 s: así nadie atraviesa una muralla o un río de un salto
 { const base = vGo; vGo = function(v, x, y, dt, run){ if (!(dt > .12)) return base(v, x, y, dt, run); const n = Math.min(4, Math.ceil(dt / .1)), d = dt / n; let r = false; for (let k = 0; k < n && !r; k++) r = base(v, x, y, d, run); return r; }; }
+// Fuera de la pantalla (o con el mapa alejado, donde cada uno es un puntito), a x3 o más con mucha gente, no se camina
+// esquivando paso a paso: se calcula la ruta (así se sabe si se puede llegar) y se avanza deslizándose por ella a su
+// velocidad. Lo que pasa cuenta igual (trabajan, comen, cobran, desgastan el camino por donde pasan); solo se ahorra el
+// detalle de cada pisada, que nadie está mirando. Al acercar la cámara vuelven a caminar normal.
+const NO_ABS = new Set(['asalto', 'reprimir', 'protesta', 'apagar', 'guardia', 'jugar', 'atleta', 'nadar', 'correr', 'golpe', 'sacrificio', 'refugio', 'embarcar']);
+let absRect = null, absRectT = -1;
+const absOn = v => { if (!(gameSpeed >= 3) || window.ABS_OFF || villagers.length < 250 || v === follow || v.boat || v.mount || v.enemy || v.foe || (v.task && (NO_ABS.has(v.task.k) || v.task.a || v.task.target))) return false; /* (lo que persigue algo que se mueve, de verdad) */
+  if (zoom < 1) return true;
+  if (absRectT !== yearT) { absRectT = yearT; absRect = visibleRect(); } const [x0, y0, x1, y1] = absRect; return v.x < x0 - 120 || v.x > x1 + 120 || v.y < y0 - 120 || v.y > y1 + 120; };
+{ const base = vGo; vGo = function(v, x, y, dt, run){
+  if (!absOn(v)) { v.abs = null; return base(v, x, y, dt, run); }
+  const d = Math.hypot(x - v.x, y - v.y); if (d < 3) { v.abs = null; v.route = null; return true; }
+  const tk = Math.floor(y / T) * W + Math.floor(x / T); let A = v.abs;
+  if (!A || Math.hypot((tk % W) - (A.k % W), ((tk / W) | 0) - ((A.k / W) | 0)) > 2) {
+    if (inWater(v.x, v.y)) return base(v, x, y, dt, run); // (nadando, mejor de verdad)
+    const r = d > T * 2.5 ? routeTo(v, tk) : null;
+    if (!r && d > T * 3) { v.abs = null; v.routeKey = null; return base(v, x, y, dt, run); } // (no hay forma de llegar: que lo resuelva el de siempre)
+    const end = walkable(x, y) || !r || !r.length ? [x, y] : r[r.length - 1], pts = [[v.x, v.y], ...(r || []), end], cum = [0];
+    for (let k = 1; k < pts.length; k++) cum.push(cum[k - 1] + Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]));
+    A = v.abs = { k:tk, pts, cum, s:0, i:1 };
+  }
+  const sp = 10 * (1 + (v.fit || 0) * .3) * 1.3 * (run ? 1.35 : 1) * (ageOf(v) < ADULT_H ? .8 : 1), P = A.pts, C = A.cum, L = C[C.length - 1];
+  A.s += sp * dt; v.moving = true; v.walk += dt;
+  if (A.s < L) { while (A.i < C.length - 1 && C[A.i] < A.s) A.i++;
+    const k = A.i, f = (A.s - C[k - 1]) / Math.max(.001, C[k] - C[k - 1]), nx = P[k - 1][0] + (P[k][0] - P[k - 1][0]) * f, ny = P[k - 1][1] + (P[k][1] - P[k - 1][1]) * f;
+    if (Math.abs(nx - v.x) > .2) v.dir = nx > v.x ? 1 : -1; v.x = nx; v.y = ny; return false; }
+  // Llega: deja la huella en el camino recorrido
+  if (wear) for (let k = 1; k < P.length - 1; k++) { const wi = Math.floor(P[k][1] / T) * W + Math.floor(P[k][0] / T); if (WATER[world.biome[wi]] || bridgeSet.has(wi) || (pathMap.has(wi) && !desireSet.has(wi)) || footAt(wi)) continue;
+    wear[wi] = Math.min(60, wear[wi] + T / 13); if (wear[wi] > 4) wornSet.add(wi); if (wear[wi] > 30 && !world.objs[wi] && !farmMap.has(wi) && !pathMap.has(wi)) { pathMap.add(wi); desireSet.add(wi); } }
+  [v.x, v.y] = P[P.length - 1]; v.abs = null; v.route = null; v.routeKey = null; return true;
+}; }
 function vGo(v, x, y, dt, run){
   const d = Math.hypot(x - v.x, y - v.y);
   if (d < 3 || (d < 9 && !walkable(x, y))) { v.route = null; return true; }

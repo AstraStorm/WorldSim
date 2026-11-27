@@ -68,7 +68,7 @@ function updateLife(dt){
 let lastT = 0, gameSpeed = 1;
 const SYSTEMS = [dt => { updateBallGames(dt); olympicsTick(dt); }, dt => updateSieges(dt), dt => updateVillagers(dt), dt => updateAnimals(dt), dt => updateFires(dt), dt => updateClimate(dt), dt => updateLife(dt), (dt, t) => updateVolcanoes(dt, t),
   dt => updateWeather(dt), dt => { updateStorms(dt); updateWhirls(dt); }, dt => updateSandstorms(dt), dt => updateMeteors(dt), dt => updateBalloons(dt), dt => updateLanguages(dt), dt => clearWallsOverPens(dt), dt => updateCouncil(dt), dt => updatePirates(dt), dt => updateBandits(dt), dt => updateQuakes(dt), (dt, t) => updateWaves(t)];
-let simLag = 0; // pasos que no cupieron en el último fotograma
+let simLag = 0, lastDrawT = 0, drawSkipped = false; // pasos que no cupieron en el último fotograma
 const SIM_BUDGET = 30; let simStepMs = 5; // ms de simulación por fotograma / coste medio de un paso
 const WAVES_SYS = SYSTEMS[SYSTEMS.length - 1];
 // Sistemas lentos y suaves (clima, tiempo, idiomas, consejo, islas...): a velocidad x2-x5 se calculan una sola vez por
@@ -86,6 +86,7 @@ function loop(t){
     const simT0 = performance.now(), want = dt * gameSpeed, budget = SIM_BUDGET + Math.max(0, gameSpeed - 2) * (gameSpeed >= 4 ? 22 : 10); // a x3-x5 se acepta perder algo de fluidez
     const maxStep = gameSpeed >= 4 ? .2 : .1; // (a x4 y x5, pasos de hasta 0,2 s: la mitad de pasos para lo mismo; el movimiento se sigue haciendo de 0,1 en 0,1)
     const steps = gameSpeed ? Math.min(gameSpeed, Math.max(1, Math.ceil(want / maxStep), Math.floor(budget / simStepMs))) : 0, sdt = steps ? Math.min(maxStep, want / steps) : 0;
+    simLag = 0;
     for (let k = 0; k < steps; k++) {
       if (k && performance.now() - simT0 + simStepMs * .7 > budget) { simLag = steps - k; break; } // no da para tanto: el resto, otro fotograma (más lento, pero sin tirones)
       const s0 = performance.now();
@@ -117,6 +118,8 @@ function loop(t){
     offY += (ch / 2 - (follow.y - 5) * zoom - offY) * k;
     updateFollowTag();
   }
-  draw(t);
+  // A x4 y x5, si la simulación no llega, se dibuja un fotograma de cada dos (y nunca menos de unos 7 por segundo): el resto
+  // del tiempo es para simular; se ve algo menos suave, pero el juego va más cerca de x5 de verdad
+  if (gameSpeed >= 4 && simLag > 0 && !drawSkipped && t - lastDrawT < 150) drawSkipped = true; else { draw(t); lastDrawT = t; drawSkipped = false; }
   requestAnimationFrame(loop);
 }

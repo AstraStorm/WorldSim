@@ -1,8 +1,12 @@
 {
  "juego": "World Sim",
- "version": "202611271300",
- "fecha": "2026-11-27 13:00",
+ "version": "202611271323",
+ "fecha": "2026-11-27 13:23",
  "novedades": [
+  {
+   "fecha": "2026-11-27",
+   "texto": "Manifestaciones que marchan a donde está el problema, y simulación más ligera para x5"
+  },
   {
    "fecha": "2026-11-27",
    "texto": "Constitución: solo leyes fundamentales, la política del día a día queda para cada gobierno"
@@ -46,14 +50,10 @@
   {
    "fecha": "2026-11-27",
    "texto": "El tren ya no cruza el mar"
-  },
-  {
-   "fecha": "2026-11-27",
-   "texto": "Abrigos dibujados en la propia figura"
   }
  ],
  "archivos": {
-  "index.html": "edf0097492c59a4594f1392d2024b937fb884554",
+  "index.html": "f4230a893f91ed290007048b9d72bfd5bc1a7af2",
   "css/estilo.css": "c312120dba0778bf02fde9ce57a98f7776bec66f",
   "js/agencia.js": "dd15e5ae8fa08af254622aba102dafae859910b9",
   "js/aldeanos.js": "f154c584cd8b3c983fa0154330d6ec4f3c76c8d6",
@@ -61,7 +61,7 @@
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "a94b46896cfd10fd688954a3c5b9297e9b693872",
   "js/armas.js": "d4710aa65550aceb06fbdd1d2d290c8085f58e96",
-  "js/arte.js": "b13b19b918e5df8b51dde1377607f8892e83796d",
+  "js/arte.js": "ee3aac55f08141c9bb1b95597ae47067b173109e",
   "js/arte_mapa.js": "a92d6a3c48ca112990a90102d27322fe8879ec53",
   "js/aviacion.js": "2bceeb5a9a59332b96ad69d19b5f6e39da71af42",
   "js/bandidos.js": "bc804375208c5f300e33435e76d16001e8c4daae",
@@ -111,7 +111,7 @@
   "js/gobierno.js": "0640677a5d4bf3f5c071d293b7f1485c138529d3",
   "js/grafica.js": "d548461632882f80f4077d9e5754c70c5319331e",
   "js/guerra.js": "2aab88f346ccb8117f2fd463cb66b8189034b083",
-  "js/humanos.js": "b8d5f15d44c9f24901106ea9533fce27ece81413",
+  "js/humanos.js": "7041ef0d3e57f029a35ad1c4f4ec3f3b9e88a0db",
   "js/idiomas.js": "c9cea6906055fb07058b9e57a2e455a8238ba521",
   "js/impuestos.js": "30a39fbfba11c9245a09cf6e54504337272a2fb6",
   "js/industria.js": "22d48830a1468bf98232c5575425dce53c564f30",
@@ -123,7 +123,7 @@
   "js/leyes2.js": "856be98432d378371775fd37d9fc19f9ed13c096",
   "js/libro.js": "77022669857da910d675ba22320bd2281a13fa64",
   "js/lluvia.js": "f5d9f158319f36671117bcf52a7e408433bc153d",
-  "js/manifestaciones.js": "25c0c2b43822d161f26723012cd223cd09ad4ca3",
+  "js/manifestaciones.js": "e87f9a3185234cc4fe667bba1bd3d1ff97631ea3",
   "js/mapas.js": "822f9d930f4b0a1f4fc0bbb8808ef5ba56f2f985",
   "js/medios.js": "3da2fb5734d0fdf45a37828bad849d11ee88ca61",
   "js/minas.js": "4f093817fbd8df8654fd4d2c9507600191bcd312",
@@ -161,7 +161,7 @@
   "js/tratados.js": "c7221ac52158a928a77489448ca7f1ce45ade8e2",
   "js/ui.js": "87256f0f01b8aa2a5b9d282c0a2a538dce73cf85",
   "js/urbanismo.js": "fc463eb0ef8c8080138d8ce2650bb2cdfc2b7718",
-  "js/vegetacion.js": "37faf9a0358361a3423aef8f9110c0e754889584",
+  "js/vegetacion.js": "2741eface4ddb480111085c19e6aae980c82e457",
   "js/vida.js": "2fca663a0d538b7d713ddf84ee9c89d69dcf6b66",
   "js/visitas.js": "5ae62a73b96064c44cf473c03ed02d831401bd82",
   "js/vista.js": "25efedff617e0f2eab5ef9c098b87900d73af85b",
