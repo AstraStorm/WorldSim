@@ -22,10 +22,15 @@ OBJ['oil:pozo'] = ['Pozo petrolero', 'house', 0]; OBJ['oil:plataforma'] = ['Plat
 Object.assign(BLD_DESC, { oil:'Petróleo: el pozo lo saca de la tierra (o del fondo del mar) y la refinería lo convierte en combustible, asfalto y plástico' });
 Object.assign(BLD_TYPE, { oil:'Energía' });
 // ---- Yacimientos ----
+const OIL_LAND = 45000, OIL_SEA = 70000; // una mancha por cada tantas casillas: el petróleo tiene que ser escaso
 function oilDeposits(){
-  if (world.oil) return world.oil;
+  if (world.oil) {
+    // Partidas de antes (había el doble): se quitan los sobrantes que nadie explota
+    if (!world.oilTrim) { world.oilTrim = true; for (const [sea, per, min] of [[false, OIL_LAND, 3], [true, OIL_SEA, 2]]) { const want = Math.max(min, Math.round(N / per)), free = world.oil.filter(d => !!d.sea === sea && d.owner == null && d.well == null); let extra = world.oil.filter(d => !!d.sea === sea).length - want; while (extra-- > 0 && free.length) { const d = free.splice(Math.floor(Math.random() * free.length), 1)[0]; world.oil.splice(world.oil.indexOf(d), 1); } } }
+    return world.oil;
+  }
   const r = mulberry32((hashStr(params.seed) ^ 0x0117) >>> 0), out = [], seaNear = i => { const x = i % W, y = (i / W) | 0; for (let d = 2; d <= 10; d++) for (const [a, b] of [[d, 0], [-d, 0], [0, d], [0, -d]]) { const j = (y + b) * W + x + a; if (j >= 0 && j < N && !WATER[world.biome[j]]) return true; } return false; };
-  const want = Math.max(4, Math.round(N / 22000)), wantSea = Math.max(3, Math.round(N / 35000));
+  const want = Math.max(3, Math.round(N / OIL_LAND)), wantSea = Math.max(2, Math.round(N / OIL_SEA)); world.oilTrim = true;
   for (let k = 0; k < 40000 && out.filter(o => !o.sea).length < want; k++) { const i = Math.floor(r() * N), b = world.biome[i]; if (![B.DESERT, B.DRY, B.SAND].includes(b) && !(b === B.PLAINS && r() < .08)) continue; const x = i % W, y = (i / W) | 0; if (x < 6 || y < 8 || x >= W - 6 || y >= H - 4 || out.some(o => Math.hypot(o.i % W - x, ((o.i / W) | 0) - y) < 30)) continue; out.push({ i, sea:false, amt:500 + r() * 700 }); }
   for (let k = 0; k < 40000 && out.filter(o => o.sea).length < wantSea; k++) { const i = Math.floor(r() * N), b = world.biome[i]; if (b !== B.SHALLOW && b !== B.SEA) continue; const x = i % W, y = (i / W) | 0; if (x < 6 || y < 8 || x >= W - 6 || y >= H - 4 || !seaNear(i) || out.some(o => Math.hypot(o.i % W - x, ((o.i / W) | 0) - y) < 30)) continue; out.push({ i, sea:true, amt:800 + r() * 900 }); }
   return world.oil = out;

@@ -5,7 +5,11 @@
  "novedades": [
   {
    "fecha": "2026-11-27",
-   "texto": "Animales salvajes y niños fuera del mar"
+   "texto": "Menos petróleo"
+  },
+  {
+   "fecha": "2026-11-27",
+   "texto": "Quedan animales salvajes y los niños no se meten en el mar"
   },
   {
    "fecha": "2026-11-27",
@@ -46,10 +50,6 @@
   {
    "fecha": "2026-11-27",
    "texto": "Menús del modo nación arrastrables y cine más variado"
-  },
-  {
-   "fecha": "2026-11-27",
-   "texto": "Arreglos tras probar todo en el navegador"
   }
  ],
  "archivos": {
@@ -135,7 +135,7 @@
   "js/parlamento.js": "d9536c13bd9a02da8f30e1922e6ac942842e6462",
   "js/partidas.js": "025a681f82298cdc75156307a3270c8535976f17",
   "js/pensamientos.js": "129733b3005a3a32d867533753d8e1c42ead3b32",
-  "js/petroleo.js": "7b30905d4f3a32fd4fa029f30e0159aaab79b236",
+  "js/petroleo.js": "e6a69b64195066ce97c82ca30770accad63b9845",
   "js/piratas.js": "beb3854b289db488d51425c3ab8bbff0d2546f00",
   "js/pontones.js": "8de37aa4831746fa922e201c5dbbc75704c2a7b8",
   "js/potencias.js": "e538d4b65af312e2da23e6803210bd94954c7228",
