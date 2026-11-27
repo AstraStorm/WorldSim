@@ -1384,7 +1384,7 @@ function renderVillageCard(force){
     const vr = n.voteRes;
     body = `<div>${govCard(g)}</div>
       ${typeof hemicycle === 'function' && seatsOf(n) ? `<h4>Parlamento</h4>${hemicycle(n)}` : ''}${typeof pollChart === 'function' && pollChart(n) ? `<h4>Encuestas</h4>${pollChart(n)}` : ''}${n.parties ? `<h4>Partidos</h4><div class="parties">${n.parties.map((q, k) => { const pct = vr && vr[k] != null ? vr[k] : null; return `<div class="party${n.ruling === k ? ' on' : ''}">${logoImg(q, 30)}<div class="pi"><b style="color:${q.col}">${esc(q.name)}</b> <span class="muted">(${esc(q.abbr || siglas(q.name))})</span><b>${n.ruling === k ? ' <span class="gold">★ gobierna</span>' : ''}</b><span class="muted">${sideTxt(q)}${typeof partyLeaderOf === 'function' && partyLeaderOf(n, q) ? ` · lo lidera ${esc(partyLeaderOf(n, q).name)}` : ''}${q.rallies ? ` · ${q.rallies} mitin${q.rallies > 1 ? 'es' : ''}` : ''} · propone: ${q.laws.map(l => LAW_TXT[l]).join(', ')}</span>${pct != null ? `<span class="pv">${bar(pct / 100, q.col, 150)} ${pct} %</span>` : ''}</div></div>`; }).join('')}</div>` : '<h4>Partidos</h4><div>Aún no tienen partidos</div>'}
-      <h4>Leyes</h4><div class="laws">${lawsOf(g).map(l => `<div><b>${LAW_TXT[l]}</b><span class="muted">${LAW_DESC[l] || ''}</span></div>`).join('') || '<div class="muted">Sin leyes propias todavía</div>'}</div>
+      ${typeof constCard === 'function' ? constCard(n) : ''}<h4>Leyes</h4><div class="laws">${lawsOf(g).map(l => `<div><b>${typeof constHas === 'function' && constHas(n, l) ? '📜 ' : ''}${LAW_TXT[l]}</b><span class="muted">${LAW_DESC[l] || ''}</span></div>`).join('') || '<div class="muted">Sin leyes propias todavía</div>'}</div>
       ${(nationOf(g).lawHist || []).length ? `<h4>Historia de las leyes</h4><ul class="log">${nationOf(g).lawHist.slice().reverse().map(e => `<li class="pol"><span class="d">día ${e.d}</span>${esc(e.txt.replace(`En ${nationOf(g).name} `, ''))}</li>`).join('')}</ul>` : ''}
       ${colonyCard(g)}${justiceCard(g)}${pressCard(g)}${scienceCard(g)}${councilCard(g)}${spyCard(g)}${cultureCard(g)}
       <h4>Horario</h4><div>${shiftTxt(g)}${inShift(g) ? ' · <b>ahora trabajan</b>' : isNight() ? ' · ahora duermen' : ' · <b>ahora es su tiempo libre</b>'}</div>
@@ -2214,9 +2214,9 @@ function makeParties(g){
   notify(`En ${g.name} nacen los partidos: ${parties.map(p => p.name).join(', ')}`, { x:g.fx * T, y:g.fy * T });
 }
 const artP = p => /^(Ciudadanos|Verdes|Liberales)/.test(p.name) ? 'los' : /^(Unión|Liga|Alianza|Asamblea|Hermandad|Izquierda|Coalición|Acción|Agrupación|Convergencia)/.test(p.name) ? 'la' : 'el'; // «gana la Liga…», «gana el Frente…»
-const lawsOfAll = g => { const n = nationOf(g); if (n.pLaws) return n.pLaws; if (REGIME_LAWS[n.regime]) return REGIME_LAWS[n.regime]; /* (n.pLaws: las leyes que pone el jugador, gobierno.js) */ let L = n.ruling != null && n.parties && n.parties[n.ruling] ? n.parties[n.ruling].laws : [];
+const lawsOfAll = g => { const n = nationOf(g), cm = typeof constMerge === 'function' ? L0 => constMerge(n, L0) : L0 => L0; /* (constMerge: el núcleo de la Constitución, constitucion.js) */ if (n.pLaws) return cm(n.pLaws); if (REGIME_LAWS[n.regime]) return REGIME_LAWS[n.regime]; /* (n.pLaws: las leyes que pone el jugador, gobierno.js) */ let L = n.ruling != null && n.parties && n.parties[n.ruling] ? n.parties[n.ruling].laws : [];
   const C = n.coalition != null && n.parties && n.parties[n.coalition]; if (C) L = [...L, ...C.laws.filter(l => !L.includes(l) && !LAW_CLASH.some(([a, b]) => (l === a && L.includes(b)) || (l === b && L.includes(a))))];
-  return n.regime === 'socialismo' ? [...new Set(['reparto', 'estatal', 'vivienda_publica', ...L.filter(l => l !== 'mercado_vivienda')])] : L; };
+  return cm(n.regime === 'socialismo' ? [...new Set(['reparto', 'estatal', 'vivienda_publica', ...L.filter(l => l !== 'mercado_vivienda')])] : L); };
 const lawsOf = g => { const L = lawsOfAll(g); if (typeof lawAwake !== 'function') return L; const c = L._aw; if (c && c.t === yearT && c.n === nationOf(g)) return c.out; const out = L.filter(l => lawAwake(g, l)); try { Object.defineProperty(L, '_aw', { value:{ t:yearT, n:nationOf(g), out }, configurable:true, writable:true }); } catch (e) {} return out; }; // (las leyes sin sentido aún quedan dormidas: leyes.js)
 const hasLaw = (g, l) => lawsOf(g).includes(l);
 const sideTxt = p => p.ideo < -.3 ? 'izquierda' : p.ideo > .3 ? 'derecha' : 'centro';
@@ -2421,14 +2421,14 @@ function politicsTick(g, dt, people){
 function lawLog(g, txt){ (g.lawHist ||= []).push({ d:Math.floor(yearT / DAY_LEN) + 1, txt }); if (g.lawHist.length > 12) g.lawHist.shift(); }
 // Una ley nueva: la propone el gobierno (cercana a sus ideas) y la vota la gente (cada uno, según lo cerca que le quede)
 function proposeLaw(g, adults){
-  const p = g.parties[g.ruling], cand = Object.keys(LAW_LEAN).filter(l => !p.laws.includes(l) && lawAwake(g, l) && !LAW_CLASH.some(([a, b]) => (l === a && p.laws.includes(b)) || (l === b && p.laws.includes(a))));
+  const p = g.parties[g.ruling], cand = Object.keys(LAW_LEAN).filter(l => !p.laws.includes(l) && lawAwake(g, l) && !(typeof constBlocks === 'function' && constBlocks(g, l)) && !LAW_CLASH.some(([a, b]) => (l === a && p.laws.includes(b)) || (l === b && p.laws.includes(a))));
   if (!cand.length || !adults.length) return;
   const w = cand.map(l => Math.exp(-((LAW_LEAN[l] - p.ideo) ** 2) / .2) + .02); let k = Math.random() * w.reduce((a, b) => a + b, 0), law = cand[0];
   for (let j = 0; j < cand.length; j++) if ((k -= w[j]) < 0) { law = cand[j]; break; }
   const ms = adults.map(u => u.money || 0).sort((a, b) => a - b); g.moneyMed = ms[ms.length >> 1] || 0;
   const yesSet = new Set(adults.filter(u => lawVote(u, g, law))), yes = yesSet.size, pct = Math.round(yes / adults.length * 100), at = { x:g.fx * T, y:g.fy * T }, who = lawWho(adults, g, law, yesSet); // cada uno vota según sus ideas y lo que le toca (leyes.js)
   if (pct >= 55) {
-    const out = p.laws.length >= 4 ? p.laws[Math.floor(Math.random() * p.laws.length)] : null; if (out) p.laws = p.laws.filter(l => l !== out); p.laws.push(law);
+    const yesOf = l => adults.reduce((a, u) => a + (lawVote(u, g, l) ? 1 : 0), 0), out = p.laws.length >= 4 ? p.laws.map(l => [l, yesOf(l)]).sort((a, b) => a[1] - b[1])[0][0] : null; /* (se cae la que menos gusta, no una al azar) */ if (out) p.laws = p.laws.filter(l => l !== out); p.laws.push(law);
     const txt = `En ${g.name} se aprueba la ley de «${LAW_TXT[law]}» con el ${pct} % de los votos${who ? ` (${who})` : ''}${out ? `; se deroga la de «${LAW_TXT[out]}»` : ''}`; lawLog(g, txt); notify(txt, at);
   } else { const txt = `En ${g.name} el pueblo rechaza la ley de «${LAW_TXT[law]}» que proponía ${artP(p)} ${p.name} (solo un ${pct} % a favor${who ? `; ${who}` : ''})`; lawLog(g, txt); notify(txt, at); g.anger = Math.min(100, (g.anger || 0) + 3); }
 }

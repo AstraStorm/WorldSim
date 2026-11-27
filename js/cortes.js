@@ -76,7 +76,7 @@ function billTick(dt){
 }
 // ---- Referéndums ----
 function personYes(u, g, R){
-  if (R.kind === 'ley') { const lean = LAW_LEAN[R.key] || 0, s = (typeof lawNeed === 'function' ? lawNeed(u, g, R.key) : 0) * .7 + (lean ? .22 - Math.abs((u.ideo || 0) - lean) * .55 : .02 + (Math.random() - .5) * .3); return R.on ? s > 0 : s <= 0; }
+  if (R.kind === 'ley' || R.kind === 'const') { const lean = LAW_LEAN[R.key] || 0, s = (typeof lawNeed === 'function' ? lawNeed(u, g, R.key) : 0) * .7 + (lean ? .22 - Math.abs((u.ideo || 0) - lean) * .55 : .02 + (Math.random() - .5) * .3); return R.on ? s > 0 : s <= 0; }
   const free = ['republica', 'democracia', 'monarquia_parlamentaria', 'partitocracia'].includes(R.key), I = REGIME_IDEO[R.key] ?? 0;
   return free ? Math.abs(u.ideo || 0) < .75 : Math.abs((u.ideo || 0) - I) < .45;
 }
@@ -87,16 +87,16 @@ function startReferendum(kind, key, on){
     for (const u of villagers) { if (u.dead || u.away || u.vid !== o.id || ageOf(u) < ADULT_H || u.sleep || u.boat || (u.task && ['asalto', 'apagar', 'viaje', 'ritual', 'protesta', 'golpe', 'reprimir', 'detenido', 'mitin'].includes(u.task.k))) continue;
       releaseTask(u); if (u.actT > 0) { u.actT = 0; u.onDone = null; }
       u.task = { k:'votar', x:(r0.x0 + .5 + Math.random() * (r0.x1 - r0.x0)) * T + 2, y:(r0.y0 + .5 + Math.random() * (r0.y1 - r0.y0)) * T + 3, until:R.until - 2 }; u.lastD = Infinity; } }
-  notify(`Referéndum en ${n.name}: ¿${kind === 'ley' ? `${R.on ? 'aprobar' : 'quitar'} la ley de «${LAW_TXT[key] || key}»` : `pasar a ser ${REGIME_A[key]}`}? Todos a la plaza a votar`, { x:n.fx * T, y:n.fy * T });
+  notify(`Referéndum en ${n.name}: ¿${kind === 'const' ? `reformar la Constitución para ${R.on ? 'añadir' : 'quitar'} «${LAW_TXT[key] || key}» (hacen falta dos de cada tres)` : kind === 'ley' ? `${R.on ? 'aprobar' : 'quitar'} la ley de «${LAW_TXT[key] || key}»` : `pasar a ser ${REGIME_A[key]}`}? Todos a la plaza a votar`, { x:n.fx * T, y:n.fy * T });
 }
 function refTick(){
   const n = playerNat(), P = world && world.player, R = P && P.ref; if (!R || yearT < R.until) return;
   P.ref = null; P.refT = yearT + DAY_LEN * .5; if (!n) return;
   const ads = villagers.filter(u => !u.dead && ageOf(u) >= ADULT_H && isPlayerG(villageById(u.vid))); let yes = 0;
   for (const u of ads) if (personYes(u, villageById(u.vid) || n, R)) yes++;
-  const pct = Math.round(yes / Math.max(1, ads.length) * 100), ok = pct > 50, at = { x:n.fx * T, y:n.fy * T };
-  const what = R.kind === 'ley' ? `${R.on ? 'aprobar' : 'quitar'} la ley de «${LAW_TXT[R.key] || R.key}»` : `pasar a ser ${REGIME_A[R.key]}`;
-  if (ok) { if (R.kind === 'ley') setPlayerLaw(R.key, R.on, `por referéndum (${pct} % de síes)`, 0); else setPlayerRegime(R.key, `por referéndum (${pct} % de síes)`, 0, true); }
+  const pct = Math.round(yes / Math.max(1, ads.length) * 100), ok = pct > (R.kind === 'const' ? 66 : 50), at = { x:n.fx * T, y:n.fy * T };
+  const what = R.kind === 'const' ? `reformar la Constitución (${R.on ? 'añadir' : 'quitar'} «${LAW_TXT[R.key] || R.key}»; hacía falta un 67 %)` : R.kind === 'ley' ? `${R.on ? 'aprobar' : 'quitar'} la ley de «${LAW_TXT[R.key] || R.key}»` : `pasar a ser ${REGIME_A[R.key]}`;
+  if (ok) { if (R.kind === 'const') constReform(n, R.key, R.on, `por referéndum (${pct} % de síes)`); else if (R.kind === 'ley') setPlayerLaw(R.key, R.on, `por referéndum (${pct} % de síes)`, 0); else setPlayerRegime(R.key, `por referéndum (${pct} % de síes)`, 0, true); }
   else notify(`Referéndum en ${n.name}: gana el no (${100 - pct} %) y no se va a ${what}`, at);
   for (const g of playerTowns()) g.anger = Math.max(0, (g.anger || 0) - 4); // (les han preguntado: eso calma)
 }

@@ -137,6 +137,7 @@ Sin dependencias ni compilación: cada archivo es un script normal y se cargan e
 | `js/empresas.js` | Empresas con sede (oficinas con letrero), CEO, plantilla de oficinistas, sueldos, beneficios, impuesto de sociedades, bonus, huelgas, despidos y quiebras; las de videojuegos, apps, medios y cine se vuelven empresas; lista con las fábricas y ranking en Historia |
 | `js/eras.js` | Las eras del mundo (Antigüedad, Hierro, Pólvora, Revolución Industrial, Eléctrica, Aire, Espacial, Digital): pantalla al empezar cada una |
 | `js/gobierno.js` | Menú de inicio con dos modos: modo dios o «Gobierna una nación» (fundas tu tribu en el mapa y decides régimen, leyes, impuestos, prioridades de trabajo, obras, ciencia, guerra, paz, diplomáticos, regalos, embargos y colonias; la gente puede enfadarse y protestar) |
+| `js/constitucion.js` | Constitución: las naciones donde se vota fijan en ella las leyes que quiere la gran mayoría (≥60 %); valen gobierne quien gobierne y solo cambian con reformas de dos tercios. Se suspende con golpes y vuelve con la democracia. En tu nación la convocas y reformas por referéndum |
 | `js/ui.js` | Pestañas del panel y de la barra de abajo, y el resumen del mundo |
 | `js/interfaz.js` | Herramientas del jugador, entrada, panel, pantalla de carga y oleaje |
 
