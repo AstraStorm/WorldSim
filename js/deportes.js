@@ -15,10 +15,11 @@ const sportCat = v => { const a = ageOf(v), L = v.life || 20; return a < ADULT_H
 const SPORT_CATS = ['infantil', 'juvenil', 'absoluta', 'veteranos'];
 // Un sitio libre para una instalación (como el de la pista de atletismo)
 function sportSite(g, w, h){
+  const blk = [...(typeof bldRects === 'function' ? bldRects() : []), ...(typeof fortRects === 'function' ? fortRects() : [])]; // (los edificios de todos y los solares de los castillos, también en obras)
   for (let k = 0; k < 700; k++) { // primero cerca; si no cabe, en las afueras (y con sitio por arriba para las gradas)
     const a = Math.random() * Math.PI * 2, d = 10 + Math.random() * (k < 200 ? 18 : k < 450 ? 36 : 55), x0 = Math.round(g.fx + Math.cos(a) * d - w / 2), y0 = Math.round(g.fy + Math.sin(a) * d * .8 - h / 2);
     if (x0 < 2 || y0 < 2 || x0 + w >= W - 2 || y0 + h >= H - 2) continue;
-    let ok = !plotIn(x0 - 1, y0 - 1, x0 + w, y0 + h) && !holyNear(x0, y0, x0 + w - 1, y0 + h - 1) && !penOverlap(null, x0, y0, x0 + w - 1, y0 + h - 1) && !volcDanger(x0, y0);
+    let ok = !blk.some(b => !(x0 + w - 1 < b.x0 || x0 > b.x1 || y0 + h - 1 < b.y0 || y0 - 3 > b.y1)) && !plotIn(x0 - 1, y0 - 1, x0 + w, y0 + h) && !holyNear(x0, y0, x0 + w - 1, y0 + h - 1) && !penOverlap(null, x0, y0, x0 + w - 1, y0 + h - 1) && !volcDanger(x0, y0);
     for (let y = y0 - 3; ok && y < y0 + h; y++) for (let x = x0; ok && x < x0 + w; x++) { const i = y * W + x, o = world.objs[i]; if (WATER[world.biome[i]] || world.biome[i] === B.LAVA || pathMap.has(i) || plazaSet.has(i) || farmMap.has(i) || wallSet.has(i) || bridgeSet.has(i) || underBuilding(g, x, y) || (o && !['tree', 'berry', 'stone'].includes(OBJ[o.key][1]))) ok = false; }
     if (ok) return { x0, y0, w, h };
   }

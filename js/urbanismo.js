@@ -406,6 +406,8 @@ function wallUnderFix(g){
 // · El último cercado, si pisa un edificio, se desmonta
 const rectOf = q => q.x1 != null ? q : { x0:q.x0, y0:q.y0, x1:q.x0 + q.w - 1, y1:q.y0 + q.h - 1 };
 const rectHit = (a, b) => !(a.x1 < b.x0 || a.x0 > b.x1 || a.y1 < b.y0 || a.y0 > b.y1);
+// El solar de un castillo (en obras o ya hecho): castillos.js lo ocupa entero desde que se empieza
+const fortRects = () => villages.filter(o => o.fort && o.fort.i != null).map(o => { const x = o.fort.i % W, y = (o.fort.i / W) | 0; return { x0:x - 7, y0:y - 11, x1:x + 7, y1:y + 1 }; });
 function bldRects(){
   const out = []; for (const o0 of villages) for (const b of buildingsOf(o0)) { const o = world.objs[b]; if (!o || !isBuilding(o)) continue; const [hw, hh] = BUILD_DIMS[o.key.split(':')[0]] || [4, 5], x = b % W, y = (b / W) | 0; out.push({ i:b, k:o.key.split(':')[0], x0:x - hw + 1, y0:y - hh + 1, x1:x + hw - 1, y1:y }); }
   return out;
@@ -426,7 +428,7 @@ function overlapFix(g){
   for (const w of [...(g.wells || [])]) { const x = w.i % W, y = (w.i / W) | 0; if (villages.some(o => [o.holy, o.plaza, o.registry].some(q => q && rectHit({ x0:x - 1, y0:y - 2, x1:x + 1, y1:y }, rectOf(q))))) { world.objs[w.i] = null; g.wells = g.wells.filter(q => q !== w); n++; } }
   for (const key of ['grove', 'berryPlot', 'registry', 'pitch', 'pool', 'track']) {
     const q = g[key]; if (!q) continue; const r = rectOf(q);
-    const hit = B0.some(b => rectHit(b, r)) || villages.some(o => [o.holy, o.plaza, o.marketRect].some(z => z && rectHit(z, r))) || villages.some(o => ['grove', 'berryPlot', 'registry', 'pitch', 'pool', 'track', 'cemetery'].some(k2 => o[k2] && o[k2] !== q && k2 !== key && rectHit(rectOf(o[k2]), r) && ['pitch', 'pool', 'track', 'cemetery'].includes(k2) && !['pitch', 'pool', 'track'].includes(key)));
+    const hit = B0.some(b => rectHit(b, r)) || fortRects().some(f => rectHit(f, r)) || villages.some(o => [o.holy, o.plaza, o.marketRect].some(z => z && rectHit(z, r))) || villages.some(o => ['grove', 'berryPlot', 'registry', 'pitch', 'pool', 'track', 'cemetery'].some(k2 => o[k2] && o[k2] !== q && k2 !== key && rectHit(rectOf(o[k2]), r) && ['pitch', 'pool', 'track', 'cemetery'].includes(k2) && !['pitch', 'pool', 'track'].includes(key)));
     if (!hit) continue;
     g[key] = null; n++;
     if (['pitch', 'pool', 'track'].includes(key)) notify(`En ${g.name} desmontan ${key === 'pitch' ? 'el campo de fútbol' : key === 'pool' ? 'la piscina' : 'la pista de atletismo'}, que pisaba otras cosas: lo levantarán en otro sitio`, { x:r.x0 * T, y:r.y0 * T });
