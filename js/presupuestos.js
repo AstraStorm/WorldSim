@@ -49,7 +49,7 @@ function budgetDay(g, ec, people, L){
   if (b.day != null) { b.last = b.spent; b.spent = {}; }
   b.day = day;
   // Votación cada 2 días donde se vota; si no sale, prorrogados (y si nunca hubo, sin presupuestos)
-  if (votes(g) && day - (b.voteD ?? -9) >= 2) {
+  if (votes(g) && day - (b.voteD ?? -9) >= 2 && !(typeof isPlayerG === 'function' && isPlayerG(g) && nationOf(g).pBudget)) { // (los tuyos, los publicas tú: gobierno.js)
     // Votan a favor los del partido del gobierno y buena parte de los partidos de ideas parecidas (coalición)
     const cap = nationOf(g), ps = cap.parties || [], gov = ps[cap.ruling], vr = cap.voteRes || [];
     const base = gov ? ps.reduce((a, q, k) => a + (vr[k] || 0) * (k === cap.ruling ? 1 : Math.abs(q.ideo - gov.ideo) < .5 ? .75 : Math.abs(q.ideo - gov.ideo) < .9 ? .25 : 0), 0) : 55;
@@ -67,7 +67,7 @@ function budgetDay(g, ec, people, L){
     if (openTrial(g, L, 'corrupción', .85)) setTimeout(() => notify(`${L.name} tendrá que responder ante el juez por corrupción`, at), 300); // justicia.js
     if (votes(g) && Math.random() < .5) { // dimite y hay elecciones
       if (g.leader === L) g.leader = null; const cap = nationOf(g); if (cap.leader === L) cap.leader = null; if (typeof replaceLeader === 'function') replaceLeader(cap);
-      setTimeout(() => notify(`${L.name} dimite por el escándalo; ${g.name} convoca elecciones`, at), 500);
+      setTimeout(() => notify(`${L.name} dimite por el escándalo en ${g.name}`, at), 500);
     } else if (tyranny(g) && Math.random() < .6) { // el tirano no se va: amenaza a la ciudad
       g.threat = { by:L.name, until:yearT + DAY_LEN * 3 };
       setTimeout(() => notify(`${L.name} amenaza a ${g.name}: sus soldados vigilan las calles, cobran «protección» y quien proteste lo pagará`, at), 500);

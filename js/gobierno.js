@@ -306,6 +306,7 @@ function govRender(force){
   else h = ({ resumen:govSummary, regimen:govRegime, leyes:govLaws, economia:govEconomy, trabajo:govWork, diplomacia:govDiplo })[govTab](n);
   const tabs = [['resumen', '🏛 Resumen'], ['regimen', '👑 Régimen'], ['leyes', '📜 Leyes'], ['economia', '💰 Economía'], ['trabajo', '🏗 Trabajo y obras'], ['diplomacia', '🤝 Diplomacia']];
   const html = `${n ? `<div class="cl-f gv-tabs">${tabs.map(([k, t]) => `<button data-gtab="${k}" class="${govTab === k ? 'on' : ''}">${t}</button>`).join('')}</div>` : ''}<div class="gv">${h}</div>`;
+  if (govDragging) return; // (mientras se arrastra una ley, no se repinta: si no, se pierde lo que se lleva)
   if (!force && (el.matches(':hover') && performance.now() - (el._t || 0) < 1200)) return;
   if (body._html !== html) { const top = body.scrollTop; body.innerHTML = html; body._html = html; body.scrollTop = top; el._t = performance.now(); }
 }
@@ -335,16 +336,46 @@ function govSummary(n){
     <h4>Ciencia</h4><div class="gv-row">${goal ? `<span>Investigando <b>${esc(capFirst(goal.txt))}</b> · ${Math.round(Math.min(1, (n.research || 0) / goal.cost) * 100)} %</span>` : `<span class="muted">${hasInst(n, 'universidad') ? 'Nada que investigar ahora' : 'Sin universidad apenas se investiga: lo que sepan lo aprenden de otros'}</span>`}<button class="gv-btn" data-gact="ciencia">🔬 Elegir qué investigar</button></div>
     <p class="muted gv-note">Tu gente vive a su aire: tú marcas el rumbo. Si la aprobación cae mucho, habrá protestas e incluso golpes de estado.</p>`;
 }
+// Las leyes, por bloques (como los ministerios): cada bloque se abre y se cierra, y arriba, las que están en vigor.
+// Se puede arrastrar una ley a «En vigor» para aprobarla (o llevarla a las Cortes) y sacarla de ahí para quitarla
+const LAW_CATS = [
+  ['economia', '💰', 'Economía e impuestos', ['aranceles', 'estatal', 'comercio', 'impuestos_altos', 'impuestos_bajos', 'impuesto_ricos', 'renta_basica', 'loteria', 'prohibir_juego', 'puerto_franco', 'patentes', 'impuesto_carbon', 'impuesto_combustible']],
+  ['trabajo', '🔨', 'Trabajo e industria', ['derecho_huelga', 'prohibir_huelgas', 'jornada_corta', 'jornada_larga', 'salario_minimo', 'pensiones', 'mas_festivos', 'trabajos_forzados', 'esclavitud', 'abolicion', 'fomento_industria', 'carbon_estrategico', 'libre_industria', 'nacionalizar_industria', 'nacionalizar_petroleo', 'red_publica']],
+  ['vivienda', '🏠', 'Vivienda y ciudad', ['vivienda_publica', 'mercado_vivienda', 'tope_alquiler', 'contratos_alquiler', 'proteger_okupas', 'desalojo_okupas', 'edificacion_altura', 'obras']],
+  ['social', '🤝', 'Derechos y sociedad', ['derechos_humanos', 'segregacion', 'matrimonio_igualitario', 'persecucion', 'libertad_prensa', 'censura', 'natalidad', 'proteccion_infancia', 'reparto', 'deporte', 'entradas_gratis']],
+  ['salud', '🏥', 'Salud y educación', ['sanidad', 'educacion', 'escolarizacion', 'vacunacion', 'cuarentena', 'ley_seca']],
+  ['exterior', '🌍', 'Exterior y fronteras', ['paz', 'expansion', 'fronteras_abiertas', 'fronteras_cerradas', 'control_fronteras', 'deportaciones', 'regularizacion', 'autonomia', 'desarme', 'disuasion']],
+  ['seguridad', '🛡', 'Seguridad y ejército', ['fortificacion', 'ejercito', 'servicio_militar', 'orden', 'toque_queda', 'campos_internamiento', 'antiterrorista']],
+  ['fe', '✨', 'Religión y lengua', ['fe', 'laicidad', 'libertad_religiosa', 'persecucion_religiosa', 'lengua_unica', 'plurilinguismo', 'reforma_lengua', 'pureza_lengua']],
+  ['natura', '🌱', 'Naturaleza y tecnología', ['bosques', 'animales', 'proteccion_aguas', 'aire_limpio', 'neutralidad_red', 'censura_internet', 'proteccion_datos', 'agencia_espacial', 'espacio_privado']],
+];
+const lawCatOf = l => (LAW_CATS.find(c => c[3].includes(l)) || ['otras'])[0];
+const govOpenCats = new Set();
+let govDragging = false;
 function govLaws(n){
   const L = n.pLaws ||= [], all = Object.keys(LAW_TXT).filter(l => typeof lawAwake !== 'function' || lawAwake(n, l));
+  const supCol = s => s > .55 ? '#7ab04a' : s > .35 ? '#d8b848' : '#d8583a';
   const row = l => { const on = L.includes(l), s = lawSup(n, l), lean = LAW_LEAN[l] || 0, opp = lawOpp(l);
-    return `<div class="gv-law${on ? ' on' : ''}"><div class="gv-lt"><b>${esc(capFirst(LAW_TXT[l] || l))}</b><span class="gv-lean ${lean < -.15 ? 'l' : lean > .15 ? 'r' : 'c'}">${lean < -.15 ? 'izquierda' : lean > .15 ? 'derecha' : 'de centro'}</span>${opp && L.includes(opp) && !on ? `<span class="muted">· quitaría «${esc(LAW_TXT[opp] || opp)}»</span>` : ''}${typeof LAW_DESC !== 'undefined' && LAW_DESC[l] ? `<span class="gv-desc">${esc(capFirst(LAW_DESC[l]))}</span>` : ''}</div>
-      <div class="gv-sup"><span class="gv-meter sm"><i style="width:${Math.round(s * 100)}%;background:${s > .55 ? '#7ab04a' : s > .35 ? '#d8b848' : '#d8583a'}"></i></span><span>la apoya el ${pctTxt(s)}</span></div>
+    return `<div class="gv-law${on ? ' on' : ''}" draggable="${on ? 'false' : 'true'}" data-dlaw="${l}"><div class="gv-lt"><b>${on ? '✓ ' : ''}${esc(capFirst(LAW_TXT[l] || l))}</b><span class="gv-lean ${lean < -.15 ? 'l' : lean > .15 ? 'r' : 'c'}">${lean < -.15 ? 'izquierda' : lean > .15 ? 'derecha' : 'de centro'}</span>${opp && L.includes(opp) && !on ? `<span class="muted">· quitaría «${esc(LAW_TXT[opp] || opp)}»</span>` : ''}${typeof LAW_DESC !== 'undefined' && LAW_DESC[l] ? `<span class="gv-desc">${esc(capFirst(LAW_DESC[l]))}</span>` : ''}</div>
+      <div class="gv-sup"><span class="gv-meter sm"><i style="width:${Math.round(s * 100)}%;background:${supCol(s)}"></i></span><span>la apoya el ${pctTxt(s)}</span></div>
       <div class="gv-acts gv-la">${!on && L.length >= P_LAWS_MAX ? '<span class="gv-miss">ya tienes demasiadas leyes</span>' : typeof lawActions === 'function' ? lawActions(n, l, !on) : `<button class="gv-btn" data-glaw="${l}" data-on="${on ? 0 : 1}">${on ? 'Derogar' : 'Aprobar'}</button>`}</div></div>`; };
-  const act = all.filter(l => L.includes(l)), rest = all.filter(l => !L.includes(l)).sort((a, b) => lawSup(n, b) - lawSup(n, a));
-  return `<p class="muted gv-note">Tú decides las leyes de ${esc(n.name)} (como mucho ${P_LAWS_MAX}). Aprobar lo que la mayoría rechaza enfada a la gente; lo que pide, la calma. Solo salen las leyes que ya tienen sentido aquí.</p>
-    ${typeof cortesBar === 'function' ? cortesBar(n) : ''}<h4>En vigor (${act.length})</h4>${act.length ? act.map(row).join('') : '<div class="muted">Ninguna todavía.</div>'}
-    <h4>Se pueden aprobar</h4>${rest.map(row).join('')}`;
+  const act = all.filter(l => L.includes(l)), cats = [...LAW_CATS, ['otras', '📁', 'Otras', all.filter(l => lawCatOf(l) === 'otras')]];
+  const chips = act.map(l => { const lean = LAW_LEAN[l] || 0; return `<span class="gv-chip" draggable="true" data-dout="${l}" title="${esc(LAW_DESC && LAW_DESC[l] || '')} · Arrástrala fuera para quitarla"><i class="${lean < -.15 ? 'l' : lean > .15 ? 'r' : 'c'}"></i>${esc(capFirst(LAW_TXT[l] || l))}<button data-gquit="${l}" aria-label="Quitar ${esc(LAW_TXT[l] || l)}" title="Quitar">×</button></span>`; }).join('');
+  const blocks = cats.map(([k, ic, name, laws]) => { const mine = laws.filter(l => all.includes(l)); if (!mine.length) return '';
+    const on = mine.filter(l => L.includes(l)), sorted = [...on, ...mine.filter(l => !L.includes(l)).sort((a, b) => lawSup(n, b) - lawSup(n, a))];
+    return `<details class="gv-blk" data-cat="${k}"${govOpenCats.has(k) ? ' open' : ''}><summary><span class="gv-bic">${ic}</span><b>${name}</b><span class="muted">${on.length ? `${on.length} en vigor · ` : ''}${mine.length - on.length} por aprobar</span></summary><div class="gv-blist">${sorted.map(row).join('')}</div></details>`; }).join('');
+  return `<p class="muted gv-note">Tú decides las leyes de ${esc(n.name)} (como mucho ${P_LAWS_MAX}). Abre un bloque y arrastra una ley a «En vigor» para aprobarla${hasCortes(n) ? ' (irá a las Cortes)' : ''}; para quitarla, sácala de ahí o pulsa ×. Aprobar lo que la mayoría rechaza enfada a la gente.</p>
+    ${typeof cortesBar === 'function' ? cortesBar(n) : ''}
+    <div class="gv-vigor" data-drop="on"><div class="gv-vh"><b>En vigor</b><span class="muted">${act.length}/${P_LAWS_MAX}</span></div><div class="gv-chips">${chips || '<span class="muted">Ninguna todavía: arrastra aquí una ley</span>'}</div></div>
+    <div class="gv-blks">${blocks}</div>`;
+}
+// Aprobar o quitar (por decreto o, si hay parlamento, en las Cortes)
+function govLawDo(l, on){
+  const n = playerNat(); if (!n) return; const L = n.pLaws ||= [];
+  if (on === L.includes(l)) return; if (on && L.length >= P_LAWS_MAX) { sysToast(`Ya tienes ${P_LAWS_MAX} leyes: quita alguna antes`); return; }
+  if (typeof hasCortes === 'function' && hasCortes(n)) { if (world.player.bill) { sysToast('Ya se debate otra ley en las Cortes'); return; } startBill(l, on); }
+  else setPlayerLaw(l, on);
+  govRender(true);
 }
 function govEconomy(n){
   const T0 = playerTowns(), coin = T0.filter(g => g.coin), ec = n.coin && typeof ecOf === 'function' ? ecOf(n) : null;
@@ -356,10 +387,41 @@ function govEconomy(n){
   h += Object.entries(TAXES).filter(([k]) => !['guerra', 'deuda'].includes(k)).map(([k, d]) => { const on = has(k), like = 1 - Math.min(1, Math.abs(d.lean - ideoAvg));
     return `<div class="gv-law${on ? ' on' : ''}"><div class="gv-lt"><b>${esc(d.name)}</b><span class="muted">${esc(d.what)}</span></div><div class="gv-sup"><span class="gv-meter sm"><i style="width:${Math.round(like * 100)}%;background:${like > .6 ? '#7ab04a' : like > .4 ? '#d8b848' : '#d8583a'}"></i></span><span>${like > .6 ? 'lo aceptan' : like > .4 ? 'a regañadientes' : 'no lo quieren'}</span></div>
       <button class="gv-btn${on ? '' : ' gold'}" data-gtax="${k}" data-on="${on ? 0 : 1}">${on ? 'Quitar' : 'Crear'}</button></div>`; }).join('');
-  if (typeof budgetShares === 'function' && budgetOn(n)) { const s = budgetShares(n, false), tot = Object.values(s).reduce((a, b) => a + b, 0);
-    h += `<h4>En qué se gasta</h4><p class="muted gv-note">El presupuesto se reparte según tus leyes (sanidad, educación, ejército, obras públicas, reparto, fe oficial).</p>${Object.entries(s).map(([k, v]) => `<div class="gv-why"><span>${esc(BUDGET_TXT[k] || k)}</span><span class="gv-meter sm"><i style="width:${Math.round(v / tot * 100)}%;background:#e0b850"></i></span><b>${pctTxt(v / tot)}</b></div>`).join('')}`; }
+  h += govBudgetHtml(n);
   return h;
 }
+// ---- Presupuestos: el jugador reparte el gasto y los publica (en las Cortes si hay parlamento; si no, por decreto) ----
+const BUD_LEAN = { admin:.15, obras:-.15, sanidad:-.55, educacion:-.4, ejercito:.6, reparto:-.8, templos:.5, corona:.75 };
+const budDraft = n => (n.pBudDraft ||= Object.fromEntries(Object.keys(BUDGET_TXT).map(k => [k, Math.round(((n.pBudget || {}).shares || {})[k] != null ? n.pBudget.shares[k] * 100 : ({ admin:40, obras:25, sanidad:10, educacion:10, ejercito:10, reparto:5, templos:0, corona:0 })[k])])));
+const budIdeo = D => { const t = Object.values(D).reduce((a, x) => a + x, 0) || 1; return Object.entries(D).reduce((a, [k, x]) => a + (BUD_LEAN[k] || 0) * x / t, 0) * 1.6; };
+function budgetVote(n, D){
+  const S = typeof seatsOf === 'function' ? seatsOf(n) : null; if (!S) return null;
+  const bi = budIdeo(D), tot = S.reduce((a, b) => a + b, 0); let yes = 0; const vote = n.parties.map((p, k) => Math.abs(p.ideo - bi) < .55 || ((world.player.pacts || {})[k] && world.player.pacts[k].bill === 'presupuestos'));
+  vote.forEach((v, k) => { if (v) yes += S[k]; }); return { yes, tot, ok:yes * 2 > tot };
+}
+function publishBudget(){
+  const n = playerNat(); if (!n) return; const D = budDraft(n), t = Object.values(D).reduce((a, x) => a + x, 0); if (t <= 0) return;
+  const shares = Object.fromEntries(Object.entries(D).map(([k, x]) => [k, x / t])), day = Math.floor(yearT / DAY_LEN) + 1, at = { x:n.fx * T, y:n.fy * T };
+  const v = budgetVote(n, D), list = Object.entries(D).filter(([, x]) => x > 0).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, x]) => `${BUDGET_TXT[k].toLowerCase()} ${Math.round(x / t * 100)} %`).join(', ');
+  if (v && !v.ok) { notify(`Las Cortes de ${n.name} tumban los presupuestos del gobierno (${v.yes} a favor de ${v.tot}): siguen los de antes`, at); world.player.budFail = day; return; }
+  n.pBudget = { shares, d:day, how:v ? 'votados' : 'decreto', yes:v ? v.yes : null, tot:v ? v.tot : null };
+  for (const g of playerTowns()) if (g.budget) { g.budget.shares = { ...shares }; g.budget.how = v ? 'votados' : 'decreto'; g.budget.d = day; g.budget.voteD = day - 1; g.noBudgetDays = 0; }
+  // A la gente le gusta más o menos según sus ideas
+  const ads = villagers.filter(u => !u.dead && ageOf(u) >= ADULT_H && isPlayerG(villageById(u.vid))), bi = budIdeo(D), like = ads.length ? ads.filter(u => Math.abs((u.ideo || 0) - bi) < .5).length / ads.length : .5;
+  for (const g of playerTowns()) g.anger = clamp((g.anger || 0) + (like < .35 ? 10 : like > .6 ? -6 : 0), 0, 100);
+  const txt = `${n.name} ${v ? `aprueba en las Cortes (${v.yes} de ${v.tot} escaños)` : 'aprueba por decreto'} sus presupuestos: sobre todo ${list}`; notify(txt, at); lawLog(n, txt);
+}
+function govBudgetHtml(n){
+  if (!budgetOn(n)) return `<h4>Presupuestos</h4><div class="muted">Con moneda y un tesoro, aquí repartirás en qué se gasta el dinero público.</div>`;
+  const D = budDraft(n), t = Object.values(D).reduce((a, x) => a + x, 0) || 1, P = n.pBudget, v = budgetVote(n, D), bi = budIdeo(D), b = n.budget || {};
+  const ads = villagers.filter(u => !u.dead && ageOf(u) >= ADULT_H && isPlayerG(villageById(u.vid))), like = ads.length ? ads.filter(u => Math.abs((u.ideo || 0) - bi) < .5).length / ads.length : .5;
+  return `<h4>Presupuestos</h4><p class="muted gv-note">Reparte el gasto público y publícalo${v ? ': irá a votación en las Cortes' : ' (por decreto)'}. Ahora: ${P ? `los tuyos, del día ${P.d}${P.how === 'votados' ? ` (votados ${P.yes}/${P.tot})` : ' (decreto)'}` : `${b.how === 'prorrogados' ? 'prorrogados' : b.how === 'sin' ? 'sin presupuestos' : 'los que salen de tus leyes'}`}.</p>
+    <div class="gv-bud">${Object.keys(BUDGET_TXT).map(k => `<label class="gv-bk"><span>${esc(BUDGET_TXT[k])}</span><input type="range" min="0" max="100" step="5" value="${D[k] || 0}" data-gbud="${k}" aria-label="${esc(BUDGET_TXT[k])}"><b>${Math.round((D[k] || 0) / t * 100)} %</b></label>`).join('')}</div>
+    <div class="gv-row gv-budf"><span>Es un presupuesto ${bi < -.25 ? 'de izquierdas' : bi > .25 ? 'de derechas' : 'de centro'} · le gusta al <b style="color:${like > .55 ? '#a8d890' : like > .35 ? '#e8d080' : '#f0a890'}">${pctTxt(like)}</b> de la gente${v ? ` · en las Cortes saldría <b class="${v.ok ? 'gv-okk' : 'gv-miss'}">${v.yes}/${v.tot}</b>` : ''}</span>
+      <button class="gv-btn gold" data-gact="presupuestos">📢 Publicar presupuestos</button></div>`;
+}
+// En tu nación, el reparto que has publicado
+{ const base = budgetShares; budgetShares = function(g){ const n = nationOf(g); if (typeof isPlayerG === 'function' && isPlayerG(g) && n.pBudget) return { ...n.pBudget.shares }; return base.apply(this, arguments); }; }
 function govWork(n){
   const T0 = playerTowns(), cur = T0[0] && T0[0].pFocus || 'normal', sel = T0.find(g => g.id === govWork.vid) || n;
   let h = `<h4>En qué se trabaja más</h4><p class="muted gv-note">La gente sigue eligiendo sus tareas, pero hará mucho más de lo que marques (en todos tus pueblos).</p>
@@ -402,12 +464,14 @@ function govClick(e){
     if (k === 'refundar') { $('govPanel').hidden = true; foundStart(); }
     if (k === 'dios') { world.player = null; govSync(); }
     if (k === 'colonia') { $('govPanel').hidden = true; foundStart('colonia'); }
+    if (k === 'presupuestos') { publishBudget(); govRender(true); }
     return; }
   const rg = e.target.closest('[data-greg]'); if (rg) { setPlayerRegime(rg.dataset.greg); govRender(true); return; }
   const cb = e.target.closest('[data-gbill]'); if (cb) { startBill(cb.dataset.gbill, cb.dataset.on === '1'); world.player.neg = null; govRender(true); return; }
   const cn = e.target.closest('[data-gneg]'); if (cn) { world.player.neg = world.player.neg === cn.dataset.gneg ? null : cn.dataset.gneg; govRender(true); return; }
   const cp = e.target.closest('[data-gpact]'); if (cp) { makePact(+cp.dataset.gpact, cp.dataset.law, cp.dataset.on === '1'); govRender(true); return; }
   const cr = e.target.closest('[data-gref]'); if (cr) { startReferendum(cr.dataset.gref, cr.dataset.key, cr.dataset.on !== '0'); govRender(true); return; }
+  const q = e.target.closest('[data-gquit]'); if (q) { govLawDo(q.dataset.gquit, false); return; }
   const l = e.target.closest('[data-glaw]'); if (l) { setPlayerLaw(l.dataset.glaw, l.dataset.on === '1'); govRender(true); return; }
   const x = e.target.closest('[data-gtax]'); if (x) { setPlayerTax(x.dataset.gtax, x.dataset.on === '1'); govRender(true); return; }
   const f = e.target.closest('[data-gfocus]'); if (f) { for (const g of playerTowns()) g.pFocus = f.dataset.gfocus === 'normal' ? null : f.dataset.gfocus; const F = FOCUS[f.dataset.gfocus]; const n = playerNat(); if (n) notify(`${n.name} pone a su gente a trabajar sobre todo en: ${F.txt.toLowerCase()}`, { x:n.fx * T, y:n.fy * T }); govRender(true); return; }
@@ -423,6 +487,19 @@ function govClick(e){
   p.innerHTML = `<div class="ch-h"><b>👑 Gobierno</b><button class="x" aria-label="Cerrar gobierno">×</button></div><div class="hp-body"></div>`;
   $('histPanel').parentElement.appendChild(p); p.addEventListener('click', govClick);
   p.addEventListener('change', e => { const s = e.target.closest('.gv-town'); if (s) { govWork.vid = +s.value; govRender(true); } });
+  // Deslizadores de los presupuestos: se guardan en el borrador y no se repinta mientras se arrastran
+  p.addEventListener('pointerdown', e => { if (e.target.closest('[data-gbud]')) govDragging = true; });
+  addEventListener('pointerup', () => { if (govDragging && !document.querySelector('.gvp .dragging')) { govDragging = false; govRender(true); } });
+  p.addEventListener('input', e => { const r = e.target.closest('[data-gbud]'); if (!r) return; const n = playerNat(); if (!n) return; budDraft(n)[r.dataset.gbud] = +r.value;
+    const D = budDraft(n), t = Object.values(D).reduce((a, x) => a + x, 0) || 1; for (const q of p.querySelectorAll('[data-gbud]')) q.nextElementSibling.textContent = Math.round((D[q.dataset.gbud] || 0) / t * 100) + ' %'; });
+  p.addEventListener('toggle', e => { const d = e.target; if (d.classList && d.classList.contains('gv-blk')) { if (d.open) govOpenCats.add(d.dataset.cat); else govOpenCats.delete(d.dataset.cat); } }, true);
+  p.addEventListener('dragstart', e => { const r = e.target.closest('[data-dlaw], [data-dout]'); if (!r) return; govDragging = true; const law = r.dataset.dlaw || r.dataset.dout, out = !!r.dataset.dout;
+    e.dataTransfer.setData('text/plain', (out ? 'out:' : 'in:') + law); e.dataTransfer.effectAllowed = 'move'; r.classList.add('dragging'); p.classList.add(out ? 'drag-out' : 'drag-in'); });
+  p.addEventListener('dragend', e => { govDragging = false; p.classList.remove('drag-in', 'drag-out'); for (const x of p.querySelectorAll('.dragging, .over')) x.classList.remove('dragging', 'over'); });
+  p.addEventListener('dragover', e => { const z = e.target.closest('.gv-vigor'); if (p.classList.contains('drag-in') ? z : !z) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; if (z) z.classList.add('over'); } });
+  p.addEventListener('dragleave', e => { const z = e.target.closest('.gv-vigor'); if (z && !z.contains(e.relatedTarget)) z.classList.remove('over'); });
+  p.addEventListener('drop', e => { const d = e.dataTransfer.getData('text/plain'); if (!d) return; e.preventDefault(); const [k, law] = d.split(':'), z = e.target.closest('.gv-vigor');
+    govDragging = false; if (k === 'in' && z) govLawDo(law, true); else if (k === 'out' && !z) govLawDo(law, false); });
   document.addEventListener('click', e => { if (e.target.closest('#govBtn')) { const el = $('govPanel'); if (el.hidden) govOpen(); else el.hidden = true; } if (e.target.closest('#menuBtn')) menuOpen(); });
   SYSTEMS.push(dt => { if ((govT -= dt) > 0) return; govT = 1; govSync(); try { govRender(); } catch (err) { console.error(err); } });
   // Al cargar una partida o crear un mundo nuevo, el botón aparece o desaparece según el modo

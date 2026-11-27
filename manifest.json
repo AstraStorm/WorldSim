@@ -1,11 +1,15 @@
 {
  "juego": "World Sim",
- "version": "202611270138",
- "fecha": "2026-11-27 01:38",
+ "version": "202611270151",
+ "fecha": "2026-11-27 01:51",
  "novedades": [
   {
    "fecha": "2026-11-27",
-   "texto": "Menos avisos y qué hace cada ley"
+   "texto": "Leyes por bloques y presupuestos del jugador"
+  },
+  {
+   "fecha": "2026-11-27",
+   "texto": "Crónica con menos ruido, qué hace cada ley y apoyos más realistas"
   },
   {
    "fecha": "2026-11-27",
@@ -46,22 +50,18 @@
   {
    "fecha": "2026-11-26",
    "texto": "Susurrar ideas a los aldeanos y mercancías que sirven para algo"
-  },
-  {
-   "fecha": "2026-11-26",
-   "texto": "Mercado más vivo: más consumo, almacén según la población y caravanas que vuelven cargadas"
   }
  ],
  "archivos": {
-  "index.html": "b88d37eac24164bf6a57907378db84b094382ebc",
-  "css/estilo.css": "1260e7748b7383124eb2445eef97493a3de55e05",
+  "index.html": "7b19fd1e555ccdc3d87cc4abda0893c69bd80b16",
+  "css/estilo.css": "f0d5d4ea4ba2877f88327f1e50380ad57e67ff42",
   "js/agencia.js": "dd15e5ae8fa08af254622aba102dafae859910b9",
   "js/aldeanos.js": "9fc48c835e3cf5baaebb07594aa0624275287f1d",
   "js/ambiente.js": "6c96bf777f6cdfc55b648f495836521ee28aeb8f",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "a94b46896cfd10fd688954a3c5b9297e9b693872",
   "js/armas.js": "d4710aa65550aceb06fbdd1d2d290c8085f58e96",
-  "js/arte.js": "5a58f7cbcd35154c9bb405518d0b5bb5b2fecb3e",
+  "js/arte.js": "852db322bc9f27026c5c5fec41f1bba7a2364d8a",
   "js/arte_mapa.js": "a92d6a3c48ca112990a90102d27322fe8879ec53",
   "js/aviacion.js": "2bceeb5a9a59332b96ad69d19b5f6e39da71af42",
   "js/bandidos.js": "bc804375208c5f300e33435e76d16001e8c4daae",
@@ -106,7 +106,7 @@
   "js/fauna.js": "f9955feca793b4c39fb033e8dd56d59e0054b693",
   "js/fichas.js": "6bb63b0e1a4bec19f98635bfd6c012456c2950b1",
   "js/globos.js": "955b67ce3b9dd8c36b7ee965f9f05f4fb8bd9d39",
-  "js/gobierno.js": "6ad6ff60741da7a9b96ade9daf2d00cd734bf5d0",
+  "js/gobierno.js": "9f2e185381245db1155331b260b66fe09838d46c",
   "js/grafica.js": "d548461632882f80f4077d9e5754c70c5319331e",
   "js/guerra.js": "2aab88f346ccb8117f2fd463cb66b8189034b083",
   "js/humanos.js": "bbe24acbdab55480f23f246393e2209fed4abb34",
@@ -140,7 +140,7 @@
   "js/pontones.js": "8de37aa4831746fa922e201c5dbbc75704c2a7b8",
   "js/potencias.js": "e538d4b65af312e2da23e6803210bd94954c7228",
   "js/prensa.js": "61134ccce4b95a026605717fa5ab37600850af2a",
-  "js/presupuestos.js": "5bd5fa9bc828e654be315514b98118fa82ebda6d",
+  "js/presupuestos.js": "2d2c8827a4816ab738672ee1787541fc04f48524",
   "js/puertos.js": "affa01683a0e078054babe79033142ed55a05a43",
   "js/redes.js": "218c16e9fffa5fde1b9391e6d48d212e81c4d357",
   "js/regimenes.js": "7573d0d69c7a331715b2c4ee302711d39a47490a",
