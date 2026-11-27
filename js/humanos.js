@@ -270,8 +270,22 @@ function standBy(i){ // casilla libre al lado de un objeto (para trabajar en él
   for (const [dx, dy] of [[0, 1], [1, 0], [-1, 0], [0, -1], [1, 1], [-1, 1]]) if (tileFree(x + dx, y + dy)) return [(x + dx) * T + 2, (y + dy) * T + 3];
   return null;
 }
-function siteNear(g, rMin, rMax, test){
-  for (let k = 0; k < 60; k++) {
+// El solar de una maravilla: además de árboles y matorrales, se pueden quitar las rocas sueltas y los minerales comunes
+// (la piedra va al pueblo); nunca los valiosos ni los objetos legendarios
+const wonderOkObj = o => { const c = OBJ[o.key]; return c && (['tree', 'berry'].includes(c[1]) || (c[1] === 'stone' && c[2] === 0) || (c[1] === 'mineral' && c[2] <= 1)); };
+function wonderClearable(x0, y0, x1, y1){
+  if (x0 < 0 || y0 < 0 || x1 >= W || y1 >= H) return false;
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const i = y * W + x, b = world.biome[i], o = world.objs[i];
+    if (WATER[b] || b === B.LAVA || bridgeSet.has(i) || isFlooded(i) || (o && !wonderOkObj(o))) return false; }
+  return true;
+}
+function wonderClear(g, x0, y0, x1, y1){
+  let st = 0; for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { const i = y * W + x, o = world.objs[i]; if (!o || !wonderOkObj(o) || ['tree', 'berry'].includes(OBJ[o.key][1])) continue; world.objs[i] = null; st++; }
+  if (st) { g.stone = (g.stone || 0) + st; composeRegion(x0 - 7, y0 - 11, x1 + 7, y1 + 12); rareDirty = true; }
+  clearSite(g, x0, y0, x1, y1);
+}
+function siteNear(g, rMin, rMax, test, tries = 60){
+  for (let k = 0; k < tries; k++) {
     const a = Math.random() * Math.PI * 2, d = rMin + Math.random() * (rMax - rMin);
     const x = Math.round(g.fx + Math.cos(a) * d), y = Math.round(g.fy + Math.sin(a) * d * .8);
     if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1) continue;
@@ -414,7 +428,7 @@ function chooseJob(v, g){
   add('templo', g.faith && houses >= 4 && (g.hall != null || pop >= 14) && (g.temple == null || !world.objs[g.temple]) && g.stone >= 15 && spare >= 10 && !busyWith(g, 'templo') ? 3 + (g.devotion || 0) * .3 : 0);
   add('monumento', g.temple != null && world.objs[g.temple] && pop >= 18 && g.stone >= 25 && (g.monument == null || !world.objs[g.monument]) && !busyWith(g, 'monumento') ? 2 + (g.devotion || 0) * .2 : 0);
   add('banco', g.coin && g.hall != null && pop >= 20 && !hasBank(g) && g.stone >= 12 && g.wood >= 8 && !busyWith(g, 'banco') ? 3 : 0);
-  add('maravilla', nationOf(g) === g && regimeOf(g) !== 'tribu' && g.hall != null && pop >= 24 && (g.wonder == null || !world.objs[g.wonder]) && g.stone >= 30 && g.wood >= 15 && yearT - (g.regimeT || 0) > DAY_LEN * .3 && !busyWith(g, 'maravilla') ? 3 : 0);
+  add('maravilla', nationOf(g) === g && regimeOf(g) !== 'tribu' && g.hall != null && pop >= 24 && (g.wonder == null || !world.objs[g.wonder]) && g.stone >= 30 && g.wood >= 15 && yearT - (g.regimeT || 0) > DAY_LEN * .3 && !busyWith(g, 'maravilla') ? 6 : 0); // (la obra del régimen: que no quede siempre detrás de todo)
   add('mercado', houses >= 4 && pop >= 14 && (g.market == null || !world.objs[g.market]) && spare >= 12 && !busyWith(g, 'mercado') ? (pop >= 20 ? 5 : 3) : 0);
   add('encender', g.fireOut && !raining(g.fy * W + g.fx) && !(floodA && floodA[g.fy * W + g.fx] > .3) && !busyWith(g, 'encender') ? 12 : 0);
   add('comerciar', g.market != null && world.objs[g.market] ? (L.includes('comercio') ? 2.5 : 1.2) : 0);
@@ -529,9 +543,10 @@ function setupTask(v, g, job){
       const i = hs[Math.floor(Math.random() * hs.length)], sb = standBy(i); return sb ? { k:job, i, x:sb[0], y:sb[1] } : null;
     }
     case 'banco': { const p = bestSite(v, g, job); return p ? { k:job, i:p[1] * W + p[0], x:p[0] * T + 2, y:(p[1] + 1) * T + 3 } : null; }
-    case 'maravilla': { // cerca de la plaza, en un solar despejado y fuera de calles y campos
-      const p = siteNear(g, 8, 32, (x, y, i) => !farmMap.has(i) && !pathMap.has(i) && !streetZone(g, x, y) && !penOverlap(g, x - 6, y - 10, x + 6, y + 1) && !farmIn(x - 6, y - 10, x + 6, y + 1) && !plazaIn(x - 6, y - 10, x + 6, y + 1)
-        && !pathIn(x - 6, y - 10, x + 6, y) && clearable(x - 6, y - 10, x + 6, y + 1) && !underBuilding(g, x, y) && !buildingClash(x, y, 'maravilla') && !hallIn(g, x - 6, y - 10, x + 6, y + 1));
+    case 'maravilla': { // cerca de la plaza, en un solar despejado y fuera de calles y campos (en una capital grande ya no cabe dentro: en las afueras)
+      const ok = (x, y, i) => !farmMap.has(i) && !pathMap.has(i) && !streetZone(g, x, y) && !penOverlap(g, x - 6, y - 10, x + 6, y + 1) && !farmIn(x - 6, y - 10, x + 6, y + 1) && !plazaIn(x - 6, y - 10, x + 6, y + 1)
+        && !pathIn(x - 6, y - 10, x + 6, y) && wonderClearable(x - 6, y - 10, x + 6, y + 1) && !underBuilding(g, x, y) && !buildingClash(x, y, 'maravilla') && !hallIn(g, x - 6, y - 10, x + 6, y + 1);
+      const p = siteNear(g, 8, 32, ok, 200) || siteNear(g, 32, 70, ok, 300);
       return p ? { k:job, i:p[1] * W + p[0], x:p[0] * T + 2, y:(p[1] + 1) * T + 3 } : null;
     }
     case 'pozo': case 'molino': case 'ayuntamiento': case 'almacen': {
@@ -916,7 +931,7 @@ function runTask(v, g, dt){
     case 'maravilla': v.actT = 20; v.onDone = () => {
       const x = t.i % W, y = (t.i / W) | 0, reg = WONDER_OF[regimeOf(g)] || regimeOf(g);
       if ((g.wonder != null && world.objs[g.wonder]) || g.wood < 15 || g.stone < 30 || !(WONDER_ROWS[reg] || ART_MAP['wonder:' + reg])) return;
-      if (clearable(x - 6, y - 10, x + 6, y + 1)) clearSite(g, x - 6, y - 10, x + 6, y + 1);
+      if (wonderClearable(x - 6, y - 10, x + 6, y + 1)) wonderClear(g, x - 6, y - 10, x + 6, y + 1);
       if (!tileFree(x, y) || buildingClash(x, y, 'maravilla', t.i)) return;
       world.objs[t.i] = { key:'wonder:' + reg, v:0, ox:0, oy:0, vid:g.id }; g.wonder = t.i; g.wood -= 15; g.stone -= 30;
       if (g.coin) ecOf(g).treas -= 30 * ecOf(g).P; // se paga del tesoro (si no llega, deuda o moneda impresa)
