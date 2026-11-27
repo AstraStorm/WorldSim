@@ -94,7 +94,7 @@ function railPath(sa, sb){
   const s0 = sa[1] * W + sa[0], s1 = sb[1] * W + sb[0], tx1 = sb[0], ty1 = sb[1];
   const cost = i => {
     const x = i % W, y = (i / W) | 0; if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1) return Infinity;
-    const b = world.biome[i]; if (b === B.DEEP || b === B.SEA || b === B.LAVA || (wallSet.has(i) && !gateSet.has(i)) || plazaSet.has(i)) return Infinity;
+    const b = world.biome[i]; if (b === B.DEEP || b === B.SEA || b === B.SHALLOW || b === B.LAVA || (wallSet.has(i) && !gateSet.has(i)) || plazaSet.has(i)) return Infinity;
     if (villages.some(g => popOf(g) && underBuilding(g, x, y))) return i === s0 || i === s1 ? 1 : Infinity;
     const o = world.objs[i]; if (o && !(OBJ[o.key][1] === 'tree' || OBJ[o.key][1] === 'berry')) return Infinity;
     let c = WATER[b] ? 9 : 1; if (o) c += 2; if (farmMap.has(i)) c += 5; if (pathMap.has(i)) c += .5;
@@ -117,6 +117,17 @@ function railPath(sa, sb){
 }
 // Al tender la vía: se talan los árboles que estorban y el trazado queda como camino (nadie construye encima)
 function layRail(path){ for (const i of path) { for (const j of [i, i - 1, i + 1, i - W, i + W]) { const o = world.objs[j]; if (o && (OBJ[o.key][1] === 'tree' || OBJ[o.key][1] === 'berry')) { world.objs[j] = null; composeRegion(j % W - 7, ((j / W) | 0) - 11, j % W + 7, ((j / W) | 0) + 12); } } if (!WATER[world.biome[i]]) pathMap.add(i); } railCache = null; }
+// Vías antiguas que cruzaban el mar (el agua poco profunda de la costa contaba como un río): se desmontan; si hay
+// camino por tierra, se volverá a tender más adelante bordeando la costa
+let railSeaChk = null;
+SYSTEMS.push(() => {
+  if (!world || railSeaChk === world) return; railSeaChk = world;
+  for (const r of rels.values()) {
+    if (!r.rail || !r.rail.path || !r.rail.path.some(i => { const b = world.biome[i]; return b === B.SHALLOW || b === B.SEA || b === B.DEEP; })) continue;
+    const a = villageById(r.rail.a), b = villageById(r.rail.b); r.rail = null; r.railFail = yearT; railCache = null;
+    if (a && b) notify(`Se desmonta la vía de tren entre ${a.name} y ${b.name}: cruzaba el mar`, { x:(a.fx + b.fx) / 2 * T, y:(a.fy + b.fy) / 2 * T });
+  }
+});
 let railCache = null;
 function railTiles(){
   if (railCache && railCache.n === rels.size) return railCache.set;
