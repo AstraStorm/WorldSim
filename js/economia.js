@@ -91,6 +91,7 @@ function layoffTick(n){
 }
 function fireWorker(g, u, why){
   for (const f of (typeof facsOf === 'function' ? facsOf(g) : [])) if (f.crew && f.crew.includes(pidOf(u))) { f.crew = f.crew.filter(p => p !== pidOf(u)); if (u.oficio === 'obrero') { u.oficio = u.oldOficio || 'recolector'; u.facI = null; } }
+  if (u.compId != null) { const c = typeof compById === 'function' && compById(u.compId); if (c) c.staff = c.staff.filter(x => x !== u); u.compId = null; if (u.oficio === 'oficinista') u.oficio = u.oldOficio || 'recolector'; }
   u.fired = yearT; u.parado = { until:yearT + DAY_LEN * (1.5 + Math.random() * 2), why };
 }
 // Los parados cobran poco (chapuzas); en auge, algo más todos; en crisis, algo menos

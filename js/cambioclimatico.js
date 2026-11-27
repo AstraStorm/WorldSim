@@ -52,7 +52,7 @@ function climateDay(){
   if (W0.warm > .3) { const before = Math.floor(W0.seaRise / 10); W0.seaRise += W0.warm * .9; if (Math.floor(W0.seaRise / 10) > before) seaStep(); }
   // Avisos por umbrales
   for (const [t, txt] of [[.5, 'Los científicos avisan: el planeta se ha calentado medio grado desde antes de las fábricas'], [1, '🌡 El mundo ya está 1 °C más caliente: veranos más duros y más tormentas'], [1.5, '🌡 +1,5 °C: los glaciares retroceden y las olas de calor matan en las ciudades'], [2, '🔥 +2 °C: el clima se descontrola; sequías, inundaciones y el mar avanza'], [3, '🔥 +3 °C: el planeta vive una emergencia climática']])
-    if (was < t && W0.warm >= t) { notify(txt, null); if (typeof crisisSoon === 'function') crisisSoon('clima'); }
+    if (was < t && W0.warm >= t) notify(txt, null);
   // Más DANAs con más calor
   if (W0.warm > .8 && typeof startDana === 'function' && Math.random() < Math.min(.5, (W0.warm - .6) * .25)) { const g = coastalTown(); if (g) startDana(g); }
   climateDeal();

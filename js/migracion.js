@@ -33,7 +33,7 @@ function migAppeal(g){
   if (hasHosp(g)) a += .06;
   a -= Math.min(.4, (g.jobless || 0) / Math.max(1, pop) * 2);           // paro (automatizacion.js)
   if (typeof econPhase === 'function') a += econPhase(nationOf(g)) * .25; // si su economía va bien o mal (economia.js)
-  const v = clamp(a, 0, 2.2); g._ma = { t:yearT, v }; return v;
+  const v = clamp(a, 0, 3); g._ma = { t:yearT, v }; return v;
 }
 const borderShut = (from, to) => { if (typeof sameUnion === 'function' && sameUnion(from, to)) return false; /* libre circulación en una Unión (union.js) */ const r = rels.get(relKey(from, to)); return hasLaw(to, 'fronteras_cerradas') && !hasTreaty(r, 'circulacion'); };
 function migTick(g, people){

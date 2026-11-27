@@ -1,8 +1,20 @@
 {
  "juego": "World Sim",
- "version": "202611271323",
- "fecha": "2026-11-27 13:23",
+ "version": "202611271730",
+ "fecha": "2026-11-27 17:30",
  "novedades": [
+  {
+   "fecha": "2026-11-27",
+   "texto": "Demografía, migraciones, ciclo económico, robots e IA, cambio climático, crisis con dilemas, uniones, discurso anual y botón Reportar"
+  },
+  {
+   "fecha": "2026-11-27",
+   "texto": "Demografía, migraciones, ciclo económico, robots e IA, cambio climático, crisis con dilemas, uniones, discurso anual y botón Reportar"
+  },
+  {
+   "fecha": "2026-11-27",
+   "texto": "x5 más fluido: movimiento resumido fuera de pantalla y con el mapa alejado, y menos dibujo cuando la simulación no llega"
+  },
   {
    "fecha": "2026-11-27",
    "texto": "Manifestaciones que marchan a donde está el problema, y simulación más ligera para x5"
@@ -38,36 +50,26 @@
   {
    "fecha": "2026-11-27",
    "texto": "Las capitales vuelven a levantar la maravilla de su régimen"
-  },
-  {
-   "fecha": "2026-11-27",
-   "texto": "Rendimiento: menos parones, dibujo de lejos más ligero y animales sin saltos"
-  },
-  {
-   "fecha": "2026-11-27",
-   "texto": "Campos, piscinas y pistas ya no se construyen encima de un castillo"
-  },
-  {
-   "fecha": "2026-11-27",
-   "texto": "El tren ya no cruza el mar"
   }
  ],
  "archivos": {
-  "index.html": "f4230a893f91ed290007048b9d72bfd5bc1a7af2",
-  "css/estilo.css": "c312120dba0778bf02fde9ce57a98f7776bec66f",
+  "index.html": "f49028acb59ccd226341d25256d35997afd6a5a5",
+  "css/estilo.css": "eb2c6a0c3b417250272a46180e1767d087996425",
   "js/agencia.js": "dd15e5ae8fa08af254622aba102dafae859910b9",
   "js/aldeanos.js": "f154c584cd8b3c983fa0154330d6ec4f3c76c8d6",
   "js/ambiente.js": "6c96bf777f6cdfc55b648f495836521ee28aeb8f",
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "a94b46896cfd10fd688954a3c5b9297e9b693872",
   "js/armas.js": "d4710aa65550aceb06fbdd1d2d290c8085f58e96",
-  "js/arte.js": "ee3aac55f08141c9bb1b95597ae47067b173109e",
+  "js/arte.js": "0e1194fcd53258b06bbb16e633afab5e674c4f87",
   "js/arte_mapa.js": "a92d6a3c48ca112990a90102d27322fe8879ec53",
+  "js/automatizacion.js": "b0c9d760d1de77a37eebb4c7b97d47130dbd35b5",
   "js/aviacion.js": "2bceeb5a9a59332b96ad69d19b5f6e39da71af42",
   "js/bandidos.js": "bc804375208c5f300e33435e76d16001e8c4daae",
   "js/barrios.js": "6080e504032cd128ae1af9291b8ad403e33f4e66",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
   "js/calendario.js": "03559b1ef711175c3f112ecaa0243a06a44b4b9c",
+  "js/cambioclimatico.js": "b0e60ee48d85fe617f960b63cab5cb6c92437986",
   "js/carguero.js": "2b2c93469c9e6cb18adf22910a0ff0ac54b3a659",
   "js/cartografia.js": "c9def7d880466a65cf8b65e167c0d82df6d959f0",
   "js/casino.js": "8f0563111a86c2d0e37e7fbf5214f9777d070b00",
@@ -84,25 +86,28 @@
   "js/convivencia.js": "81be8970d88a47871bd4e45796c00a51f56287f8",
   "js/cortes.js": "a19ed695ac6c4a430fb3c9e8eaab455ad9993cc8",
   "js/credos.js": "2c9349a62f485ee953ea7e58c09de270a73b45c0",
+  "js/crisis.js": "26c5b5d6afa062585d273d07407944da74c910b4",
   "js/cultivos.js": "e0abec05946f771bbc71cd29ff7b744673c79a7a",
   "js/cultura.js": "1c0aee43cec333f47fd22aad80549378bb4b73b8",
   "js/defensa.js": "91cdc6da347cbc9e6255b720650340dbbb919808",
+  "js/demografia.js": "671fbe7a39bd2d9ab00053e2e9735351f06b3700",
   "js/deportes.js": "117b0e7e55848a1dfb01e3d5b4776fe9374e0e12",
   "js/desastres.js": "c3838e346d9e18ad979dbe7a647d48b1414c3f82",
   "js/devocion.js": "ead2ae212c4a3118764213abe00f4b6424a6760b",
   "js/digital.js": "78743a73f5639a2d4e25ec087292c11fe4010be7",
   "js/documentos.js": "5b297799cde31f243fdb78a3be57c1209f89b14d",
+  "js/economia.js": "25d2bc410c9d19a49e39eaa54b82aad0f3208954",
   "js/edificios.js": "42aba0b10b2a9ae0f5b87d3af949c04f53c4483b",
   "js/electricidad.js": "5e67c3d67ba2019941002f00829efa3d95fa1db0",
   "js/electronica.js": "d16687a33090b324490ea4369a67d994e495f161",
-  "js/empresas.js": "c29ad545dabe16646560f6966a8494aea8cb7558",
+  "js/empresas.js": "672b331ab53cb3002a50b3795c91002e13d1af12",
   "js/encuestas.js": "6d57dc9138e29d6b879e123d70e6e820163928be",
   "js/eras.js": "491c0126d7b3eaadbf2e2aecbc13f73f64ac2f67",
   "js/espacio.js": "b02dc94a3dacc519fba45225e77e4e8ab78c0f1e",
   "js/espionaje.js": "6291557af0a9488f321131fbfb7cdccf50cdbbf1",
   "js/estaciones.js": "a96b13894423698dcb4e5c41619b1c74367e5fff",
   "js/estrategia.js": "ae7d15b34738072ed40e9ce5047d990fbfed8540",
-  "js/fabricas.js": "2662dbba3c714c8823b805cb98799ed57bc5e24c",
+  "js/fabricas.js": "c29f46a6adffec48e333ad4219d02dd11afc5a16",
   "js/fama.js": "3dbc519ba45e02ce7da052b90b5afae8c6c7218d",
   "js/fauna.js": "b44f266238bc4a14747ac25bc68186350a2c2afe",
   "js/fenomenos.js": "1ebb36e5885700b76c2934a1cf2bf01ac183fdc3",
@@ -119,6 +124,7 @@
   "js/interfaz.js": "33331b35465a7d1e527f0e10e6d5744527a2a1e0",
   "js/islas.js": "d65159562d188788176b02cca6001d0abcb20629",
   "js/justicia.js": "3831f20ef0f118af99af70e5d0977d0bcfcdee46",
+  "js/legado.js": "bf1729a89ed70f74976beca6cf843496f06836ca",
   "js/leyes.js": "99be7f20a6e1d933940eee67a52ba1c0deca8c2b",
   "js/leyes2.js": "856be98432d378371775fd37d9fc19f9ed13c096",
   "js/libro.js": "77022669857da910d675ba22320bd2281a13fa64",
@@ -126,6 +132,7 @@
   "js/manifestaciones.js": "e87f9a3185234cc4fe667bba1bd3d1ff97631ea3",
   "js/mapas.js": "822f9d930f4b0a1f4fc0bbb8808ef5ba56f2f985",
   "js/medios.js": "3da2fb5734d0fdf45a37828bad849d11ee88ca61",
+  "js/migracion.js": "4f10dfc195bb6b00174b54a53c02fbebab623b17",
   "js/minas.js": "4f093817fbd8df8654fd4d2c9507600191bcd312",
   "js/misiles.js": "69cc84a321ce23a1be2f64d0ff60c9966fd43d52",
   "js/mitines.js": "cf5fb8338be6f1c32a3340060ab39d995a13759b",
@@ -148,11 +155,12 @@
   "js/redes.js": "218c16e9fffa5fde1b9391e6d48d212e81c4d357",
   "js/regimenes.js": "7573d0d69c7a331715b2c4ee302711d39a47490a",
   "js/renovables.js": "7f3d36c46afb3bed99dc3e25a0b96d34efd934dd",
+  "js/reportar.js": "93fac558b1d4b0711bc6617658b4f350836d9021",
   "js/rescate.js": "d21e0bb80c7639eb13d89dace4a5553c498a6853",
   "js/riqueza.js": "6e0afe4ee16977f7f9b9bb2987844ad104f54f6a",
   "js/rutas.js": "6e12cafc1992e09fc3c2b5b13ca7d7db6416c364",
   "js/sindicatos.js": "f7cb8bf83ff74322a6fc45cc6ac90550425c6d15",
-  "js/sociedad.js": "f430fe8f0d55b5475fc7eefa2ab992caa341aaa3",
+  "js/sociedad.js": "e84c08b2a23fd17a78b49dbeaed9a521c34a2e41",
   "js/sonido.js": "59d02d23305c1cd915f05be3262d7a642c59d7be",
   "js/susurros.js": "691d8cb4be92fdaff56018d77370403fb6300b66",
   "js/terrorismo.js": "a2285a3dfa1180fc7b7922eadf05f9f189970d6e",
@@ -160,6 +168,7 @@
   "js/trabajo.js": "8a8074684a5610b247700d4dbe7620b254c50cb7",
   "js/tratados.js": "c7221ac52158a928a77489448ca7f1ce45ade8e2",
   "js/ui.js": "87256f0f01b8aa2a5b9d282c0a2a538dce73cf85",
+  "js/union.js": "782e8ad95ca315f653ce4d2df76f59886e5ac1d6",
   "js/urbanismo.js": "fc463eb0ef8c8080138d8ce2650bb2cdfc2b7718",
   "js/vegetacion.js": "2741eface4ddb480111085c19e6aae980c82e457",
   "js/vida.js": "2fca663a0d538b7d713ddf84ee9c89d69dcf6b66",
