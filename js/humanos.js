@@ -1147,7 +1147,7 @@ function runTask(v, g, dt){
     case 'instruir': v.actT = 7; v.dir = Math.random() < .5 ? -1 : 1; v.stab = .25; v.onDone = () => { v.vet = Math.min(3, (v.vet || 0) + 1); floats.push({ x:v.x, y:v.y - 12, txt:['recluta', 'soldado', 'veterano', 'veterano'][v.vet], col:'#c8d0dc', life:0 }); }; break;
     case 'asedio': v.actT = 14; v.onDone = () => { if (g.wood < 12 || (g.iron || 0) < 2) return; g.wood -= 12; g.iron -= 2; g.siege = (g.siege || 0) + 1; if (!g.siegeMsg) { g.siegeMsg = true; notify(`En ${g.name} construyen su primera catapulta para asediar murallas`, { x:v.x, y:v.y }); } }; break;
     case 'bolsa': v.actT = 5; v.onDone = () => { v.bolsaT = yearT; tradeStocks(v, g); }; break;
-    case 'vender': v.actT = 10; v.dir = 1; v.onDone = () => { snd('coin', v.x, v.y); g.trades = (g.trades || 0) + 2; const n = g.coin ? wageOf(g, 6) : 0; if (n) { v.money = (v.money || 0) + n; v.earned = (v.earned || 0) + n; } floats.push({ x:v.x, y:v.y - 12, txt:n ? `+${n} ${coinPl(g)}` : 'trueque', col:'#f0d060', life:0 }); }; break;
+    case 'vender': v.actT = 10; v.dir = 1; v.onDone = () => { snd('coin', v.x, v.y); g.trades = (g.trades || 0) + 2; const n = g.coin ? sround(wageOf(g, 6)) : 0; if (n) { v.money = (v.money || 0) + n; v.earned = (v.earned || 0) + n; } floats.push({ x:v.x, y:v.y - 12, txt:n ? `+${n} ${coinPl(g)}` : 'trueque', col:'#f0d060', life:0 }); }; break;
     case 'hospital': v.actT = 12; v.onDone = () => {
       const x = t.i % W, y = (t.i / W) | 0;
       if (hasHosp(g) || g.stone < 15 || g.wood < 12) return;

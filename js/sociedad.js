@@ -2376,7 +2376,7 @@ function politicsTick(g, dt, people){
   { const ad = adults.length || 1, mins = adults.filter(u => isMinority(u, g)).length, gays = adults.filter(lgtb).length, left = adults.filter(u => (u.ideo || 0) < -.2).length / ad;
     if (hasLaw(g, 'segregacion') && (mins / ad > .12 || left > .4)) f.racismo = .25 + mins / ad;
     if (hasLaw(g, 'persecucion') && (gays >= 2 || left > .4)) f.derechos = .2 + gays / ad * 2;
-    f.idioma = languageGrief(g, adults); // idiomas.js
+    f.idioma = regimeOf(g) === 'tribu' ? 0 : languageGrief(g, adults); // idiomas.js (una tribu no tiene política de idiomas ni pensiones de las que quejarse)
     Object.assign(f, staffGrief(g, adults, people)); // faltan maestros, médicos o bomberos (trabajo.js)
     f.pensiones = pensionGrief(g, adults); // (cultura.js)
     const others = adults.filter(u => otherFaith(u, g)).length; if (hasLaw(g, 'persecucion_religiosa') && (others >= 2 || left > .45)) f.culto = .2 + others / ad * 1.5; }
@@ -2581,13 +2581,15 @@ function resolveCoup(g){
 }
 // ---- Dinero: cada pueblo su moneda; impuestos, gasto, banco, deuda, inflación y bancarrota ----
 // Salario por un viaje de trabajo (según lo que trae, los precios y el salario mínimo) e impuesto que se lleva el gobierno
-const wageOf = (g, n) => Math.max(1, Math.round(n / 3 * priceOf(g) * (hasLaw(g, 'salario_minimo') ? 1.5 : 1) * (regimeOf(g) === 'comunismo' ? .7 : 1) * (g.wageUp || 1)));
+const priceRaw = g => g.coin ? Math.max(.3, ecOf(g).P) : 1; // (el nivel de precios de verdad: priceOf lo redondea a entero y casi siempre daba 1)
+const sround = x => { const f = Math.floor(x); return f + (Math.random() < x - f ? 1 : 0); }; // redondeo al azar que respeta la media: así un 10 % de subida se nota
+const wageOf = (g, n) => n / 3 * priceRaw(g) * (hasLaw(g, 'salario_minimo') ? 1.5 : 1) * (regimeOf(g) === 'comunismo' ? .7 : 1) * (g.wageUp || 1);
 // Lo que cuesta vivir un día (comer lo de cada día y algo más) y lo que gana cada uno al día
-const costOfLiving = g => Math.max(2, Math.round(priceOf(g) * 4.5)); // comida, casa, ropa y lo demás de un día
+const costOfLiving = g => Math.max(2, Math.round(priceRaw(g) * 4.5)); // comida, casa, ropa y lo demás de un día (con los precios de verdad de cada pueblo)
 const UNPAID = new Set(['refugio', 'bolsa', 'ocio', 'pasear', 'comer', 'beber', 'dormir', 'ver_teatro', 'ver_coliseo', 'ir_taberna', 'jugar', 'volver', 'espectador', 'votar', 'mitin', 'protesta', 'golpe', 'detenido', 'ritual']);
 function payWage(v, g, n){
   if (!g || !g.coin || ageOf(v) < ADULT_H) return;
-  const pay = Math.max(1, Math.round(wageOf(g, n) * (hasLaw(g, 'segregacion') && isMinority(v, g) ? .6 : 1) * (1 + Math.min(.4, (v.edu || 0) * .4)))), /* con estudios, más */ d = Math.floor(yearT / DAY_LEN);
+  const pay = sround(wageOf(g, n) * (hasLaw(g, 'segregacion') && isMinority(v, g) ? .6 : 1) * (1 + Math.min(.4, (v.edu || 0) * .4))), /* con estudios, más */ d = Math.floor(yearT / DAY_LEN);
   if (v.payDay !== d) { if (v.payDay != null) v.wage = v.wage == null ? v.dayPay || 0 : Math.round(v.wage * .5 + (v.dayPay || 0) * .5); v.payDay = d; v.dayPay = 0; }
   v.dayPay += pay; v.money = (v.money || 0) + pay; v.earned = (v.earned || 0) + pay; v.lastPay = pay;
 }

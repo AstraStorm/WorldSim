@@ -38,10 +38,10 @@ const retired = (v, g) => ageOf(v) > (v.life || 20) * .72 && (hasLaw(g, 'pension
 // Pensiones (desde econTick)
 function payPensions(g, people){
   const old = people.filter(u => retired(u, g)).length; if (!old || !g.coin) return;
-  const ec = ecOf(g), each = wageOf(g, 2); ec.treas -= old * each;
+  const ec = ecOf(g), each = Math.round(wageOf(g, 2)); ec.treas -= old * each;
   for (const u of people) if (retired(u, g)) u.money = (u.money || 0) + each;
 }
-const pensionGrief = (g, adults) => { if (hasLaw(g, 'pensiones') || ['socialismo', 'comunismo'].includes(regimeOf(g))) return 0; const old = adults.filter(u => ageOf(u) > (u.life || 20) * .72).length, left = adults.filter(u => (u.ideo || 0) < -.2).length / Math.max(1, adults.length); return old >= 3 && left > .35 ? .1 + old * .02 : 0; };
+const pensionGrief = (g, adults) => { if (!g.coin || regimeOf(g) === 'tribu' || hasLaw(g, 'pensiones') || ['socialismo', 'comunismo'].includes(regimeOf(g))) return 0; const old = adults.filter(u => ageOf(u) > (u.life || 20) * .72).length, left = adults.filter(u => (u.ideo || 0) < -.2).length / Math.max(1, adults.length); return old >= 3 && left > .35 ? .1 + old * .02 : 0; };
 function cultureTick(g, dt, people, adults){
   if (Array.isArray(g.works)) { g.writings = g.works; g.works = 0; } // (partidas de antes: las obras iban en g.works, que es el dinero de obras públicas)
   if ((g.culT = (g.culT || 0) - dt) > 0) return; g.culT = 5; const el = 5, at = { x:g.fx * T, y:g.fy * T };
