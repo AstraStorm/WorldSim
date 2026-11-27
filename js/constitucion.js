@@ -1,12 +1,16 @@
 // Constitución: para que las leyes no vayan y vengan con cada gobierno.
 // · Las naciones donde se vota y que ya saben escribir convocan unas Cortes Constituyentes: entran en la Constitución las
-//   leyes que quiere una mayoría clara (≥60 %), sin choques entre ellas, como mucho 5. El texto se aprueba en referéndum.
+//   leyes fundamentales (CONST_KINDS) que quiere una mayoría clara (≥60 %), sin choques entre ellas, como mucho 5. El texto se aprueba en referéndum.
 // · Esas leyes valen gobierne quien gobierne: los partidos no las proponen ni las derogan, y las suyas que chocan con
 //   ellas quedan sin efecto (constMerge, desde lawsOfAll en sociedad.js).
 // · Cambiarla cuesta: una reforma necesita dos de cada tres votos. Las naciones de la IA la revisan cada pocos días: se
 //   quita lo que ya casi nadie quiere (≤33 %) o se añade lo que casi todos piden (≥72 %), un cambio cada vez.
 // · Con un golpe o un régimen sin votos queda suspendida; si vuelve la democracia, vuelve con ella.
 // · En tu nación sale sola cuando toca (o la convocas tú); la reformas con un referéndum de dos tercios.
+// Lo que entra en una Constitución es lo fundamental (derechos, lengua, religión, huelga, autonomía, sanidad, educación,
+// vivienda, medio ambiente, paz), para bien o para mal. Impuestos, jornada, comercio o ejército son política de cada gobierno.
+const CONST_KINDS = new Set(['autonomia', 'derecho_huelga', 'prohibir_huelgas', 'lengua_unica', 'plurilinguismo', 'libertad_religiosa', 'persecucion_religiosa', 'laicidad', 'fe',
+  'derechos_humanos', 'matrimonio_igualitario', 'segregacion', 'persecucion', 'sanidad', 'educacion', 'vivienda_publica', 'pensiones', 'bosques', 'paz']);
 const CONST_MAX = 6, CONST_DRAFT_MIN = .6, CONST_ADD = .72, CONST_DROP = .33;
 const constOn = n => !!(n && n.const && n.const.laws.length && votes(n));
 const constHas = (n, l) => constOn(n) && n.const.laws.includes(l);
@@ -31,7 +35,7 @@ const constList = L => L.map(l => `«${LAW_TXT[l] || l}»`).join(', ').replace(/
 // Cortes Constituyentes
 function constDraft(n, byPlayer){
   const S = constVoters(n); if (S.length < 8) { if (byPlayer) sysToast('Hace falta más gente para unas Cortes Constituyentes'); return false; }
-  const cand = Object.keys(LAW_LEAN).filter(l => LAW_TXT[l] && lawAwake(n, l)).map(l => [l, constSup(n, S, l)]).sort((a, b) => b[1] - a[1]), laws = [];
+  const cand = Object.keys(LAW_LEAN).filter(l => CONST_KINDS.has(l) && LAW_TXT[l] && lawAwake(n, l)).map(l => [l, constSup(n, S, l)]).sort((a, b) => b[1] - a[1]), laws = [];
   for (const [l, s] of cand) { if (laws.length >= 5 || s < CONST_DRAFT_MIN) break; if (!laws.some(x => lawClash(x, l))) laws.push(l); }
   const at = { x:n.fx * T, y:n.fy * T };
   if (laws.length < 2) { n.constT = yearT + DAY_LEN * 2;
@@ -60,7 +64,7 @@ function constReview(n){
   const worst = C.laws.map(l => [l, constSup(n, S, l)]).sort((a, b) => a[1] - b[1])[0];
   if (worst && worst[1] <= CONST_DROP && C.laws.length > 1) { constReform(n, worst[0], false, `(solo un ${Math.round(worst[1] * 100)} % la quería ya)`); return; }
   if (C.laws.length >= CONST_MAX) return;
-  const best = Object.keys(LAW_LEAN).filter(l => LAW_TXT[l] && !C.laws.includes(l) && lawAwake(n, l) && !C.laws.some(x => lawClash(x, l))).map(l => [l, constSup(n, S, l)]).sort((a, b) => b[1] - a[1])[0];
+  const best = Object.keys(LAW_LEAN).filter(l => CONST_KINDS.has(l) && LAW_TXT[l] && !C.laws.includes(l) && lawAwake(n, l) && !C.laws.some(x => lawClash(x, l))).map(l => [l, constSup(n, S, l)]).sort((a, b) => b[1] - a[1])[0];
   if (best && best[1] >= CONST_ADD) constReform(n, best[0], true, `(con un ${Math.round(best[1] * 100)} % a favor)`);
 }
 let constClock = 0;
@@ -92,7 +96,7 @@ function constGovHtml(n){
   if (!votes(n)) return n.const ? `<div class="gv-note muted">📜 La ${esc(constName(n))} está suspendida: con este régimen no se vota.</div>` : '';
   const P = world.player, busy = !!P.ref || (P.refT || -1e9) > yearT, dis = busy ? ' disabled title="Ya hay un referéndum o acaba de haber uno"' : '';
   if (!n.const) return `<div class="gv-vigor gv-const"><div class="gv-vh"><b>📜 Constitución</b><span class="muted">no tenéis</span></div><p class="muted gv-note">Una Constitución fija las leyes que quiere la gran mayoría: ya no cambian con cada gobierno y solo se tocan con dos tercios de los votos.</p><button class="gv-btn gold" data-gconst="1"${(n.constT || 0) > yearT ? ' disabled title="Las Cortes Constituyentes acaban de reunirse"' : ''}>Convocar Cortes Constituyentes</button></div>`;
-  const C = n.const, add = (n.pLaws || []).filter(l => !C.laws.includes(l) && !C.laws.some(x => lawClash(x, l)) && LAW_LEAN[l] != null);
+  const C = n.const, add = (n.pLaws || []).filter(l => !C.laws.includes(l) && !C.laws.some(x => lawClash(x, l)) && CONST_KINDS.has(l));
   return `<div class="gv-vigor gv-const"><div class="gv-vh"><b>📜 ${esc(constName(n))}</b><span class="muted">${C.laws.length}/${CONST_MAX}</span></div>
     <p class="muted gv-note">Estas leyes no se pueden quitar por decreto ni en las Cortes: solo con una reforma votada en referéndum por dos de cada tres.</p>
     <div class="gv-blist">${C.laws.map(l => `<div class="gv-law on"><div class="gv-lt"><b>📜 ${esc(LAW_TXT[l] || l)}</b><span class="muted">apoyo ${Math.round(lawSup(n, l) * 100)} %</span></div><button class="gv-btn" data-gref="const" data-key="${l}" data-on="0"${dis}>🗳 Reforma: quitar</button></div>`).join('')}

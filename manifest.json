@@ -1,8 +1,12 @@
 {
  "juego": "World Sim",
- "version": "202611271215",
- "fecha": "2026-11-27 12:15",
+ "version": "202611271218",
+ "fecha": "2026-11-27 12:18",
  "novedades": [
+  {
+   "fecha": "2026-11-27",
+   "texto": "Constitución: un núcleo de leyes que no cambia con cada gobierno"
+  },
   {
    "fecha": "2026-11-27",
    "texto": "DANAs, El Niño y La Niña, lluvia más realista y más torbellinos"
@@ -46,14 +50,10 @@
   {
    "fecha": "2026-11-27",
    "texto": "Modo nación: leyes por bloques arrastrables y presupuestos propios"
-  },
-  {
-   "fecha": "2026-11-27",
-   "texto": "Crónica con menos ruido, qué hace cada ley y apoyos más realistas"
   }
  ],
  "archivos": {
-  "index.html": "402bbfd1f54b933b0b4f2476a4c70fc4a6397cdd",
+  "index.html": "84ecf117f0453fbad65a4a0ddcbd602c86b3b748",
   "css/estilo.css": "c312120dba0778bf02fde9ce57a98f7776bec66f",
   "js/agencia.js": "dd15e5ae8fa08af254622aba102dafae859910b9",
   "js/aldeanos.js": "f3cc33d51bbdef68e8917643c836dd13a5ab0039",
@@ -61,7 +61,7 @@
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "a94b46896cfd10fd688954a3c5b9297e9b693872",
   "js/armas.js": "d4710aa65550aceb06fbdd1d2d290c8085f58e96",
-  "js/arte.js": "fab1ee1c48a97b47920ddff9047a9ac6f584fef0",
+  "js/arte.js": "e5d0a68c65f7fa59782b30c29227a6323d8937fe",
   "js/arte_mapa.js": "a92d6a3c48ca112990a90102d27322fe8879ec53",
   "js/aviacion.js": "2bceeb5a9a59332b96ad69d19b5f6e39da71af42",
   "js/bandidos.js": "bc804375208c5f300e33435e76d16001e8c4daae",
@@ -80,7 +80,7 @@
   "js/colonias.js": "3dddbf00163398d4bcd95259f103d95fa1548b64",
   "js/comercio.js": "574baaa7b297a05d7395d02761380bdef968e929",
   "js/consejo.js": "3ed73b3dcc91de9bb3f1c23c7caec240114f61e4",
-  "js/constitucion.js": "954c9d58468d5781844b64a51991644471060706",
+  "js/constitucion.js": "47f43ac19759eb1add038ae7618bffa25ca9993b",
   "js/convivencia.js": "81be8970d88a47871bd4e45796c00a51f56287f8",
   "js/cortes.js": "a19ed695ac6c4a430fb3c9e8eaab455ad9993cc8",
   "js/credos.js": "2c9349a62f485ee953ea7e58c09de270a73b45c0",
