@@ -74,7 +74,7 @@ function linkCompanies(n){
   for (const st of (n.studios || [])) { const L = 'st:' + n.id + ':' + st.name; if (!have.has(L)) foundCompany(home(st.founder), 'videojuegos', { name:st.name, ceo:st.founder && !st.founder.dead && st.founder.compId == null ? st.founder : null, link:L }); }
   for (const a of (typeof worldApps === 'function' ? worldApps() : []).filter(a => a.nat === n.id)) { const L = 'app:' + a.name; if (!have.has(L)) foundCompany(home(a.founder), 'redes', { name:`${a.name} S.A.`, ceo:a.founder && !a.founder.dead && a.founder.compId == null ? a.founder : null, link:L }); }
   const M = n.media; if (M) for (const o of [...M.radio, ...M.tv].filter(o => !o.official && !o.public)) { const L = 'md:' + o.name; if (!have.has(L)) foundCompany(home(o.host), 'medios', { name:`Grupo ${o.name}`, link:L }); }
-  if ((n.films || []).length && !have.has('cine:' + n.id)) foundCompany(towns[0], 'cine', { name:`${typeof brandWord === 'function' ? brandWord(n) : n.name} Films`, link:'cine:' + n.id });
+  if ((n.films || []).length && !have.has('cine:' + n.id)) { const bw = typeof brandWord === 'function' ? brandWord(n) : ''; foundCompany(towns[0], 'cine', { name:`${bw.length >= 4 ? bw : n.name} Films`, link:'cine:' + n.id }); }
 }
 // Lo que deja lo enlazado hoy (ventas de juegos, usuarios de la app, audiencia, taquilla)
 function linkRevenue(c, n){

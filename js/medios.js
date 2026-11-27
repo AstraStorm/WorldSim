@@ -105,7 +105,7 @@ const worldFilms = () => (world.films ||= []);
 function shootFilm(n, day){
   const towns = natTowns(n), cines = towns.filter(cineOn); if (!cines.length) return;
   const recent = chronicle.filter(c => c.d >= day - 3 && towns.some(g => c.text.includes(g.name))).slice(-12), ev = recent.length ? recent[Math.floor(Math.random() * recent.length)] : null;
-  let genre = ev ? genreOf(ev.text) : 'comedia'; if (tyranny(n) && Math.random() < .45) genre = 'propaganda';
+  let genre = ev ? genreOf(ev.text) : 'comedia'; if (genre === 'comedia' && Math.random() < .6) genre = ['drama', 'romance', 'aventura', 'épica'][Math.floor(Math.random() * 4)]; // (si lo que pasó no da para otro género, a veces se inventan uno) if (tyranny(n) && Math.random() < .45) genre = 'propaganda';
   const names = villages.filter(o => popOf(o) || o.name).map(o => o.name), place = (ev && (towns.map(g => g.name).find(nm => ev.text.includes(nm)) || names.find(nm => ev.text.includes(nm)))) || (genre === 'propaganda' ? n.name : towns[Math.floor(Math.random() * towns.length)].name);
   const T0 = FILM_GENRES[genre], title = T0[Math.floor(Math.random() * T0.length)](place);
   const crew = villagers.filter(u => !u.dead && !u.away && ageOf(u) >= ADULT_H && towns.some(g => g.id === u.vid) && !locked(u));

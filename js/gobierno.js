@@ -429,3 +429,28 @@ function govClick(e){
   setInterval(() => { try { govSync(); } catch (e) {} }, 1500);
   menuOpen();
 }
+// ---- Menús que se arrastran: el de Gobierno, «Ideas en marcha» y el de susurrar se mueven cogiéndolos por el título;
+//      se recuerda dónde los dejó cada jugador (doble clic en el título: vuelve a su sitio) ----
+function makeDraggable(el, handleSel, key){
+  const stage = () => el.offsetParent || el.parentElement;
+  const place = (x, y) => { if (getComputedStyle(el).position !== 'absolute') el.style.position = 'absolute'; const P = stage().getBoundingClientRect(), w = el.offsetWidth, h = el.offsetHeight;
+    x = clamp(x, 0, Math.max(0, P.width - Math.min(w, 120))); y = clamp(y, 0, Math.max(0, P.height - 40));
+    el.style.left = x + 'px'; el.style.top = y + 'px'; el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.transform = 'none'; el.style.margin = '0'; el.dataset.moved = '1'; };
+  try { const s = JSON.parse(localStorage.getItem('ws-drag-' + key) || 'null'); if (s) requestAnimationFrame(() => place(s.x, s.y)); } catch (e) {}
+  let d = null;
+  el.addEventListener('pointerdown', e => {
+    const h = e.target.closest(handleSel); if (!h || !el.contains(h) || e.target.closest('button, select, input, a') || e.button !== 0) return;
+    const now = performance.now(); if (now - (el._tap || 0) < 350) { el._tap = 0; reset(); return; } el._tap = now; // (doble pulsación en el título: a su sitio)
+    const r = el.getBoundingClientRect(), P = stage().getBoundingClientRect();
+    d = { dx:e.clientX - r.left, dy:e.clientY - r.top, P }; el.setPointerCapture(e.pointerId); el.classList.add('dragging'); e.preventDefault();
+  });
+  el.addEventListener('pointermove', e => { if (d) place(e.clientX - d.P.left - d.dx, e.clientY - d.P.top - d.dy); });
+  const end = () => { if (!d) return; d = null; el.classList.remove('dragging'); try { localStorage.setItem('ws-drag-' + key, JSON.stringify({ x:parseFloat(el.style.left) || 0, y:parseFloat(el.style.top) || 0 })); } catch (e) {} };
+  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+  function reset(){ for (const k of ['left', 'top', 'right', 'bottom', 'transform', 'margin', 'position']) el.style[k] = ''; delete el.dataset.moved; try { localStorage.removeItem('ws-drag-' + key); } catch (err) {} }
+}
+makeDraggable($('govPanel'), '.ch-h', 'gob');
+// «Ideas en marcha» y el panel de susurrar se crean más tarde: se les engancha cuando aparecen
+{ const hook = () => { const t = $('ideaTrack'); if (t && !t.dataset.drag) { t.dataset.drag = '1'; makeDraggable(t, '.it-h', 'ideas'); }
+    const w = $('whisper'), c = w && w.querySelector('.wh'); if (c && !c.dataset.drag) { c.dataset.drag = '1'; makeDraggable(c, '.wh-h', 'susurro'); } };
+  new MutationObserver(hook).observe(document.body, { childList:true, subtree:true }); }
