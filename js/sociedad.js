@@ -1372,7 +1372,7 @@ function renderVillageCard(force){
     const bins = [0, 0, 0, 0, 0]; for (const v of adults) bins[clamp(Math.floor(((v.ideo || 0) + 1) / 2 * 5), 0, 4)]++; const bm = Math.max(1, ...bins);
     const believers = g.faith ? ps.filter(v => pietyOf(v) > .3).length : 0;
     const notable = [...ps].sort((a, b) => (b === g.leader) - (a === g.leader) || a.born - b.born).slice(0, 6);
-    body = `<h4>Oficios</h4><div class="hbars">${ofs.map(([k, c]) => `<span>${k}</span>${bar(c / mx, '#6a9ac8', 140)}<span>${c}</span>`).join('')}</div>
+    body = `${typeof demoCard === 'function' ? demoCard(g, ps) : ''}<h4>Oficios</h4><div class="hbars">${ofs.map(([k, c]) => `<span>${k}</span>${bar(c / mx, '#6a9ac8', 140)}<span>${c}</span>`).join('')}</div>
       <h4>Ideas políticas</h4><div class="hist">${bins.map((c, k) => `<i style="height:${Math.round(c / bm * 36) + 2}px;background:${['#d8483a', '#e08a6a', '#c8b890', '#7a9ad8', '#3a6ab8'][k]}" title="${c}"></i>`).join('')}</div><div class="ideo-l"><span>izquierda</span><span>centro</span><span>derecha</span></div>
       <h4>Creencias</h4><div>${g.faith ? `${believers} de ${ps.length} son creyentes (${Math.round(believers / Math.max(1, ps.length) * 100)} %)` : 'Aún no tienen religión'}${(fs => fs.length ? ` · <b>${fs.length}</b> de otra fe (${[...new Set(fs.map(u => u.creed.god))].join(', ')}): ${persecutesFaith(g) ? 'perseguidos' : hasLaw(g, 'libertad_religiosa') ? 'con libertad de culto' : 'tolerados'}` : '')(ps.filter(u => otherFaith(u, g)))}</div>
       ${g.cemetery ? `<h4>Cementerio</h4><div>${g.cemetery.graves.size} tumba${g.cemetery.graves.size === 1 ? '' : 's'}${g.cemetery.graves.size ? ': ' + [...g.cemetery.graves.values()].sort((a, b) => b.t - a.t).slice(0, 6).map(gr => `† ${esc(gr.name)} (${gr.age} años, ${esc(gr.cause)}, día ${gr.d})`).join(' · ') : ''}</div>` : ''}
@@ -3406,9 +3406,9 @@ function updateVillages(dt){
     const cap = houseCap(g) + 4 + (g.hall != null && world.objs[g.hall] ? 8 : 0), adults = people.filter(v => { const a = (yearT - v.born) / YEAR; return a >= ADULT_H && a < 12; });
     // Cuantas más parejas, más nacimientos (antes solo podía tener hijos la primera: los pueblos se estancaban en unos 30)
     // Cada madre, como mucho un hijo cada año y pico (embarazo y crianza): unos cinco o seis en toda su vida, no uno cada poco
-    const moms = adults.filter(v => v.sex === 'm' && partnerOf(v) && partnerOf(v).sex === 'h' && adults.includes(partnerOf(v)) && yearT - (v.lastBirth ?? -1e9) > YEAR * .6);
+    const moms = adults.filter(v => v.sex === 'm' && partnerOf(v) && partnerOf(v).sex === 'h' && !partnerOf(v).away && (yearT - partnerOf(v).born) / YEAR >= ADULT_H && yearT - (v.lastBirth ?? -1e9) > YEAR * .6); /* el padre puede ser mayor que la ventana fértil de ella: antes, al pasarse él de edad, la pareja entera dejaba de tener hijos y toda la generación fundadora se quedaba sin niños a la vez */
     const mom = moms[Math.floor(Math.random() * moms.length)], dad = mom && partnerOf(mom); // de una pareja
-    if (mom && dad && pop < cap && g.food >= pop * (pop < 20 ? .8 : 1.5) + 3 && Math.random() < dt * Math.min(.12, moms.length / (YEAR * .7)) * (hasLaw(g, 'natalidad') ? 1.6 : 1) * (g.fort && g.fort.built && !g.fort.ruined && pop < 45 ? 1.25 : 1)) { // con castillo hacen falta más manos
+    if (mom && dad && pop < cap && g.food >= pop * (pop < 20 ? .8 : 1.5) + 3 && Math.random() < dt * Math.min(.12, moms.length / (YEAR * .7)) * (hasLaw(g, 'natalidad') ? 1.6 : 1) * (typeof fertMul === 'function' ? fertMul(g) : 1) * (g.fort && g.fort.built && !g.fort.ruined && pop < 45 ? 1.25 : 1)) { // con castillo hacen falta más manos
       const kid = lifeFields({ name:NAMES[nameIdx++ % NAMES.length], x:mom.x, y:mom.y, path:null, wait:1, walk:0, moving:false, dir:1, appear:1,
         pants:pick(PANTS, Math.random), hat:pick(HATS, Math.random), shirt:pick(SHIRT, Math.random), hair:Math.random() < .5 ? mom.hair : dad.hair },
         Math.floor(mom.x / T), Math.floor(mom.y / T), 0, Math.random);

@@ -94,7 +94,7 @@ function companyDay(g, c){
   if (state && !c.state) { c.state = true; c.ceoPay = 2; notify(`«${c.name}» pasa a ser del estado: el beneficio irá al tesoro`, at); } else if (!state && c.state) { c.state = false; c.ceoPay = CEO_PAY; }
   // Ingresos y gastos (en monedas)
   const prosper = clamp(g.food / Math.max(1, popOf(g) * 2), .7, 1.2) * (g.strike ? .6 : 1), wageBase = costOfLiving(g) * .9;
-  const base = ((c.staff.length + 2) + popOf(g) * .04) * (S.rev / 3.5) * wageBase * prosper * (c.strikeT > yearT ? .3 : 1) + linkRevenue(c, n) * P; // (cada empleado produce más de lo que cobra; y el pueblo, cuanto más grande, más clientes)
+  const base = ((c.staff.length + 2) + popOf(g) * .04) * (S.rev / 3.5) * wageBase * prosper * (c.strikeT > yearT ? .3 : 1) * (c.ai ? 1.25 : 1) + linkRevenue(c, n) * P; // (cada empleado produce más de lo que cobra; y el pueblo, cuanto más grande, más clientes)
   const cost = (c.staff.length * c.pay + c.ceoPay) * wageBase;
   c.rev = Math.round(base); c.cost = Math.round(cost); c.profit = c.rev - c.cost;
   const tax = c.profit > 0 ? Math.round(c.profit * (state ? 1 : hasLaw(g, 'impuestos_altos') ? .3 : hasLaw(g, 'impuestos_bajos') ? .1 : .18)) : 0;
@@ -108,7 +108,7 @@ function companyDay(g, c){
   if (c.profit > 0 && c.cash > cost * 2) {
     if (greedy && Math.random() < .5) { const b = Math.round(c.profit * .4); c.cash -= b; c.ceo.money = (c.ceo.money || 0) + b; c.bonus = (c.bonus || 0) + b; if (b > 20 * P && Math.random() < .3) { log(`el CEO se lleva un bonus de ${b}`); notify(`💰 El CEO de «${c.name}», ${c.ceo.name}, se lleva un bonus de ${b} ${typeof coinPl === 'function' ? coinPl(g) : ''} mientras la plantilla cobra lo mismo`, at); } }
     else if (c.staff.length >= 2 && Math.random() < .3) { c.pay = +(c.pay * 1.06).toFixed(2); log('sube los sueldos un 6 %'); }
-    if (c.staff.length < COMP_SLOTS && Math.random() < .7) hire(g, c, 1 + (c.cash > cost * 5 ? 1 : 0));
+    if (c.staff.length < COMP_SLOTS - (c.ai ? 2 : 0) && Math.random() < .7) hire(g, c, 1 + (c.cash > cost * 5 ? 1 : 0));
   } else if (c.profit < 0) {
     c.lossDays = (c.lossDays || 0) + 1;
     if (c.lossDays >= 2 && c.staff.length) { const out = c.staff.splice(0, Math.max(1, Math.ceil(c.staff.length / 4))); for (const u of out) { u.compId = null; u.oficio = u.oldOficio || pickOficio(g); u.fired = yearT; } log(`despide a ${out.length}`); notify(`📉 «${c.name}» pierde dinero y despide a ${out.length} persona${out.length > 1 ? 's' : ''}`, at); c.lossDays = 0; }
@@ -122,7 +122,7 @@ function companyDay(g, c){
 function hire(g, c, k){
   const adults = villagers.filter(u => !u.dead && !u.away && u.vid === g.id && ageOf(u) >= ADULT_H && ageOf(u) < (u.life || 20) * .75 && u.compId == null && u.facBoss == null && u.oficio !== 'obrero' && !locked(u) && u !== g.leader && !(u.fired > yearT - DAY_LEN * 2) && !['maestro', 'curandero', 'sabio', 'bombero', 'sacerdote', 'soldado'].includes(u.oficio));
   const cnt = o => adults.filter(u => u.oficio === o).length;
-  for (let j = 0; j < k && c.staff.length < COMP_SLOTS; j++) {
+  for (let j = 0; j < k && c.staff.length < COMP_SLOTS - (c.ai ? 2 : 0); j++) {
     const u = adults.filter(x => x.compId == null).sort((a, b) => ((b.edu || 0) + cnt(b.oficio) * .05) - ((a.edu || 0) + cnt(a.oficio) * .05))[0]; if (!u) return;
     u.oldOficio = u.oficio; u.oficio = 'oficinista'; u.compId = c.id; c.staff.push(u);
   }

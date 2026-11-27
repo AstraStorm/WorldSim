@@ -929,3 +929,41 @@ body.drop-save::after{content:'Suelta aquí la partida .forja para abrirla';posi
 .gm-quit{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;margin-top:12px;padding:10px;border-radius:12px;background:rgba(216,72,58,.08);border:1px solid rgba(216,72,58,.35);font-size:13px}
 .gm-quit button{padding:7px 14px;border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:var(--fg);font:600 13px var(--f-body);cursor:pointer}
 .gm-quit button.gold{border-color:#e0b850;background:linear-gradient(180deg,#f8dc80,#e0b040);color:#1a1408}
+
+/* ===== World Sim · Demografía, ciclo económico, crisis, legado e informe ===== */
+.dp{display:flex;flex-direction:column;gap:1px;font-size:10.5px;margin:4px 0 8px}
+.dp-h{display:grid;grid-template-columns:1fr 42px 1fr;color:#b8ae98;font-size:10px;text-align:center;margin-bottom:2px}
+.dp-r{display:grid;grid-template-columns:1fr 42px 1fr;align-items:center}
+.dp-m{display:flex;justify-content:flex-end}.dp-f{display:flex}
+.dp-m i,.dp-f i{display:block;height:9px;border-radius:2px}
+.dp-m i{background:#6a9ad8}.dp-f i{background:#e08aa8}
+.dp-a{text-align:center;color:#b8ae98;font-variant-numeric:tabular-nums}
+.dp-k{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:12.5px;margin:4px 0 6px}
+.dp-k span{color:#b8ae98}.dp-k b{font-weight:600}
+.demo-row{align-items:flex-start;gap:14px;flex-wrap:wrap}
+.cy-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:4px 0}
+.cy-w{font-size:14px;white-space:nowrap}
+.cy-sp .cy-0{stroke:rgba(255,255,255,.18);stroke-dasharray:3 3}
+.cy-sp .cy-l{fill:none;stroke:#e8c870;stroke-width:1.6}
+.cr-opts{display:flex;flex-direction:column;gap:8px;margin:16px 0 4px;text-align:left}
+.cr-opt{display:flex;flex-direction:column;gap:3px;padding:10px 14px;border-radius:12px;border:1px solid rgba(240,208,112,.35);background:rgba(240,208,112,.06);color:#f2ead8;font:13px var(--f-body,system-ui);cursor:pointer;text-align:left}
+.cr-opt b{font-size:15px;color:#f6dc8a}
+.cr-opt span{color:#d8ccb0;line-height:1.4}
+.cr-opt em{color:#f08a7a;font-style:normal;font-size:12px}
+.cr-opt:hover:not(:disabled),.cr-opt:focus-visible{background:rgba(240,208,112,.16);border-color:#f0d070}
+.cr-opt:disabled{opacity:.5;cursor:not-allowed}
+.leg-score{display:inline-flex;flex-direction:column;align-items:center;margin:4px 0 10px;padding:8px 22px;border-radius:14px;border:2px solid var(--c);background:rgba(0,0,0,.25)}
+.leg-score b{font-size:34px;color:var(--c);line-height:1}
+.leg-score span{font-size:11px;color:#b8ae98}
+.leg-facts{list-style:none;margin:0 0 10px;padding:0;text-align:left;display:flex;flex-direction:column;gap:4px;font-size:13px}
+.leg-facts li{padding:5px 10px;border-radius:7px;background:rgba(255,255,255,.04);display:flex;gap:8px}
+.leg-facts li.up{background:rgba(122,176,74,.12)}.leg-facts li.down{background:rgba(216,88,58,.12)}
+.leg-years{display:flex;align-items:flex-end;justify-content:center;gap:4px;height:48px;margin:6px 0 12px}
+.leg-years i{display:block;width:14px;border-radius:3px 3px 0 0}
+.rep-box{position:fixed;z-index:60;right:16px;top:calc(var(--top,60px) + 10px);width:min(380px,calc(100vw - 32px));padding:12px;border-radius:12px;background:rgba(17,21,26,.97);border:1px solid var(--line);box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.rep-box[hidden]{display:none}
+.rep-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.rep-h .x{background:none;border:none;font-size:20px;color:var(--fg);cursor:pointer}
+.rep-box textarea{width:100%;box-sizing:border-box;resize:vertical;padding:8px;border-radius:8px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--fg);font:13px var(--f-body,system-ui)}
+.rep-f{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px;font-size:12px}
+.rep-f .gold{border-color:#e0b850;background:linear-gradient(180deg,#f8dc80,#e0b040);color:#1a1408;border-radius:16px;padding:6px 14px}

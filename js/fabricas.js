@@ -251,7 +251,7 @@ function facCycle(v, g, i){
   if (firewood) g.wood -= 2; else { f.burn = (f.burn || 0) + 1; if (f.burn >= 2) { f.burn = 0; g.coal -= 1; } } // media unidad de carbón por tanda (o 2 de leña)
   g.indWater -= 1; for (const [r, n] of Object.entries(F.in || {})) g[r] -= n;
   f.lastWork = yearT; f.made = (f.made || 0) + 1;
-  const ec = ecOf(g), P = ec ? ec.P || 1 : 1, nat = hasLaw(g, 'nacionalizar_industria'), mul = (hasLaw(g, 'libre_industria') ? 1.1 : 1) * (nat ? .85 : 1) * (1 + (f.lv || 0) * .35);
+  const ec = ecOf(g), P = ec ? ec.P || 1 : 1, nat = hasLaw(g, 'nacionalizar_industria'), mul = (hasLaw(g, 'libre_industria') ? 1.1 : 1) * (nat ? .85 : 1) * (1 + (f.lv || 0) * .35) * (1 + (f.robot || 0) * .4);
   let n = Math.max(1, Math.round(F.n * mul * (firewood ? .5 : 1))), txt = F.txt.replace(/\d+/, n);
   switch (F.out) {
     case 'wood': if ((g.coal || 0) < coalReserve(g) && !hasMine(g)) { g.wood += Math.round(n / 2); g.coal = (g.coal || 0) + 2; txt = `+${Math.round(n / 2)} madera, +2 carbón vegetal`; } else g.wood += n; break;
@@ -471,7 +471,7 @@ function crewTick(g, people, facs, at){
   (g.staffKeep ||= {}).obrero = yearT + DAY_LEN; // que el reparto de oficios no se los lleve
   // Contratar hasta llenar cada cuadrilla, sin dejar el pueblo sin gente en el campo (no más de un 30 %, un 40 % con fomento)
   const max = Math.ceil(adults.length * (fo ? .4 : .3)), cnt = o => adults.filter(u => u.oficio === o).length;
-  if (g.food >= popOf(g) * 2.5) for (const f of facs) while (f.crew.length < facSlots(g) && total < max) {
+  if (g.food >= popOf(g) * 2.5) for (const f of facs) while (f.crew.length < facSlots(g) - (f.robot || 0) && total < max) { /* con robots (automatizacion.js) hace falta menos gente */
     const pref = CREW_FROM[f.k], free = adults.filter(u => u.oficio !== 'obrero' && u.oficio !== 'oficinista' && u.compId == null && u.facBoss == null && !(u.fired > yearT - DAY_LEN * 2) && !['maestro', 'curandero', 'sabio', 'bombero', 'sacerdote'].includes(u.oficio));
     const u = free.sort((a, b) => (b.oficio === pref) - (a.oficio === pref) || cnt(b.oficio) - cnt(a.oficio))[0]; if (!u) break;
     u.oldOficio = u.oficio; u.oficio = 'obrero'; u.facI = f.i; f.crew.push(pidOf(u)); total++;
