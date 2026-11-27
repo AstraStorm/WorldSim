@@ -332,7 +332,7 @@ function drawSmoke(){
 }
 // Repinta los árboles y rocas cuya base está por delante (más abajo) de baseY: tapan lo que hay detrás
 function redrawFront(l, r, top, baseY){
-  if (!params.objects) return;
+  if (!params.objects || zoom < WAVE_ZOOM) return; // (muy alejado, la gente es un punto: no hace falta repintar lo que tiene delante)
   const objs = world.objs;
   for (let ty = Math.max(0, Math.floor(baseY / T)); ty <= Math.min(H - 1, Math.floor((baseY + 80) / T)); ty++)
     for (let tx = Math.max(0, Math.floor((l - 66) / T)); tx <= Math.min(W - 1, Math.floor((r + 66) / T)); tx++) {

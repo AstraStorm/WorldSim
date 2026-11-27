@@ -87,8 +87,8 @@ let respriteLeft = 2;
 // cuesta, y en los mapas enormes nacen y mueren muchas)
 const cloudPool = new Map();
 function pooledCloud(type, w, hr){
-  const key = `${type}|${Math.round(w / 14)}|${Math.round(hr * 12)}`; let l = cloudPool.get(key); if (!l) cloudPool.set(key, l = []);
-  if (l.length < 5) { const sp = cloudSprites(type, w, w * hr); l.push(sp); return sp; }
+  const key = `${type}|${Math.round(w / 24)}|${Math.round(hr * 6)}`; /* tamaños parecidos comparten dibujo: crear nubes nuevas cuesta */ let l = cloudPool.get(key); if (!l) cloudPool.set(key, l = []);
+  if (l.length < 3) { const sp = cloudSprites(type, w, w * hr); l.push(sp); return sp; }
   return l[Math.floor(Math.random() * l.length)];
 }
 function resprite(c){
@@ -245,24 +245,26 @@ function drawWeather(t){
     const cw0 = c.x1 - c.x0, left = c.x + c.x0 + cw0 * .12, width = cw0 * .76;
     const top = c.y - LIFT + c.y1 - 2, span = LIFT + c.h * .6 - c.y1 + 2;
     // De lejos las gotas miden menos de un píxel de pantalla: se pintan menos (se nota igual que llueve)
-    const n = Math.round(width * c.h / (c.type === 'storm' ? 14 : 24) * c.precip * Math.min(1, .25 + zoom * .5));
+    const n = Math.round(width * c.h / (c.type === 'storm' ? 14 : 24) * c.precip * Math.min(1, zoom < 1 ? zoom * .6 : .25 + zoom * .5));
     vctx.globalAlpha = c.alpha;
     if (c.snow) {
-      vctx.fillStyle = 'rgba(255,255,255,.9)';
+      vctx.fillStyle = 'rgba(255,255,255,.9)'; vctx.beginPath(); // (todas las gotas en un solo trazado: miles de fillRect sueltos costaban mucho)
       for (let d = 0; d < n * .8; d++) {
         const ph = (ts * (.25 + h2(d, 3, 31) * .2) + h2(d, 7, 32)) % 1;
-        vctx.fillRect(Math.round(left + h2(d, 1, 33) * width + Math.sin(ts * 2 + d) * 2), Math.round(top + ph * span), 1, 1);
+        vctx.rect(Math.round(left + h2(d, 1, 33) * width + Math.sin(ts * 2 + d) * 2), Math.round(top + ph * span), 1, 1);
       }
+      vctx.fill();
     } else {
       // Las gotas caen inclinadas según el viento (con tormenta, más largas y rápidas) y salpican al llegar al suelo
       const storm = c.type === 'storm', slant = clamp((c.wx || 0) / 8, -2.5, 2.5) * (storm ? 1.6 : 1), len = storm ? 4 : 3, sp = storm ? 2.1 : 1.4;
-      vctx.fillStyle = storm ? 'rgba(170,190,220,.6)' : 'rgba(190,210,235,.55)';
+      vctx.fillStyle = storm ? 'rgba(170,190,220,.6)' : 'rgba(190,210,235,.55)'; vctx.beginPath();
       for (let d = 0; d < n; d++) {
         const ph = (ts * (sp + h2(d, 3, 31)) + h2(d, 7, 32)) % 1, x = left + h2(d, 1, 33) * width + slant * ph * span * .25;
-        if (ph > .94) { vctx.fillRect(Math.round(x) - 1, Math.round(top + span), 3, 1); continue; } // salpicadura
-        vctx.fillRect(Math.round(x), Math.round(top + ph * span), 1, len);
-        if (Math.abs(slant) > 1.2) vctx.fillRect(Math.round(x + Math.sign(slant)), Math.round(top + ph * span) + len, 1, 1);
+        if (ph > .94) { vctx.rect(Math.round(x) - 1, Math.round(top + span), 3, 1); continue; } // salpicadura
+        vctx.rect(Math.round(x), Math.round(top + ph * span), 1, len);
+        if (Math.abs(slant) > 1.2) vctx.rect(Math.round(x + Math.sign(slant)), Math.round(top + ph * span) + len, 1, 1);
       }
+      vctx.fill();
     }
   }
   for (const c of clouds) if (c.x + c.w > x0 && c.x < x1 && c.y - LIFT + c.h > y0 && c.y - LIFT < y1) {

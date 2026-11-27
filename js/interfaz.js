@@ -314,6 +314,7 @@ function buildWaves(){
   if (snowA && fresh) for (const i of snowSet) snowDirty.add(i);
 }
 let vrOverride = null;
+const WAVE_ZOOM = .45; // (más lejos, el oleaje ni se calcula ni se pinta)
 function visibleRect(){
   if (vrOverride) return vrOverride;
   return [clamp(Math.floor(-offX / zoom) - 2, 0, PW - 1), clamp(Math.floor(-offY / zoom) - 2, 0, PH - 1),
@@ -322,7 +323,7 @@ function visibleRect(){
 let floodTick = 0;
 function updateWaves(t){
   floodTick++;
-  if (!coastK || reduceMotion || !cw) return;
+  if (!coastK || reduceMotion || !cw || zoom < WAVE_ZOOM) return;
   // Con mucho mapa a la vista se reparte el trabajo en franjas: cada fotograma se anima solo una franja
   // horizontal (y solo esa se copia al lienzo), así nunca se procesan millones de píxeles de golpe.
   // Con poco a la vista se anima todo cada fotograma (de cerca, sin saltos)
@@ -444,7 +445,7 @@ function updateWaves(t){
   wvctx.putImageData(waveImg, 0, 0, x0, y0, x1 - x0 + 1, y1 - y0 + 1);
 }
 function drawGlints(t){
-  if (!glintK || reduceMotion) return;
+  if (!glintK || reduceMotion || zoom < WAVE_ZOOM) return; // (muy alejado no se distinguen)
   const [x0, y0, x1, y1] = visibleRect(), ts = t / 1000; vctx.fillStyle = '#ffffff';
   for (let n = 0; n < glintK.length; n++) {
     const k = glintK[n], px = k % PW, py = (k / PW) | 0;

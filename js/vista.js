@@ -41,7 +41,7 @@ function draw(t){
   vctx.setTransform(dpr * zoom, 0, 0, dpr * zoom, Math.round(dpr * (offX + jx)), Math.round(dpr * (offY + jy)));
   // Orden: terreno → agua animada → árboles y rocas → aldeanos
   vctx.drawImage(terrain, 0, 0);
-  if (waveImg && !reduceMotion) vctx.drawImage(waveCv, 0, 0);
+  if (waveImg && !reduceMotion && zoom >= WAVE_ZOOM) { const [a, b, c, d] = visibleRect(); vctx.drawImage(waveCv, a, b, c - a + 1, d - b + 1, a, b, c - a + 1, d - b + 1); } // (muy alejado, las olas no se distinguen: no se pintan)
   drawGlints(t);
   drawWhirls(t);
   drawFish(t);

@@ -69,7 +69,7 @@ let lastT = 0, gameSpeed = 1;
 const SYSTEMS = [dt => { updateBallGames(dt); olympicsTick(dt); }, dt => updateSieges(dt), dt => updateVillagers(dt), dt => updateAnimals(dt), dt => updateFires(dt), dt => updateClimate(dt), dt => updateLife(dt), (dt, t) => updateVolcanoes(dt, t),
   dt => updateWeather(dt), dt => { updateStorms(dt); updateWhirls(dt); }, dt => updateSandstorms(dt), dt => updateMeteors(dt), dt => updateBalloons(dt), dt => updateLanguages(dt), dt => clearWallsOverPens(dt), dt => updateCouncil(dt), dt => updatePirates(dt), dt => updateBandits(dt), dt => updateQuakes(dt), (dt, t) => updateWaves(t)];
 let simLag = 0, lastDrawT = 0, drawSkipped = false; // pasos que no cupieron en el último fotograma
-const SIM_BUDGET = 30; let simStepMs = 5; // ms de simulación por fotograma / coste medio de un paso
+const SIM_BUDGET = 30; let simStepMs = 5, slowAcc = 0, slowSkip = false; // ms de simulación por fotograma / coste medio de un paso
 const WAVES_SYS = SYSTEMS[SYSTEMS.length - 1];
 // Sistemas lentos y suaves (clima, tiempo, idiomas, consejo, islas...): a velocidad x2-x5 se calculan una sola vez por
 // fotograma con todo el tiempo junto, en vez de repetirlos en cada paso (dan lo mismo y cuestan mucho menos)
@@ -83,7 +83,7 @@ function loop(t){
     // cada sistema por separado: si uno falla en un fotograma, el resto sigue y el juego no se congela
     // Si no caben todos los pasos en el presupuesto, se dan menos pasos pero más largos (máx. 0,1 s, como a 10 fps):
     // así x5 avanza de verdad 5 veces más rápido en vez de quedarse en x2 por los pasos que se perdían
-    const simT0 = performance.now(), want = dt * gameSpeed, budget = SIM_BUDGET + Math.max(0, gameSpeed - 2) * (gameSpeed >= 4 ? 22 : 10); // a x3-x5 se acepta perder algo de fluidez
+    const simT0 = performance.now(), want = dt * gameSpeed, budget = SIM_BUDGET + Math.max(0, gameSpeed - 2) * 3; // (antes, hasta 96 ms a x5: iba a 5 fps; con poco más de 30 ms va más fluido y, como cada fotograma avanza lo que ha durado, incluso más rápido)
     const maxStep = gameSpeed >= 4 ? .2 : .1; // (a x4 y x5, pasos de hasta 0,2 s: la mitad de pasos para lo mismo; el movimiento se sigue haciendo de 0,1 en 0,1)
     const steps = gameSpeed ? Math.min(gameSpeed, Math.max(1, Math.ceil(want / maxStep), Math.floor(budget / simStepMs))) : 0, sdt = steps ? Math.min(maxStep, want / steps) : 0;
     simLag = 0;
@@ -91,7 +91,9 @@ function loop(t){
       if (k && performance.now() - simT0 + simStepMs * .7 > budget) { simLag = steps - k; break; } // no da para tanto: el resto, otro fotograma (más lento, pero sin tirones)
       const s0 = performance.now();
       yearT += sdt;
-      for (let n = 0; n < SYSTEMS.length; n++) { const S = SYSTEMS[n]; if (k && (S === WAVES_SYS || isSlowSys(S))) continue; if (!k && isSlowSys(S)) { try { S(sdt * steps, t); } catch (err) { console.error(err); } continue; } try { SYSTEMS[n](sdt, t); } catch (err) { console.error(err); } }
+      if (!k) { slowAcc += sdt * steps; slowSkip = gameSpeed >= 4 && !slowSkip; } // (a x4 y x5, los lentos y el oleaje, un fotograma sí y otro no, con todo el tiempo junto)
+      for (let n = 0; n < SYSTEMS.length; n++) { const S = SYSTEMS[n]; if (k && (S === WAVES_SYS || isSlowSys(S))) continue; if (!k && (S === WAVES_SYS || isSlowSys(S)) && slowSkip) continue; if (!k && isSlowSys(S)) { try { S(slowAcc, t); } catch (err) { console.error(err); } continue; } try { SYSTEMS[n](sdt, t); } catch (err) { console.error(err); } }
+      if (!k && !slowSkip) slowAcc = 0;
       simStepMs = simStepMs * .9 + (performance.now() - s0) * .1;
     }
     updateSeasonHud();
@@ -118,8 +120,6 @@ function loop(t){
     offY += (ch / 2 - (follow.y - 5) * zoom - offY) * k;
     updateFollowTag();
   }
-  // A x4 y x5, si la simulación no llega, se dibuja un fotograma de cada dos (y nunca menos de unos 7 por segundo): el resto
-  // del tiempo es para simular; se ve algo menos suave, pero el juego va más cerca de x5 de verdad
-  if (gameSpeed >= 4 && simLag > 0 && !drawSkipped && t - lastDrawT < 150) drawSkipped = true; else { draw(t); lastDrawT = t; drawSkipped = false; }
+  draw(t); lastDrawT = t; // (antes, a x4-x5 se saltaba un fotograma de cada dos: más simulación, pero a tirones)
   requestAnimationFrame(loop);
 }

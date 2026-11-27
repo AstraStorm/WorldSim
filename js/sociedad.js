@@ -327,22 +327,37 @@ function connect(g, x, y){
 }
 // Caminos, plazas y puentes cambian poco: se pintan en una capa aparte que se rehace solo cuando cambian
 // (o cada pocos segundos, por la nieve) en vez de casilla a casilla en cada fotograma
-let groundCv = null, groundSig = '', groundT = 0;
+let groundCv = null, groundSig = '', groundT = 0, groundDirty = new Set();
+// El suelo pintado (caminos, plazas, carreteras, puentes) en lienzos de 512 px: uno solo del tamaño del mapa era muy
+// lento de retocar (el navegador lo copiaba entero cada vez que se tocaba después de dibujarlo: 200-400 ms parado)
+const GROUND_CH = 512, groundChunks = new Map();
 function groundSignature(){
   let q = 0; for (const g of villages) q = (q * 31 + (g.quarry ?? 7) + (g.holy ? g.holy.x0 * 3 : 0)) % 1e9;
   return [pathMap.size, plazaSet.size, holySet.size, wornSet.size, bridges.length, bridgeSet.size, q, snowA ? 1 : 0, (world.roads || []).length].join(',');
 }
 function drawGround(){
-  if (!groundCv || groundCv.width !== PW || groundCv.height !== PH) { groundCv = document.createElement('canvas'); groundCv.width = PW; groundCv.height = PH; groundSig = ''; }
-  const now = performance.now(), sig = groundSignature();
-  if ((sig !== groundSig && (now - groundT > 5000 || !groundSig)) || now - groundT > 15000) { // (cambios de caminos: como mucho cada 5 s) // (la nieve sobre los caminos cambia despacio)
+  const size = PW + 'x' + PH;
+  if (groundCv !== size) { groundCv = size; groundChunks.clear(); groundSig = ''; }
+  const now = performance.now(), sig = groundSignature(), first = !groundChunks.size; // (groundSig = '' desde otros módulos: repintar ya, pero a trozos)
+  if ((sig !== groundSig && (now - groundT > 5000 || first || !groundSig)) || now - groundT > 15000) { // (cambios de caminos: como mucho cada 5 s) // (la nieve sobre los caminos cambia despacio)
     groundSig = sig; groundT = now;
-    const gc = groundCv.getContext('2d'), keep = vctx; gc.clearRect(0, 0, PW, PH);
-    vctx = gc; vrOverride = [0, 0, PW - 1, PH - 1];
-    try { paintPaths(); paintRoads(); paintBridges('static'); } finally { vctx = keep; vrOverride = null; }
+    groundDirty = new Set(); for (let cy = 0; cy < Math.ceil(PH / GROUND_CH); cy++) for (let cx = 0; cx < Math.ceil(PW / GROUND_CH); cx++) groundDirty.add(cy * 1000 + cx);
   }
-  const [x0, y0, x1, y1] = visibleRect();
-  vctx.drawImage(groundCv, x0, y0, x1 - x0 + 1, y1 - y0 + 1, x0, y0, x1 - x0 + 1, y1 - y0 + 1);
+  const [x0, y0, x1, y1] = visibleRect(), seen = k => { const cx = k % 1000, cy = (k / 1000) | 0; return cx * GROUND_CH <= x1 && (cx + 1) * GROUND_CH >= x0 && cy * GROUND_CH <= y1 && (cy + 1) * GROUND_CH >= y0; };
+  // Se repinta a trozos: primero lo que se ve, y cada fotograma solo unos milisegundos (la primera vez, entero)
+  if (groundDirty.size) {
+    const order = [...groundDirty].sort((a, b) => seen(b) - seen(a)), keep = vctx, t0 = performance.now();
+    for (const k of order) {
+      if (!first && performance.now() - t0 > 4) break;
+      groundDirty.delete(k);
+      const X = (k % 1000) * GROUND_CH, Y = ((k / 1000) | 0) * GROUND_CH;
+      let c = groundChunks.get(k); if (!c) { c = document.createElement('canvas'); c.width = Math.min(GROUND_CH, PW - X); c.height = Math.min(GROUND_CH, PH - Y); groundChunks.set(k, c); }
+      const gc = c.getContext('2d'); gc.setTransform(1, 0, 0, 1, 0, 0); gc.clearRect(0, 0, c.width, c.height); gc.setTransform(1, 0, 0, 1, -X, -Y);
+      vctx = gc; vrOverride = [X - 4 * T, Y - 4 * T, X + c.width + 4 * T, Y + c.height + 4 * T];
+      try { paintPaths(); paintRoads(); paintBridges('static'); } finally { vctx = keep; vrOverride = null; }
+    }
+  }
+  for (const [k, c] of groundChunks) if (seen(k)) vctx.drawImage(c, (k % 1000) * GROUND_CH, ((k / 1000) | 0) * GROUND_CH);
 }
 const drawPaths = () => drawGround(), drawBridges = () => paintBridges('live');
 function paintPaths(){

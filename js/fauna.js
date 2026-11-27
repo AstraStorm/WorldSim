@@ -262,6 +262,7 @@ function spawnFish(){
   }
 }
 function drawFish(t){
+  if (zoom < WAVE_ZOOM) return; // (muy alejado no se distinguen)
   const [x0, y0, x1, y1] = visibleRect(), ts = t / 1000;
   for (const f of fishes) {
     if (f.x < x0 - 10 || f.x > x1 + 10 || f.y < y0 - 10 || f.y > y1 + 10) continue;
