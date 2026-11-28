@@ -1,8 +1,12 @@
 {
  "juego": "World Sim",
- "version": "202611281629",
- "fecha": "2026-11-28 16:29",
+ "version": "202611281640",
+ "fecha": "2026-11-28 16:40",
  "novedades": [
+  {
+   "fecha": "2026-11-28",
+   "texto": "Ganado como prioridad: con hambre o con animales sueltos alrededor, cercar y capturar pasan a ser casi lo primero (el primer cercado, más barato y con la madera reservada), más cercados por pueblo, y con hambre de verdad sacrifican ganado del cercado para comer"
+  },
   {
    "fecha": "2026-11-28",
    "texto": "Coches: el automóvil, fábricas con la marca de cada nación y sus modelos (dos berlinas, familiar, sedán y deportivo), concesionarios, compra, comercio por las rutas y en cargueros; gasolineras con el precio de la gasolina y del diésel que sube y baja, quejas cuando se dispara y tráfico por las calles con coches de colores"
@@ -46,14 +50,10 @@
   {
    "fecha": "2026-11-28",
    "texto": "Animales: las crías maman (antes morían todas de hambre), buscan agua antes y la hierba les da algo, las manadas reparten la presa y buscan presas por la comarca. Mudanzas dentro del país a la ciudad vecina con casas libres. Casas aisladas por el mar se derrumban y se las traga. Registro civil sin solapes (ya no aparece y desaparece) y sin calles encima. Barcos que se quedaban parados sin ruta"
-  },
-  {
-   "fecha": "2026-11-28",
-   "texto": "Guardado sin parón: la partida se copia a un hilo aparte que la convierte y comprime (de ~1,3 s a ~0,2 s de bloqueo); destellos de objetos raros sin recorrer el mapa a cada tala"
   }
  ],
  "archivos": {
-  "index.html": "871cf4991c079f0a00d196700625defab885c549",
+  "index.html": "0beaca470eba44ef294166a6c8f96b825964c1da",
   "css/estilo.css": "eb2c6a0c3b417250272a46180e1767d087996425",
   "js/agencia.js": "dd15e5ae8fa08af254622aba102dafae859910b9",
   "js/aldeanos.js": "9e2f68a67a99a8683a0ed856c7068883d093912a",
@@ -61,8 +61,8 @@
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "a94b46896cfd10fd688954a3c5b9297e9b693872",
   "js/armas.js": "d4710aa65550aceb06fbdd1d2d290c8085f58e96",
-  "js/arte.js": "cfb512b1f845a1e2fa8ba0c908b67d48b63ff926",
-  "js/arte_mapa.js": "4e29886b482631f06368c5b1e1da169aa8a48f5d",
+  "js/arte.js": "fd0c9855f56c7ea64704ad08752e0cfb5948abb6",
+  "js/arte_mapa.js": "a16152d95bae935112098770f82d4862bc7e21fc",
   "js/automatizacion.js": "b0c9d760d1de77a37eebb4c7b97d47130dbd35b5",
   "js/aviacion.js": "2bceeb5a9a59332b96ad69d19b5f6e39da71af42",
   "js/bandidos.js": "e02ad8bf16bcd5d4857b8c80845ac1f68c523280",
@@ -81,7 +81,7 @@
   "js/civilizacion.js": "b29923d00547d07040841cfcfd63776944a65aa7",
   "js/clases.js": "d492b674481b1fba29d3b594d2a65a9bb2d75029",
   "js/clima.js": "fb127cab3275b29e8f5b0d7f1a307032708f68b6",
-  "js/coches.js": "405270cf50b03e9d7e3c5f519338f5bd462d4802",
+  "js/coches.js": "6f30f9ea73661a6e256818eee6cc5577c4392a28",
   "js/colonias.js": "55190d6d9bccef656b14171475d5f81da652f2f0",
   "js/comercio.js": "574baaa7b297a05d7395d02761380bdef968e929",
   "js/consejo.js": "3ed73b3dcc91de9bb3f1c23c7caec240114f61e4",
@@ -181,7 +181,7 @@
   "js/vista.js": "88e9e1dee4205a537d73f7c4c79e49a2ecd0be6b",
   "js/vivienda.js": "0f3091767a41917156ce106447eb0e9659b69271",
   "js/volcanes.js": "4067032845043fb48c13e4327ab45aab136a6563",
-  "arte/atlas.png": "27e82e8b053cf862e04a063f97e4f7ab15f1cdeb",
+  "arte/atlas.png": "8d492d4c36ec7c002061e870c651027050137613",
   "arte/logo.png": "d18c1e289f646312aeb3ec4087060e60088f0ccd",
   "arte/papeles/contrato.png": "e1625cf1f7bb7b9b5b142d12899265fab2ce7cf0",
   "arte/papeles/dni.png": "6dcfc114b88e629bfed1b2ac368acbfcd1474f34",

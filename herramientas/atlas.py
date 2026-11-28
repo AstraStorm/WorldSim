@@ -383,6 +383,11 @@ if os.path.exists(os.path.join(SRC, 'gasolinera.png')):  # la gasolinera, de fre
     for key, box, w in [('gas:gasolinera', (590, 630, 940, 890), 38), ('gas:izq', (50, 640, 490, 880), 44), ('gas:der', (1040, 640, 1490, 880), 44)]:
         add(key, shrink(box_parts('gasolinera.png', box), w, 40))
 
+if os.path.exists(os.path.join(SRC, 'parking.png')):  # aparcamientos de frente (tierra arriba, asfalto abajo; uno estrecho y otro ancho)
+    for key, box, w in [('parking:tierra', (450, 160, 880, 430), 40), ('parking:tierra2', (1300, 160, 1770, 430), 46),
+                        ('parking:asfalto', (450, 530, 880, 800), 40), ('parking:asfalto2', (1300, 540, 1770, 800), 46)]:
+        add(key, shrink(box_parts('parking.png', box), w, 40))
+
 # ---- Atlas: en filas, con 1 píxel de separación ----
 keys = list(S); W = 512; x = y = rowh = 0; pos = {}
 for k in sorted(keys, key=lambda k: -S[k]['img'].height):

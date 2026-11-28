@@ -252,4 +252,51 @@ function drawCars(now){
   if (zoom >= 2) for (const g of carFacs()) { const i = g.carFac.i, x = (i % W) * T + 2, y = ((i / W) | 0) * T - 30; if (x < x0 - 40 || x > x1 + 40 || y < y0 - 20 || y > y1 + 40) continue;
     vctx.font = 'bold 4.5px sans-serif'; const w = vctx.measureText(g.carFac.brand).width + 6; vctx.fillStyle = '#22201e'; vctx.fillRect(x - w / 2 - 1, y - 1, w + 2, 8); vctx.fillStyle = '#2a4a80'; vctx.fillRect(x - w / 2, y, w, 6); vctx.fillStyle = '#f4f0e4'; vctx.textAlign = 'center'; vctx.fillText(g.carFac.brand, x, y + 4.6); vctx.textAlign = 'start'; }
 }
+// ---- Aparcamientos ----
+// · Con cinco o más coches en el pueblo, un aparcamiento junto a una calle (otro por cada doce coches, hasta tres): de
+//   tierra o, si la nación ya sabe refinar (asfalto), asfaltado; los de tierra se asfaltan cuando aprenden
+// · Se ven los coches de la gente que no está conduciendo, aparcados en sus plazas (de morro, en dos filas)
+BLD.add('parking'); BUILD_DIMS.parking = [4, 4]; KIND_DIMS.aparcamiento = [4, 4];
+for (const k of ['tierra', 'tierra2', 'asfalto', 'asfalto2']) OBJ['parking:' + k] = ['Aparcamiento', 'house', 0];
+if (typeof BLD_DESC !== 'undefined') BLD_DESC.parking = 'Aparcamiento: donde dejan el coche los del pueblo';
+const parksOf = g => (g.parks || []).filter(i => world.objs[i] && world.objs[i].key.startsWith('parking:'));
+function parkSite(g){ // (como la gasolinera: con una calle delante, de la plaza hacia fuera)
+  const R = Math.min(34, (typeof townRadius === 'function' ? townRadius(g) : 10) + 8), cand = [];
+  for (const i of pathMap) { const x = i % W, y = ((i / W) | 0) - 1, d = Math.hypot(x - g.fx, y - g.fy); if (d < 4 || d > R || plazaSet.has(i)) continue; cand.push([d + Math.random() * 8, x, y]); }
+  cand.sort((a, b) => a[0] - b[0]);
+  for (const [, x, y] of cand.slice(0, 400)) {
+    if (x < 6 || y < 6 || x >= W - 6 || y >= H - 6 || pathMap.has(y * W + x) || !tileFree(x, y)) continue;
+    if (!clearable(x - 4, y - 4, x + 4, y) || buildingClash(x, y, 'aparcamiento') || villages.some(o => underBuilding(o, x, y))) continue;
+    return [x, y]; }
+  return null;
+}
+let parkT = 0;
+SYSTEMS.push(dt => { try {
+  if (!world || (parkT -= dt) > 0) return; parkT = 12;
+  for (const g of liveTowns()) {
+    const n = nationOf(g); if (!knowsSci(n, 'automovil')) continue;
+    const P = g.parks = parksOf(g), own = carOwners(g).length, paved = knowsSci(n, 'refinado');
+    for (const i of P) { const o = world.objs[i]; if (paved && o.key.startsWith('parking:tierra')) { o.key = o.key.replace('tierra', 'asfalto'); const x = i % W, y = (i / W) | 0; composeRegion(x - 8, y - 8, x + 8, y + 4); } } // (lo asfaltan)
+    if (own < 5 || P.length >= Math.min(3, Math.ceil(own / 12)) || (g.stone || 0) < 8 || (g.parkFail > yearT - DAY_LEN)) continue;
+    const p = parkSite(g); if (!p) { g.parkFail = yearT; continue; }
+    const [x, y] = p, i = y * W + x; clearSite(g, x - 4, y - 4, x + 4, y);
+    world.objs[i] = { key:`parking:${paved ? 'asfalto' : 'tierra'}${Math.random() < .5 ? '2' : ''}`, v:0, ox:0, oy:0, vid:g.id }; P.push(i); g.stone -= 8;
+    composeRegion(x - 8, y - 8, x + 8, y + 4); addEffect(x * T + 2, y * T + 3, 'poof');
+    if (P.length === 1) notify(`En ${g.name} hacen un aparcamiento: ya hay tantos coches que no caben por las calles`, { x:x * T, y:y * T });
+  }
+} catch (e) { console.error(e); } });
+function drawParked(){
+  if (zoom < 1.4) return; const [x0, y0, x1, y1] = visibleRect(), driving = new Set(traffic.map(c => c.v));
+  for (const g of liveTowns()) {
+    const P = (g.parks || []).filter(i => world.objs[i] && world.objs[i].key.startsWith('parking:')); if (!P.length) continue;
+    const cars = carOwners(g).filter(v => !driving.has(v) && !v.away); let k = 0;
+    for (const i of P) {
+      const f = artFrame(world.objs[i].key), x = (i % W) * T + 2, y = ((i / W) | 0) * T + 3; if (!f || x < x0 - 40 || x > x1 + 40 || y < y0 - 30 || y > y1 + 20) { k += 8; continue; }
+      const L = x - f.ax, Tp = y - f.height + 1, w = f.width, h = f.height, xs = [.27, .42, .58, .73];
+      for (const [row, dir, fy] of [[0, 'n', .5], [1, 's', .93]]) for (const fx of xs) { const v = cars[k++]; if (!v) continue; const s = carSprite(v.car.t, dir, v.car.c); if (!s) continue;
+        vctx.drawImage(s, Math.round(L + w * fx - s.width / 2), Math.round(Tp + h * fy - s.height)); }
+    }
+  }
+}
+{ const base = drawCars; drawCars = function(now){ try { drawParked(); } catch (e) { console.error(e); } return base.apply(this, arguments); }; }
 { const base = drawInstFlags; drawInstFlags = function(t){ const r = base.apply(this, arguments); try { drawCars(performance.now()); } catch (e) { console.error(e); } return r; }; }
