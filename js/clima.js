@@ -10,6 +10,7 @@ const CLOUD_PAL = {
   normal:{ h:'#ffffff', l:'#f1f4f8', g:'#dde3ea', d:'#c3ccd6' },
   rain:  { h:'#dfe4ea', l:'#c7ced8', g:'#aeb7c3', d:'#949eac' },
   storm: { h:'#9aa1ab', l:'#7f8691', g:'#666d78', d:'#4d535d' },
+  ash:   { h:'#8c8e78', l:'#6e7260', g:'#565a4a', d:'#3e4036' }, // la nube de ceniza tóxica de los volcanes (gris con un tono verdoso)
 };
 function cloudSprites(type, w, h){
   // Margen alrededor para que ninguna mancha se salga del lienzo (si no, la nube queda cortada en recto)

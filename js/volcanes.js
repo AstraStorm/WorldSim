@@ -148,16 +148,22 @@ function updateAshClouds(dt){
   }
   if (ashClouds.length) ashClouds = ashClouds.filter(c => c.life < c.max);
 }
+// Con el mismo dibujo que las nubes del cielo (clima.js), en gris verdoso: la sombra en el suelo y la nube un poco por
+// encima (más baja que las de lluvia: es humo pesado), y un dibujo más grande a medida que se extiende
+const ASH_LIFT = 18;
+function ashSprite(c){
+  const w = c.r * 2.4; if (c.spr && Math.abs(c.sw - w) / c.sw < .3) return c.spr;
+  c.sw = w; return c.spr = pooledCloud('ash', w, .42 + (c.seed % 1) * .12);
+}
 function drawAshClouds(t){
   if (!ashClouds.length) return;
   const [x0, y0, x1, y1] = visibleRect();
   for (const c of ashClouds) {
-    if (c.x + c.r * 1.5 < x0 || c.x - c.r * 1.5 > x1 || c.y + c.r < y0 || c.y - c.r > y1) continue;
-    const dens = ashDens(c);
-    c.puffs.forEach(([ox, oy, s], k) => {
-      const wob = Math.sin(t / 1400 + c.seed + k) * 2, px = c.x + ox * c.r + wob, py = c.y + oy * c.r, r = c.r * s;
-      vctx.fillStyle = `rgba(62,64,52,${.16 * dens})`; vctx.beginPath(); vctx.ellipse(px, py, r, r * .62, 0, 0, Math.PI * 2); vctx.fill();
-      vctx.fillStyle = `rgba(110,118,70,${.08 * dens})`; vctx.beginPath(); vctx.ellipse(px - r * .2, py - r * .15, r * .6, r * .35, 0, 0, Math.PI * 2); vctx.fill(); // el tono verdoso del gas
-    });
+    if (c.x + c.r * 1.6 < x0 || c.x - c.r * 1.6 > x1 || c.y + c.r < y0 || c.y - c.r - ASH_LIFT > y1) continue;
+    const dens = ashDens(c), sp = ashSprite(c), w = sp.body.width, h = sp.body.height, wob = Math.sin(t / 1400 + c.seed) * 2;
+    const x = Math.round(c.x - w / 2 + wob), y = Math.round(c.y - h / 2);
+    vctx.globalAlpha = .22 * dens; vctx.drawImage(sp.shadow, x, y); // la sombra
+    vctx.globalAlpha = .72 * dens; vctx.drawImage(sp.body, x, y - ASH_LIFT);
+    vctx.globalAlpha = 1;
   }
 }
