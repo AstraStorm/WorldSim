@@ -1,8 +1,12 @@
 {
  "juego": "World Sim",
- "version": "202611281450",
- "fecha": "2026-11-28 14:50",
+ "version": "202611281458",
+ "fecha": "2026-11-28 14:58",
  "novedades": [
+  {
+   "fecha": "2026-11-28",
+   "texto": "Barcos que ya no se quedan clavados junto a la costa (se empujaban entre ellos); tren que sí se construye (estación en las afueras, también entre la capital y sus ciudades, sin perder el carbón); avenidas rectas de antes rehechas con curvas; colonias de ultramar repobladas y sobre sus ruinas; caminos de verdad en las rutas comerciales, empedrados y con venta; ciudades con oficio; «Nueva X» con su fiesta; faro en los puertos con tráfico; icono de la pestaña"
+  },
   {
    "fecha": "2026-11-28",
    "texto": "Ciudades nuevas que crecen: la capital sigue mandando familias (y madera) los primeros días, una ciudad joven no se abandona mientras la capital pueda repoblarla, y la siguiente ciudad se funda sobre las ruinas de la que murió aprovechando las casas en pie"
@@ -46,14 +50,10 @@
   {
    "fecha": "2026-11-27",
    "texto": "Manifestaciones que marchan a donde está el problema, y simulación más ligera para x5"
-  },
-  {
-   "fecha": "2026-11-27",
-   "texto": "Constitución: solo leyes fundamentales, la política del día a día queda para cada gobierno"
   }
  ],
  "archivos": {
-  "index.html": "ae53cb3883ba937bec8e871483d64effec8afe12",
+  "index.html": "4c4b2512bb12f84fce882f0a1667aacce5bfc555",
   "css/estilo.css": "eb2c6a0c3b417250272a46180e1767d087996425",
   "js/agencia.js": "dd15e5ae8fa08af254622aba102dafae859910b9",
   "js/aldeanos.js": "9e2f68a67a99a8683a0ed856c7068883d093912a",
@@ -61,11 +61,11 @@
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "a94b46896cfd10fd688954a3c5b9297e9b693872",
   "js/armas.js": "d4710aa65550aceb06fbdd1d2d290c8085f58e96",
-  "js/arte.js": "164182407d3dcf71ce39897fa6902d8682ac1584",
+  "js/arte.js": "b89cd9a6f2a7f830187d378fd1ae7b1fa7feb91d",
   "js/arte_mapa.js": "a92d6a3c48ca112990a90102d27322fe8879ec53",
   "js/automatizacion.js": "b0c9d760d1de77a37eebb4c7b97d47130dbd35b5",
   "js/aviacion.js": "2bceeb5a9a59332b96ad69d19b5f6e39da71af42",
-  "js/bandidos.js": "bc804375208c5f300e33435e76d16001e8c4daae",
+  "js/bandidos.js": "e02ad8bf16bcd5d4857b8c80845ac1f68c523280",
   "js/barrios.js": "5ec85f3b28caa5bfa3fd2a25b4158f71c7a9d8d2",
   "js/bolsa.js": "30dec10fd2352c55bb982bf5b615d2194a8d885a",
   "js/calendario.js": "03559b1ef711175c3f112ecaa0243a06a44b4b9c",
