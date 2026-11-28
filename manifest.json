@@ -1,8 +1,12 @@
 {
  "juego": "World Sim",
- "version": "202611281529",
- "fecha": "2026-11-28 15:29",
+ "version": "202611281543",
+ "fecha": "2026-11-28 15:43",
  "novedades": [
+  {
+   "fecha": "2026-11-28",
+   "texto": "Las ciudades necesitan ocio: pasear ya no basta en una ciudad, plazas de ocio según taberna, teatro o cine, coliseo, casino, deporte y esquí; sin ocio la gente se aburre, la ciudad atrae menos y construye antes sitios de ocio. Estaciones de esquí en montañas nevadas: refugio, telesilla con torres y sillas, pista con esquiadores; abren con la nieve y dan ocio y dinero"
+  },
   {
    "fecha": "2026-11-28",
    "texto": "La gente habla de lo que acaba de pasar cerca: un meteorito, el volcán, un terremoto, un incendio, la guerra, una boda, los Juegos... y los vecinos contestan a juego; con algo grave al lado, nada de frases alegres"
@@ -46,14 +50,10 @@
   {
    "fecha": "2026-11-28",
    "texto": "Menos tirones a x5: rutas por mar con tablas precalculadas (sin tope que las hacía fallar), territorio y barrios a trozos por fotograma, solares sin repetir búsquedas fallidas, sequía y nieve con límite de tiempo real; arreglado el destello blanco de daño que se quedaba fijo al cargar una partida"
-  },
-  {
-   "fecha": "2026-11-27",
-   "texto": "Más fps: suelo en trozos de 512 px (sin repintar todo el mapa), lluvia en un trazado, oleaje/brillos/peces solo de cerca, x5 con menos presupuesto de simulación por fotograma"
   }
  ],
  "archivos": {
-  "index.html": "bf5cf637b10ef707fb73a1ddf88f8fdf91884ffe",
+  "index.html": "0fa72444a2cf04cdb75ce231003005fd4c5b7043",
   "css/estilo.css": "eb2c6a0c3b417250272a46180e1767d087996425",
   "js/agencia.js": "dd15e5ae8fa08af254622aba102dafae859910b9",
   "js/aldeanos.js": "9e2f68a67a99a8683a0ed856c7068883d093912a",
@@ -61,8 +61,8 @@
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "a94b46896cfd10fd688954a3c5b9297e9b693872",
   "js/armas.js": "d4710aa65550aceb06fbdd1d2d290c8085f58e96",
-  "js/arte.js": "c87501ab73e3d5af1dbdaaa963c90d74864f5b5b",
-  "js/arte_mapa.js": "a92d6a3c48ca112990a90102d27322fe8879ec53",
+  "js/arte.js": "360982521aa962c9e781751cf3feb81686750de6",
+  "js/arte_mapa.js": "dba25f805972b8dea5cc22fd27f15d02d0715f58",
   "js/automatizacion.js": "b0c9d760d1de77a37eebb4c7b97d47130dbd35b5",
   "js/aviacion.js": "2bceeb5a9a59332b96ad69d19b5f6e39da71af42",
   "js/bandidos.js": "e02ad8bf16bcd5d4857b8c80845ac1f68c523280",
@@ -107,7 +107,7 @@
   "js/eras.js": "491c0126d7b3eaadbf2e2aecbc13f73f64ac2f67",
   "js/espacio.js": "b02dc94a3dacc519fba45225e77e4e8ab78c0f1e",
   "js/espionaje.js": "6291557af0a9488f321131fbfb7cdccf50cdbbf1",
-  "js/esqui.js": "0cc044edecfa1c23082035241be41cdb0caa3960",
+  "js/esqui.js": "3f83586fd4660275e66b3fa97b4e50135bbb3ac9",
   "js/estaciones.js": "a96b13894423698dcb4e5c41619b1c74367e5fff",
   "js/estrategia.js": "ae7d15b34738072ed40e9ce5047d990fbfed8540",
   "js/fabricas.js": "c29f46a6adffec48e333ad4219d02dd11afc5a16",
@@ -134,7 +134,7 @@
   "js/lluvia.js": "f5d9f158319f36671117bcf52a7e408433bc153d",
   "js/manifestaciones.js": "a1c92286fbd3c982cd00a7e0fda9744b5a6834ba",
   "js/mapas.js": "822f9d930f4b0a1f4fc0bbb8808ef5ba56f2f985",
-  "js/medios.js": "3da2fb5734d0fdf45a37828bad849d11ee88ca61",
+  "js/medios.js": "72167264b1be389fee5015abaf7ad635b502f051",
   "js/migracion.js": "c7e42c376655a85630ebf8b653df28dbd799c5f7",
   "js/minas.js": "4f093817fbd8df8654fd4d2c9507600191bcd312",
   "js/misiles.js": "69cc84a321ce23a1be2f64d0ff60c9966fd43d52",
@@ -180,7 +180,7 @@
   "js/vista.js": "88e9e1dee4205a537d73f7c4c79e49a2ecd0be6b",
   "js/vivienda.js": "0f3091767a41917156ce106447eb0e9659b69271",
   "js/volcanes.js": "4067032845043fb48c13e4327ab45aab136a6563",
-  "arte/atlas.png": "f3e847e9c31afd049e2807b9d345324405701572",
+  "arte/atlas.png": "1962211939cba57c90bfe7d51647eadbbc4f5f3a",
   "arte/logo.png": "d18c1e289f646312aeb3ec4087060e60088f0ccd",
   "arte/papeles/contrato.png": "e1625cf1f7bb7b9b5b142d12899265fab2ce7cf0",
   "arte/papeles/dni.png": "6dcfc114b88e629bfed1b2ac368acbfcd1474f34",

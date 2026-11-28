@@ -103,14 +103,30 @@ function drawSki(t){
     // La pista: nieve pisada y jalones naranjas
     if (open) { vctx.lineCap = 'round'; vctx.lineJoin = 'round'; for (const [c, w] of [['rgba(150,176,214,.55)', 8], ['rgba(246,250,255,.9)', 5]]) { vctx.strokeStyle = c; vctx.lineWidth = w; vctx.beginPath(); P.pts.forEach(([x, y], k) => k ? vctx.lineTo(x, y) : vctx.moveTo(x, y)); vctx.stroke(); } vctx.lineWidth = 1; // (nieve pisada, con el borde azulado)
       for (let k = 2; k < P.pts.length - 1; k += 4) { const [x, y] = P.pts[k]; vctx.fillStyle = '#e07020'; vctx.fillRect(Math.round(x) + 4, Math.round(y) - 4, 1, 4); vctx.fillRect(Math.round(x) - 5, Math.round(y) - 4, 1, 4); } }
-    // El telesilla: de la caseta de abajo (al lado del refugio) a la cima, en línea recta, con torres
-    const ax = X0 + 16, ay = Y0, L = Math.hypot(X1 - ax, Y1 - ay) || 1, ux = (X1 - ax) / L, uy = (Y1 - ay) / L, HH = 13, nT = Math.max(1, Math.floor(L / 22));
+    // El telesilla: de la caseta de abajo (al lado del refugio) a la cima, en línea recta; el cable pasa por lo alto de
+    // cada torre y de las dos casetas, y las sillas cuelgan de él (suben por un lado y bajan por el otro)
+    const ax = X0 + 32, ay = Y0, nT = Math.max(1, Math.floor(Math.hypot(X1 - ax, Y1 - ay) / 45)); // (la caseta, a un lado del refugio; la línea va paralela a la pista, no encima)
+    const fT = artFrame('ski:torre'), fB = artFrame('ski:telesilla_base'), fC = artFrame('ski:telesilla_cima');
+    const hT = fT ? fT.height - 4 : 13, hB = fB ? fB.height - 6 : 9, hC = fC ? fC.height - 7 : 8;
+    // La caseta de alquiler, al otro lado del refugio
+    const fA = artFrame('ski:alquiler'); if (fA) vctx.drawImage(fA, Math.round(X0 - 38 - fA.ax), Math.round(Y0 - fA.height + 1));
     drawSkiStation(ax, ay, false);
-    for (let k = 1; k <= nT; k++) { const f = k / (nT + 1); drawSkiTower(ax + (X1 - ax) * f, ay + (Y1 - ay) * f); }
-    drawSkiStation(X1, Y1, true);
-    vctx.strokeStyle = 'rgba(40,40,46,.85)'; for (const o of [-2, 2]) { vctx.beginPath(); vctx.moveTo(ax + o, ay - HH + 3); vctx.lineTo(X1 + o, Y1 - HH + 4); vctx.stroke(); }
-    const nC = Math.max(3, Math.floor(L / 9)), sp = open ? t / 1000 * 6 : 0;
-    for (let k = 0; k < nC; k++) { const s = ((k / nC) * L + sp) % L, up = k % 2 === 0, d = up ? s : L - s, o = up ? -2 : 2; drawSkiChair(ax + ux * d + o, ay + uy * d - HH + 3, up ? 1 : -1); }
+    const bX = X1 + 30, bY = Y1; // (arriba, también a un lado de la pista)
+    const towers = []; for (let k = 1; k <= nT; k++) { const f = k / (nT + 1); towers.push([ax + (bX - ax) * f, ay + (bY - ay) * f]); }
+    for (const [x, y] of towers) drawSkiTower(x, y);
+    drawSkiStation(bX, bY, true);
+    const cab = [[ax, ay - hB], ...towers.map(([x, y]) => [x, y - hT]), [bX, bY - hC]], cum = [0];
+    for (let k = 1; k < cab.length; k++) cum.push(cum[k - 1] + Math.hypot(cab[k][0] - cab[k - 1][0], cab[k][1] - cab[k - 1][1]));
+    const L = cum[cum.length - 1] || 1, at = s => { let k = 1; while (k < cum.length - 1 && cum[k] < s) k++; const f = (s - cum[k - 1]) / Math.max(.001, cum[k] - cum[k - 1]); return [cab[k - 1][0] + (cab[k][0] - cab[k - 1][0]) * f, cab[k - 1][1] + (cab[k][1] - cab[k - 1][1]) * f]; };
+    // (los dos cables, a cada lado: separados en perpendicular a la línea, para que las sillas de subida y de bajada no se pisen)
+    const dX = bX - ax, dY = bY - ay, dl = Math.hypot(dX, dY) || 1, px = -dY / dl * 6, py = dX / dl * 3;
+    vctx.strokeStyle = 'rgba(40,40,46,.85)'; for (const sg of [-1, 1]) { vctx.beginPath(); cab.forEach(([x, y], k) => k ? vctx.lineTo(x + px * sg, y + py * sg) : vctx.moveTo(x + px * sg, y + py * sg)); vctx.stroke(); }
+    const nC = Math.max(2, Math.floor(L / 30)), sp = open ? t / 1000 * 6 : 0;
+    for (let k = 0; k < nC * 2; k++) { const up = k % 2 === 0, s = ((Math.floor(k / 2) / nC) * L + sp + (up ? 0 : L / nC / 2)) % L, [x, y] = at(up ? s : L - s), sg = up ? -1 : 1; drawSkiChair(x + px * sg, y + py * sg, up ? 1 : -1); }
+    // Cañones de nieve a lo largo de la pista (echando nieve cuando está abierta)
+    const fN = artFrame('ski:canon');
+    if (fN) for (let k = 3; k < P.pts.length - 2; k += 6) { const [x, y] = P.pts[k], cx = Math.round(x + 9), cy = Math.round(y); vctx.drawImage(fN, cx - fN.ax, cy - fN.height + 1);
+      if (open) for (let q = 0; q < 4; q++) { const ph = (t / 600 + q / 4 + k) % 1; vctx.fillStyle = `rgba(255,255,255,${.9 * (1 - ph)})`; vctx.fillRect(Math.round(cx + 6 + ph * 10), Math.round(cy - 14 - ph * 6 + Math.sin(q * 2) * 2), 1, 1); } }
     // Los esquiadores bajan haciendo eses
     if (open) { const nS = Math.min(8, 2 + Math.floor(S.visitors / 4));
       for (let k = 0; k < nS; k++) { const s = ((t / 1000 * 9 + k * P.L / nS) % P.L), [x, y, dx, dy] = skiAt(P, s), d = Math.hypot(dx, dy) || 1, sw = Math.sin(t / 380 + k * 1.7) * 4, px = x - dy / d * sw, py = y + dx / d * sw;

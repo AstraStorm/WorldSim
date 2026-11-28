@@ -359,6 +359,12 @@ if os.path.exists(os.path.join(SRC, 'castillos.png')):
         c, r = k % 3, k // 3
         add('castle:' + name, shrink(box_parts('castillos.png', (c * 512, 80 + r * 450, (c + 1) * 512, 500 + r * 470)), w, 56))
 
+if os.path.exists(os.path.join(SRC, 'esqui.png')):  # hoja 15 · ocio: cine y estación de esquí (2172x724, 4 columnas x 2 filas)
+    for key, box, w in [('cinema:cine', (60, 20, 520, 372), 50), ('skilodge:refugio', (600, 60, 1040, 372), 46), ('ski:telesilla_base', (1130, 100, 1580, 372), 30),
+                        ('ski:telesilla_cima', (1740, 100, 2100, 372), 24), ('ski:torre', (150, 400, 420, 710), 20), ('ski:silla', (700, 470, 930, 700), 10),
+                        ('ski:canon', (1230, 470, 1480, 710), 16), ('ski:alquiler', (1700, 450, 2080, 710), 26)]:
+        add(key, shrink(box_parts('esqui.png', box), w, 40))
+
 # ---- Atlas: en filas, con 1 píxel de separación ----
 keys = list(S); W = 512; x = y = rowh = 0; pos = {}
 for k in sorted(keys, key=lambda k: -S[k]['img'].height):

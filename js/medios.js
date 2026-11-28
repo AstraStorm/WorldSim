@@ -215,7 +215,7 @@ SYSTEMS.push(dt => {
   for (const g of villages) {
     if (!popOf(g) || g.fx * T < vx0 - 80 || g.fx * T > vx1 + 80 || g.fy * T < vy0 - 80 || g.fy * T > vy1 + 80) continue;
     // El cine: letrero con bombillas encima del teatro
-    if (cineOn(g)) { const i = g.theater, x = (i % W) * T + 2, y = ((i / W) | 0) * T - 30; vctx.fillStyle = '#2a1a10'; vctx.fillRect(x - 10, y, 21, 7); vctx.fillStyle = '#c82a2a'; vctx.fillRect(x - 9, y + 1, 19, 5);
+    if (cineOn(g) && !(typeof ART_MAP !== 'undefined' && ART_MAP['cinema:cine'] && ART.ready)) { const i = g.theater, x = (i % W) * T + 2, y = ((i / W) | 0) * T - 30; vctx.fillStyle = '#2a1a10'; vctx.fillRect(x - 10, y, 21, 7); vctx.fillStyle = '#c82a2a'; vctx.fillRect(x - 9, y + 1, 19, 5);
       vctx.fillStyle = '#fff2c0'; vctx.font = 'bold 4.5px sans-serif'; vctx.textAlign = 'center'; vctx.fillText('CINE', x + .5, y + 5.2); vctx.textAlign = 'start';
       for (let k = 0; k < 6; k++) { vctx.fillStyle = (Math.floor(now / 250) + k) % 2 ? '#ffe070' : '#8a6a30'; vctx.fillRect(x - 10 + k * 4, y - 1, 1, 1); } }
     // La antena de radio de la capital (con su luz roja)
@@ -261,3 +261,14 @@ function showsHtml(){
   const el = $('histPanel'); if (el && !el.hidden && histTab === 'espect') { el.querySelector('.hp-body').innerHTML = showsHtml(); return; }
   return base.apply(this, arguments);
 }; }
+// El cine con su propio dibujo (hoja 15): el teatro de una ciudad con corriente se pinta como cine. El suelo y los
+// edificios van ya pintados en trozos: al encenderse o apagarse el cine, se repinta ese trozo
+{ const base = artSprite; artSprite = function(o){
+  if (o && o.key === 'theater:teatro' && ART_MAP['cinema:cine']) { const g = villageById(o.vid); if (g && g.theater != null && world.objs[g.theater] === o && g.cineArt) return base.call(this, { ...o, key:'cinema:cine' }); }
+  return base.apply(this, arguments);
+}; }
+let cineArtT = 0;
+SYSTEMS.push(dt => { try {
+  if (!world || (cineArtT -= dt) > 0) return; cineArtT = 3;
+  for (const g of villages) { if (!hasTheater(g)) continue; const on = cineOn(g); if (!!g.cineArt === on) continue; g.cineArt = on; const i = g.theater, x = i % W, y = (i / W) | 0; composeRegion(x - 10, y - 14, x + 10, y + 12); }
+} catch (e) { console.error(e); } });
