@@ -206,14 +206,19 @@ function clearSite(g, x0, y0, x1, y1){
   if (n) { g.wood += n; composeRegion(x0 - 7, y0 - 11, x1 + 7, y1 + 12); rareDirty = true; }
 }
 // Entre unos cuantos solares posibles, el que tiene el camino más corto (sin ríos por medio, a poder ser)
+// (rendimiento) si el pueblo no tiene sitio para eso, no se vuelve a buscar en un rato: cada búsqueda fallida costaba hasta 100 ms
+const noSite = new WeakMap();
 function bestSite(v, g, kind){
-  let best = null, bl = Infinity;
+  const ns = noSite.get(g); if (ns && ns[kind] > yearT) return null;
+  let best = null, bl = Infinity; const seen = new Set(), t0 = performance.now();
   for (let k = 0; k < 4; k++) {
     const p = planSite(g, kind); if (!p) break;
+    if (seen.has(p[0] + ',' + p[1])) break; seen.add(p[0] + ',' + p[1]); // (el mismo solar otra vez: no da más opciones)
     const r0 = routeTo(v, (p[1] + 1) * W + p[0]), r = r0 && !r0.partial ? r0 : null, len = r ? r.length + r.filter(([px, py]) => inWater(px, py)).length * 4 : Infinity;
     if (len < bl) { bl = len; best = p; }
-    if (kind === 'ayuntamiento') break;
+    if (kind === 'ayuntamiento' || performance.now() - t0 > 12) break;
   }
+  if (!best && !seen.size) { const m = ns || {}; m[kind] = yearT + 20; noSite.set(g, m); return null; }
   return best || planSite(g, kind);
 }
 // Tamaño de cada edificio (medio ancho y alto en casillas, por encima de su base): para que no se monten
@@ -233,13 +238,14 @@ const ZONE_OK = new Set(['altar', 'templo', 'catedral', 'mercado', 'maravilla', 
 const zoneHit = (x0, y0, x1, y1) => villages.some(o => [o.holy, o.marketRect, o.plaza].some(q => q && !(x1 < q.x0 || x0 > q.x1 || y1 < q.y0 || y0 > q.y1)));
 let pwC = null, pwT = -1; // trazado de las murallas que se están levantando (no se construye encima)
 function plannedWalls(){ if (pwT !== yearT || !pwC) { pwT = yearT; pwC = new Set(); for (const o of villages) { if (!popOf(o) || !(o.wallIdx > 0) || (o.wallMsg && !o.wallPlan1)) continue; for (const i of [...(o.wallPlan || []), ...(o.wallPlan1 || [])]) if (!wallSet.has(i) && !gateSet.has(i)) pwC.add(i); } } return pwC; }
+const dimsC = new Map(), dimsOfKey = k => { let d = dimsC.get(k); if (d === undefined) dimsC.set(k, d = BUILD_DIMS[k.split(':')[0]] || null); return d; }; // (sin partir la clave en cada pregunta)
 function buildingClash(x, y, kind, skip){
   if (volcDanger(x, y)) return true; // ni en las faldas de un volcán ni sobre la lava (volcanes.js)
   const [hw, hh] = KIND_DIMS[kind] || [4, 5];
   const hit = (bx, by, d) => !(x + hw < bx - d[0] || x - hw > bx + d[0] || y + 1 < by - d[1] || y - hh > by + 1);
   for (const b of buildingsNear(x - hw, y - hh, x + hw, y + 1)) {
     if (b === skip) continue; const o = world.objs[b]; if (!o) continue;
-    const d = BUILD_DIMS[o.key.split(':')[0]]; if (d && hit(b % W, (b / W) | 0, d)) return true;
+    const d = dimsOfKey(o.key); if (d && hit(b % W, (b / W) | 0, d)) return true;
   }
   if (penOverlap(null, x - hw, y - hh, x + hw, y + 1) || plotIn(x - hw, y - hh, x + hw, y + 1)) return true;
   if (!ZONE_OK.has(kind) && zoneHit(x - hw, y - hh, x + hw, y)) return true;
@@ -700,52 +706,71 @@ function villageColor(g){
   const f = k => { const a = .62 * Math.min(.5, 1 - .5); const kk = (k + h / 30) % 12; return .5 - a * Math.max(-1, Math.min(kk - 3, 9 - kk, 1)); };
   return g.col = [f(0) * 255 | 0, f(8) * 255 | 0, f(4) * 255 | 0];
 }
-let zoneSig = '';
+let zoneSig = '', zoneJob = null;
+// (rendimiento) rehacer el territorio cuesta ~140 ms: con el juego en marcha se hace a trozos de unos 5 ms por fotograma
+// (zoneStep, en SYSTEMS); al cargar o cuando se pide con force, de una vez
 function buildZones(force){
+  if (zoneJob && !force && gameSpeed) return; // (ya se está rehaciendo)
+  const j = zoneGen(force);
+  if (force || !gameSpeed) { zoneJob = null; while (!j.next().done); } else zoneJob = j;
+}
+function zoneStep(){ if (!zoneJob) return; const t = performance.now(); while (performance.now() - t < 5) if (zoneJob.next().done) { zoneJob = null; break; } }
+function* zoneGen(force){
   const live = villages.filter(g => popOf(g) > 0 && world.objs[g.fy * W + g.fx]);
   if (!live.length) { zoneCv = null; zoneSig = ''; return; }
   // Solo si ha cambiado algo (casas, pozos, campos, cercados o quién vive): rehacerlo costaba ~100 ms
   const sig = live.map(g => `${g.id}:${g.houses.length}:${(g.wells || []).length}:${(g.pens || []).length}:${nationOf(g).id}`).join(',') + '|' + Math.round(farmMap.size / 10) + '|' + (world.player ? 1 : 0);
   if (!force && sig === zoneSig && zoneCv) return; zoneSig = sig;
   const own = new Int16Array(N), best = new Float32Array(N).fill(9);
+  // (rendimiento) los campos por pueblo y las casillas de camino, una sola vez; y lo demás, solo dentro del recuadro ocupado
+  const farmsBy = new Map(); for (const f of farmMap.values()) { let L = farmsBy.get(f.vid); if (!L) farmsBy.set(f.vid, L = []); L.push(f.i); }
+  const pX = new Int16Array(pathMap.size), pY = new Int16Array(pathMap.size); { let k = 0; for (const i of pathMap) { pX[k] = i % W; pY[k++] = (i / W) | 0; } }
+  let bx0 = W, by0 = H, bx1 = 0, by1 = 0, nSrc = 0;
+  yield;
   // Empieza pequeño (la hoguera y poco más) y se extiende alrededor de lo que van construyendo:
   // cada casa, pozo, molino o cantera, sus campos y el cercado suman su trozo de tierra
-  live.forEach((g, k) => {
-    const src = [[g.fx, g.fy, Math.min(16, 6 + popOf(g) * .3)]];
+  for (let k = 0; k < live.length; k++) {
+    const g = live[k], src = [[g.fx, g.fy, Math.min(16, 6 + popOf(g) * .3)]];
     for (const h of housesOf(g)) src.push([h % W, (h / W) | 0, 5]);
     for (const w of wellsOf(g)) src.push([w.i % W, (w.i / W) | 0, 4]);
     for (const b of [g.mill, g.quarry]) if (b != null && world.objs[b]) src.push([b % W, (b / W) | 0, 5]);
-    for (const f of farmMap.values()) if (f.vid === g.id) src.push([f.i % W, (f.i / W) | 0, 2.5]);
+    for (const i of farmsBy.get(g.id) || []) src.push([i % W, (i / W) | 0, 2.5]);
     for (const p of pensOf(g)) src.push([(p.x0 + p.x1) / 2, (p.y0 + p.y1) / 2, 5]);
     if (g.hall != null && world.objs[g.hall]) src.push([g.hall % W, (g.hall / W) | 0, 10]);
     for (const i of storesOf(g)) src.push([i % W, (i / W) | 0, 5]);
     for (const i of towersOf(g)) src.push([i % W, (i / W) | 0, 7]);
-    for (const i of pathMap) { const x = i % W, y = (i / W) | 0; if (Math.abs(x - g.fx) < 50 && Math.abs(y - g.fy) < 50) src.push([x, y, 1.8]); }
+    for (let k = 0; k < pX.length; k++) if (Math.abs(pX[k] - g.fx) < 50 && Math.abs(pY[k] - g.fy) < 50) src.push([pX[k], pY[k], 1.8]);
     if (g.wallRect) { const r = g.wallRect; src.push([(r.x0 + r.x1) / 2, (r.y0 + r.y1) / 2, Math.hypot(r.x1 - r.x0, r.y1 - r.y0) / 2 + 1]); }
-    for (const [sx, sy, R] of src)
+    for (const [sx, sy, R] of src) {
+      bx0 = Math.min(bx0, Math.floor(sx - R)); by0 = Math.min(by0, Math.floor(sy - R)); bx1 = Math.max(bx1, Math.ceil(sx + R)); by1 = Math.max(by1, Math.ceil(sy + R));
       for (let y = Math.max(0, Math.floor(sy - R)); y <= Math.min(H - 1, Math.ceil(sy + R)); y++)
         for (let x = Math.max(0, Math.floor(sx - R)); x <= Math.min(W - 1, Math.ceil(sx + R)); x++) {
-          const i = y * W + x, d = Math.hypot(x - sx, y - sy) / R * (.9 + .2 * h2(x >> 1, y >> 1, g.id)); // borde algo irregular
+          const i = y * W + x, d0 = Math.hypot(x - sx, y - sy) / R; if (d0 * .9 >= 1 || d0 * .9 >= best[i]) continue; // (no puede ganar: ni se calcula el ruido)
+          const d = d0 * (.9 + .2 * h2(x >> 1, y >> 1, g.id)); // borde algo irregular
           if (d < 1 && d < best[i] && world.biome[i] !== B.DEEP && world.biome[i] !== B.SEA) { best[i] = d; own[i] = k + 1; }
         }
-  });
+      if (++nSrc % 400 === 0) yield;
+    }
+    yield;
+  }
+  bx0 = Math.max(1, bx0 - 4); by0 = Math.max(1, by0 - 4); bx1 = Math.min(W - 2, bx1 + 4); by1 = Math.min(H - 2, by1 + 4);
   // Cierre: se extiende 3 casillas y luego se recorta otras 3, así los huecos y pasillos estrechos quedan dentro
   const orig = own.slice(), isSea = i => world.biome[i] === B.DEEP || world.biome[i] === B.SEA;
-  for (let it = 0; it < 3; it++) { const nx = own.slice(); for (let i = W + 1; i < N - W - 1; i++) { if (own[i] || isSea(i)) continue; const a = own[i - 1] || own[i + 1] || own[i - W] || own[i + W]; if (a) nx[i] = a; } own.set(nx); }
-  for (let it = 0; it < 3; it++) { const nx = own.slice(); for (let i = W + 1; i < N - W - 1; i++) { if (!own[i] || orig[i]) continue; if (!own[i - 1] || !own[i + 1] || !own[i - W] || !own[i + W]) nx[i] = 0; } own.set(nx); }
-  zoneOwn = own; zoneLive = live;
+  for (let it = 0; it < 3; it++) { const nx = own.slice(); for (let y = by0; y <= by1; y++) { for (let i = y * W + bx0, e = y * W + bx1; i <= e; i++) { if (own[i] || isSea(i)) continue; const a = own[i - 1] || own[i + 1] || own[i - W] || own[i + W]; if (a) nx[i] = a; } if (!(y & 63)) yield; } own.set(nx); }
+  for (let it = 0; it < 3; it++) { const nx = own.slice(); for (let y = by0; y <= by1; y++) { for (let i = y * W + bx0, e = y * W + bx1; i <= e; i++) { if (!own[i] || orig[i]) continue; if (!own[i - 1] || !own[i + 1] || !own[i - W] || !own[i + W]) nx[i] = 0; } if (!(y & 63)) yield; } own.set(nx); }
   if (!zoneCv || zoneCv.width !== W || zoneCv.height !== H) { zoneCv = document.createElement('canvas'); zoneCv.width = W; zoneCv.height = H; }
   const zc = zoneCv.getContext('2d'), img = zc.createImageData(W, H), D = img.data, nat = [0, ...live.map(g => nationOf(g).id)];
-  for (let i = 0; i < N; i++) {
+  const cols = [null, ...live.map(villageColor)];
+  for (let y = Math.max(0, by0 - 1); y <= Math.min(H - 1, by1 + 1); y++) { if (!(y & 63)) yield; for (let i = y * W + Math.max(0, bx0 - 1), e = y * W + Math.min(W - 1, bx1 + 1); i <= e; i++) {
     const k = own[i]; if (!k) continue;
-    const x = i % W, y = (i / W) | 0, [r, g2, b] = villageColor(live[k - 1]), n = nat[k];
+    const x = i % W, [r, g2, b] = cols[k], n = nat[k];
     // Borde fino (una casilla) solo donde cambia la nación (entre pueblos de la misma, no) y relleno suave; dentro de lo
     // construido (calles, campos), más suave aún para que no ensucie el pueblo
     const edge = x === 0 || y === 0 || x === W - 1 || y === H - 1 || nat[own[i - 1]] !== n || nat[own[i + 1]] !== n || nat[own[i - W]] !== n || nat[own[i + W]] !== n;
     const built = pathMap.has(i) || farmMap.has(i) || plazaSet.has(i);
     const o = i * 4; D[o] = r; D[o + 1] = g2; D[o + 2] = b; D[o + 3] = edge ? (built ? 120 : 200) : built ? 22 : 50;
-  }
-  zc.putImageData(img, 0, 0);
+  } }
+  zc.putImageData(img, 0, 0); zoneOwn = own; zoneLive = live;
 }
 function drawZones(){
   if (!params.zones || !zoneCv) return;
@@ -1129,6 +1154,7 @@ function hurtFx(e, fromX, fromY, walk){
 // El golpe se nota: un destello blanco y después una capa roja que se apaga en un tercio de segundo
 function drawHurt(e, s, x, y, w, h){
   const ms = performance.now() - (e.hurtAt || -1e9), k = 1 - ms / 330; if (k <= 0) return;
+  if (ms < 0) { e.hurtAt = null; return; } // (golpe de otra sesión, guardado en la partida: el reloj empieza de cero al abrir el juego y el destello se quedaba blanco)
   vctx.globalAlpha = ms < 90 ? .95 : .75 * k; vctx.drawImage(ms < 90 ? whiteOf(s) : redOf(s), x, y, w ?? s.width, h ?? s.height); vctx.globalAlpha = 1;
 }
 // ---- Antorchas: a oscuras no ven, así que ponen antorchas junto a caminos y plaza; al atardecer alguien las va
@@ -3212,6 +3238,7 @@ function updateVillagers(dtAll){
   if (villagers.some(v => v.dead)) villagers = villagers.filter(v => !v.dead);
   villageClock += dtAll;
   if (villageClock >= 1) { updateVillages(villageClock); villageClock = 0; }
+  zoneStep(); // (el territorio, a trozos: buildZones)
 }
 // ---- Pueblo abandonado: en unos días los edificios se caen, el cercado se pudre y la hierba se come las calles ----
 function decayRuins(g, dt){

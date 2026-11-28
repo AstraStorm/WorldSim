@@ -22,11 +22,14 @@ const BARRIO_OF = { hall:'centro', court:'centro', parliament:'centro', academy:
   fac:'industria', factory:'industria', power:'industria', oil:'industria', pump:'industria', station:'industria', // (almacenes, molinos y herrerías no hacen barrio: son del que los rodea)
   mine:'minas', quarry:'minas' };
 const BARRIO_DIR = ['Norte', 'Este', 'Sur', 'Oeste'];
-let barrios = [], barrioT = -1e9, barrioCv = null, barrioLabels = [];
+let barrios = [], barrioT = -1e9, barrioCv = null, barrioLabels = [], barrioSig = '', barrioW = null;
 // Calcula los barrios: cada edificio marca su huella (y un poco alrededor) con su tipo; las zonas unidas del mismo tipo
 // son un barrio (si son de cierto tamaño)
-function computeBarrios(){
-  barrios = []; const own = new Int32Array(W * H).fill(-1), kind = new Int8Array(W * H).fill(-1), K = Object.keys(BARRIO), dist = new Uint8Array(W * H).fill(255);
+// (rendimiento) cuesta hasta ~80 ms: en el mapa se rehace a trozos de unos 4 ms por fotograma (barrioJob); la ficha, de una vez
+let barrioJob = null;
+function computeBarrios(){ barrioJob = null; const j = barrioGen(); while (!j.next().done); }
+function* barrioGen(){
+  const out = []; const own = new Int32Array(W * H).fill(-1), kind = new Int8Array(W * H).fill(-1), K = Object.keys(BARRIO), dist = new Uint8Array(W * H).fill(255);
   const q = [];
   const mark = (i, k, gid, d) => { i = Math.round(i); /* (medidas de edificio con medias casillas: sin redondear, la búsqueda de barrios no acababa nunca) */ if (i < 0 || i >= W * H || WATER[world.biome[i]]) return; if (dist[i] <= d) return; dist[i] = d; kind[i] = k; own[i] = gid; q.push(i); };
   for (const g of liveTowns()) {
@@ -43,10 +46,12 @@ function computeBarrios(){
     const kc = K.indexOf('campos');
     for (const p of pensOf(g)) for (let yy = p.y0; yy <= p.y1; yy++) for (let xx = p.x0; xx <= p.x1; xx++) mark(yy * W + xx, kc, g.id, 1);
     if (g.plaza) for (let yy = g.plaza.y0; yy <= g.plaza.y1; yy++) for (let xx = g.plaza.x0; xx <= g.plaza.x1; xx++) mark(yy * W + xx, K.indexOf('centro'), g.id, 0);
+    yield;
   }
   for (const f of farmMap.values()) { const g = villageById(f.vid); if (g && popOf(g)) mark(f.i, K.indexOf('campos'), g.id, 1); }
   // Un poco alrededor de cada edificio (calles, patios): así un barrio es una mancha y no edificios sueltos
-  for (let h = 0; h < q.length; h++) { const i = q[h], d = dist[i]; if (d >= 3) continue; for (const j of [i - 1, i + 1, i - W, i + W]) if (j >= 0 && j < W * H && dist[j] > d + 1 && !WATER[world.biome[j]] && !(kind[j] >= 0 && dist[j] <= 1)) { dist[j] = d + 1; kind[j] = kind[i]; own[j] = own[i]; q.push(j); } }
+  yield;
+  for (let h = 0; h < q.length; h++) { if (!(h & 16383)) yield; const i = q[h], d = dist[i]; if (d >= 3) continue; for (const j of [i - 1, i + 1, i - W, i + W]) if (j >= 0 && j < W * H && dist[j] > d + 1 && !WATER[world.biome[j]] && !(kind[j] >= 0 && dist[j] <= 1)) { dist[j] = d + 1; kind[j] = kind[i]; own[j] = own[i]; q.push(j); } }
   // Zonas unidas del mismo tipo y la misma ciudad
   const comps = () => { const seen = new Uint8Array(W * H), out = [];
     for (const s0 of q) { if (seen[s0] || kind[s0] < 0) continue; const k = kind[s0], gid = own[s0], comp = [s0]; seen[s0] = 1;
@@ -56,12 +61,12 @@ function computeBarrios(){
   // Un solo centro por ciudad (el del ayuntamiento o el más céntrico); los trozos sueltos de centro, comercio o industria
   // (un templo o una taberna entre casas) son del barrio que los rodea; lo diminuto no es barrio
   const kR = K.indexOf('residencial'), cOf = c => { let sx = 0, sy = 0; for (const i of c.tiles) { sx += i % W; sy += (i / W) | 0; } return [sx / c.tiles.length, sy / c.tiles.length]; };
-  let C = comps(); const bestCentro = new Map();
+  yield; let C = comps(); yield; const bestCentro = new Map();
   for (const c of C) if (K[c.k] === 'centro') { const g = villageById(c.gid), hall = g.hall != null ? g.hall : Math.round(g.fy) * W + Math.round(g.fx), [cx, cy] = cOf(c), sc = (c.tiles.includes(hall) ? 1e6 : 0) + c.tiles.length - Math.hypot(cx - g.fx, cy - g.fy) * 8; if (!bestCentro.has(c.gid) || sc > bestCentro.get(c.gid).sc) bestCentro.set(c.gid, { c, sc }); }
   for (const c of C) { const n = K[c.k], L = c.tiles.length;
     if ((n === 'centro' && bestCentro.get(c.gid).c !== c) || (n === 'industria' && L < 80) || (n === 'comercio' && L < 45)) for (const i of c.tiles) kind[i] = kR;
     else if ((n === 'minas' && L < 40) || (n === 'campos' && L < 60)) for (const i of c.tiles) kind[i] = -2; }
-  C = comps();
+  yield; C = comps(); yield;
   // Viviendas: en un pueblo pequeño, el pueblo entero es «el barrio» (no se marca); de 40 habitantes en adelante, un barrio
   // residencial, y de 80 en adelante, uno por punto cardinal (norte, este, sur, oeste), con todas sus casas aunque estén sueltas
   const parts = [], resid = new Map();
@@ -74,12 +79,13 @@ function computeBarrios(){
   for (const r of resid.values()) if (r.tiles.length >= 40) parts.push(r);
   for (const c of parts) {
     let sx = 0, sy = 0, x0 = W, y0 = H, x1 = 0, y1 = 0; for (const i of c.tiles) { const x = i % W, y = (i / W) | 0; sx += x; sy += y; if (x < x0) x0 = x; if (y < y0) y0 = y; if (x > x1) x1 = x; if (y > y1) y1 = y; }
-    barrios.push({ g:c.gid, c:K[c.k], tiles:c.tiles, cx:sx / c.tiles.length, cy:sy / c.tiles.length, x0, y0, x1, y1 });
+    out.push({ g:c.gid, c:K[c.k], tiles:c.tiles, cx:sx / c.tiles.length, cy:sy / c.tiles.length, x0, y0, x1, y1 });
   }
   for (let i = 0; i < W * H; i++) if (kind[i] === -2) kind[i] = -1;
   // Nombres: el centro, «Centro»; los demás, con nombre propio en la lengua del pueblo (se guarda: no cambia nunca)
   const used = new Map();
-  for (const B of barrios.sort((a, b) => b.tiles.length - a.tiles.length)) {
+  yield;
+  for (const B of out.sort((a, b) => b.tiles.length - a.tiles.length)) {
     const g = villageById(B.g), N = g.barrioNames ||= {};
     const a = Math.atan2(B.cy - g.fy, B.cx - g.fx), dir = BARRIO_DIR[((Math.round(a / (Math.PI / 2)) % 4) + 5) % 4];
     let key = B.c === 'centro' ? 'centro' : B.c + ':' + dir, n = 1; while (used.has(B.g + '|' + key)) key = B.c + ':' + dir + ':' + (++n); used.set(B.g + '|' + key, 1);
@@ -94,14 +100,17 @@ function computeBarrios(){
   // La capa del mapa: un píxel por casilla (luego se estira): tono suave dentro y algo más fuerte en el borde
   if (!barrioCv || barrioCv.width !== W || barrioCv.height !== H) { barrioCv = document.createElement('canvas'); barrioCv.width = W; barrioCv.height = H; }
   const x = barrioCv.getContext('2d'), img = x.createImageData(W, H), D = img.data, idx = new Int16Array(W * H).fill(-1);
-  barrios.forEach((B, n) => { for (const i of B.tiles) idx[i] = n; });
-  barrios.forEach((B, n) => { const [r, g2, b] = BARRIO[B.c].col; for (const i of B.tiles) { const edge = [i - 1, i + 1, i - W, i + W].some(j => idx[j] !== n); D[i * 4] = r; D[i * 4 + 1] = g2; D[i * 4 + 2] = b; D[i * 4 + 3] = B.c === 'campos' ? 0 : edge ? 70 : 24; } });
-  x.putImageData(img, 0, 0); barrioT = yearT;
+  out.forEach((B, n) => { for (const i of B.tiles) idx[i] = n; });
+  out.forEach((B, n) => { const [r, g2, b] = BARRIO[B.c].col; for (const i of B.tiles) { const edge = [i - 1, i + 1, i - W, i + W].some(j => idx[j] !== n); D[i * 4] = r; D[i * 4 + 1] = g2; D[i * 4 + 2] = b; D[i * 4 + 3] = B.c === 'campos' ? 0 : edge ? 70 : 24; } });
+  barrios = out; x.putImageData(img, 0, 0); barrioT = yearT;
 }
 const barriosOn = () => params.barrios !== false;
 function drawBarrios(){
   if (!barriosOn() || !world || !villages.length) return;
-  if (yearT - barrioT > 15 || yearT < barrioT) computeBarrios();
+  if (yearT - barrioT > 15 || yearT < barrioT) { // (rendimiento) solo si han cambiado los edificios, los campos o el tamaño de las ciudades: rehacerlo cuesta ~80 ms
+    const sig = liveTowns().map(g => g.id + ':' + buildingsOf(g).length + ':' + (g.facs || []).length + ':' + pensOf(g).length + ':' + Math.min(2, Math.floor(popOf(g) / 40))).join(',') + '|' + Math.round(farmMap.size / 20) + '|' + (barrioCv ? 1 : 0);
+    if (sig !== barrioSig || yearT < barrioT || barrioW !== world) { barrioSig = sig; barrioW = world; barrioJob = barrioGen(); } barrioT = yearT; }
+  if (barrioJob) { const t = performance.now(); while (performance.now() - t < 4) if (barrioJob.next().done) { barrioJob = null; break; } }
   if (!barrioCv) return; const sm = vctx.imageSmoothingEnabled; vctx.imageSmoothingEnabled = false; vctx.drawImage(barrioCv, 0, 0, W * T, H * T); vctx.imageSmoothingEnabled = sm;
 }
 // Los nombres, por encima de los edificios (solo de cerca, y no los de los campos salvo muy de cerca)
@@ -126,7 +135,7 @@ function drawBarrioNames(){
 ZONE_INFO.barrio = ['Barrio', 'Barrio', ''];
 const barrioByKey = (vid, key) => barrios.find(B => B.g === vid && B.key === key);
 const barrioRect = z => { const B = barrioByKey(z.vid, z.key); return B ? { x0:B.x0, y0:B.y0, x1:B.x1, y1:B.y1 } : null; }; // (zoneRect, en edificios.js, pregunta aquí)
-addEventListener('DOMContentLoaded', () => { const c = document.getElementById('barrios'); if (!c) return; c.checked = barriosOn(); c.addEventListener('change', () => { params.barrios = c.checked; barrioT = -1e9; }); });
+addEventListener('DOMContentLoaded', () => { const c = document.getElementById('barrios'); if (!c) return; c.checked = barriosOn(); c.addEventListener('change', () => { params.barrios = c.checked; barrioT = -1e9; barrioSig = ''; }); });
 { const base = zoneAt; zoneAt = function(sx, sy){
   if (barriosOn()) { const wx = (sx - offX) / zoom, wy = (sy - offY) / zoom; const L = barrioLabels.find(l => wx >= l.x0 && wx <= l.x1 && wy >= l.y0 && wy <= l.y1); if (L) return { vid:L.B.g, k:'barrio', key:L.B.key }; }
   return base.apply(this, arguments);

@@ -101,7 +101,8 @@ function protSteer(v, t){
   const tr = p.trail;
   if (v === p.lead) { let e = tr[tr.length - 1], d = Math.hypot(v.x - e[0], v.y - e[1]);
     while (d > 3) { e = [e[0] + (v.x - e[0]) * 3 / d, e[1] + (v.y - e[1]) * 3 / d]; tr.push(e); d -= 3; } if (tr.length > 200) tr.splice(0, tr.length - 200); return; }
-  const k = p.who.indexOf(v), row = Math.floor((k - 1) / 3) + 1, col = (k - 1) % 3 - 1, j = tr.length - 1 - row * 2;
+  const k = p.who.indexOf(v); if (k < 1) return; // (ya no va en la marcha)
+  const row = Math.floor((k - 1) / 3) + 1, col = (k - 1) % 3 - 1, j = tr.length - 1 - row * 2;
   if (j < 1) { [t.gx, t.gy] = tr[0]; return; } // (la cola aún está saliendo: hacia donde arrancó el cabecilla)
   const [ax, ay] = tr[j], [bx, by] = tr[j + 1], dl = Math.hypot(bx - ax, by - ay) || 1, px = -(by - ay) / dl * col * 5, py = (bx - ax) / dl * col * 5;
   [t.gx, t.gy] = walkable(ax + px, ay + py) ? [ax + px, ay + py] : [ax, ay]; t.run = Math.hypot(t.gx - v.x, t.gy - v.y) > 30; // (si se queda atrás, aprieta el paso)

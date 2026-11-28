@@ -368,7 +368,7 @@ function drawVillagers(){
     if (v.x < vx0 - 40 || v.x > vx1 + 40 || v.y < vy0 - 20 || v.y > vy1 + 60) continue; // fuera de la vista: no se dibuja
     const s = personSprite(v, v.moving ? Math.floor(v.walk * 8) % 2 : 0, v.dir < 0);
     const lunge = v.stab > 0 && !isRanged(v.weapon) ? v.dir * Math.round(Math.sin(Math.min(1, v.stab / .25) * Math.PI) * 2.5) : 0; // la estocada: se echa hacia delante y vuelve
-    const shake = performance.now() - (v.hurtAt || -1e9) < 160 ? (Math.floor(performance.now() / 40) % 2 ? 1 : -1) : 0; // al recibir un golpe, tiembla
+    const shake = performance.now() - (v.hurtAt || -1e9) < 160 && performance.now() >= v.hurtAt ? (Math.floor(performance.now() / 40) % 2 ? 1 : -1) : 0; // al recibir un golpe, tiembla
     const x = Math.round(v.x) + lunge + shake, y = Math.round(v.y), selected = v === follow;
     const ringA = .65 + .35 * Math.sin(performance.now() / 250);
     if (selected) { vctx.fillStyle = `rgba(233,185,73,${ringA})`; for (const [dx, dy] of RING) if (dy < 1) vctx.fillRect(x + dx, y + dy, 1, 1); }

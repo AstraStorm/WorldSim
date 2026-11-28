@@ -11,7 +11,7 @@ const setSnow = (i, v) => { const o = snowA[i]; snowA[i] = v; if ((o * 20 | 0) !
 // Temperatura media del planeta respecto a la normal: va hacia un objetivo que cambia cada año
 let globalT = 0, globalTarget = 0, globalYear = 0;
 let ensoDT = 0; // (El Niño / La Niña: fenomenos.js)
-let iceSet = new Set(), drySet = new Set(), snowDepth = null, snowClock = 0, seasonTempNow = 0, soil = null, soilNorm = null, soilRain = null, drought = null, droughtCv = null, climT = 0, iceSweep = 0, climClock = 0, lastDroughtNotice = -1e9;
+let iceSet = new Set(), drySet = new Set(), snowDepth = null, snowClock = 0, seasonTempNow = 0, soil = null, soilNorm = null, soilRain = null, drought = null, droughtCv = null, climT = 0, iceSweep = 0, climClock = 0, lastDroughtNotice = -1e9, snowDepthRT = 0, droughtRT = 0, droughtShown = true;
 const SOIL_C = 8; // las celdas de humedad del suelo agrupan 8×8 casillas
 const BIOME_DT = { [B.DESERT]:6, [B.DRY]:2, [B.SAND]:2, [B.SNOW]:-4, [B.TUNDRA]:-3, [B.ROCK]:-2, [B.SWAMP]:1 };
 function initClimate(){
@@ -128,13 +128,13 @@ function updateClimate(dt){
     if (v > 0) iceSet.add(i);
   }
   snowClock += dt;
-  if (snowClock > 3) { snowClock = 0; buildSnowDepth(); }
+  if (snowClock > 3 && performance.now() - snowDepthRT > 1500) { snowClock = 0; snowDepthRT = performance.now(); buildSnowDepth(); } // (a x5, cada 3 s de juego eran 5 veces por segundo; ~25 ms cada vez)
   // Humedad del suelo y sequía, una vez por segundo
   climClock += dt;
   if (climClock < 1) return;
   const step = climClock; climClock = 0;
   const SW = Math.ceil(W / SOIL_C), SH = Math.ceil(H / SOIL_C), si = seasonInfo().i;
-  const img = droughtCv.getContext('2d').createImageData(W, H), D = img.data;
+  let anyD = false;
   for (let c = 0; c < soil.length; c++) {
     const cx = (c % SW) * SOIL_C + 4, cy = Math.floor(c / SW) * SOIL_C + 4, ti = Math.min(H - 1, cy) * W + Math.min(W - 1, cx);
     // Sin lluvia, el suelo tiende a su humedad normal, menos cuanto más calor haga por encima de lo habitual
@@ -145,10 +145,14 @@ function updateClimate(dt){
     soilRain[c] = 0;
     const d = clamp((soilNorm[c] * .8 - soil[c]) / (soilNorm[c] * .6), 0, 1);
     if (d > .45 && drought[c] <= .45 && t > 15) maybeDroughtNotice(cx, cy);
-    drought[c] = d;
+    drought[c] = d; if (d >= .2) anyD = true;
   }
-  // Capa de sequía: 1 píxel por casilla (se pinta ampliada y suavizada sobre el terreno)
-  for (let i = 0; i < N; i++) {
+  // Capa de sequía: 1 píxel por casilla (se pinta ampliada y suavizada sobre el terreno). (rendimiento) sin sequía en ningún
+  // sitio no se rehace (queda vacía), y con sequía, como mucho una vez cada 1,5 s de tiempo real: cambia despacio
+  if (!anyD && !droughtShown) return;
+  if (anyD && performance.now() - droughtRT < 1500) return; droughtRT = performance.now(); droughtShown = anyD;
+  const img = droughtCv.getContext('2d').createImageData(W, H), D = img.data;
+  if (anyD) for (let i = 0; i < N; i++) {
     const b = world.biome[i]; if (WATER[b] || b === B.LAVA || b === B.SNOW || b === B.DESERT) continue;
     const d = drought[soilCell(i)]; if (d < .2) continue;
     const o = i * 4; D[o] = 196; D[o + 1] = 156; D[o + 2] = 70; D[o + 3] = Math.min(1, (d - .2) / .6) * 120;
@@ -160,7 +164,7 @@ function maybeDroughtNotice(x, y){
   lastDroughtNotice = t; notify('Hay sequía en una región', { x:x * T, y:y * T });
 }
 function drawDrought(){
-  if (!droughtCv) return;
+  if (!droughtCv || !droughtShown) return;
   vctx.save(); vctx.imageSmoothingEnabled = true; vctx.drawImage(droughtCv, 0, 0, PW, PH); vctx.restore();
 }
 // Distancia de cada casilla nevada al borde de su mancha (0 en el borde, más en el centro)

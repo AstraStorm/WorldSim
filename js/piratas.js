@@ -39,21 +39,40 @@ function navigate(o, tx, ty, sp, dt){
   return sail(o, wp[0], wp[1], sp, dt);
 }
 // Ruta por mar abierto de casilla en casilla (en diagonal solo si no corta una esquina de tierra)
+// (rendimiento) qué casillas son mar abierto y a qué masa de agua pertenece cada una se apunta en tablas que se rehacen cada
+// 15 s (por el hielo, la sequía y los puentes; ~30 ms). Con eso, un destino en otro mar (un lago, un mar cerrado por el hielo)
+// se descarta al momento, y la búsqueda ya no pregunta casilla a casilla: antes, en un océano grande pasaba de las 150 000
+// casillas, tardaba ~60 ms y volvía sin ruta aunque la hubiera
+let seaOpen = null, seaComp = null, seaCompW = null, seaCompT = -1e9, srP = null, srS = null, srQ = null, srGen = 0;
+function seaCompOf(i){
+  if (!seaComp || seaComp.length !== N || seaCompW !== world || performance.now() - seaCompT > 15000) {
+    seaCompW = world; seaCompT = performance.now(); const ok = seaOpen = new Uint8Array(N), C = seaComp = new Int32Array(N), q = new Int32Array(N), bi = world.biome, dry = world.dry, ice = world.ice;
+    for (let k = 0; k < N; k++) ok[k] = WATER[bi[k]] && !(dry && dry[k] > .6) && !(ice && ice[k] > .5) ? 1 : 0;
+    for (const k of bridgeSet) ok[k] = 0;
+    let id = 0;
+    for (let s = 0; s < N; s++) { if (C[s] || !ok[s]) continue; C[s] = ++id; let n = 0; q[n++] = s;
+      while (n) { const i = q[--n], x = i % W, row = i - x;
+        for (let dy = -W; dy <= W; dy += W) for (let dx = -1; dx <= 1; dx++) { const nx = x + dx, j = i + dy + dx; if (nx < 0 || nx >= W || j < 0 || j >= N || C[j] || !ok[j]) continue;
+          if (dx && dy && !(ok[row + nx] && ok[i + dy])) continue; C[j] = id; q[n++] = j; } } }
+  }
+  return seaComp[i];
+}
 function seaRoute(a, b){
   if (a === b) return [];
-  const prev = new Int32Array(N).fill(-1), q = [a]; prev[a] = a;
-  for (let h = 0; h < q.length && h < 150000; h++) {
-    const i = q[h]; if (i === b) break;
-    const x = i % W, y = (i / W) | 0;
-    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-      if (!dx && !dy) continue; const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
-      const n = ny * W + nx; if (prev[n] !== -1 || !openWater(n)) continue;
-      if (dx && dy && !(openWater(y * W + nx) && openWater(ny * W + x))) continue; // sin cortar esquinas
-      prev[n] = i; q.push(n);
+  const ca = seaCompOf(a), cb = seaComp[b]; if (ca && cb && ca !== cb) return null;
+  if (!srP || srP.length !== N) { srP = new Int32Array(N); srS = new Uint32Array(N); srQ = new Int32Array(N); srGen = 0; }
+  const ok = seaOpen, gen = ++srGen; let h = 0, n = 0, found = false; srQ[n++] = a; srS[a] = gen; srP[a] = a;
+  while (h < n) {
+    const i = srQ[h++]; if (i === b) { found = true; break; }
+    const x = i % W, row = i - x;
+    for (let dy = -W; dy <= W; dy += W) for (let dx = -1; dx <= 1; dx++) {
+      if (!dx && !dy) continue; const nx = x + dx, j = i + dy + dx; if (nx < 0 || nx >= W || j < 0 || j >= N || srS[j] === gen || !ok[j]) continue;
+      if (dx && dy && !(ok[row + nx] && ok[i + dy])) continue; // sin cortar esquinas
+      srS[j] = gen; srP[j] = i; srQ[n++] = j;
     }
   }
-  if (prev[b] === -1) return null;
-  const path = []; for (let i = b; i !== a; i = prev[i]) path.push([(i % W) * T + T / 2, ((i / W) | 0) * T + T / 2]);
+  if (!found) return null;
+  const path = []; for (let i = b; i !== a; i = srP[i]) path.push([(i % W) * T + T / 2, ((i / W) | 0) * T + T / 2]);
   return path.reverse();
 }
 // La casilla de mar abierto más cercana (para salir de un muelle en un río o pegado a la orilla)
