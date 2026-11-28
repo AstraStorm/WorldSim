@@ -103,8 +103,8 @@ function landAt(v, x, y){
 function ringFind(tx, ty, R, test){
   if (test(tx, ty)) return [tx, ty];
   for (let r = 1; r <= R; r++) for (let k = 0; k < 8 * r; k++) {
-    const side = Math.floor(k / (2 * r)), s2 = k % (2 * r) - r;
-    const x = tx + [s2, r, -s2, -r][side], y = ty + [-r, s2, r, -s2][side];
+    const side = Math.floor(k / (2 * r)), s2 = k % (2 * r) - r; // (sin crear dos listas por casilla: se pregunta muchísimo)
+    const x = tx + (side === 0 ? s2 : side === 1 ? r : side === 2 ? -s2 : -r), y = ty + (side === 0 ? -r : side === 1 ? s2 : side === 2 ? r : -s2);
     if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1) continue;
     if (test(x, y)) return [x, y];
   }
@@ -116,11 +116,12 @@ const freshNear = (i, R) => { const x0 = i % W, y0 = (i / W) | 0;
 // Orilla de agua dulce (o charco) para beber, junto a la que se pueda estar de pie
 // (buscar en 40 casillas a la redonda es caro y mucha gente tiene sed a la vez: se recuerda por zonas de 4×4 unos segundos)
 const waterC = new Map(); let waterCW = null;
-const waterOk = (x, y, v) => { const i = y * W + x; return tileFree(x, y) && !avoided(v, i) && (nb4i(i).some(n => FRESH(world.biome[n]) && !frozen(n) && !dried(n)) || (floodA && floodA[i] > .35 && !WATER[world.biome[i]])); };
+const drinkable = n => n >= 0 && n < N && FRESH(world.biome[n]) && !frozen(n) && !dried(n);
+const waterOk = (x, y, v) => { const i = y * W + x; return tileFree(x, y) && !avoided(v, i) && (drinkable(i - 1) || drinkable(i + 1) || drinkable(i - W) || drinkable(i + W) || (floodA && floodA[i] > .35 && !WATER[world.biome[i]])); };
 function waterSpot(tx, ty, v){
   if (waterCW !== world) { waterC.clear(); waterCW = world; }
   const key = (ty >> 2) * W + (tx >> 2), c = waterC.get(key);
-  let p = c && yearT - c.t < 4 && yearT >= c.t && (c.p === null || waterOk(c.p[0], c.p[1], v)) ? c.p : undefined;
+  let p = c && yearT - c.t < (c.p === null ? 20 : 4) && yearT >= c.t && (c.p === null || waterOk(c.p[0], c.p[1], v)) ? c.p : undefined; // (sin agua cerca: buscar otra vez en 40 casillas cuesta, y el agua no aparece así como así)
   if (p === undefined) { p = ringFind(tx, ty, 40, (x, y) => waterOk(x, y, v)); if (waterC.size > 4000) waterC.clear(); waterC.set(key, { t:yearT, p }); }
   return p && [p[0] * T + 2, p[1] * T + 3];
 }

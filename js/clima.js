@@ -85,10 +85,11 @@ function liftAt(x, y, wx, wy){
 let respriteLeft = 2;
 // Dibujos de nube ya hechos, por tipo y tamaño parecido: una nube nueva reutiliza uno de ellos (pintar una nube grande
 // cuesta, y en los mapas enormes nacen y mueren muchas)
-const cloudPool = new Map();
+const cloudPool = new Map(); let cloudMadeT = 0;
 function pooledCloud(type, w, hr){
   const key = `${type}|${Math.round(w / 24)}|${Math.round(hr * 6)}`; /* tamaños parecidos comparten dibujo: crear nubes nuevas cuesta */ let l = cloudPool.get(key); if (!l) cloudPool.set(key, l = []);
-  if (l.length < 3) { const sp = cloudSprites(type, w, w * hr); l.push(sp); return sp; }
+  // (rendimiento) una nube grande tarda hasta ~25 ms en pintarse: si ya hay alguna de ese tamaño, como mucho una nueva cada medio segundo
+  if (l.length < 3 && (!l.length || performance.now() - cloudMadeT > 500)) { cloudMadeT = performance.now(); const sp = cloudSprites(type, w, w * hr); l.push(sp); return sp; }
   return l[Math.floor(Math.random() * l.length)];
 }
 function resprite(c){
@@ -338,7 +339,7 @@ function drawPressure(t){
 // Nacen solos (tornado o tromba bajo una nube de tormenta; huracán en una borrasca fuerte sobre el mar)
 // o los desata el jugador desde el menú. Los tornados arrancan árboles y arrastran aldeanos;
 // los huracanes inundan la costa, tumban árboles y lanzan rayos. Sobre tierra el huracán se debilita.
-let storms = [], rareDirty = false, rareT = 0;
+let storms = [], rareDirty = false, rareT = 0, rareRT = 0;
 const surfaceWater = (x, y) => !!WATER[world.biome[clamp(Math.floor(y / T), 0, H - 1) * W + clamp(Math.floor(x / T), 0, W - 1)]];
 const stormPower = s => clamp(Math.min(s.age / 3, (s.life - s.age) / 4), 0, 1);
 function hurricaneSprite(R){
@@ -501,7 +502,7 @@ function updateStorms(dt){
     const x = i % W, y = (i / W) | 0; paintRegion(x - 1, y - 1, x + 1, y + 1);
   }
   rareT += dt;
-  if (rareDirty && rareT > 1) { buildRareList(); rareDirty = false; rareT = 0; }
+  if (rareDirty && rareT > 1 && performance.now() - rareRT > 3000) { rareRT = performance.now(); buildRareList(); rareDirty = false; rareT = 0; } // (recorre todo el mapa: a x5, con tanta tala, era varias veces por segundo; solo son los destellos de los objetos raros)
 }
 function drawStorms(t){
   if (!params.weather) return;

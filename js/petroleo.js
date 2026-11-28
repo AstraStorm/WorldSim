@@ -172,7 +172,7 @@ const isAsphalt = i => !!(world.asphalt && world.asphalt.length && asphaltSet().
 function asphaltOne(g){
   const S = roadSet(), A = asphaltSet(); let best = null, bd = 1e9;
   for (const i of S) { if (A.has(i)) continue; const d = Math.hypot(i % W - g.fx, ((i / W) | 0) - g.fy); if (d < bd && d < 60) { bd = d; best = i; } }
-  if (best == null) return; g.asphalt -= .25; world.asphalt.push(best); groundSig = '';
+  if (best == null) return; g.asphalt -= .25; world.asphalt.push(best); // (el suelo lo repinta solo en ese trozo: groundScan)
   if (!g.asphMsg) { g.asphMsg = true; notify(`${g.name} empieza a asfaltar sus carreteras: los carros y camiones van mucho más rápido`, { x:g.fx * T, y:g.fy * T }); }
 }
 { const base = paintRoads; paintRoads = function(){

@@ -74,7 +74,7 @@ function pontWork(G, g, alive){
   const want = Math.min(P.tiles.length, Math.floor((yearT - P.t0) / 1.2) + 1);
   while (P.k < want) {
     const i = P.tiles[P.k++]; if (!WATER[world.biome[i]]) continue;
-    bridgeSet.add(i); P.b.tiles.push(i); P.b.core.push(i); addEffect((i % W) * T + 2, ((i / W) | 0) * T + 3, 'poof'); groundSig = '';
+    bridgeSet.add(i); P.b.tiles.push(i); P.b.core.push(i); addEffect((i % W) * T + 2, ((i / W) | 0) * T + 3, 'poof'); groundTouch(i);
     const v = alive[P.k % Math.max(1, alive.length)]; if (v && Math.random() < .5) floats.push({ x:v.x, y:v.y - 12, txt:['¡otro tronco!', '¡atad fuerte!', '¡empujad!'][P.k % 3], col:'#e8c898', life:0 });
   }
   if (P.k < P.tiles.length) return false;

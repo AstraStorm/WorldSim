@@ -40,8 +40,8 @@ SYSTEMS.push(dt => {
     if (B0.done) continue;
     const all = [...B0.quay, ...B0.piers.flatMap(p => p.tiles)], want = Math.min(all.length, Math.floor((yearT - B0.t0) / 3) + 1); // una casilla cada pocos segundos
     if (B0.built >= want) continue;
-    while (B0.built < want) { const j = all[B0.built++]; if (!openWater(j)) continue; bridgeSet.add(j); B0.b.tiles.push(j); addEffect((j % W) * T + 2, ((j / W) | 0) * T + 3, 'poof'); }
-    groundSig = ''; if (typeof routeC !== 'undefined') routeC.clear();
+    while (B0.built < want) { const j = all[B0.built++]; if (!openWater(j)) continue; bridgeSet.add(j); B0.b.tiles.push(j); addEffect((j % W) * T + 2, ((j / W) | 0) * T + 3, 'poof'); groundTouch(j); }
+    if (typeof routeC !== 'undefined') routeC.clear();
     if (B0.built >= all.length) { B0.done = true; notify(`Terminan el gran puerto de ${g.name}: ya pueden amarrar varios barcos a la vez`, { x:g.port.sx * T, y:g.port.sy * T }); }
   }
 });

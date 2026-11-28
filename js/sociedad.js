@@ -339,15 +339,49 @@ let groundCv = null, groundSig = '', groundT = 0, groundDirty = new Set();
 const GROUND_CH = 512, groundChunks = new Map();
 function groundSignature(){
   let q = 0; for (const g of villages) q = (q * 31 + (g.quarry ?? 7) + (g.holy ? g.holy.x0 * 3 : 0)) % 1e9;
-  return [pathMap.size, plazaSet.size, holySet.size, wornSet.size, bridges.length, bridgeSet.size, q, snowA ? 1 : 0, (world.roads || []).length].join(',');
+  return [bridges.length, q, ART.ready ? 1 : 0].join(','); // (un puente o un muelle que crece casilla a casilla: groundTouch) // (los caminos, la hierba pisada y la nieve, por trozos: groundScan)
+}
+// Reparte las casillas de camino y de hierba pisada entre los trozos que las pintan (con el margen de 4 casillas) y saca la
+// huella de cada trozo (qué casillas, plaza o no, cuánta nieve, cuánto pisada): solo se repinta el trozo cuya huella cambia,
+// y cada trozo recorre solo sus casillas (antes, los 70 y pico trozos recorrían cada uno todos los caminos del mapa)
+function groundScan(){
+  const B = new Map(), Hs = new Map(), ncx = Math.ceil(PW / GROUND_CH) - 1, ncy = Math.ceil(PH / GROUND_CH) - 1;
+  const add = (i, kind, v) => {
+    const px = (i % W) * T, py = ((i / W) | 0) * T; let m = Math.imul(v ^ (v >>> 15), 2246822519); m = Math.imul(m ^ (m >>> 13), 3266489917) ^ (m >>> 16);
+    for (let cy = Math.max(0, ((py - 4 * T) / GROUND_CH) | 0), cy1 = Math.min(ncy, ((py + 5 * T) / GROUND_CH) | 0); cy <= cy1; cy++)
+      for (let cx = Math.max(0, ((px - 4 * T) / GROUND_CH) | 0), cx1 = Math.min(ncx, ((px + 5 * T) / GROUND_CH) | 0); cx <= cx1; cx++) {
+        const k = cy * 1000 + cx; let b = B.get(k); if (!b) B.set(k, b = { worn:[], paths:[], farms:[] }); b[kind].push(i); Hs.set(k, ((Hs.get(k) || 0) + m) | 0);
+      }
+  };
+  const RS = typeof roadSet === 'function' && world.roads && world.roads.length ? roadSet() : null; // (las carreteras son casillas de camino empedradas)
+  const AS = typeof isAsphalt === 'function' ? isAsphalt : () => false; // (asfalto: petroleo.js)
+  for (const i of pathMap) add(i, 'paths', i * 256 + (AS(i) ? 128 : 0) + (snowA ? Math.min(5, snowA[i] * 6 | 0) * 4 : 0) + (plazaSet.has(i) ? 1 : 0) + (holySet.has(i) ? 2 : 0) + (RS && RS.has(i) ? 32 : 0) + 1);
+  const cropN = c => { let n = 0; for (let k = 0; k < c.length; k++) n = (n * 31 + c.charCodeAt(k)) | 0; return n; };
+  for (const [i, f] of farmMap) add(i, 'farms', (Math.imul(i, 31) + Math.imul(FARM_ST.indexOf(f.st) + 1, 1009) + Math.imul(Math.round((f.g || 0) * 4), 7919) + Math.imul(cropN(f.crop || ''), 104729)
+    + Math.imul(snowA ? Math.min(5, snowA[i] * 6 | 0) : 0, 15485863) + Math.imul(f.field ? f.field.x0 * 4096 + f.field.y0 + 1 : 0, 613) + (f.why === 'helada' ? 3 : 0)) | 0);
+  for (const i of wornSet) if (!pathMap.has(i)) add(i, 'worn', i * 256 + 64 + Math.min(4, wear[i] / 7.5 | 0)); // (por escalones: la hierba pisada cambia a cada paso)
+  return [B, Hs];
+}
+let groundHash = new Map(), groundBuckets = new Map();
+const FARM_ST = ['pradera', 'arada', 'sembrado', 'creciendo', 'madura', 'muerta'];
+// Repintar solo los trozos alrededor de una casilla (un tablón más de un puente o de un muelle)
+function groundTouch(i){
+  const px = (i % W) * T, py = ((i / W) | 0) * T, ncx = Math.ceil(PW / GROUND_CH) - 1, ncy = Math.ceil(PH / GROUND_CH) - 1;
+  for (let cy = Math.max(0, ((py - 6 * T) / GROUND_CH) | 0); cy <= Math.min(ncy, ((py + 7 * T) / GROUND_CH) | 0); cy++)
+    for (let cx = Math.max(0, ((px - 6 * T) / GROUND_CH) | 0); cx <= Math.min(ncx, ((px + 7 * T) / GROUND_CH) | 0); cx++) groundDirty.add(cy * 1000 + cx);
 }
 function drawGround(){
   const size = PW + 'x' + PH;
   if (groundCv !== size) { groundCv = size; groundChunks.clear(); groundSig = ''; }
   const now = performance.now(), sig = groundSignature(), first = !groundChunks.size; // (groundSig = '' desde otros módulos: repintar ya, pero a trozos)
-  if ((sig !== groundSig && (now - groundT > 5000 || first || !groundSig)) || now - groundT > 15000) { // (cambios de caminos: como mucho cada 5 s) // (la nieve sobre los caminos cambia despacio)
-    groundSig = sig; groundT = now;
+  if (sig !== groundSig || first) { // puentes, carreteras, canteras… o lo piden otros módulos (groundSig = ''): todo, a trozos
+    groundSig = sig; groundT = now; [groundBuckets, groundHash] = groundScan();
     groundDirty = new Set(); for (let cy = 0; cy < Math.ceil(PH / GROUND_CH); cy++) for (let cx = 0; cx < Math.ceil(PW / GROUND_CH); cx++) groundDirty.add(cy * 1000 + cx);
+  } else if (now - groundT > 5000) { // caminos nuevos, hierba pisada y nieve: cada 5 s, solo los trozos que han cambiado
+    groundT = now; const [Bk, Hs] = groundScan();
+    for (const [k, h] of Hs) if (groundHash.get(k) !== h) groundDirty.add(k);
+    for (const k of groundHash.keys()) if (!Hs.has(k)) groundDirty.add(k);
+    groundBuckets = Bk; groundHash = Hs;
   }
   const [x0, y0, x1, y1] = visibleRect(), seen = k => { const cx = k % 1000, cy = (k / 1000) | 0; return cx * GROUND_CH <= x1 && (cx + 1) * GROUND_CH >= x0 && cy * GROUND_CH <= y1 && (cy + 1) * GROUND_CH >= y0; };
   // Se repinta a trozos: primero lo que se ve, y cada fotograma solo unos milisegundos (la primera vez, entero)
@@ -360,14 +394,14 @@ function drawGround(){
       let c = groundChunks.get(k); if (!c) { c = document.createElement('canvas'); c.width = Math.min(GROUND_CH, PW - X); c.height = Math.min(GROUND_CH, PH - Y); groundChunks.set(k, c); }
       const gc = c.getContext('2d'); gc.setTransform(1, 0, 0, 1, 0, 0); gc.clearRect(0, 0, c.width, c.height); gc.setTransform(1, 0, 0, 1, -X, -Y);
       vctx = gc; vrOverride = [X - 4 * T, Y - 4 * T, X + c.width + 4 * T, Y + c.height + 4 * T];
-      try { paintPaths(); paintRoads(); paintBridges('static'); } finally { vctx = keep; vrOverride = null; }
+      try { const bk = groundBuckets.get(k) || { worn:[], paths:[], farms:[] }; paintPaths(bk); paintRoads(); paintBridges('static'); paintFarms(bk.farms); } finally { vctx = keep; vrOverride = null; }
     }
   }
   for (const [k, c] of groundChunks) if (seen(k)) vctx.drawImage(c, (k % 1000) * GROUND_CH, ((k / 1000) | 0) * GROUND_CH);
 }
 const drawPaths = () => drawGround(), drawBridges = () => paintBridges('live');
-function paintPaths(){
-  const [x0, y0, x1, y1] = visibleRect();
+function paintPaths(sub){
+  const [x0, y0, x1, y1] = visibleRect(), WS = sub ? sub.worn : wornSet, PS = sub ? sub.paths : pathMap; // (sub: solo las casillas de ese trozo)
   // Alrededor de la cantera, el suelo lleno de grava y lascas de piedra
   for (const g of villages) {
     if (g.quarry == null || !world.objs[g.quarry]) continue;
@@ -380,7 +414,7 @@ function paintPaths(){
     }
   }
   // Hierba gastada: manchas de tierra que crecen cuanto más se pisa
-  for (const i of wornSet) {
+  for (const i of WS) {
     if (pathMap.has(i)) continue;
     const px = (i % W) * T, py = ((i / W) | 0) * T;
     if (px + T < x0 || px > x1 || py + T < y0 || py > y1) continue;
@@ -389,7 +423,7 @@ function paintPaths(){
     for (let n = 0; n < 3 + k * 9; n++) vctx.fillRect(px + Math.floor(h2(tx, ty, 200 + n) * T), py + Math.floor(h2(tx, ty, 220 + n) * T), 1, 1);
   }
   if (!pathMap.size) return;
-  for (const i of pathMap) {
+  for (const i of PS) {
     const px = (i % W) * T, py = ((i / W) | 0) * T;
     if (px + T < x0 || px > x1 || py + T < y0 || py > y1) continue;
     if (holySet.has(i)) { drawHolyTile(i, px, py); snowTile(i, px, py); continue; } // plaza sagrada: a su manera
@@ -406,7 +440,7 @@ function paintPaths(){
   // sale hacia la hierba (las esquinas quedan redondeadas), dos rodadas claras y alguna piedrecilla
   const isP = j => pathMap.has(j) || bridgeSet.has(j);
   const vis = [];
-  for (const i of pathMap) {
+  for (const i of PS) {
     if (plazaSet.has(i)) continue;
     const px = (i % W) * T, py = ((i / W) | 0) * T;
     if (px + T < x0 || px > x1 || py + T < y0 || py > y1) continue;
@@ -667,13 +701,14 @@ function wellWater(g, i, dt){
   return false;
 }
 function drawWellsMills(g, t){
+  const [vx0, vy0, vx1, vy1] = visibleRect(), off = i => { const x = (i % W) * T, y = ((i / W) | 0) * T; return x < vx0 - 80 || x > vx1 + 80 || y < vy0 - 20 || y > vy1 + 100; }; // (rendimiento) los que no se ven, ni se tocan
   for (const w of wellsOf(g)) {
-    if (w.q < .03) continue;
+    if (w.q < .03 || off(w.i)) continue;
     const o = world.objs[w.i], s = objSprite(o), l = (w.i % W) * T + 2 + o.ox - s.ax, top = ((w.i / W) | 0) * T + 3 + o.oy - s.height + 1;
     vctx.fillStyle = `rgba(70,130,205,${.35 + .6 * w.q})`; vctx.fillRect(l + 4, top + 14, 10, 2);
     redrawFront(l, l + s.width, top, ((w.i / W) | 0) * T + 3 + o.oy);
   }
-  if (g.mill != null && world.objs[g.mill] && world.objs[g.mill].key === 'mill:molino') {
+  if (g.mill != null && world.objs[g.mill] && world.objs[g.mill].key === 'mill:molino' && !off(g.mill)) {
     const o = world.objs[g.mill], s = objSprite(o), mx = (g.mill % W) * T + 2 + o.ox, base = ((g.mill / W) | 0) * T + 3 + o.oy;
     const asp = artFrame('mill:aspas'), hx = asp ? mx - s.ax + (s.width >> 1) : mx - s.ax + 12, hy = asp ? base - s.height + Math.round(s.height * .3) : base - s.height + 11, [wx, wy] = windAt(hx, hy);
     const dtf = Math.min(.1, (t - (g.millT ?? t)) / 1000); g.millT = t;
@@ -868,12 +903,22 @@ function drawWorkFx(now){
   if (floats.length) floats = floats.filter(f => f.life < 1.6);
 }
 // ---- La noche: oscuridad azulada, con la luz de las hogueras y de las ventanas ----
+const glowCache = new Map();
+function glowSprite(c, r){
+  const R = Math.max(1, Math.round(r)), key = c + '|' + R; let s = glowCache.get(key); if (s) return s;
+  s = document.createElement('canvas'); s.width = s.height = R * 2; s.r = R; const x = s.getContext('2d'), g = x.createRadialGradient(R, R, 0, R, R, R);
+  g.addColorStop(0, `rgba(${c},1)`); g.addColorStop(1, `rgba(${c},0)`); x.fillStyle = g; x.fillRect(0, 0, R * 2, R * 2);
+  if (glowCache.size > 400) glowCache.clear(); glowCache.set(key, s); return s;
+}
 function drawNight(){
   const k = darkness(); if (k <= .01) return;
   const [x0, y0, x1, y1] = visibleRect();
   vctx.fillStyle = `rgba(12,18,46,${k})`; vctx.fillRect(x0, y0, x1 - x0 + 1, y1 - y0 + 1);
   vctx.globalCompositeOperation = 'lighter';
-  const glow = (x, y, r, a, c) => { const g2 = vctx.createRadialGradient(x, y, 0, x, y, r); g2.addColorStop(0, `rgba(${c},${a})`); g2.addColorStop(1, `rgba(${c},0)`); vctx.fillStyle = g2; vctx.fillRect(x - r, y - r, r * 2, r * 2); };
+  // (rendimiento) cada luz es un dibujo de degradado ya hecho (por color y radio) que se pinta con su intensidad, en vez de un
+  // degradado nuevo por luz y fotograma; las que no se ven, ni eso
+  const glow = (x, y, r, a, c) => { if (x + r < x0 || x - r > x1 || y + r < y0 || y - r > y1) return; const s = glowSprite(c, r); vctx.globalAlpha = Math.max(0, Math.min(1, a)); vctx.drawImage(s, x - s.r, y - s.r); vctx.globalAlpha = 1; };
+  const sleepers = new Set(); for (const v of villagers) if (v.sleep && v.home != null) sleepers.add(v.home); // (antes, cada casa repasaba a todo el mundo)
   for (const g of villages) {
     if (g.gone || !world.objs[g.fy * W + g.fx]) continue;
     const fx = g.fx * T + 2, fy = g.fy * T;
@@ -883,7 +928,7 @@ function drawNight(){
     for (const h of [...housesOf(g), ...(g.hall != null && world.objs[g.hall] ? [g.hall] : [])]) {
       const hx = (h % W) * T + 2, hy = ((h / W) | 0) * T - 6;
       glow(hx, hy, 11, k * .8, '255,200,110');
-      if (villagers.some(v => v.sleep && v.home === h) && (Math.floor(performance.now() / 700) + h) % 3 === 0) { // zzz
+      if (sleepers.has(h) && (Math.floor(performance.now() / 700) + h) % 3 === 0) { // zzz
         vctx.globalCompositeOperation = 'source-over'; vctx.fillStyle = 'rgba(230,235,255,.85)';
         const zy = hy - 22 - (performance.now() / 120 % 6); vctx.fillRect(hx + 6, zy, 3, 1); vctx.fillRect(hx + 7, zy + 1, 1, 1); vctx.fillRect(hx + 6, zy + 2, 3, 1);
         vctx.globalCompositeOperation = 'lighter';
@@ -3528,8 +3573,10 @@ function domesticStep(a, S, dt){
 // Nieve cuajada encima de algo dibujado sobre el suelo (plaza, caminos, campos): píxeles blancos según la cantidad
 function snowTile(i, px, py){
   const sn = snowA ? snowA[i] : 0; if (sn < .06) return;
-  const tx = i % W, ty = (i / W) | 0;
-  for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) if (h2(px + x, py + y, 41) < sn * 1.15) { vctx.fillStyle = h2(px + x, py + y, 44) > .8 ? '#dfe6ee' : '#f4f7fc'; vctx.fillRect(px + x, py + y, 1, 1); }
+  vctx.beginPath(); const dim = []; // (un solo trazado por casilla en vez de un fillRect por píxel)
+  for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) if (h2(px + x, py + y, 41) < sn * 1.15) { if (h2(px + x, py + y, 44) > .8) dim.push(x, y); else vctx.rect(px + x, py + y, 1, 1); }
+  vctx.fillStyle = '#f4f7fc'; vctx.fill();
+  if (dim.length) { vctx.beginPath(); for (let k = 0; k < dim.length; k += 2) vctx.rect(px + dim[k], py + dim[k + 1], 1, 1); vctx.fillStyle = '#dfe6ee'; vctx.fill(); }
 }
 // Tejados (y cabezas de estatua) nevados: los píxeles de arriba de cada columna del dibujo, en la mitad superior
 const snowCapCache = new WeakMap();
@@ -3579,19 +3626,24 @@ function drawCemeteries(){
     }
   }
 }
-function drawFarms(){
-  if (!farmMap.size) return;
+// (rendimiento) los campos se pintan en la capa del suelo, por trozos (drawGround), y solo se repintan los trozos en que
+// algo cambia (groundScan): antes, los cientos de casillas de cultivo se pintaban una a una en cada fotograma
+function drawFarms(){}
+function paintFarms(list){
+  if (!farmMap.size || !list.length) return;
   const [x0, y0, x1, y1] = visibleRect();
-  drawFarmTiles(x0, y0, x1, y1);
-  for (const [i, f] of farmMap) {
+  drawFarmTiles(x0, y0, x1, y1, list);
+  for (const i of list) {
+    const f = farmMap.get(i); if (!f) continue;
     const px = (i % W) * T, py = ((i / W) | 0) * T;
     if (px + T < x0 || px > x1 || py + T < y0 || py > y1) continue;
     if (f.st === 'muerta' && f.why === 'helada') { vctx.fillStyle = 'rgba(200,225,245,.45)'; vctx.fillRect(px, py, T, T); vctx.fillStyle = '#eef6fc'; vctx.fillRect(px + (i % 3), py + 1, 1, 1); vctx.fillRect(px + 3, py + 3, 1, 1); }
     snowTile(i, px, py);
   }
 }
-function drawFarmTiles(x0, y0, x1, y1){
-  for (const [i, f] of farmMap) {
+function drawFarmTiles(x0, y0, x1, y1, list){
+  for (const i of list) {
+    const f = farmMap.get(i); if (!f) continue;
     const tx = i % W, ty = (i / W) | 0, px = tx * T, py = ty * T;
     if (px + T < x0 || px > x1 || py + T < y0 || py > y1) continue;
     const st = f.st, tk = st !== 'pradera' && ART.ready && fieldTex(f);

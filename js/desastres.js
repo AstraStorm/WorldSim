@@ -293,28 +293,36 @@ function updateFires(dt){
   }
 }
 // Tierra calcinada: manchas negras y ceniza gris que se van aclarando hasta desaparecer
-let burntCv = null, burntDirty = true, burntT = 0;
+// (rendimiento) antes se repintaba todo, píxel a píxel, cada 4 s: ahora solo las casillas nuevas, las que se han aclarado un
+// escalón (de 10) y las que ya se han borrado; todo entero solo al crear la capa y cada minuto (por si se perdió el lienzo)
+let burntCv = null, burntDirty = true, burntT = 0, burntFullT = 0; const burntLvl = new Map();
+const burntK = age => Math.ceil((1 - age / (YEAR * .7)) * 10) / 10;
 function drawBurnt(){
-  if (!burnt.size) return;
+  if (!burnt.size && !burntLvl.size) return;
   const now = performance.now();
-  if (!burntCv || burntCv.width !== PW || burntCv.height !== PH) { burntCv = document.createElement('canvas'); burntCv.width = PW; burntCv.height = PH; burntDirty = true; }
-  if (burntDirty || now - burntT > 4000) {
-    burntDirty = false; burntT = now; const bc = burntCv.getContext('2d'); bc.clearRect(0, 0, PW, PH); paintBurnt(bc);
+  if (!burntCv || burntCv.width !== PW || burntCv.height !== PH) { burntCv = document.createElement('canvas'); burntCv.width = PW; burntCv.height = PH; burntFullT = 0; }
+  if (now - burntFullT > 60000) {
+    burntFullT = burntT = now; burntDirty = false; const bc = burntCv.getContext('2d'); bc.clearRect(0, 0, PW, PH); burntLvl.clear(); paintBurnt(bc);
+  } else if (burntDirty || now - burntT > 4000) {
+    burntDirty = false; burntT = now; const bc = burntCv.getContext('2d');
+    for (const [i] of burntLvl) if (!burnt.has(i)) { burntLvl.delete(i); bc.clearRect((i % W) * T, ((i / W) | 0) * T, T, T); }
+    for (const [i, age] of burnt) { const k = burntK(age); if (burntLvl.get(i) === k) continue; burntLvl.set(i, k); bc.clearRect((i % W) * T, ((i / W) | 0) * T, T, T); paintBurntTile(bc, i, k, false); }
   }
   const [x0, y0, x1, y1] = visibleRect();
   vctx.drawImage(burntCv, x0, y0, x1 - x0 + 1, y1 - y0 + 1, x0, y0, x1 - x0 + 1, y1 - y0 + 1);
 }
 function paintBurnt(ctx){
-  for (const [i, age] of burnt) {
-    const x = (i % W) * T, y = ((i / W) | 0) * T, k = 1 - age / (YEAR * .7);
-    for (let py = 0; py < T; py++) for (let px = 0; px < T; px++) {
-      const hv = h2(x + px, y + py, 91); if (hv > .3 + k * .7) continue;
-      ctx.fillStyle = hv < .1 ? `rgba(130,126,118,${.7 * k})` : `rgba(26,20,16,${.8 * k})`;
-      ctx.fillRect(x + px, y + py, 1, 1);
-    }
-    // Bordes irregulares: algún píxel chamuscado fuera de la casilla
-    if (k > .3) { ctx.fillStyle = `rgba(40,30,20,${.45 * k})`; ctx.fillRect(x - 1 + Math.floor(h2(i, 1, 3) * (T + 2)), y - 1, 1, 1); ctx.fillRect(x + T, y + Math.floor(h2(i, 2, 3) * T), 1, 1); }
+  for (const [i, age] of burnt) { const k = burntK(age); burntLvl.set(i, k); paintBurntTile(ctx, i, k, true); }
+}
+function paintBurntTile(ctx, i, k, edges){
+  const x = (i % W) * T, y = ((i / W) | 0) * T, ash = new Path2D(), soot = new Path2D(); // (dos trazados en vez de un fillRect por píxel)
+  for (let py = 0; py < T; py++) for (let px = 0; px < T; px++) {
+    const hv = h2(x + px, y + py, 91); if (hv > .3 + k * .7) continue;
+    (hv < .1 ? ash : soot).rect(x + px, y + py, 1, 1);
   }
+  ctx.fillStyle = `rgba(130,126,118,${.7 * k})`; ctx.fill(ash); ctx.fillStyle = `rgba(26,20,16,${.8 * k})`; ctx.fill(soot);
+  // Bordes irregulares: algún píxel chamuscado fuera de la casilla (solo al repintarlo todo: si no, se oscurecerían a cada repaso)
+  if (edges && k > .3) { ctx.fillStyle = `rgba(40,30,20,${.45 * k})`; ctx.fillRect(x - 1 + Math.floor(h2(i, 1, 3) * (T + 2)), y - 1, 1, 1); ctx.fillRect(x + T, y + Math.floor(h2(i, 2, 3) * T), 1, 1); }
 }
 // Silueta negra de un sprite (el árbol carbonizado)
 const charCache = new WeakMap();
@@ -335,14 +343,18 @@ function drawSmoke(){
   }
 }
 // Repinta los árboles y rocas cuya base está por delante (más abajo) de baseY: tapan lo que hay detrás
+// (rendimiento) se llama muchas veces por fotograma (antorchas, pozos, nieve en los tejados…) y casi siempre sobre los mismos
+// objetos: el dibujo de cada uno se apunta durante el fotograma (liveQ se rehace al empezar cada uno)
+let rfQ = null; const rfMemo = new Map();
 function redrawFront(l, r, top, baseY){
   if (!params.objects || zoom < WAVE_ZOOM) return; // (muy alejado, la gente es un punto: no hace falta repintar lo que tiene delante)
+  if (rfQ !== liveQ) { rfQ = liveQ; rfMemo.clear(); }
   const objs = world.objs;
   for (let ty = Math.max(0, Math.floor(baseY / T)); ty <= Math.min(H - 1, Math.floor((baseY + 80) / T)); ty++)
     for (let tx = Math.max(0, Math.floor((l - 66) / T)); tx <= Math.min(W - 1, Math.floor((r + 66) / T)); tx++) {
       const o = objs[ty * W + tx]; if (!o) continue;
-      const os = objSprite(o), by = ty * T + 3 + o.oy;
-      if (by <= baseY || o.key === 'quarry:cantera') continue;
+      const by = ty * T + 3 + o.oy; if (by <= baseY || o.key === 'quarry:cantera') continue;
+      let os = rfMemo.get(o); if (!os) rfMemo.set(o, os = objSprite(o));
       const ol = tx * T + 2 + o.ox - os.ax, ot = by - os.height + 1;
       if (ol > r || ol + os.width <= l || ot > baseY || by < top) continue;
       vctx.drawImage(os, ol, ot);
