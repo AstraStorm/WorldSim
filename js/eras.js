@@ -52,6 +52,10 @@ function eraScreen(e){
     <button class="era-ok" data-eraok type="button">Continuar</button></div>`;
   eraShown = { speed:gameSpeed }; if (gameSpeed) setSpeed(0);
   el.hidden = false; requestAnimationFrame(() => el.classList.add('in')); const b = el.querySelector('.era-ok'); if (b) b.focus();
+  // Se cierra sola a los 5 segundos (con la cuenta atrás en el botón); pulsar antes la cierra igual
+  clearInterval(eraTimer); let left = 5; if (b) b.textContent = `Continuar (${left})`;
+  eraTimer = setInterval(() => { if (!eraShown) { clearInterval(eraTimer); return; } if (--left <= 0) { clearInterval(eraTimer); eraClose(); } else if (b) b.textContent = `Continuar (${left})`; }, 1000);
   snd('bell'); // (sin sitio: se oye igual desde cualquier parte)
 }
-function eraClose(){ const el = $('eraScreen'); if (!el) return; el.classList.remove('in'); el.hidden = true; if (eraShown && eraShown.speed) setSpeed(eraShown.speed); eraShown = null; }
+let eraTimer = 0;
+function eraClose(){ clearInterval(eraTimer); const el = $('eraScreen'); if (!el) return; el.classList.remove('in'); el.hidden = true; if (eraShown && eraShown.speed) setSpeed(eraShown.speed); eraShown = null; }
