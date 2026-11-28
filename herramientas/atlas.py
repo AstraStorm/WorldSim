@@ -365,6 +365,24 @@ if os.path.exists(os.path.join(SRC, 'esqui.png')):  # hoja 15 · ocio: cine y es
                         ('ski:canon', (1230, 470, 1480, 710), 16), ('ski:alquiler', (1700, 450, 2080, 710), 26)]:
         add(key, shrink(box_parts('esqui.png', box), w, 40))
 
+if os.path.exists(os.path.join(SRC, 'coches.png')):  # 5 coches (en blanco: el juego los pinta del color que toque), cada uno en 8 direcciones
+    # Cada coche ocupa un bloque de 3x3 (el centro vacío): arriba se ven por detrás (no, n, ne), en medio de lado (o, e) y
+    # abajo por delante (so, s, se). Bloques: familiar, berlina, berlina2 (arriba); sedan, deportivo (abajo)
+    _, _, parts = sheet('coches.png')
+    GROUPS = [('familiar', 30, 50), ('berlina', 540, 50), ('berlina2', 1050, 50), ('sedan', 30, 560), ('deportivo', 540, 560)]
+    DIRS = [['no', 'n', 'ne'], ['o', None, 'e'], ['so', 's', 'se']]
+    WID = {'n':10, 's':10, 'e':19, 'o':19, 'ne':16, 'no':16, 'se':16, 'so':16}
+    for name, gx, gy in GROUPS:
+        for p0 in parts:
+            cx, cy = (p0['x0'] + p0['x1']) / 2, (p0['y0'] + p0['y1']) / 2
+            if not (gx <= cx < gx + 460 and gy <= cy < gy + 420) or p0['area'] < 800: continue
+            col = min(2, int((cx - gx) / 153)); row = min(2, int((cy - gy) / 135)); d = DIRS[row][col]
+            if not d: continue
+            add(f'car:{name}:{d}', shrink(box_parts('coches.png', (p0['x0'], p0['y0'], p0['x1'], p0['y1'])), WID[d], 40))
+if os.path.exists(os.path.join(SRC, 'gasolinera.png')):  # la gasolinera, de frente (y con los surtidores a un lado o al otro)
+    for key, box, w in [('gas:gasolinera', (590, 630, 940, 890), 38), ('gas:izq', (50, 640, 490, 880), 44), ('gas:der', (1040, 640, 1490, 880), 44)]:
+        add(key, shrink(box_parts('gasolinera.png', box), w, 40))
+
 # ---- Atlas: en filas, con 1 píxel de separación ----
 keys = list(S); W = 512; x = y = rowh = 0; pos = {}
 for k in sorted(keys, key=lambda k: -S[k]['img'].height):

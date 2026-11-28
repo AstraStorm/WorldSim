@@ -130,6 +130,7 @@ Sin dependencias ni compilación: cada archivo es un script normal y se cargan e
 | `js/charla.js` | De qué se habla: cada suceso importante (meteorito, volcán, terremoto, guerra, boda...) deja un «momento» en su zona y la gente de alrededor habla de eso |
 | `js/ocio.js` | El ocio de las ciudades: plazas de ocio (taberna, teatro o cine, coliseo, casino, deporte, esquí) frente a los adultos; sin ocio la gente se aburre, la ciudad atrae menos y construye antes sitios de ocio |
 | `js/esqui.js` | Estaciones de esquí en montañas nevadas: refugio, telesilla con torres y sillas, pista con esquiadores; abre con la nieve, da ocio y dinero |
+| `js/coches.js` | Coches: el automóvil, fábricas y marcas de cada nación con sus modelos (berlinas, familiar, sedán, deportivo), concesionarios, compra, comercio por las rutas y en cargueros, gasolineras con el precio de la gasolina y del diésel que sube y baja, quejas y tráfico por las calles |
 | `js/susurros.js` | Susurrar ideas: desde la ficha de un aldeano le metes una idea; se contagia boca a boca y entre pueblos y, si cala (30 % de un pueblo), pasa algo (tensión o guerra, paz, caravanas, protestas, ritual, leyes). Panel «Ideas en marcha» |
 | `js/mitines.js` | Cada partido tiene su líder; en campaña dan mítines en los barrios (estrado, banderas, programa a gritos) que reafirman a los suyos y convencen a indecisos |
 | `js/parlamento.js` | Elecciones una vez al año, escaños por D'Hondt, hemiciclo en la ficha y mociones de censura entre elecciones |
