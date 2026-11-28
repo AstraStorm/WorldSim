@@ -127,6 +127,7 @@ Sin dependencias ni compilación: cada archivo es un script normal y se cargan e
 | `js/edificios.js` | Clic en un edificio: su ficha (qué es, de quién, quién vive, qué guarda) y lista de edificios del pueblo |
 | `js/calendario.js` | Días de la semana en cada lengua y calendario laboral con festivos (pestaña Calendario de la ficha) |
 | `js/pensamientos.js` | De cerca, bocadillos con lo que piensan y dicen los aldeanos (su ánimo, lo que hacen, la guerra, las leyes); el de al lado contesta |
+| `js/charla.js` | De qué se habla: cada suceso importante (meteorito, volcán, terremoto, guerra, boda...) deja un «momento» en su zona y la gente de alrededor habla de eso |
 | `js/susurros.js` | Susurrar ideas: desde la ficha de un aldeano le metes una idea; se contagia boca a boca y entre pueblos y, si cala (30 % de un pueblo), pasa algo (tensión o guerra, paz, caravanas, protestas, ritual, leyes). Panel «Ideas en marcha» |
 | `js/mitines.js` | Cada partido tiene su líder; en campaña dan mítines en los barrios (estrado, banderas, programa a gritos) que reafirman a los suyos y convencen a indecisos |
 | `js/parlamento.js` | Elecciones una vez al año, escaños por D'Hondt, hemiciclo en la ficha y mociones de censura entre elecciones |
