@@ -298,7 +298,7 @@ function planSite(g, kind){
 // tuerce y serpentea según el terreno
 // Casilla de la puerta de un edificio (la de justo debajo de su base): por ahí sí entra el camino
 const buildingDoor = (g, i) => buildingsOf(g).some(b => b + W === i);
-function pathTiles(g, sx, sy){
+function pathTiles(g, sx, sy, wgt = .9, lim = 8000){ // (wgt > 1: búsqueda más directa, para tramos largos)
   const mr = g.marketRect, hr = g.holy, inR = (r, i) => r && (i % W) >= r.x0 && (i % W) <= r.x1 && ((i / W) | 0) >= r.y0 && ((i / W) | 0) <= r.y1, inM = i => inR(mr, i) || inR(hr, i);
   const s0 = sy * W + sx, goal = i => i !== s0 && !inM(i) && (pathMap.has(i) || plazaSet.has(i) || i === g.fy * W + g.fx);
   const cost = i => {
@@ -307,18 +307,18 @@ function pathTiles(g, sx, sy){
     const o = world.objs[i]; if (o && !['tree', 'berry'].includes(OBJ[o.key][1]) && o.key !== 'fire:camp') return Infinity;
     if (villages.some(vg => underBuilding(vg, x, y) && !buildingDoor(vg, i))) return Infinity; // por debajo de un edificio, no
     if (villages.some(vg => inPen(vg, x, y))) return Infinity; // ni a través de un cercado
-    return (o ? 4 : 1) + (farmMap.has(i) ? 6 : 0) + h2(x >> 1, y >> 1, 77) * .7; // algo de ruido: el camino serpentea
+    return (o ? 4 : 1) + (farmMap.has(i) ? 6 : 0) + h2(x >> 1, y >> 1, 77) * .7 + (wgt > 1 ? h2(x >> 3, y >> 3, 31) * 2.5 : 0); // algo de ruido: el camino serpentea (en los tramos largos, a curvas más anchas)
   };
   const gs = new Map([[s0, 0]]), par = new Map(), heap = [[0, s0]], hx = g.fx, hy = g.fy;
   const push = (f, i) => { heap.push([f, i]); let k = heap.length - 1; while (k) { const q = (k - 1) >> 1; if (heap[q][0] <= heap[k][0]) break; [heap[q], heap[k]] = [heap[k], heap[q]]; k = q; } };
   const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let k = 0; for (;;) { const l = 2 * k + 1, r = l + 1; let m = k; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === k) break; [heap[m], heap[k]] = [heap[k], heap[m]]; k = m; } } return top; };
-  for (let n = 0; heap.length && n < 8000; n++) {
+  for (let n = 0; heap.length && n < lim; n++) {
     const [, i] = pop();
     if (goal(i)) { const out = []; for (let j = i; j !== undefined; j = par.get(j)) out.push(j); return out; }
     const x = i % W, y = (i / W) | 0;
     for (const j of [i - 1, i + 1, i - W, i + W]) {
       const c = cost(j); if (c === Infinity) continue;
-      const ng = gs.get(i) + c; if (ng < (gs.get(j) ?? Infinity)) { gs.set(j, ng); par.set(j, i); push(ng + Math.hypot((j % W) - hx, ((j / W) | 0) - hy) * .9, j); }
+      const ng = gs.get(i) + c; if (ng < (gs.get(j) ?? Infinity)) { gs.set(j, ng); par.set(j, i); push(ng + Math.hypot((j % W) - hx, ((j / W) | 0) - hy) * wgt, j); }
     }
   }
   return null;
@@ -326,10 +326,11 @@ function pathTiles(g, sx, sy){
 function connect(g, x, y){
   // Si el camino pasa por un campo, ese trozo de campo se deja para el camino
   const mark = (a, b) => { const i = b * W + a; if (a >= 0 && b >= 0 && a < W && b < H && !WATER[world.biome[i]] && !(a === g.fx && b === g.fy)) { farmMap.delete(i); pathMap.add(i); if (wallSet.has(i)) { wallSet.delete(i); gateSet.add(i); } } };
-  const dy = y + 1, route = pathTiles(g, x, dy);
-  if (route) { for (const i of route) if (!bridgeSet.has(i)) mark(i % W, (i / W) | 0); return; }
-  for (let a = Math.min(x, g.fx); a <= Math.max(x, g.fx); a++) mark(a, dy); // sin recorrido posible: en línea recta
-  for (let b = Math.min(dy, g.fy); b <= Math.max(dy, g.fy); b++) mark(g.fx, b);
+  const dy = y + 1, far = Math.hypot(x - g.fx, dy - g.fy);
+  // Lejos del pueblo (entre árboles) las 8000 casillas no llegaban y salía una avenida recta cruzando el bosque: se repite
+  // la búsqueda más directa y con más margen; si ni así hay recorrido, no se traza nada (la gente abre la senda al pisar)
+  const route = (far > 40 ? null : pathTiles(g, x, dy)) || (far > 12 ? pathTiles(g, x, dy, 2.2, Math.min(80000, 4000 + far * 400)) : null);
+  if (route) for (const i of route) if (!bridgeSet.has(i)) mark(i % W, (i / W) | 0);
 }
 // Caminos, plazas y puentes cambian poco: se pintan en una capa aparte que se rehace solo cuando cambian
 // (o cada pocos segundos, por la nieve) en vez de casilla a casilla en cada fotograma

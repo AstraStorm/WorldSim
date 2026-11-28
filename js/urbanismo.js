@@ -381,7 +381,7 @@ function paveLine(g, tiles, net){
 { const base = connect; connect = function(g, x, y){
   const s = y + 1, o = world.objs[y * W + x];
   if (o && isBuilding(o)) { const [hw, hh] = BUILD_DIMS[o.key.split(':')[0]] || [4, 6]; for (let yy = y - hh; yy <= y; yy++) for (let xx = x - hw; xx <= x + hw; xx++) farmMap.delete(yy * W + xx); } // el campo que había en el solar
-  if (!g || !o || !isBuilding(o) || !gridRow(g, s) || Math.abs(s - g.fy) > 70 || Math.abs(x - g.fx) > 70) return base.apply(this, arguments);
+  if (!g || !o || !isBuilding(o) || !gridRow(g, s) || Math.abs(s - g.fy) > Math.min(70, townRadius(g) + 10) || Math.abs(x - g.fx) > Math.min(70, townRadius(g) + 12)) return base.apply(this, arguments); // (calle recta solo dentro del pueblo: fuera, el camino serpentea)
   const [hw] = BUILD_DIMS[o.key.split(':')[0]] || [4, 6], net = townNet(g), side = x >= g.fx ? 1 : -1;
   for (let a = x - hw - 1; a <= x + hw + 1; a++) { const i = s * W + a; if (!net.has(i) && streetFree(i)) paveTile(g, i, net); } // la acera de la fachada
   const row = []; for (let a = x - side * (hw + 2); side > 0 ? a >= g.fx : a <= g.fx; a -= side) row.push(s * W + a);
