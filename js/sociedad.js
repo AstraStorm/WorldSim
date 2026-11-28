@@ -1347,8 +1347,8 @@ function moodOf(v){
   if (g) { housingMood(v, g, add); stockMood(v, g, add); }
   if (v.task && v.task.k === 'detenido') add(-30, 'está detenido');
   if (g && ageOf(v) >= ADULT_H) { if (hasLaw(g, 'jornada_larga')) add(-8, 'trabaja demasiadas horas'); else if (hasLaw(g, 'jornada_corta')) add(5, 'tiene una jornada corta'); }
-  if (v.fun && yearT - v.fun < DAY_LEN) add(6 * (.5 + trait(v, 'sociable')), 'ha tenido tiempo libre');
-  else if (ageOf(v) >= ADULT_H && trait(v, 'sociable') > .6 && yearT - (v.fun || v.born || 0) > DAY_LEN * 3) add(-4 - trait(v, 'sociable') * 4, 'se aburre: hace días que no se distrae');
+  if (typeof ocioMood === 'function') ocioMood(v, g, add); // tiempo libre o aburrimiento (ocio.js)
+  else if (v.fun && yearT - v.fun < DAY_LEN) add(6 * (.5 + trait(v, 'sociable')), 'ha tenido tiempo libre');
   // Necesidades del cuerpo, según el aguante de cada cual
   const tough = 1.4 - trait(v, 'aguante') * .8;
   if ((v.chill || 0) > .15) add(-v.chill * 40 * tough, 'pasa frío'); else if ((v.hot || 0) > .3) add(-v.hot * 25 * tough, 'pasa calor');

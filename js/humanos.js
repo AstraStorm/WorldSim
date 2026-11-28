@@ -525,6 +525,7 @@ function chooseJob(v, g){
     if (hasLaw(g, 'toque_queda') && dayT() > .62) J.push(['ocio', 6]); // toque de queda: al caer la tarde, nada de salir (leyes.js)
     else { J.push(['ocio', 6], ['pasear', 1]); sportsLeisure(v, g, J); fairLeisure(v, g, J); eventLeisure(v, g, J); if (holidayToday(g)) J.push(['fiesta', 10]); if (hasTheater(g)) J.push(['ver_teatro', 3]); if (hasColiseum(g)) J.push(['ver_coliseo', 2.5]); if (hasTavern(g) && !hasLaw(g, 'ley_seca')) J.push(['ir_taberna', ageOf(v) < ADULT_H ? 1 : 4]); }
   }
+  if (typeof ocioBoost === 'function') ocioBoost(v, g, J); // una ciudad sin ocio construye antes tabernas, teatros... (ocio.js)
   let k = Math.random() * J.reduce((s, j) => s + j[1], 0);
   for (const [job, w] of J) if ((k -= w) < 0) return job;
   return 'pasear';
@@ -876,7 +877,7 @@ function runTask(v, g, dt){
       if (t.cup) { g.cups = Math.max(0, (g.cups || 0) - 1); const pr = Math.min(v.money || 0, 1); if (pr > 0) { v.money -= pr; ecOf(g).treas += pr * .5; } floats.push({ x:v.x, y:v.y - 12, txt:'taza de agua', col:'#9cc8f0', life:0 }); }
       else if (t.jar) { g.jars = Math.max(0, (g.jars || 0) - 1); } else if (!t.well) { const jc = 6 + storesOf(g).length * 8; if ((g.jars || 0) < jc) { g.jars = Math.min(jc, (g.jars || 0) + 2); if (!g.jarMsg && g.jars >= 4) { g.jarMsg = true; notify(`En ${g.name} empiezan a traer cántaros de agua para no tener que ir tan lejos a beber`, { x:g.fx * T, y:g.fy * T }); } } } if (!v.swims && !t.well && Math.random() < .03) v.swims = true; if (t.well) t.well.q = Math.max(0, t.well.q - .02); if (t.dry) v.water = .55; }; break;
     case 'comer': v.actT = 1.5; dismount(v); v.onDone = () => { deposit(v, g); if (eatFrom(v, g, 1) && g.coin && g.market != null && (v.money || 0) > 0) { const pr = Math.min(v.money, priceOf(g)); v.money -= pr; ecOf(g).treas += pr * .1; floats.push({ x:v.x, y:v.y - 12, txt:`−${pr} ${g.coin}`, col:'#c8b080', life:0 }); } }; break;
-    case 'ocio': v.actT = 6 + Math.random() * 8; v.dir = Math.random() < .5 ? -1 : 1; v.dirT = v.actT; v.onDone = () => { v.fun = yearT; }; break;
+    case 'ocio': v.actT = 6 + Math.random() * 8; v.dir = Math.random() < .5 ? -1 : 1; v.dirT = v.actT; v.onDone = () => { if (typeof ocioWalk === 'function') ocioWalk(v, g); else v.fun = yearT; }; break; // (pasear: en una ciudad no basta; ocio.js)
     case 'equipar': v.actT = hasForge(g) ? 6 : 5; v.onDone = () => {
       const n = gearNeed(g); if (!n) return; const [u, what] = n;
       if (what === 'espada') { g.iron -= 2; g.wood -= 1; u.weapon = 'espada'; }

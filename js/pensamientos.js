@@ -36,6 +36,7 @@ const TH_MOOD = [
   [/^trabaja demasiadas horas$/, () => ['Trabajo demasiadas horas...', 'Estoy agotad@']],
   [/^tiene una jornada corta$/, () => ['Con la jornada corta me da tiempo a todo']],
   [/^ha tenido tiempo libre$/, () => ['Qué bien me lo pasé el otro día']],
+  [/no hay nada que hacer/, () => ['En esta ciudad no hay nada que hacer', 'Ojalá abrieran un teatro', 'Si al menos hubiera una taberna decente...', 'Los domingos aquí son eternos']],
   [/^se aburre/, () => ['Me aburro muchísimo', 'Aquí nunca pasa nada']],
   [/^pasa frío$/, () => ['Brrr, qué frío', 'Se me congelan los dedos']],
   [/^pasa calor$/, () => ['Uf, qué calor hace', 'Me estoy asando']],
