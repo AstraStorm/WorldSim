@@ -539,3 +539,36 @@ SYSTEMS.push(dt => {
     if (!(o.strandMsg > yearT - DAY_LEN)) { o.strandMsg = yearT; notify(`${v.name}, de ${g.name}, no encuentra el camino de vuelta y se queda a vivir en ${o.name}`, { x:v.x, y:v.y }); }
   }
 });
+
+// ---- Avenidas rectas de partidas de antes ----
+// Antes, un camino a un edificio lejano que no encontraba recorrido se trazaba en línea recta cruzando bosques y campos.
+// Una vez por partida: los tramos rectos de 25 casillas o más fuera de los pueblos (que no son vía, carretera, puente ni
+// plaza) se borran y el camino se vuelve a trazar desde su extremo lejano, ya con curvas
+function straightRoadFix(){
+  const towns = liveTowns(); if (!towns.length) return 0;
+  const rail = typeof railTiles === 'function' ? railTiles() : new Set(), RS = typeof roadSet === 'function' && world.roads && world.roads.length ? roadSet() : new Set();
+  const keep = i => rail.has(i) || RS.has(i) || plazaSet.has(i) || bridgeSet.has(i) || (typeof isAsphalt === 'function' && isAsphalt(i));
+  const inTown = (x, y) => towns.some(g => { const r = townRadius(g); return Math.abs(x - g.fx) <= Math.min(70, r + 12) && Math.abs(y - g.fy) <= Math.min(70, r + 10); });
+  const runs = [];
+  for (const i of pathMap) {
+    const x = i % W;
+    if (!(x > 0 && pathMap.has(i - 1))) { let n = 0; while (x + n < W && pathMap.has(i + n)) n++; if (n >= 25) runs.push([i, n, 1]); }
+    if (!pathMap.has(i - W)) { let n = 0; while (pathMap.has(i + n * W)) n++; if (n >= 25) runs.push([i, n, W]); }
+  }
+  let fixed = 0;
+  for (const [i0, n, st] of runs) {
+    const out = []; for (let k = 0; k < n; k++) { const i = i0 + k * st; if (!keep(i) && !inTown(i % W, (i / W) | 0)) out.push(i); }
+    if (out.length < 20) continue;
+    const a = i0, b = i0 + (n - 1) * st, far = [a, b].map(i => [i, Math.min(...towns.map(g => Math.hypot(i % W - g.fx, ((i / W) | 0) - g.fy)))]).sort((p, q) => q[1] - p[1])[0][0];
+    for (const i of out) { pathMap.delete(i); desireSet.delete(i); }
+    const fx = far % W, fy = (far / W) | 0, g = towns.slice().sort((p, q) => Math.hypot(p.fx - fx, p.fy - fy) - Math.hypot(q.fx - fx, q.fy - fy))[0];
+    if (!inTown(fx, fy)) connect(g, fx, fy - 1);
+    const xs = out.map(i => i % W), ys = out.map(i => (i / W) | 0); composeRegion(Math.min(...xs) - 4, Math.min(...ys) - 6, Math.max(...xs) + 4, Math.max(...ys) + 4);
+    fixed++;
+  }
+  return fixed;
+}
+SYSTEMS.push(() => { try {
+  if (!world || world.straightFix || !villages.length || yearT < 5) return; world.straightFix = 1;
+  const n = straightRoadFix(); if (n) console.log(`[caminos] ${n} tramos rectos rehechos con curvas`);
+} catch (e) { console.error(e); } });

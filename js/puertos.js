@@ -65,3 +65,42 @@ function drawBigPorts(now){
   }
 }
 { const base = drawInstFlags; drawInstFlags = function(t){ base.apply(this, arguments); drawBigPorts(performance.now()); }; }
+
+// ---- Tráfico y faro ----
+// · Cada medio día de ruta comercial por mar (y cada viaje de carguero) cuenta como tráfico del puerto. Con el gran puerto
+//   terminado y bastante tráfico, levantan un faro en la punta del espigón: de noche gira su luz y los piratas se lo
+//   piensan (la mitad de asaltos en sus rutas)
+const hasFaro = g => !!(g && g.bigPort && g.bigPort.faro != null);
+{ const base = routeTick; routeTick = function(a, b, r){
+  const was = r.routeT, out = base.apply(this, arguments);
+  if (r.route && r.route.sea && r.routeT !== was) for (const g of [a, b]) if (g.port) g.portTraffic = (g.portTraffic || 0) + 1;
+  return out;
+}; }
+let faroT = 0;
+SYSTEMS.push(dt => { try {
+  if (!world || (faroT -= dt) > 0) return; faroT = 10;
+  for (const g of liveTowns()) {
+    const B0 = g.bigPort; if (!B0 || !B0.done || B0.faro != null) continue;
+    const traffic = (g.portTraffic || 0) + (g.cargoTrips || 0); if (traffic < 10 || (g.stone || 0) < 20 || (g.wood || 0) < 10) continue;
+    const p = B0.piers.slice().sort((x, y) => y.tiles.length - x.tiles.length)[0]; if (!p) continue;
+    B0.faro = p.tiles[p.tiles.length - 1]; g.stone -= 20; g.wood -= 10;
+    const x = B0.faro % W, y = (B0.faro / W) | 0; addEffect(x * T + 2, y * T + 3, 'poof');
+    notify(`En la punta del espigón de ${g.name} levantan un faro: con tanto barco entrando y saliendo, ya no se pierden de noche`, { x:x * T, y:y * T });
+  }
+} catch (e) { console.error(e); } });
+function drawFaro(g, now){
+  const j = g.bigPort.faro, x = (j % W) * T + 2, y = ((j / W) | 0) * T + 3, [x0, y0, x1, y1] = visibleRect();
+  const night = isNight();
+  if (night && x > x0 - 200 && x < x1 + 200 && y > y0 - 200 && y < y1 + 200) { // el haz que gira
+    const a = now / 1400, L = 70; vctx.save(); vctx.globalCompositeOperation = 'lighter';
+    for (const s of [0, Math.PI]) { const g2 = vctx.createRadialGradient(x, y - 17, 1, x, y - 17, L); g2.addColorStop(0, 'rgba(255,240,170,.55)'); g2.addColorStop(1, 'rgba(255,240,170,0)'); vctx.fillStyle = g2; vctx.beginPath(); vctx.moveTo(x, y - 17); vctx.arc(x, y - 17, L, a + s - .14, a + s + .14); vctx.closePath(); vctx.fill(); }
+    vctx.restore();
+  }
+  if (x < x0 - 20 || x > x1 + 20 || y < y0 - 30 || y > y1 + 10) return;
+  vctx.fillStyle = 'rgba(0,0,0,.28)'; vctx.fillRect(x - 3, y, 8, 2);
+  vctx.fillStyle = '#6a6a72'; vctx.fillRect(x - 4, y - 2, 9, 3); // la base de piedra
+  for (let k = 0; k < 4; k++) { vctx.fillStyle = k % 2 ? '#c8302a' : '#f0ece2'; vctx.fillRect(x - 3 + (k >> 1) * 0, y - 5 - k * 3, 7 - (k >> 1), 3); } // la torre a franjas
+  vctx.fillStyle = '#2a2a30'; vctx.fillRect(x - 3, y - 18, 7, 2); vctx.fillRect(x - 2, y - 21, 5, 1);
+  vctx.fillStyle = night ? '#fff6c0' : '#d8d4b0'; vctx.fillRect(x - 2, y - 20, 5, 2); // la linterna
+}
+{ const base = drawBigPorts; drawBigPorts = function(now){ base.apply(this, arguments); for (const g of villages) if (popOf(g) && hasFaro(g)) drawFaro(g, now); }; }

@@ -298,9 +298,9 @@ function planSite(g, kind){
 // tuerce y serpentea según el terreno
 // Casilla de la puerta de un edificio (la de justo debajo de su base): por ahí sí entra el camino
 const buildingDoor = (g, i) => buildingsOf(g).some(b => b + W === i);
-function pathTiles(g, sx, sy, wgt = .9, lim = 8000){ // (wgt > 1: búsqueda más directa, para tramos largos)
+function pathTiles(g, sx, sy, wgt = .9, lim = 8000, goalFn = null){ // (wgt > 1: búsqueda más directa, para tramos largos; goalFn: otra meta que «cualquier camino»)
   const mr = g.marketRect, hr = g.holy, inR = (r, i) => r && (i % W) >= r.x0 && (i % W) <= r.x1 && ((i / W) | 0) >= r.y0 && ((i / W) | 0) <= r.y1, inM = i => inR(mr, i) || inR(hr, i);
-  const s0 = sy * W + sx, goal = i => i !== s0 && !inM(i) && (pathMap.has(i) || plazaSet.has(i) || i === g.fy * W + g.fx);
+  const s0 = sy * W + sx, goal = goalFn ? (i => i !== s0 && goalFn(i)) : (i => i !== s0 && !inM(i) && (pathMap.has(i) || plazaSet.has(i) || i === g.fy * W + g.fx));
   const cost = i => {
     const x = i % W, y = (i / W) | 0; if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1) return Infinity;
     if (bridgeSet.has(i)) return 1; if (WATER[world.biome[i]] || world.biome[i] === B.LAVA || wallSet.has(i)) return Infinity;

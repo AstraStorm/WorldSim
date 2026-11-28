@@ -21,7 +21,7 @@ function routeTick(a, b, r){
   railCheck(a, b, r); // ¿ferrocarril? (industria.js)
   if (r.rail) { const g = (a.coal || 0) >= (b.coal || 0) ? a : b, was = r.rail.idle; r.rail.idle = (g.coal || 0) < 1; if (!r.rail.idle) g.coal -= 1; if (r.rail.idle && !was) notify(`Se para el tren entre ${a.name} y ${b.name}: no queda carbón`, { x:(a.fx + b.fx) / 2 * T, y:(a.fy + b.fy) / 2 * T }); } // el tren quema carbón
   let biz = Math.sqrt(popOf(a) * popOf(b)) * .12 * (r.rail && !r.rail.idle ? 2 : 1);
-  if (r.route.sea && (world.pirates || []).length && Math.random() < .06) { // los piratas asaltan un barco mercante
+  if (r.route.sea && (world.pirates || []).length && Math.random() < .06 * (typeof hasFaro === 'function' && (hasFaro(a) || hasFaro(b)) ? .5 : 1)) { // (con faro, la mitad) // los piratas asaltan un barco mercante
     biz *= .3; notify(`¡Piratas! Asaltan ${knowsSci(a, 'vapor') ? 'un vapor' : 'un galeón'} mercante entre ${a.name} y ${b.name} y se llevan buena parte de la carga`, { x:(a.fx + b.fx) / 2 * T, y:(a.fy + b.fy) / 2 * T });
   }
   for (const g of [a, b]) { const ec = ecOf(g); if (ec) ec.treas += Math.round(biz * ec.P); g.trades = (g.trades || 0) + 1; }
@@ -41,7 +41,7 @@ function drawTradeRoutes(now){
   const [vx0, vy0, vx1, vy1] = visibleRect();
   vctx.save(); vctx.lineWidth = Math.max(.6, 1.2 / zoom); vctx.setLineDash([2 / zoom * 2, 5 / zoom * 2]); vctx.strokeStyle = 'rgba(240,200,80,.55)';
   for (const r of rels.values()) {
-    if (!r.route) continue; const a = villageById(r.route.a), b = villageById(r.route.b); if (!a || !b || !popOf(a) || !popOf(b)) continue;
+    if (!r.route || (r.route.road && r.route.road.length)) continue; const a = villageById(r.route.a), b = villageById(r.route.b); if (!a || !b || !popOf(a) || !popOf(b)) continue; // (las que tienen camino de verdad: caminos.js)
     const ax = a.fx * T, ay = a.fy * T, bx = b.fx * T, by = b.fy * T;
     if (Math.max(ax, bx) < vx0 || Math.min(ax, bx) > vx1 || Math.max(ay, by) < vy0 || Math.min(ay, by) > vy1) continue;
     vctx.beginPath(); vctx.moveTo(ax, ay); vctx.lineTo(bx, by); vctx.stroke();

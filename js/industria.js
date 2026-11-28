@@ -78,17 +78,34 @@ function industryTick(g, dt, people){
   if (knowsSci(g, 'reloj') && g.plaza && !g.clock) { g.clock = true; notify(`En ${g.name} levantan la torre del reloj en la plaza`, at); }
 }
 // Ferrocarril (desde routeTick): vía y estaciones entre dos pueblos con ruta por tierra que lo conocen
-function railCheck(a, b, r){
-  if (r.rail || !r.route || r.route.sea || !knowsSci(a, 'ferrocarril') || !knowsSci(b, 'ferrocarril') || yearT - (r.railFail ?? -1e9) < DAY_LEN * 2) return;
+function railCheck(a, b, r, home = false){
+  // (home: capital y ciudad de una misma nación, sin hace falta ruta comercial; la ruta por mar no impide la vía si se llega por tierra)
+  if (r.rail || (!home && !r.route) || !knowsSci(a, 'ferrocarril') || !knowsSci(b, 'ferrocarril') || yearT - (r.railFail ?? -1e9) < DAY_LEN * 2) return;
   const d = Math.hypot(b.fx - a.fx, b.fy - a.fy) || 1, ux = (b.fx - a.fx) / d, uy = (b.fy - a.fy) / d;
-  const st = (g, s) => ringFind(Math.round(g.fx + ux * s * 10), Math.round(g.fy + uy * s * 10), 8, (x, y) => tileFree(x, y) && tileFree(x - 2, y) && tileFree(x + 2, y) && !pathMap.has(y * W + x) && !villages.some(o => underBuilding(o, x, y)));
-  const sa = st(a, 1), sb = st(b, -1); if (!sa || !sb) return;
+  const free = (x, y) => tileFree(x, y) && tileFree(x - 2, y) && tileFree(x + 2, y) && !pathMap.has(y * W + x) && !villages.some(o => underBuilding(o, x, y));
+  // La estación, en el lado que mira al otro pueblo: antes solo se buscaba a unas 10 casillas del centro y en una ciudad
+  // grande ahí no queda un hueco, así que nunca se hacía; ahora se va alejando hasta las afueras
+  const st = (g, s) => { const R = typeof townRadius === 'function' ? townRadius(g) : 10; for (let k = 10; k <= R + 26; k += 4) { const p = ringFind(Math.round(g.fx + ux * s * k), Math.round(g.fy + uy * s * k), 7, free); if (p) return p; } return null; };
+  const sa = st(a, 1), sb = st(b, -1);
+  if (!sa || !sb) { r.railFail = yearT; if (!r.railSiteMsg) { r.railSiteMsg = true; notify(`${a.name} y ${b.name} quieren unirse con el ferrocarril, pero ${!sa ? a.name : b.name} no encuentra sitio para la estación`, { x:(a.fx + b.fx) / 2 * T, y:(a.fy + b.fy) / 2 * T }); } return; }
   if ((a.coal || 0) + (b.coal || 0) < 20) { if (!r.railCoalMsg) { r.railCoalMsg = true; notify(`${a.name} y ${b.name} quieren unirse con el ferrocarril, pero entre los dos no tienen carbón suficiente (20)`, { x:(a.fx + b.fx) / 2 * T, y:(a.fy + b.fy) / 2 * T }); } return; }
+  const path = railPath(sa, sb); if (!path) { r.railFail = yearT; return; } // (sin recorrido no se gasta el carbón: antes se perdía)
   { const ta = Math.min(a.coal || 0, Math.max(10, 20 - (b.coal || 0))); a.coal = (a.coal || 0) - ta; b.coal -= 20 - ta; } // lo ponen entre los dos (la mitad cada uno, si pueden)
-  const path = railPath(sa, sb); if (!path) { r.railFail = yearT; return; }
   r.rail = { a:a.id, b:b.id, sa, sb, path, since:Math.floor(yearT / DAY_LEN) + 1 }; layRail(path);
   notify(`¡Se inaugura el ferrocarril entre ${a.name} y ${b.name}! Estaciones en los dos pueblos y trenes que van y vienen`, { x:(a.fx + b.fx) / 2 * T, y:(a.fy + b.fy) / 2 * T }); snd('horn', a.fx * T, a.fy * T, .6);
 }
+// Dentro de una nación: la capital se une por tren con sus ciudades (por tierra), sin esperar a una ruta comercial
+let homeRailT = 0;
+SYSTEMS.push(dt => { try {
+  if (!world || (homeRailT -= dt) > 0) return; homeRailT = 20;
+  for (const n of liveTowns()) {
+    if (nationOf(n) !== n || !knowsSci(n, 'ferrocarril')) continue;
+    for (const c of liveTowns()) if (c !== n && !c.colony && nationOf(c) === n && popOf(c) >= 10 && Math.hypot(c.fx - n.fx, c.fy - n.fy) < 160) {
+      const r = relOf(n, c); if (r.war) continue; if (!r.rail) railCheck(n, c, r, true);
+      if (r.rail && !r.route) { const g = (n.coal || 0) >= (c.coal || 0) ? n : c; r.rail.idle = (g.coal || 0) < .3; if (!r.rail.idle) g.coal -= .3; } // el tren quema carbón (con ruta comercial ya lo cuenta routeTick)
+    }
+  }
+} catch (e) { console.error(e); } });
 // La vía va por casillas: rodea los pueblos, los edificios y los campos; cruza ríos y lagos con un puente (el mar no)
 function railPath(sa, sb){
   const s0 = sa[1] * W + sa[0], s1 = sb[1] * W + sb[0], tx1 = sb[0], ty1 = sb[1];

@@ -42,7 +42,7 @@ function colonyTick(n, dt, people, adults){
   if (goers.length < 4) return;
   for (const u of goers) { releaseTask(u); if (u.actT > 0) { u.actT = 0; u.onDone = null; } dismount(u); u.sleep = false; u.task = { k:'viaje' }; u.away = true; }
   const L = n.port.launch, home = [(L % W) * T + 2, ((L / W) | 0) * T + 3], path = s.route.slice(), first = path.shift();
-  travelers.push({ kind:'colonos', v:goers[0], crew:goers, from:n.id, to:n.id, x:home[0], y:home[1], tx:first[0], ty:first[1], path, sea:true, phase:'ida', dir:1, site:[s.x, s.y], hx:home[0], hy:home[1] });
+  travelers.push({ kind:'colonos', v:goers[0], crew:goers, from:n.id, to:n.id, x:home[0], y:home[1], tx:first[0], ty:first[1], path, sea:true, phase:'ida', dir:1, site:[s.x, s.y], hx:home[0], hy:home[1], old:s.old || null });
   notify(`De ${n.name} zarpa un barco con ${goers.length} colonos hacia tierras lejanas`, at);
 }
 // Llegan: fundan la colonia (si no se puede, se instalan donde llegan y siguen siendo de los suyos)

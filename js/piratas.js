@@ -332,12 +332,16 @@ const SHIP_GAP = 30 * SHIP_K;
 addEventListener('DOMContentLoaded', () => SYSTEMS.push(dt => { // (este archivo se carga antes que la lista de sistemas)
   if (!world) return;
   const L = [...pirates(), ...navies()].filter(s => s.sink == null);
-  for (const t of travelers) if (t.sea && !t.done && seaTile(t.x, t.y)) L.push(t);
+  const TR = new Set(); for (const t of travelers) if (t.sea && !t.done && seaTile(t.x, t.y)) { L.push(t); TR.add(t); }
   if (L.length < 2) return;
   for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) {
     const a = L[i], b = L[j], dx = b.x - a.x, dy = (b.y - a.y) * 1.4, d = Math.hypot(dx, dy); // (de lado son más largos que altos)
+    // Dos barcos de viaje no se apartan entre sí (los de una misma nación ya se pintan en un solo barco): al ir varios al
+    // mismo puerto, el empujón (más rápido que lo que navegan) los dejaba clavados a unas casillas, contra la costa
+    if (TR.has(a) && TR.has(b)) continue;
     if (d >= SHIP_GAP || d < .01) { if (d < .01) b.x += 1; continue; }
     const push = Math.min(SHIP_GAP - d, 40 * dt), ux = dx / d, uy = dy / d / 1.4;
-    for (const [o, sg] of [[a, -1], [b, 1]]) { const nx = o.x + ux * push * sg * .5, ny = o.y + uy * push * sg * .5; if (seaTile(nx, ny)) { o.x = nx; o.y = ny; if (o.v && o.crew) for (const u of [o.v, ...o.crew]) if (u && !u.dead) { u.x = nx; u.y = ny; } } }
+    // (un barco de viaje que está llegando no se aparta: se aparta el otro)
+    for (const [o, sg] of [[a, -1], [b, 1]]) { if (TR.has(o) && Math.hypot(o.tx - o.x, o.ty - o.y) < SHIP_GAP * 1.5 && !(o.path && o.path.length)) continue; const nx = o.x + ux * push * sg * .5, ny = o.y + uy * push * sg * .5; if (seaTile(nx, ny)) { o.x = nx; o.y = ny; if (o.v && o.crew) for (const u of [o.v, ...o.crew]) if (u && !u.dead) { u.x = nx; u.y = ny; } } }
   }
 }));

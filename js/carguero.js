@@ -98,6 +98,7 @@ SYSTEMS.push(dt => {
             // y vuelve con lo que al otro le sobra
             const back = CARGO_GOODS.map(([k, n, keep]) => [k, n, (o[k] || 0) - keep(o)]).filter(x => x[2] > 20 && x[0] !== c.good).sort((a, b) => b[2] - a[2])[0];
             c.label = `Descargando ${c.gname}`; c.ev = [{ at:4.5, full:false, label:'Vacío' }]; if (back) { const n = Math.min(Math.floor(back[2]), 60); o[back[0]] -= n; c.backGood = back[0]; c.backN = n; c.ev.push({ at:2.4, full:false, label:`Cargando ${CARGO_GOODS.find(q => q[0] === back[0])?.[1] || back[0]}` }, { at:.8, full:true, label:'Cargado' }); } } }
+        { const og = villageById(c.g); if (og) og.cargoTrips = (og.cargoTrips || 0) + 1; } // (tráfico del puerto: faro, puertos.js)
         c.phase = 'vuelta'; c.wait = c.kind === 'petroleo' ? 4 : 7; c.pts = seaPath([c.x, c.y], c.home) || [c.home]; c.k = 0; continue;
       }
       if (c.kind === 'petroleo') { const r = (typeof hasRefinery === 'function' && hasRefinery(g) ? g : nearestRefinery(c.d)) || g; r.oilStock = (r.oilStock || 0) + (c.load || 0); } // (a la refinería de la nación)

@@ -119,6 +119,7 @@ Sin dependencias ni compilación: cada archivo es un script normal y se cargan e
 | `js/guerra.js` | Campamentos de guerra, bajas de cada bando, guerras más largas y guerras civiles |
 | `js/titulares.js` | Barra de titulares arriba: guerras con su marcador y las noticias más importantes |
 | `js/rutas.js` | Rutas comerciales: se ven en el mapa, dan negocio y mueven comida de quien sobra a quien falta |
+| `js/caminos.js` | Caminos reales entre pueblos con ruta comercial: serpentean por el terreno, se empedran desde los dos lados y tienen una venta a medio camino |
 | `js/rescate.js` | Planes para evitar la bancarrota: tipos, venta de reservas, rescates de otros países, recortes, impuesto a los ricos, reestructuración |
 | `js/deportes.js` | Campo de fútbol, piscina y pista de atletismo; clubes con escudo, entrenos, partidos entre naciones, categorías y Juegos cada año |
 | `js/leyes.js` | Diez leyes nuevas (ley seca, toque de queda, renta básica, lotería, servicio militar, deporte, más festivos, animales, libertad de prensa, impuesto a los ricos) |
