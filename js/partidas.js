@@ -92,7 +92,32 @@ function graphDecode(pk){
 }
 // Partidas guardadas en el navegador: el mismo formato que los archivos .forja (graphEncode) comprimido con gzip, y al
 // lado la ficha (meta, when) para la lista. Las de antes (la partida tal cual, sin comprimir) se siguen abriendo
+// (rendimiento) convertirla a texto y comprimirla paraba el juego ~1,3 s en cada guardado automático: ahora se pasa una copia
+// a un hilo aparte (copiarla cuesta ~0,25 s) y allí se hace lo demás. Si el hilo no está o falla, como antes
+let saveWorker = null, saveReq = 0; const saveWait = new Map();
+function saveWorkerGet(){
+  if (saveWorker !== null) return saveWorker;
+  try {
+    const src = `const b64 = ${b64.toString()};
+${graphEncode.toString()}
+onmessage = async e => { const { id, data } = e.data; try { const txt = JSON.stringify(graphEncode(data)), gz = typeof CompressionStream === 'function';
+      const z = gz ? await new Response(new Blob([txt]).stream().pipeThrough(new CompressionStream('gzip'))).blob() : new Blob([txt]); postMessage({ id, z, gz }); } catch (err) { postMessage({ id, err:String(err) }); } };`;
+    saveWorker = new Worker(URL.createObjectURL(new Blob([src], { type:'text/javascript' })));
+    saveWorker.onmessage = e => { const w = saveWait.get(e.data.id); if (!w) return; saveWait.delete(e.data.id); if (e.data.err) w.ko(new Error(e.data.err)); else w.ok(e.data); };
+    saveWorker.onerror = () => { for (const w of saveWait.values()) w.ko(new Error('hilo')); saveWait.clear(); saveWorker = false; };
+  } catch (err) { saveWorker = false; }
+  return saveWorker;
+}
 async function packSnap(snap){
+  const w = saveWorkerGet();
+  if (w) {
+    const id = ++saveReq, p = new Promise((ok, ko) => saveWait.set(id, { ok, ko }));
+    let sent = false; try { w.postMessage({ id, data:snap.data }); sent = true; } catch (err) { saveWait.delete(id); } // (algo que no se puede copiar: como antes)
+    if (sent) {
+      snap.restore(); snap.restore = () => {}; // (la copia ya está hecha: las tareas pendientes, de vuelta enseguida)
+      try { const r = await p; return { z:r.z, gz:r.gz, v:2, when:snap.data.when, meta:snap.data.meta }; } catch (err) { saveWorker = false; } // (si falla, se hace aquí)
+    }
+  }
   let txt; try { txt = JSON.stringify(graphEncode(snap.data)); } finally { snap.restore(); snap.restore = () => {}; } // (las tareas pendientes, de vuelta enseguida)
   const z = typeof CompressionStream === 'function' ? await new Response(new Blob([txt]).stream().pipeThrough(new CompressionStream('gzip'))).blob() : new Blob([txt]);
   return { z, gz:typeof CompressionStream === 'function', v:2, when:snap.data.when, meta:snap.data.meta };
