@@ -80,11 +80,37 @@ function migArrive(v, to){
 }
 { const base = welcomeMigrant; welcomeMigrant = function(v, from, to){ const r = base.apply(this, arguments); try { if (to) migArrive(v, to); } catch (e) { console.error(e); } return r; }; }
 
+// ---- Mudanzas dentro del país: de la ciudad que no da abasto a la de al lado que tiene casas libres ----
+// Si en un pueblo hay gente sin casa y otro de la misma nación, a mano, tiene sitio de sobra, unas cuantas familias se mudan
+// allí (los sin casa primero, con su pareja y sus hijos). Sin fronteras de por medio: es su país
+function housingMoveTick(g, people){
+  if ((g.moveT || 0) > yearT) return; g.moveT = yearT + DAY_LEN * (.4 + Math.random() * .3);
+  const hs = new Set(housesOf(g)), homeless = people.filter(v => v !== g.leader && ageOf(v) >= ADULT_H && !v.away && !v.boat && !v.slave && !v.compId && !v.ceo && (v.home == null || !hs.has(v.home)) && !(v.task && ['asalto', 'viaje', 'golpe', 'detenido'].includes(v.task.k)));
+  if (homeless.length < 3) return;
+  const n = nationOf(g); let best = null, bs = 0;
+  for (const o of liveTowns()) {
+    if (o === g || nationOf(o) !== n || popOf(o) < 5) continue; // (a un pueblo vivo, no a uno casi abandonado)
+    const d = Math.hypot(o.fx - g.fx, o.fy - g.fy); if (d > 120) continue;
+    const free = houseCap(o) - popOf(o); if (free < 3) continue;
+    const s = free - d / 15 + (o.food >= popOf(o) ? 2 : 0); if (s > bs) { bs = s; best = o; }
+  }
+  if (!best) return;
+  const room = houseCap(best) - popOf(best), goers = [];
+  for (const u of homeless.sort(() => Math.random() - .5)) {
+    if (goers.length >= Math.min(room - 1, 6)) break; if (goers.includes(u)) continue;
+    const fam = [u, partnerOf(u), ...(u.kids || [])].filter(x => x && !x.dead && x.vid === g.id && !x.away && x !== g.leader && !goers.includes(x));
+    if (goers.length + fam.length > room - 1) continue; goers.push(...fam);
+  }
+  if (!goers.length) return;
+  for (const u of goers) exile(u, g, best);
+  const W0 = world.moveMsg ||= {}, key = g.id + '>' + best.id;
+  if (!(W0[key] > yearT)) { W0[key] = yearT + DAY_LEN * 2; notify(`🏠 En ${g.name} no hay casa para todos: ${goers.length === 1 ? `${goers[0].name} se muda` : `${goers.length} personas se mudan`} a ${best.name}, que tiene viviendas libres`, { x:g.fx * T, y:g.fy * T }); }
+}
 let migClock = 0;
 SYSTEMS.push(dt => { try {
   if (!world || (migClock -= dt) > 0) return; migClock = 4;
   const byV = new Map(); for (const v of villagers) if (!v.dead) { let L = byV.get(v.vid); if (!L) byV.set(v.vid, L = []); L.push(v); }
-  for (const g of liveTowns()) { const ps = byV.get(g.id); if (ps) migTick(g, ps); }
+  for (const g of liveTowns()) { const ps = byV.get(g.id); if (ps) { migTick(g, ps); housingMoveTick(g, ps); } }
 } catch (e) { console.error(e); } });
 
 // ---- Fichas ----

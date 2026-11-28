@@ -1896,12 +1896,13 @@ function thinRoute(x0, y0, pts, ok){
   return out;
 }
 function routeTraveler(t){
+  if (t.routeAt > yearT) return;
   const key = `${Math.round(t.tx)},${Math.round(t.ty)}`; if (t.routed === key) return; t.routed = key;
   let r = null;
   if (!t.sea) { if (landLine(t.x, t.y, t.tx, t.ty)) return; r = landRoute(t.x, t.y, t.tx, t.ty); if (!r) { t.sea = true; t.routed = null; return; } } // sin camino por tierra: en barca
   else {
     if (seaLine(t.x, t.y, t.tx, t.ty)) return;
-    const sr = seaRoute(seaFrom(t.x, t.y), seaFrom(t.tx, t.ty)); if (!sr) return; // (mares distintos: como antes)
+    const sr = seaRoute(seaFrom(t.x, t.y), seaFrom(t.tx, t.ty)); if (!sr) { t.routed = null; t.routeAt = yearT + 3; return; } // (sin ruta: se vuelve a probar en un rato; antes no lo intentaba más y el barco se quedaba contra la costa)
     r = thinRoute(t.x, t.y, [...sr, [t.tx, t.ty]], (a, b, c, d) => seaLine(a, b, c, d));
   }
   const [f, ...rest] = r; t.path = rest.concat(t.path || []); t.tx = f[0]; t.ty = f[1]; t.routed = `${Math.round(t.tx)},${Math.round(t.ty)}`;

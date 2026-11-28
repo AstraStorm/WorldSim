@@ -50,6 +50,7 @@ function climateDay(){
   (W0.co2Hist ||= []).push(Math.round(W0.co2)); if (W0.co2Hist.length > 60) W0.co2Hist.shift();
   // El mar sube con el calor (y sigue subiendo aunque se pare, porque el hielo tarda en reaccionar)
   if (W0.warm > .3) { const before = Math.floor(W0.seaRise / 10); W0.seaRise += W0.warm * .9; if (Math.floor(W0.seaRise / 10) > before) seaStep(); }
+  strandedSweep((W0.seaRise || 0) >= 10);
   // Avisos por umbrales
   for (const [t, txt] of [[.5, 'Los científicos avisan: el planeta se ha calentado medio grado desde antes de las fábricas'], [1, '🌡 El mundo ya está 1 °C más caliente: veranos más duros y más tormentas'], [1.5, '🌡 +1,5 °C: los glaciares retroceden y las olas de calor matan en las ciudades'], [2, '🔥 +2 °C: el clima se descontrola; sequías, inundaciones y el mar avanza'], [3, '🔥 +3 °C: el planeta vive una emergencia climática']])
     if (was < t && W0.warm >= t) notify(txt, null);
@@ -77,6 +78,24 @@ function seaStep(){
   if (x1 >= 0) { paintRegion(x0 - 2, y0 - 2, x1 + 2, y1 + 2); composeRegion(x0 - 7, y0 - 11, x1 + 7, y1 + 12); statsSoon(true); }
   const names = [...towns].map(id => villageById(id)).filter(Boolean).map(g => g.name);
   notify(`🌊 El mar ha subido ${Math.round(world.seaRise)} cm: se traga ${take.length - hit} casillas de playa${names.length ? ` y daña edificios de ${names.slice(0, 4).join(', ')}` : ''}`, x1 >= 0 ? { x:x0 * T, y:y0 * T } : null);
+}
+// Lo construido que el mar ha dejado aislado (casi rodeado de agua, en tierra baja): las olas lo van derribando y, cuando
+// cae, el mar se lo traga. Antes la casilla del edificio no se inundaba nunca y quedaban casas sueltas en medio del agua
+const WATER_BLD = new Set(['oil', 'pump', 'power', 'wind', 'pylon', 'tele']); // (plataformas, presas, molinos de mar, torres: pueden estar sobre el agua)
+function strandedSweep(risen){
+  const wet = j => WATER[world.biome[j]] && !world.river[j] && !world.lake[j];
+  let x0 = W, y0 = H, x1 = -1, y1 = -1;
+  for (let i = W; i < N - W; i++) {
+    if (WATER[world.biome[i]]) { const o = world.objs[i]; if (o && isBuilding(o) && !bridgeSet.has(i) && !WATER_BLD.has(o.key.split(':')[0])) damageBuilding(i, .5); continue; } // un edificio con el agua ya debajo (inundación, tsunami…)
+    if (!risen || world.river[i] || world.lake[i] || world.e[i] > world.sea + .02) continue;
+    const n = (wet(i - 1) ? 1 : 0) + (wet(i + 1) ? 1 : 0) + (wet(i - W) ? 1 : 0) + (wet(i + W) ? 1 : 0); if (n < 3) continue;
+    const o = world.objs[i];
+    if (o && isBuilding(o)) { if (!WATER_BLD.has(o.key.split(':')[0])) damageBuilding(i, .5); continue; } // (se derrumba en un par de días)
+    if (o) world.objs[i] = null;
+    world.e[i] = world.sea - .002; world.biome[i] = classify(i); pathMap.delete(i); farmMap.delete(i);
+    const x = i % W, y = (i / W) | 0; x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);
+  }
+  if (x1 >= 0) { paintRegion(x0 - 2, y0 - 2, x1 + 2, y1 + 2); composeRegion(x0 - 7, y0 - 11, x1 + 7, y1 + 12); statsSoon(true); }
 }
 // ---- Cumbres del clima ----
 function climateDeal(){

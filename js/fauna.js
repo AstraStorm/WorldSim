@@ -372,6 +372,9 @@ function updateAnimals(dt){
       }
       continue;
     } else a.swimT = 0;
+    // Las crías maman mientras tengan madre (antes no comían nunca: el hambre se las llevaba a todas antes de hacerse mayores);
+    // las huérfanas buscan comida por su cuenta
+    if (age < ADULT && a.mother && !a.mother.dead) a.food = 1;
     a.food = Math.max(0, a.food - dt / S.hunger);
     if (a.food <= 0) { a.starve += dt; if (a.starve > 20) { killAnimal(a, 'hambre'); continue; } } else a.starve = 0;
     // Frío extremo: por debajo de lo que aguanta su especie (las crías, algo menos) se van helando y mueren;
@@ -389,7 +392,7 @@ function updateAnimals(dt){
     // Sed: más con calor y sequía; sin beber unos segundos, mueren deshidratados (las crías maman)
     if (age >= ADULT) {
       a.water = Math.max(0, a.water - dt / S.hunger * .9 * (1 + Math.max(0, temp - 20) / 10 + droughtAt(ti) * .6));
-      if (a.water <= 0) { a.thirst += dt; if (a.thirst > 15) { killAnimal(a, 'sed'); continue; } } else a.thirst = 0;
+      if (a.water <= 0) { a.thirst += dt; if (a.thirst > 25) { killAnimal(a, 'sed'); continue; } } else a.thirst = 0; // (aguantan algo más: una vaca tarda casi un minuto en llegar a un río lejano)
     }
     if (a.drinkT > 0) { a.drinkT -= dt; if (a.drinkT <= 0) a.water = 1; continue; }
     if (a.eatT > 0) { a.eatT -= dt; if (a.eatT <= 0) a.food = 1; continue; }
@@ -426,7 +429,7 @@ function updateAnimals(dt){
       if (a.mig) { a.state = 'migrando'; if (moveTo(a, a.mig[0], a.mig[1], S.speed * 1.1, dt)) a.mig = null; continue; }
     }
     // Beber: buscan la orilla de un río o lago que no esté helado (o un charco); el agua del mar no sirve
-    if (a.water < .4 && !baby) {
+    if (a.water < .6 && !baby && !(a.food < .25 && a.water > .25)) { // (antes a partir de .4: se ponían en camino demasiado tarde y morían de sed andando; con mucha hambre y algo de agua aún, primero comer)
       if (!a.wtarget || frozen(a.wtarget.i) || (a.wt -= dt) <= 0) { a.wtarget = findWater(a); a.wt = 5; }
       if (a.wtarget) {
         a.state = 'yendo a beber';
@@ -436,10 +439,10 @@ function updateAnimals(dt){
       a.state = 'buscando agua';
     }
     // Hambre: cada uno busca su comida
-    if (a.food < .5 && !baby) {
+    if (a.food < .5 && (!baby || !a.mother || a.mother.dead)) {
       if (S.eats === 'pasto') {
         a.state = 'pastando';
-        if (GRASSY.has(world.biome[ti]) && (world.graze[ti] || 0) + droughtAt(ti) * .6 < .7) { a.eatT = 2.5; world.graze[ti] = (world.graze[ti] || 0) + .45; grazed.add(ti); continue; }
+        if (GRASSY.has(world.biome[ti]) && (world.graze[ti] || 0) + droughtAt(ti) * .6 < .7) { a.eatT = 2.5; world.graze[ti] = (world.graze[ti] || 0) + .45; grazed.add(ti); a.water = Math.min(1, a.water + .35 * (1 - droughtAt(ti))); continue; } // (la hierba fresca también les da agua; con sequía, menos)
         if ((a.t -= dt) <= 0 || moveTo(a, a.tx, a.ty, S.speed, dt)) {
           a.t = 4;
           for (let k = 0; k < 12; k++) {
@@ -498,19 +501,26 @@ function updateAnimals(dt){
       if (S.prey) {
         const lead = a.herd ? herdLeader.get(a.herd) : null;
         if (lead && lead !== a && lead.prey && !lead.prey.dead) a.prey = lead.prey;
-        if (!a.prey || a.prey.dead || Math.hypot(a.prey.x - a.x, a.prey.y - a.y) > 120) {
+        if (!a.prey || a.prey.dead || Math.hypot(a.prey.x - a.x, a.prey.y - a.y) > 180) {
           a.prey = null;
           if (!((a.huntT = (a.huntT || 0) - dt) > 0)) { a.huntT = .6; // (buscar presa, como mucho dos veces por segundo y solo por las celdas de alrededor)
-            let bd = 100; const cx = Math.floor(a.x / 8), cy = Math.floor(a.y / 8);
-            for (let dy = -13; dy <= 13; dy++) for (let dx = -13; dx <= 13; dx++) { const l = aGrid.get((cy + dy) * 4096 + cx + dx); if (!l) continue;
+            const R = a.food < .2 ? 160 : 100, RC = Math.ceil(R / 8); let bd = R; const cx = Math.floor(a.x / 8), cy = Math.floor(a.y / 8); // (con mucha hambre, buscan más lejos)
+            for (let dy = -RC; dy <= RC; dy++) for (let dx = -RC; dx <= RC; dx++) { const l = aGrid.get((cy + dy) * 4096 + cx + dx); if (!l) continue;
               for (const p of l) { if (p.dead || !S.prey.includes(p.sp)) continue; const d = Math.hypot(p.x - a.x, p.y - a.y); if (d < bd) { bd = d; a.prey = p; } } }
           }
         }
         if (a.prey) {
           a.state = 'cazando';
-          if (Math.hypot(a.prey.x - a.x, a.prey.y - a.y) < 4) { killAnimal(a.prey, 'presa'); a.prey = null; a.eatT = 3; if (lead && lead !== a) lead.food = Math.max(lead.food, .8); continue; }
+          if (Math.hypot(a.prey.x - a.x, a.prey.y - a.y) < 4) { killAnimal(a.prey, 'presa'); a.prey = null; a.eatT = 3; if (lead && lead !== a) lead.food = Math.max(lead.food, .8);
+            if (a.herd) for (const o of animals) if (o !== a && !o.dead && o.herd === a.herd && Math.hypot(o.x - a.x, o.y - a.y) < 60) o.food = Math.max(o.food, .75); // (la presa se reparte con la manada que está cerca: antes solo comían el que la cazaba y el jefe)
+            continue; }
           moveTo(a, a.prey.x, a.prey.y, S.speed * 1.3, dt); continue;
         }
+      }
+      // Ninguna presa a la vista: los cazadores recorren la comarca buscándola (antes se quedaban quietos hasta morir de hambre)
+      if (S.prey && !a.prey) {
+        if (!a.roam || (a.roamT = (a.roamT || 0) - dt) <= 0) { a.roamT = 8; a.roam = null; for (let k = 0; k < 8 && !a.roam; k++) { const g = Math.random() * Math.PI * 2, x = a.x + Math.cos(g) * 150, y = a.y + Math.sin(g) * 150; if (aFree(x, y)) a.roam = [x, y]; } }
+        if (a.roam) { a.state = 'buscando presas'; if (moveTo(a, a.roam[0], a.roam[1], S.speed, dt)) a.roam = null; continue; }
       }
       a.state = 'buscando comida';
     } else a.state = baby ? 'siguiendo a su madre' : 'paseando';

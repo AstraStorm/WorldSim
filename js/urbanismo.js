@@ -362,7 +362,7 @@ function streetFree(i){
   if (URB_NET(i)) return true;
   if (WATER[world.biome[i]] || world.biome[i] === B.LAVA || wallSet.has(i)) return false;
   const o = world.objs[i]; if (o && !['tree', 'berry'].includes(OBJ[o.key][1])) return false;
-  return !villages.some(q => underBuilding(q, x, y) || inPen(q, x, y));
+  return !villages.some(q => underBuilding(q, x, y) || inPen(q, x, y)) && !inRegistry(x, y);
 }
 // Abre la calle por esas casillas, en orden: 'red' si llega a las calles del pueblo, 'fin' si se acaban, 'estorbo' si algo la corta
 function paveTile(g, i, net){
@@ -415,6 +415,13 @@ function bldRects(){
   const out = []; for (const o0 of villages) for (const b of buildingsOf(o0)) { const o = world.objs[b]; if (!o || !isBuilding(o)) continue; const [hw, hh] = BUILD_DIMS[o.key.split(':')[0]] || [4, 5], x = b % W, y = (b / W) | 0; out.push({ i:b, k:o.key.split(':')[0], x0:x - hw + 1, y0:y - hh + 1, x1:x + hw - 1, y1:y }); }
   return out;
 }
+// ¿Cabe ahí un solar (el registro civil…) sin que luego overlapFix lo tenga que quitar? Las mismas reglas: ni sobre la huella
+// de un edificio o un castillo, ni dentro de una plaza, la plaza sagrada o el mercado, ni encima de otro solar
+function plotSpotOk(r, B0 = bldRects()){
+  return !B0.some(b => rectHit(b, r)) && !fortRects().some(f => rectHit(f, r)) && !villages.some(o => [o.holy, o.plaza, o.marketRect].some(z => z && rectHit(rectOf(z), r))) && !plotIn(r.x0, r.y0, r.x1, r.y1);
+}
+// Las calles nuevas no atraviesan el registro civil (antes lo cruzaban y el repaso de solapes acababa quitándolo)
+const inRegistry = (x, y) => villages.some(o => { const q = o.registry; return q && x >= q.x0 && x < q.x0 + q.w && y >= q.y0 && y < q.y0 + q.h; });
 function overlapFix(g){
   let n = 0; const B0 = bldRects(), zones = [g.pitch, g.pool, g.track, g.holy, g.marketRect, g.plaza, g.cemetery, g.registry, g.aero].filter(Boolean).map(rectOf);
   for (const z of zones) for (let y = z.y0; y <= z.y1; y++) for (let x = z.x0; x <= z.x1; x++) {

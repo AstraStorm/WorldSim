@@ -59,7 +59,12 @@ function seaCompOf(i){
 }
 function seaRoute(a, b){
   if (a === b) return [];
-  const ca = seaCompOf(a), cb = seaComp[b]; if (ca && cb && ca !== cb) return null;
+  let ca = seaCompOf(a); const cb = seaComp[b];
+  if (ca && cb && ca !== cb) { // la salida ha caído en una charca o un brazo cerrado junto a la costa: se sale por el mar del destino, si está a mano
+    const ax = a % W, ay = (a / W) | 0; let alt = -1;
+    for (let r = 1; r <= 14 && alt < 0; r++) for (let dy = -r; dy <= r && alt < 0; dy++) for (let dx = -r; dx <= r; dx++) { if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue; const x = ax + dx, y = ay + dy; if (x < 0 || y < 0 || x >= W || y >= H) continue; if (seaComp[y * W + x] === cb) { alt = y * W + x; break; } }
+    if (alt < 0) return null; a = alt; ca = cb;
+  }
   if (!srP || srP.length !== N) { srP = new Int32Array(N); srS = new Uint32Array(N); srQ = new Int32Array(N); srGen = 0; }
   const ok = seaOpen, gen = ++srGen; let h = 0, n = 0, found = false; srQ[n++] = a; srS[a] = gen; srP[a] = a;
   while (h < n) {

@@ -50,7 +50,8 @@ function papersTick(g, dt, people){
     if (!n.dniMsg) { n.dniMsg = true; notify(`${n.name} abre el registro civil: cada habitante tendrá su DNI y quien quiera viajar, su pasaporte`, at); }
     if (!g.registry && g.hall != null && world.objs[g.hall] && !(g.regFail > yearT - DAY_LEN)) { // la oficina del registro, junto al ayuntamiento
       const hx = g.hall % W, hy = (g.hall / W) | 0;
-      const p = ringFind(hx + 8, hy + 1, 12, (x, y) => areaClear(x - 3, y - 7, x + 3, y) && [-3, -2, -1, 0, 1, 2, 3].every(dx => tileFree(x + dx, y) && !pathMap.has(y * W + x + dx) && !farmMap.has(y * W + x + dx)) && !plotIn(x - 4, y - 7, x + 4, y + 1) && !villages.some(q => underBuilding(q, x, y)));
+      const B0 = typeof bldRects === 'function' ? bldRects() : null; // (la huella de todos los edificios, una vez)
+      const p = ringFind(hx + 8, hy + 1, 12, (x, y) => areaClear(x - 3, y - 7, x + 3, y) && (!B0 || plotSpotOk({ x0:x - 3, y0:y - 6, x1:x + 3, y1:y }, B0)) && [-3, -2, -1, 0, 1, 2, 3].every(dx => tileFree(x + dx, y) && !pathMap.has(y * W + x + dx) && !farmMap.has(y * W + x + dx)) && !plotIn(x - 4, y - 7, x + 4, y + 1) && !villages.some(q => underBuilding(q, x, y)));
       if (p) { g.registry = { x:p[0], y:p[1], x0:p[0] - 3, y0:p[1] - 6, w:7, h:7 }; composeRegion(p[0] - 8, p[1] - 12, p[0] + 8, p[1] + 4); notify(`En ${g.name} abre la oficina del registro civil: allí hacen el DNI y el pasaporte`, { x:p[0] * T, y:p[1] * T }); }
       else g.regFail = yearT;
     }
