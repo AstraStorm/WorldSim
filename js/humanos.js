@@ -49,6 +49,10 @@ const bloqueMax = g => typeof industrial === 'function' && !industrial(g) ? (pop
 const onStreet = i => { const x = i % W, y = (i / W) | 0; for (let yy = y - 1; yy <= y + 2; yy++) for (let xx = x - 4; xx <= x + 4; xx++) if (pathMap.has(yy * W + xx)) return true; return false; };
 const pisoCands = g => { const mx = bloqueMax(g); return housesOf(g).filter(i => { const t = bloqueTier(world.objs[i].key); return t >= 0 && t < mx && onStreet(i) && !villagers.some(u => u.task && u.task.k === 'pisos' && u.task.i === i); }).sort((a, b) => Math.hypot(a % W - g.fx, ((a / W) | 0) - g.fy) - Math.hypot(b % W - g.fx, ((b / W) | 0) - g.fy)); };
 const penAnimals = g => animals.filter(a => !a.dead && a.dom === g.id);
+// Lo que cuesta un cercado: el primero, unas estacas y cuerda (5 de madera); los siguientes, 8
+const penCost = g => pensOf(g).length ? 8 : 5;
+// Los que se pueden sacrificar: adultos del cercado, ni caballos ni de una especie de la que solo queda la pareja
+function penMeat(g){ const P = penAnimals(g), n = {}; for (const a of P) n[a.sp] = (n[a.sp] || 0) + 1; return P.filter(a => a.sp !== 'caballo' && !a.lead && !a.rider && n[a.sp] > 2 && (yearT - a.born) / YEAR >= ADULT); }
 const MALE_ONLY = new Set(['barba', 'calvo', 'coronilla', 'calvoBarba', 'cresta']), FEMALE_ONLY = new Set(['largo', 'melena', 'coleta', 'mono']);
 function pickStyleSex(r, sex){
   for (let k = 0; k < 20; k++) { const st = pickStyle(r); if (sex === 'h' ? !FEMALE_ONLY.has(st) : !MALE_ONLY.has(st)) return st; }
@@ -337,7 +341,10 @@ function siteNear(g, rMin, rMax, test, tries = 60){
 // Cercados de animales: un pueblo puede tener varios (g.pen es siempre el primero, por las partidas guardadas de antes)
 const pensOf = g => { if (!g.pens) g.pens = g.pen ? [g.pen] : []; const p0 = g.pens[0] || null; if (g.pen !== p0) g.pen = p0; return g.pens; };
 const PEN_CAP = 12; // animales por cercado
-const penLimit = g => Math.min(4, 1 + Math.floor(popOf(g) / 15)); // uno más por cada 15 habitantes
+const penLimit = g => Math.min(6, 1 + Math.floor(popOf(g) / 10) + (g.food < popOf(g) * 2 ? 1 : 0)); // uno más por cada 10 habitantes (y otro si pasan hambre)
+// Animales de granja sueltos por la zona que se podrían encerrar (se mira cada pocos segundos)
+function wildAround(g){ const c = g._wild; if (c && yearT - c.t < 8 && yearT >= c.t) return c.n; const c0 = {}; for (const a of animals) if (!a.dead && !a.dom && !a.lead && HERBIVORES.includes(a.sp) && Math.abs(a.x / T - g.fx) < 45 && Math.abs(a.y / T - g.fy) < 45) c0[a.sp] = (c0[a.sp] || 0) + 1;
+  let n = 0; for (const sp in c0) n += Math.max(0, c0[sp] - 4); g._wild = { t:yearT, n }; return n; } // (sin contar los 4 de cada especie que se dejan en libertad para que críen)
 const penOfAnimal = (g, a) => { const ps = pensOf(g); return ps[a.penK] || ps[0] || null; };
 const emptiestPen = g => { const ps = pensOf(g), n = ps.map(() => 0); for (const a of penAnimals(g)) n[ps[a.penK] ? a.penK : 0]++; let k = 0; for (let j = 1; j < ps.length; j++) if (n[j] < n[k]) k = j; return k; };
 const inPen = (g, x, y, m = 0) => pensOf(g).some(p => x >= p.x0 - m && x <= p.x1 + m && y >= p.y0 - m && y <= p.y1 + m);
@@ -370,7 +377,7 @@ const busyWith = (g, job) => { let n = 0; for (const o of villagersOf(g.id)) if 
 // (un pescador no se pone a cosechar habiendo agricultores); si no hay nadie de ese oficio, o hay hambre de verdad y
 // es un trabajo de comida, cualquiera echa una mano
 let JOB_OF = null;
-const FOOD_JOBS = new Set(['sembrar', 'arar', 'cosechar', 'campo', 'pescar', 'barca', 'cazar', 'bayas']);
+const FOOD_JOBS = new Set(['sembrar', 'arar', 'cosechar', 'campo', 'pescar', 'barca', 'cazar', 'bayas', 'capturar', 'cercar', 'matanza']);
 function oficioCount(g){ const c = g.ofC; if (c && c.t === yearT) return c.m; const m = {}; for (const u of villagers) if (!u.dead && u.vid === g.id && u.oficio) m[u.oficio] = (m[u.oficio] || 0) + 1; g.ofC = { t:yearT, m }; return m; }
 function otherJob(v, k, ofc, hunger){
   if (!JOB_OF) { JOB_OF = {}; for (const [o, L] of Object.entries(OFICIOS)) for (const j of L) (JOB_OF[j] ||= []).push(o); }
@@ -446,8 +453,13 @@ function chooseJob(v, g){
   add('pescar', (hungry ? 2.5 : .3) * (needMeat ? 2 : needVeg ? .5 : 1)); add('cazar', (hungry ? 2 : .2) * (needMeat ? 2 : needVeg ? .5 : 1));
   if (g.port && openWater(g.port.launch)) add('barca', g.boatOut || busyWith(g, 'barca') ? 0 : (hungry || needMeat ? 3.5 : 1));
   const nPens = pensOf(g).length, nPenA = penAnimals(g).length; // otro cercado cuando los que hay están casi llenos
-  add('cercar', pop >= 4 && (!nPens || (nPenA >= nPens * (PEN_CAP - 2) && nPens < penLimit(g))) && spare >= 8 && !busyWith(g, 'cercar') && houses >= 1 ? 4 : 0);
-  add('capturar', nPens && nPenA + busyWith(g, 'capturar') < nPens * PEN_CAP && busyWith(g, 'capturar') < 3 ? (nPenA < 4 ? 5 : nPenA < 6 ? 2 : .4) : 0); // (con el cercado ya poblado, crían ellos: apenas se captura más)
+  // (con hambre o con muchos animales de granja sueltos alrededor, encerrarlos es casi lo primero: dan leche y huevos cada día)
+  const loose = wildAround(g), penHungry = g.food < pop * 2, penRush = penHungry || loose >= 8;
+  add('cercar', pop >= 4 && (!nPens || (nPenA >= nPens * (PEN_CAP - 2) && nPens < penLimit(g))) && (penRush && loose >= 3 ? g.wood >= penCost(g) : spare >= 8) && !busyWith(g, 'cercar') && houses >= 1 ? (penRush && loose >= 3 ? (penHungry ? 10 : 7) : 4) : 0);
+  add('capturar', nPens && nPenA + busyWith(g, 'capturar') < nPens * PEN_CAP && busyWith(g, 'capturar') < (penRush ? 4 : 3) ? (penRush && loose >= 3 ? 8 : nPenA < 4 ? 5 : nPenA < 6 ? 2 : .4) : 0); // (con el cercado ya poblado, crían ellos: si no hay prisa, apenas se captura más)
+  add('talar', penRush && loose >= 3 && !nPens && g.wood < penCost(g) ? 6 : 0); // (madera para el primer cercado: el ganado da de comer, las casas no)
+  // La matanza: con hambre de verdad, un animal del cercado a la despensa (sin tocar los caballos ni a la última pareja de cada especie)
+  add('matanza', g.food < pop * 1.2 && penMeat(g).length && busyWith(g, 'matanza') < 2 ? (g.food < pop * .6 ? 9 : 6) : 0);
   // Armas: solo saben hacer lanzas y arcos, y se ponen a ello cuando ven fieras cerca
   add('equipar', gearNeed(g) && busyWith(g, 'equipar') < 3 ? (atWarJ ? 2.5 : 1.5) * ((g.danger || 0) > 0 || L.includes('ejercito') || [...rels.values()].some(r => r.war && (r.war.att === g.id || r.war.def === g.id)) ? 5 : 1.5) : 0);
   const wantArmy = pop * (atWarJ ? .45 : g.danger > 0 || L.includes('ejercito') ? .3 : .15) * (g.food < pop * 3 ? .5 : 1); // una pequeña guardia siempre; en guerra, a filas
@@ -516,7 +528,7 @@ function chooseJob(v, g){
   if (L.includes('obras')) for (const j of J) if (['construir', 'pozo', 'almacen', 'puente', 'molino', 'mercado', 'templo', 'reparar'].includes(j[0])) j[1] *= 1.5;
   if (L.includes('bosques')) for (const j of J) { if (j[0] === 'talar') j[1] *= .5; if (j[0] === 'plantar' || j[0] === 'arboleda') j[1] *= 1.8; }
   // Hambruna (o el invierno encima sin despensa): todos a buscar comida; lo que no da de comer espera
-  const FOOD_JOBS = ['cosechar', 'sembrar', 'arar', 'campo', 'bayas', 'pescar', 'cazar', 'barca', 'capturar', 'bayal', 'plantar'];
+  const FOOD_JOBS = ['cosechar', 'sembrar', 'arar', 'campo', 'bayas', 'pescar', 'cazar', 'barca', 'capturar', 'bayal', 'plantar', 'matanza', 'cercar'];
   const famine = g.food < pop * 1.2 || ((si === 2 || (si === 1 && seasonInfo().f > .7)) && g.food < pop * 4);
   if (famine) for (const j of J) j[1] *= FOOD_JOBS.includes(j[0]) ? 3 : ['apagar', 'encender', 'alumbrar', 'beber', 'comer', 'pozo', 'construir', 'ampliar', 'ayuntamiento', 'reparar', 'derribar'].includes(j[0]) || (atWarJ && ['arma', 'muralla'].includes(j[0])) ? 1 : ['talar', 'picar'].includes(j[0]) ? .7 : .35;
   // Fuera de su horario, los adultos descansan: solo atienden lo urgente (fuego, defensa, la hoguera, las antorchas)
@@ -669,7 +681,8 @@ function setupTask(v, g, job){
         let ok = x0 > 1 && y0 > 1 && x0 + 9 < W - 1 && y0 + 7 < H - 1;
         for (let y = y0; ok && y <= y0 + 6; y++) for (let x = x0; ok && x <= x0 + 8; x++) { const i = y * W + x, o = world.objs[i]; if (WATER[world.biome[i]] || world.biome[i] === B.LAVA || pathMap.has(i) || bridgeSet.has(i) || farmMap.has(i) || (o && !['tree', 'berry'].includes(OBJ[o.key][1]))) ok = false; }
         for (let y = y0 - 1; ok && y <= y0 + 7; y++) for (let x = x0 - 1; ok && x <= x0 + 9; x++) if (underBuilding(g, x, y) || plazaSet.has(y * W + x) || holySet.has(y * W + x)) ok = false;
-        if (ok && !plotIn(x0 - 1, y0 - 1, x0 + 9, y0 + 7) && !penOverlap(g, x0, y0, x0 + 8, y0 + 6)) return { k:job, pen:{ x0, y0, x1:x0 + 8, y1:y0 + 6 }, x:(x0 + 4) * T + 2, y:(y0 + 3) * T + 3 };
+        if (ok && !plotIn(x0 - 1, y0 - 1, x0 + 9, y0 + 7) && !penOverlap(g, x0, y0, x0 + 8, y0 + 6)) { const pc = penCost(g); if (g.wood < pc) return null; g.wood -= pc; // (la madera se aparta ya: si no, se iba en casas antes de llegar)
+          return { k:job, pen:{ x0, y0, x1:x0 + 8, y1:y0 + 6 }, paid:pc, x:(x0 + 4) * T + 2, y:(y0 + 3) * T + 3 }; }
       }
       return null;
     }
@@ -776,6 +789,7 @@ function setupTask(v, g, job){
     }
     case 'ofrenda': { const sp = riteSpot(g, v); return sp ? { k:job, x:sp[0] + (Math.random() - .5) * 6, y:sp[1] } : null; }
     case 'sacrificio': { const herd = penAnimals(g).filter(a => !a.lead && !a.rider); if (!herd.length) return null; return { k:job, a:herd[Math.floor(Math.random() * herd.length)], phase:'ir' }; }
+    case 'matanza': { const herd = penMeat(g).filter(a => !villagers.some(u => u.task && u.task.k === 'matanza' && u.task.a === a)); if (!herd.length) return null; return { k:job, a:herd.sort((p, q) => (q.born || 0) - (p.born || 0))[herd.length - 1] }; } // (el más viejo)
     case 'equipar': { const sp = hasForge(g) ? standBy(g.forge) : fireSpot(v, g); return sp ? { k:job, x:sp[0], y:sp[1] } : null; }
     case 'caña': case 'arma': return { k:job, x:fireSpot(v, g)[0], y:fireSpot(v, g)[1] }; // se la fabrica junto a la hoguera con un palo
     case 'ocio': { // a la plaza, al mercado o junto a la hoguera, a charlar
@@ -818,6 +832,12 @@ function runTask(v, g, dt){
     return;
   }
   if (t.k === 'volver') { if (t.x == null) [t.x, t.y] = dropSpot(v, g); if (vGo(v, t.x, t.y, dt)) { deposit(v, g); dismount(v); v.task = null; v.wait = .5; } return; }
+  if (t.k === 'matanza') {
+    const a = t.a; if (!a || a.dead || a.dom !== g.id) { v.task = null; return; }
+    if (vGo(v, a.x, a.y, dt)) { killAnimal(a, 'matanza'); v.carry = { k:'comida', t:'carne', n:{ vaca:9, cerdo:7, oveja:5, pollo:2 }[a.sp] || 4, hide:a.sp !== 'pollo' }; v.task = { k:'volver' };
+      if (!(g.slaughterMsg > yearT)) { g.slaughterMsg = yearT + DAY_LEN * 2; notify(`En ${g.name} pasan hambre y sacrifican ganado del cercado para comer`, { x:v.x, y:v.y }); } }
+    return;
+  }
   if (t.k === 'cazar' || (t.k === 'capturar' && t.phase === 'ir')) {
     const a = t.a; if (!a || a.dead || a.dom) { v.task = null; return; }
     if (Math.hypot(a.x - v.x, a.y - v.y) > 60 * T) { v.task = null; return; }
@@ -1241,8 +1261,8 @@ function runTask(v, g, dt){
     }; break;
     case 'cercar': v.actT = 6; v.onDone = () => { const q = t.pen; let free = true;
       for (let y = q.y0 - 1; free && y <= q.y1 + 1; y++) for (let x = q.x0 - 1; free && x <= q.x1 + 1; x++) if (underBuilding(g, x, y) || plazaSet.has(y * W + x) || holySet.has(y * W + x) || wallSet.has(y * W + x) || (world.objs[y * W + x] && y >= q.y0 && y <= q.y1 && x >= q.x0 && x <= q.x1 && !['tree', 'berry'].includes(OBJ[world.objs[y * W + x].key][1]))) free = false;
-      if (free && pensOf(g).length < penLimit(g) && !penOverlap(g, q.x0, q.y0, q.x1, q.y1) && g.wood >= 8) { clearSite(g, q.x0, q.y0, q.x1, q.y1); g.pens.push(t.pen); g.pen = g.pens[0]; g.wood -= 8; connect(g, t.pen.x0 + 3, t.pen.y1);
-        if (g.pens.length === 2 && !g.pen2Msg) { g.pen2Msg = true; notify(`${g.name} ya tiene tantos animales que hace un segundo cercado`, { x:(q.x0 + 4) * T, y:(q.y0 + 3) * T }); } } }; break;
+      if (free && pensOf(g).length < penLimit(g) && !penOverlap(g, q.x0, q.y0, q.x1, q.y1) && (t.paid || g.wood >= penCost(g))) { if (!t.paid) g.wood -= penCost(g); t.paid = 0; clearSite(g, q.x0, q.y0, q.x1, q.y1); g.pens.push(t.pen); g.pen = g.pens[0]; connect(g, t.pen.x0 + 3, t.pen.y1);
+        if (g.pens.length === 2 && !g.pen2Msg) { g.pen2Msg = true; notify(`${g.name} ya tiene tantos animales que hace un segundo cercado`, { x:(q.x0 + 4) * T, y:(q.y0 + 3) * T }); } } if (t.paid) { g.wood += t.paid; t.paid = 0; } }; break; // (no cabía: la madera vuelve al almacén)
     case 'capturar': { const a = t.a; if (a && !a.dead) { a.lead = null; a.x = t.x; a.y = t.y; } v.task = null; return; }
     case 'pasear': v.task = null; v.wait = 1 + Math.random() * 3; return;
   }

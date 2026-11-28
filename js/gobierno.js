@@ -19,7 +19,7 @@ const embargoed = (a, b) => { const P = world && world.player; if (!P || !P.emba
 // ---- Prioridades de trabajo (desde chooseJob) ----
 const FOCUS = {
   normal:{ ic:'⚖', txt:'Equilibrado', jobs:[] },
-  comida:{ ic:'🌾', txt:'Comida', jobs:['sembrar', 'arar', 'cosechar', 'campo', 'pescar', 'barca', 'cazar', 'bayas', 'bayal', 'conservar', 'capturar', 'cercar'] },
+  comida:{ ic:'🌾', txt:'Comida', jobs:['sembrar', 'arar', 'cosechar', 'campo', 'pescar', 'barca', 'cazar', 'bayas', 'bayal', 'conservar', 'capturar', 'cercar', 'matanza'] },
   madera:{ ic:'🪵', txt:'Madera', jobs:['talar', 'plantar', 'arboleda'] },
   piedra:{ ic:'🪨', txt:'Piedra y minas', jobs:['picar', 'cantear', 'cantera', 'minar', 'extraer', 'mina'] },
   obras:{ ic:'🏗', txt:'Obras', jobs:['construir', 'ampliar', 'pozo', 'almacen', 'puente', 'mercado', 'molino', 'herreria', 'escuela', 'hospital', 'teatro', 'taberna', 'muelle', 'empedrar', 'granero', 'ahumadero', 'lenera', 'universidad', 'tribunal', 'carcel', 'imprenta', 'banco', 'lonja', 'ayuntamiento', 'reparar'] },

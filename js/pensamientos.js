@@ -70,6 +70,7 @@ function moodLine(why, v, g){
 }
 // Lo que dicen haciendo cada cosa (la tarea o el oficio)
 const TH_JOB = {
+  matanza:['Lo siento, amigo...', 'Hoy habrá carne en la mesa', 'Con el hambre que hay, no queda otra'], cercar:['Así no se escaparán', 'Una estaca más...'], capturar:['¡Ven aquí, bonita!', 'Al cercado contigo'],
   talar:['¡Árbol va!', 'Buena madera, esta'], picar:['Piedra y más piedra', 'Qué dura está esta roca'], cantear:['Piedra y más piedra'], pescar:['A ver si pican...', 'Hoy cae uno gordo'], barca:['A ver si pican...', '¡Qué bien se está en el agua!'],
   cazar:['Shhh, que se escapa', 'Hoy cenamos carne'], sembrar:['Que llueva, que llueva', 'Esta cosecha será buena'], arar:['¡Venga, buey, venga!'], cosechar:['¡Buena cosecha!', 'Esto da para todo el invierno'],
   construir:['Esto va a quedar precioso', 'Un ladrillo más...'], ampliar:['Otra habitación más'], bayas:['Mmm, qué moradas están'], beber:['¡Por fin, agua!'], comer:['¡Qué rico!', 'Ñam, ñam'], dormir:['Qué sueño...', 'Mañana más'],

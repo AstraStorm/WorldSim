@@ -8,7 +8,7 @@
 // · El gobierno cede (más sueldo o más descanso) antes si falta lo que producen o si hay ley de derecho a huelga; con
 //   ley que prohíbe las huelgas (o en una dictadura) la huelga es ilegal: la rompen y juzgan a los cabecillas
 const SECTOR_JOBS = { 'leñador':['talar'], cantero:['picar', 'cantear', 'minar', 'cantera', 'extraer'], agricultor:['arar', 'sembrar', 'cosechar', 'campo'], pescador:['pescar', 'barca', 'caña'],
-  constructor:['construir', 'ampliar', 'pozo', 'almacen', 'torre', 'muralla', 'puente'], recolector:['bayas'], cazador:['cazar'], pastor:['capturar', 'cercar'] };
+  constructor:['construir', 'ampliar', 'pozo', 'almacen', 'torre', 'muralla', 'puente'], recolector:['bayas'], cazador:['cazar'], pastor:['capturar', 'cercar', 'matanza'] };
 const SECTOR_TXT = { 'leñador':'leñadores', cantero:'canteros', agricultor:'campesinos', pescador:'pescadores', constructor:'constructores', recolector:'recolectores', cazador:'cazadores', pastor:'pastores' };
 const SECTOR_RES = { 'leñador':g => g.wood < 10, cantero:g => g.stone < 8, agricultor:g => g.food < popOf(g) * 2, pescador:g => g.food < popOf(g) * 2, constructor:g => houseCap(g) < popOf(g), recolector:g => g.food < popOf(g) * 2, cazador:g => g.food < popOf(g) * 2, pastor:() => false };
 const unionMember = (u, g) => !!(g.union && SECTOR_JOBS[u.oficio] && (u.ideo || 0) < .3 && ageOf(u) >= ADULT_H);

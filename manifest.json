@@ -1,8 +1,12 @@
 {
  "juego": "World Sim",
- "version": "202611281609",
- "fecha": "2026-11-28 16:09",
+ "version": "202611281629",
+ "fecha": "2026-11-28 16:29",
  "novedades": [
+  {
+   "fecha": "2026-11-28",
+   "texto": "Coches: el automóvil, fábricas con la marca de cada nación y sus modelos (dos berlinas, familiar, sedán y deportivo), concesionarios, compra, comercio por las rutas y en cargueros; gasolineras con el precio de la gasolina y del diésel que sube y baja, quejas cuando se dispara y tráfico por las calles con coches de colores"
+  },
   {
    "fecha": "2026-11-28",
    "texto": "Dibujos de la hoja 15: el cine (el teatro de una ciudad con corriente), el refugio de esquí, las casetas, torres y sillas del telesilla, los cañones de nieve y la caseta de alquiler; el telesilla a un lado de la pista con el cable por lo alto de las torres"
@@ -46,14 +50,10 @@
   {
    "fecha": "2026-11-28",
    "texto": "Guardado sin parón: la partida se copia a un hilo aparte que la convierte y comprime (de ~1,3 s a ~0,2 s de bloqueo); destellos de objetos raros sin recorrer el mapa a cada tala"
-  },
-  {
-   "fecha": "2026-11-28",
-   "texto": "Más fps: suelo y campos repintados solo en los trozos que cambian, tierra quemada por casillas, luces de noche ya pintadas, pozos y molinos fuera de la vista sin dibujar, nubes nuevas espaciadas, búsqueda de agua más barata"
   }
  ],
  "archivos": {
-  "index.html": "59c571b85ab4bb7fdb93ad3f6776ac7d2ef598f0",
+  "index.html": "871cf4991c079f0a00d196700625defab885c549",
   "css/estilo.css": "eb2c6a0c3b417250272a46180e1767d087996425",
   "js/agencia.js": "dd15e5ae8fa08af254622aba102dafae859910b9",
   "js/aldeanos.js": "9e2f68a67a99a8683a0ed856c7068883d093912a",
@@ -61,7 +61,7 @@
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "a94b46896cfd10fd688954a3c5b9297e9b693872",
   "js/armas.js": "d4710aa65550aceb06fbdd1d2d290c8085f58e96",
-  "js/arte.js": "00c96a40707d725032210cb24cd970d5dd24876a",
+  "js/arte.js": "cfb512b1f845a1e2fa8ba0c908b67d48b63ff926",
   "js/arte_mapa.js": "4e29886b482631f06368c5b1e1da169aa8a48f5d",
   "js/automatizacion.js": "b0c9d760d1de77a37eebb4c7b97d47130dbd35b5",
   "js/aviacion.js": "2bceeb5a9a59332b96ad69d19b5f6e39da71af42",
@@ -117,10 +117,10 @@
   "js/fenomenos.js": "1ebb36e5885700b76c2934a1cf2bf01ac183fdc3",
   "js/fichas.js": "1d748cb1fb7f5459f5e4794f8c831e3dbb9a7359",
   "js/globos.js": "955b67ce3b9dd8c36b7ee965f9f05f4fb8bd9d39",
-  "js/gobierno.js": "0640677a5d4bf3f5c071d293b7f1485c138529d3",
+  "js/gobierno.js": "85bdf2795f586d0a977e1aed18215b19951268c4",
   "js/grafica.js": "d548461632882f80f4077d9e5754c70c5319331e",
   "js/guerra.js": "2aab88f346ccb8117f2fd463cb66b8189034b083",
-  "js/humanos.js": "3a5a19095a96c0186da88af921be7cad5b07036d",
+  "js/humanos.js": "3bf8811ffc3c2e8a21ad1403a64810b035961447",
   "js/idiomas.js": "c9cea6906055fb07058b9e57a2e455a8238ba521",
   "js/impuestos.js": "30a39fbfba11c9245a09cf6e54504337272a2fb6",
   "js/industria.js": "965f3c5054aa0a4473d81485c375abb9b319c7ea",
@@ -149,7 +149,7 @@
   "js/papeles.js": "795255b93e39394849e44435d3d1b9dd6b0ec625",
   "js/parlamento.js": "d9536c13bd9a02da8f30e1922e6ac942842e6462",
   "js/partidas.js": "66da738b851220e8b759634782c068d8112285e7",
-  "js/pensamientos.js": "e0c81b3617ff55657ab6e17fd5b0bdf2c4fbfab0",
+  "js/pensamientos.js": "86ba9ab98f1d5f50add8979bb486a64a7bf3a8aa",
   "js/petroleo.js": "929db5ee8dec798b02a8426c2e4f2d3cc1fef0d1",
   "js/piratas.js": "24a48264c6aa946e48182e5a0fdc4cd620cc215f",
   "js/pontones.js": "92d44f1cd2a21068339aeed97ac8a564609bbbf9",
@@ -164,8 +164,8 @@
   "js/rescate.js": "d21e0bb80c7639eb13d89dace4a5553c498a6853",
   "js/riqueza.js": "6e0afe4ee16977f7f9b9bb2987844ad104f54f6a",
   "js/rutas.js": "b3a398612800b03c8500b4a7b2c0e230a7f4ac82",
-  "js/sindicatos.js": "f7cb8bf83ff74322a6fc45cc6ac90550425c6d15",
-  "js/sociedad.js": "26fcb250e65d1df628fce3542e6c6043d6fd34b2",
+  "js/sindicatos.js": "c5e812dedfea42b866d04bc3e715438a79594a16",
+  "js/sociedad.js": "1bc797a1773e7726e2137d9680814351d263152f",
   "js/sonido.js": "59d02d23305c1cd915f05be3262d7a642c59d7be",
   "js/susurros.js": "691d8cb4be92fdaff56018d77370403fb6300b66",
   "js/terrorismo.js": "a2285a3dfa1180fc7b7922eadf05f9f189970d6e",
