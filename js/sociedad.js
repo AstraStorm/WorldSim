@@ -3347,6 +3347,7 @@ function updateVillages(dt){
         const kn = g.know ||= {}; if (!kn.acequias && (g.dryLoss = (g.dryLoss || 0) + 1) >= 6) { kn.acequias = true; notify(`En ${g.name}, tras perder cosechas por la sequía, aprenden a cavar acequias para llevar el agua a los campos`, { x:g.fx * T, y:g.fy * T }); }
         continue; } } else f.dry = Math.max(0, f.dry - dt);
     if (water) f.g += .022 * C.grow[si] * dt;
+    if (world.ashSoil && world.ashSoil.has(i) && (water || secano)) f.g += .006 * C.grow[si] * dt; // tierra con ceniza volcánica: muy fértil
     f.st = f.g >= 1 ? 'madura' : f.g > .15 ? 'creciendo' : 'sembrado';
     if (f.st === 'madura') f.ripeT = yearT;
   }

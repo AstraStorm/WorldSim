@@ -254,11 +254,11 @@ function renderChronicle(){
 
 // ---- Coladas de lava vivas: avanzan casilla a casilla, se paran, se enfrían y quedan como roca volcánica ----
 let ash = [];
-function flowPath(v){
+function flowPath(v, lenK = 1, spK = 1){ // (lenK, spK: más larga y rápida en los volcanes en escudo; volcanes.js)
   const { e } = world, path = [], seen = new Set();
   const a = Math.random() * Math.PI * 2, rr = v.r * v.crater + .8;
   let x = Math.round(v.cx + Math.cos(a) * rr), y = Math.round(v.cy + Math.sin(a) * rr), water = -1;
-  const len = Math.round(v.r * (.5 + Math.random() * 1.3)) + 2; // cada colada llega hasta donde le toca
+  const len = Math.round(v.r * (.5 + Math.random() * 1.3) * lenK) + 2; // cada colada llega hasta donde le toca
   for (let s = 0; s < len; s++) {
     if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1) break;
     const j = y * W + x;
@@ -274,7 +274,7 @@ function flowPath(v){
     if (bx < 0) break;
     x = bx; y = by;
   }
-  return { path, head:0, acc:0, speed:.6 + Math.random() * .7, water };
+  return { path, head:0, acc:0, speed:(.6 + Math.random() * .7) * spK, water };
 }
 function igniteTile(i, v){
   if (world.biome[i] === B.LAVA) return;
@@ -305,25 +305,17 @@ function updateVolcanoes(dt, t){
   const now = performance.now();
   for (const v of world.volcanoes) {
     v.t -= dt;
-    if (v.t <= 0) {
-      if (v.state === 'dormido') { v.state = 'activo'; v.t = 10 + Math.random() * 20; }
-      else if (v.state === 'activo') {
-        if (Math.random() < .55 * Math.min(1.6, disasterF())) {
-          v.state = 'erupcion'; v.t = 8 + Math.random() * 10; snd('boom', v.x, v.y, .8);
-          // Cada erupción abre coladas nuevas en direcciones al azar y suelta una gran nube de ceniza
-          for (let k = 1 + Math.floor(Math.random() * (v.kind === 'escudo' ? 4 : 3)); k > 0; k--) v.flows.push(flowPath(v));
-          emitAsh(v, 80); toxicCloud(v); // y una nube de ceniza tóxica que se lleva el viento (volcanes.js)
-          if (t - lastNotice > 15000) { lastNotice = t; notify('Un volcán ha entrado en erupción', v); }
-        } else { v.state = 'dormido'; v.t = 25 + Math.random() * 40; }
-      } else { v.state = 'activo'; v.t = 10 + Math.random() * 15; }
-    }
-    const target = v.state === 'erupcion' ? 1 : v.state === 'activo' ? .55 : 0;
+    volcMigrate(v); // (partidas de antes y mundos nuevos: al ciclo de ahora; volcanes.js)
+    if (v.t <= 0) volcCycle(v, t); // dormido (días; la caldera, años) → avisos (temblores y humo) → erupción o falsa alarma (volcanes.js)
+    const K = volcK(v), target = v.state === 'erupcion' ? 1 : v.state === 'activo' ? .55 : 0;
     v.heat += (target - v.heat) * Math.min(1, dt * .35);
+    if (v.state === 'activo') volcRestless(v, dt);
     if (v.state === 'erupcion') {
-      if (Math.random() < dt * 12) v.bombs.push({ x:v.x + (Math.random() - .5) * 3, y:v.y - 2, vx:(Math.random() - .5) * 34, vy:-(28 + Math.random() * 38), life:0 });
-      if (Math.random() < dt * .45) lavaSpurt(v); // chorros de lava: bombas grandes que caen lejos y queman lo que pillan (volcanes.js)
-      if (Math.random() < dt * 14) emitAsh(v, 1);
+      if (Math.random() < dt * K.bombs) v.bombs.push({ x:v.x + (Math.random() - .5) * 3, y:v.y - 2, vx:(Math.random() - .5) * 34, vy:-(28 + Math.random() * 38), life:0 });
+      if (Math.random() < dt * K.spurts) lavaSpurt(v); // chorros de lava: bombas grandes que caen lejos y queman lo que pillan (volcanes.js)
+      if (Math.random() < dt * 14 * K.ash / 80) emitAsh(v, 1);
     }
+    volcFlowsTick(v, dt); // nubes ardientes y lahares (volcanes.js)
     for (const b of v.bombs) { b.life += dt; b.vy += 70 * dt; b.x += b.vx * dt; b.y += b.vy * dt; if (b.big && b.vy > 0 && b.y >= b.gy && !b.done) { b.done = true; lavaBombLand(b, v); } }
     if (v.bombs.length) v.bombs = v.bombs.filter(b => !b.done && b.life < (b.big ? 4 : 1.8));
     for (const f of v.flows) {

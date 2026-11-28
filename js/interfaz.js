@@ -124,7 +124,7 @@ function inspect(sx, sy){
   let vol = '';
   if (vi) {
     const v = world.volcanoes[vi - 1];
-    vol = ` · Volcán ${v.kind === 'cono' ? 'de cono' : v.kind === 'escudo' ? 'en escudo' : 'de caldera'} (${v.state === 'erupcion' ? 'en erupción' : v.state === 'activo' ? 'activo' : 'dormido'})`;
+    vol = ` · Volcán ${v.kind === 'cono' ? 'de cono' : v.kind === 'escudo' ? 'en escudo' : 'de caldera'} (${v.state === 'erupcion' ? 'en erupción' : v.state === 'activo' ? 'despierto: puede entrar en erupción' : 'dormido'})`;
   }
   const vv = villagerAt(sx, sy);
   if (vv) { hud.innerHTML = villagerInfo(vv); return; }

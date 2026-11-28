@@ -1,8 +1,12 @@
 {
  "juego": "World Sim",
- "version": "202611281500",
- "fecha": "2026-11-28 15:00",
+ "version": "202611281509",
+ "fecha": "2026-11-28 15:09",
  "novedades": [
+  {
+   "fecha": "2026-11-28",
+   "texto": "La nube de ceniza tóxica de los volcanes, con el mismo dibujo de píxeles que las nubes del cielo (gris verdoso, con su sombra)"
+  },
   {
    "fecha": "2026-11-28",
    "texto": "Los bandidos se pueden matar: el fuego, la lava, las riadas, los tornados, los meteoritos, los misiles y los rayos acaban con ellos; los aldeanos armados que se los cruzan pelean, los viajeros armados se defienden y matan alguno, la patrulla que gana los mata a todos, y en modo dios «Retirar» sobre la banda quita a uno; la banda se ve con los que le quedan"
@@ -46,14 +50,10 @@
   {
    "fecha": "2026-11-27",
    "texto": "Demografía, migraciones, ciclo económico, robots e IA, cambio climático, crisis con dilemas, uniones, discurso anual y botón Reportar"
-  },
-  {
-   "fecha": "2026-11-27",
-   "texto": "x5 más fluido: movimiento resumido fuera de pantalla y con el mapa alejado, y menos dibujo cuando la simulación no llega"
   }
  ],
  "archivos": {
-  "index.html": "fd5976b5c0887c30c486d15623ef989385334aa1",
+  "index.html": "8f0caa5e9ee11a0330a7567dc5ac3f966e7b39eb",
   "css/estilo.css": "eb2c6a0c3b417250272a46180e1767d087996425",
   "js/agencia.js": "dd15e5ae8fa08af254622aba102dafae859910b9",
   "js/aldeanos.js": "9e2f68a67a99a8683a0ed856c7068883d093912a",
@@ -61,7 +61,7 @@
   "js/anexiones.js": "3964c6742aaa12b345eda176610995890da0903f",
   "js/arbolciencia.js": "a94b46896cfd10fd688954a3c5b9297e9b693872",
   "js/armas.js": "d4710aa65550aceb06fbdd1d2d290c8085f58e96",
-  "js/arte.js": "acb8a39e4638acc0d0d2212fa9d7940e58adbc3f",
+  "js/arte.js": "40512f15293523c810bd7d14689d586dbedda498",
   "js/arte_mapa.js": "a92d6a3c48ca112990a90102d27322fe8879ec53",
   "js/automatizacion.js": "b0c9d760d1de77a37eebb4c7b97d47130dbd35b5",
   "js/aviacion.js": "2bceeb5a9a59332b96ad69d19b5f6e39da71af42",
@@ -93,7 +93,7 @@
   "js/defensa.js": "91cdc6da347cbc9e6255b720650340dbbb919808",
   "js/demografia.js": "671fbe7a39bd2d9ab00053e2e9735351f06b3700",
   "js/deportes.js": "117b0e7e55848a1dfb01e3d5b4776fe9374e0e12",
-  "js/desastres.js": "f4835f6c2bf6034d2e430aec87dc2bf559ab2f66",
+  "js/desastres.js": "23541979f0e423ad609c9a9d056434f539d00266",
   "js/devocion.js": "ead2ae212c4a3118764213abe00f4b6424a6760b",
   "js/digital.js": "78743a73f5639a2d4e25ec087292c11fe4010be7",
   "js/documentos.js": "5b297799cde31f243fdb78a3be57c1209f89b14d",
@@ -122,7 +122,7 @@
   "js/impuestos.js": "30a39fbfba11c9245a09cf6e54504337272a2fb6",
   "js/industria.js": "965f3c5054aa0a4473d81485c375abb9b319c7ea",
   "js/instituciones.js": "27040afa33169a2eff011b1481c00e8491c9775e",
-  "js/interfaz.js": "c1e06059c30e9b9885006caafed45687efa9ea07",
+  "js/interfaz.js": "8c0bbb5914d07f481377470043b51a1919a53dbf",
   "js/islas.js": "d65159562d188788176b02cca6001d0abcb20629",
   "js/justicia.js": "3831f20ef0f118af99af70e5d0977d0bcfcdee46",
   "js/legado.js": "bf1729a89ed70f74976beca6cf843496f06836ca",
@@ -161,7 +161,7 @@
   "js/riqueza.js": "6e0afe4ee16977f7f9b9bb2987844ad104f54f6a",
   "js/rutas.js": "b3a398612800b03c8500b4a7b2c0e230a7f4ac82",
   "js/sindicatos.js": "f7cb8bf83ff74322a6fc45cc6ac90550425c6d15",
-  "js/sociedad.js": "f01b7204606e4372c6f42125ca20c9253875a0ab",
+  "js/sociedad.js": "f6d521abf8ea0719928441c72970430e35d6d399",
   "js/sonido.js": "59d02d23305c1cd915f05be3262d7a642c59d7be",
   "js/susurros.js": "691d8cb4be92fdaff56018d77370403fb6300b66",
   "js/terrorismo.js": "a2285a3dfa1180fc7b7922eadf05f9f189970d6e",
@@ -174,9 +174,9 @@
   "js/vegetacion.js": "cf4d82501b3db2acbdb7f3e7f35ca9ec746765ae",
   "js/vida.js": "2fca663a0d538b7d713ddf84ee9c89d69dcf6b66",
   "js/visitas.js": "5ae62a73b96064c44cf473c03ed02d831401bd82",
-  "js/vista.js": "b669274fd517edaf243795bada6844b3b7ab91c1",
+  "js/vista.js": "88e9e1dee4205a537d73f7c4c79e49a2ecd0be6b",
   "js/vivienda.js": "0f3091767a41917156ce106447eb0e9659b69271",
-  "js/volcanes.js": "f4f9ee7b8dd3d9fbe3cc1f91c3e4dc3654b680ce",
+  "js/volcanes.js": "4067032845043fb48c13e4327ab45aab136a6563",
   "arte/atlas.png": "f3e847e9c31afd049e2807b9d345324405701572",
   "arte/logo.png": "d18c1e289f646312aeb3ec4087060e60088f0ccd",
   "arte/papeles/contrato.png": "e1625cf1f7bb7b9b5b142d12899265fab2ce7cf0",

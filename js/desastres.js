@@ -68,7 +68,7 @@ function tempAt(i){
   const amp = sea ? .5 : 1 + clamp(-world.baseT[i] / 15, 0, 1) * .6;
   // Cerca de un volcán hace más calor (dormido, algo; en erupción, mucho) y sobre la lava, muchísimo
   const vk = world.vHeatId[i], volc = vk ? world.vHeatF[i] * (6 + world.volcanoes[vk - 1].heat * 30) : 0;
-  return world.baseT[i] + globalT + ensoDT + seasonTempNow * amp + anomaly(x, y) - (raining(i) ? 2 : 0) + droughtAt(i) * 3 + volc + world.lavaT[i] * 40;
+  return world.baseT[i] + globalT - (world.volcWinter || 0) + ensoDT + seasonTempNow * amp + anomaly(x, y) - (raining(i) ? 2 : 0) + droughtAt(i) * 3 + volc + world.lavaT[i] * 40;
 }
 const FRESH = b => b === B.LAKE || b === B.RIVER;
 const frozen = i => world.ice && world.ice[i] > .5;
